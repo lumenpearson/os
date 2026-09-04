@@ -98,6 +98,9 @@ export function ManifestIcon({
         background: ICON_TONES.graphite,
         boxShadow: 'inset 0 0 0 1px rgb(255 255 255 / 0.14), 0 1px 1px rgb(0 0 0 / 0.18)',
         color: '#fff',
+        // The fallback tile prints one initial. A letterform standing in for an
+        // icon is exactly the accent case design rule 1 sets in JetBrains Mono.
+        // deslop-ignore-next-line 34
         fontFamily: 'var(--font-mono)',
         fontWeight: 600,
         fontSize: Math.round(size * 0.46),

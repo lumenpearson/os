@@ -57,6 +57,7 @@ every change:
    tokens; nothing scales on hover. Respect `prefers-reduced-motion`.
 6. **No emoji in UI, no badge spam, no icon tiles in a tint of themselves, no
    kicker labels above every heading, no invented statistics.**
+<!-- deslop-ignore-next-line 14 — this line forbids the pattern it quotes. -->
 7. **Copy is specific.** Say what a thing does. No "not just X — it's Y".
 
 Check with `pnpm deslop` and by looking at the running app. The vendored skill

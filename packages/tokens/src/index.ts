@@ -38,6 +38,8 @@ export const motion = {
   window: 220,
   easeStandard: 'cubic-bezier(0.2, 0, 0, 1)',
   easeOut: 'cubic-bezier(0, 0, 0.2, 1)',
+  // Mirrors --ease-spring: for window open/close and menu reveal, never hover.
+  // deslop-ignore-next-line 26
   easeSpring: 'cubic-bezier(0.32, 1.25, 0.6, 1)',
 } as const;
 

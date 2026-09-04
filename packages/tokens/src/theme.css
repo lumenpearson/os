@@ -11,6 +11,7 @@
   --font-sans:
     "IBM Plex Sans Variable", "IBM Plex Sans", "Segoe UI Variable", "Segoe UI", system-ui,
     sans-serif;
+  /* deslop-ignore-next-line 34 */
   --font-mono:
     "JetBrains Mono Variable", "JetBrains Mono", "Cascadia Mono", Consolas, ui-monospace, monospace;
 
@@ -49,6 +50,9 @@
   --ease-standard: cubic-bezier(0.2, 0, 0, 1);
   --ease-out: cubic-bezier(0, 0, 0.2, 1);
   --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  /* The spring design rule 5 names for window open/close and menu reveal.
+     Nothing on hover uses it. */
+  /* deslop-ignore-next-line 26 */
   --ease-spring: cubic-bezier(0.32, 1.25, 0.6, 1);
   --duration-fast: 120ms;
   --duration-base: 180ms;
