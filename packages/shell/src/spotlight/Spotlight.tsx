@@ -113,6 +113,9 @@ export function Spotlight() {
     return out;
   }, [query, files, installed, kernel, vfs]);
 
+  // Reset the highlight when the result count changes, not on every rebuild
+  // of an equally long list.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: the length is the intended trigger
   useEffect(() => {
     setActive(0);
   }, [results.length]);
@@ -177,6 +180,7 @@ export function Spotlight() {
             aria-label="Search"
             aria-autocomplete="list"
             aria-controls="spotlight-results"
+            aria-activedescendant={results[active] ? `spotlight-option-${active}` : undefined}
             className="h-12 w-full bg-transparent text-lg text-ink placeholder:text-ink-3 outline-none"
             autoComplete="off"
             spellCheck={false}
@@ -187,12 +191,15 @@ export function Spotlight() {
           <ul
             id="spotlight-results"
             role="listbox"
+            aria-label="Results"
             className="lumen-scroll max-h-[50vh] border-t border-rule p-1"
           >
             {results.map((r, i) => (
               <li
                 key={`${r.kind}-${r.id}`}
+                id={`spotlight-option-${i}`}
                 role="option"
+                tabIndex={-1}
                 aria-selected={i === active}
                 onPointerEnter={() => setActive(i)}
                 onPointerUp={() => run(r)}

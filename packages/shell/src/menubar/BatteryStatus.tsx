@@ -36,6 +36,7 @@ export function BatteryStatus({ className }: { className?: string }) {
   const pct = Math.round(state.level * 100);
   return (
     <span
+      role="img"
       className={cx(className, 'gap-1.5')}
       aria-label={`Battery ${pct}%${state.charging ? ', charging' : ''}`}
       title={`Battery ${pct}%`}

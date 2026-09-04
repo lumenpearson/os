@@ -70,9 +70,6 @@
     background: var(--lumen-accent);
     color: var(--lumen-accent-ink);
   }
-  .lumen-menu-item[data-active="true"] .lumen-menu-shortcut {
-    color: color-mix(in srgb, var(--lumen-accent-ink) 78%, transparent);
-  }
   .lumen-menu-item[aria-disabled="true"] {
     color: var(--lumen-ink-3);
   }
@@ -86,6 +83,9 @@
     font-size: var(--text-xs);
     color: var(--lumen-ink-3);
     letter-spacing: 0.02em;
+  }
+  .lumen-menu-item[data-active="true"] .lumen-menu-shortcut {
+    color: color-mix(in srgb, var(--lumen-accent-ink) 78%, transparent);
   }
   .lumen-menu-separator {
     height: 1px;

@@ -111,7 +111,10 @@ export function ControlCenter() {
               label="Lock"
               detail="Now"
               active={false}
-              onClick={() => (toggle('controlCenter', false), kernel.lock())}
+              onClick={() => {
+                toggle('controlCenter', false);
+                kernel.lock();
+              }}
             />
           </div>
           <div className="flex flex-col gap-2 rounded-md border border-rule bg-surface/70 p-3">
@@ -150,7 +153,10 @@ export function ControlCenter() {
             size="sm"
             variant="ghost"
             className="self-end"
-            onClick={() => (toggle('controlCenter', false), void kernel.launch('lumen.settings'))}
+            onClick={() => {
+              toggle('controlCenter', false);
+              void kernel.launch('lumen.settings');
+            }}
           >
             All settings
           </Button>

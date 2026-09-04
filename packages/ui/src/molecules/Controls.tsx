@@ -1,3 +1,4 @@
+// biome-ignore-all lint/a11y/useFocusableInteractive: a row inside a grid or listbox is not a tab stop; the container owns focus
 import { Search, X } from 'lucide-react';
 import { forwardRef, type HTMLAttributes, type ReactNode, useId } from 'react';
 import { IconButton } from '../atoms/IconButton';

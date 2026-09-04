@@ -233,8 +233,20 @@ export function StartMenu() {
           anchor={powerRef.current}
           align="end"
           items={[
-            { label: 'Lock', onSelect: () => (toggle('startMenu', false), kernel.lock()) },
-            { label: 'Sleep', onSelect: () => (toggle('startMenu', false), kernel.sleep()) },
+            {
+              label: 'Lock',
+              onSelect: () => {
+                toggle('startMenu', false);
+                kernel.lock();
+              },
+            },
+            {
+              label: 'Sleep',
+              onSelect: () => {
+                toggle('startMenu', false);
+                kernel.sleep();
+              },
+            },
             { type: 'separator' },
             { label: 'Restart…', onSelect: () => void kernel.restart() },
             { label: 'Shut Down…', onSelect: () => void kernel.shutdown() },

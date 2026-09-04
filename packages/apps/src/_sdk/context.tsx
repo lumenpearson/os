@@ -110,6 +110,9 @@ export function useCloseGuard(guard: (() => boolean | Promise<boolean>) | null) 
   const kernel = useKernel();
   const latest = useRef(guard);
   latest.current = guard;
+  // The guard is read through the ref, so it may change identity every render;
+  // only whether one exists at all needs to re-register it.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: the ref carries the latest guard
   useEffect(() => {
     kernel.setCloseGuard(windowId, guard ? () => latest.current?.() ?? true : null);
     return () => kernel.setCloseGuard(windowId, null);

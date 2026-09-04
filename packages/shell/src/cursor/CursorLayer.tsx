@@ -247,7 +247,7 @@ function CursorGlyphs({
         [data-testid='os-cursor'] svg[data-g='grab'], [data-testid='os-cursor'] svg[data-g='grabbing'], [data-testid='os-cursor'] svg[data-g='not-allowed'],
         [data-testid='os-cursor'] svg[data-g='wait'], [data-testid='os-cursor'] svg[data-g='crosshair'] { transform: translate(-50%, -50%); }
       `}</style>
-      <svg data-g="arrow" viewBox="0 0 24 24">
+      <svg aria-hidden data-g="arrow" viewBox="0 0 24 24">
         {classic ? (
           <path d="M3 2l0 17 4.5-4.2 3 6.7 3.2-1.4-3-6.6 6.3-.4z" {...common} />
         ) : (
@@ -257,13 +257,13 @@ function CursorGlyphs({
           />
         )}
       </svg>
-      <svg data-g="pointer" viewBox="0 0 24 24">
+      <svg aria-hidden data-g="pointer" viewBox="0 0 24 24">
         <path
           d="M9 3.5a1.5 1.5 0 0 1 3 0V11l1-.3a1.4 1.4 0 0 1 1.9 1l.2.5.5-.2a1.4 1.4 0 0 1 1.9.9l.1.4.5-.1a1.5 1.5 0 0 1 1.8 1.4l-.3 3.5a4 4 0 0 1-1.4 2.7l-1.4 1.2a4 4 0 0 1-2.6 1H12a4 4 0 0 1-3.4-1.9l-3.4-5.5a1.4 1.4 0 0 1 2.2-1.7L9 15z"
           {...common}
         />
       </svg>
-      <svg data-g="text" viewBox="0 0 24 24">
+      <svg aria-hidden data-g="text" viewBox="0 0 24 24">
         <path
           d="M9 3h2.5q.5 0 .5.5V20.5q0 .5-.5.5H9M15 3h-2.5q-.5 0-.5.5V20.5q0 .5.5.5H15M12 7v10"
           fill="none"
@@ -279,19 +279,19 @@ function CursorGlyphs({
           strokeLinecap="round"
         />
       </svg>
-      <svg data-g="grab" viewBox="0 0 24 24">
+      <svg aria-hidden data-g="grab" viewBox="0 0 24 24">
         <path
           d="M8 11V6.5a1.5 1.5 0 0 1 3 0V11m0-6a1.5 1.5 0 0 1 3 0v6m0-4.5a1.5 1.5 0 0 1 3 0V12m0-2a1.5 1.5 0 0 1 3 0v4.5a6 6 0 0 1-6 6h-2a6 6 0 0 1-5.2-3l-2.4-4.2a1.5 1.5 0 0 1 2.6-1.5L8 13"
           {...common}
         />
       </svg>
-      <svg data-g="grabbing" viewBox="0 0 24 24">
+      <svg aria-hidden data-g="grabbing" viewBox="0 0 24 24">
         <path
           d="M8 12v-2a1.5 1.5 0 0 1 3 0v2m0-2a1.5 1.5 0 0 1 3 0v2m0-1.5a1.5 1.5 0 0 1 3 0V12m0 0a1.5 1.5 0 0 1 3 0v3a6 6 0 0 1-6 6h-2a6 6 0 0 1-5.2-3l-1.6-2.8a1.5 1.5 0 0 1 2.6-1.5L8 14"
           {...common}
         />
       </svg>
-      <svg data-g="ew" viewBox="0 0 24 24">
+      <svg aria-hidden data-g="ew" viewBox="0 0 24 24">
         <path
           d="M3 12h18M7 8l-4 4 4 4M17 8l4 4-4 4"
           {...common}
@@ -301,7 +301,7 @@ function CursorGlyphs({
         />
         <path d="M3 12h18M7 8l-4 4 4 4M17 8l4 4-4 4" {...common} fill="none" />
       </svg>
-      <svg data-g="ns" viewBox="0 0 24 24">
+      <svg aria-hidden data-g="ns" viewBox="0 0 24 24">
         <path
           d="M12 3v18M8 7l4-4 4 4M8 17l4 4 4-4"
           {...common}
@@ -311,7 +311,7 @@ function CursorGlyphs({
         />
         <path d="M12 3v18M8 7l4-4 4 4M8 17l4 4 4-4" {...common} fill="none" />
       </svg>
-      <svg data-g="nesw" viewBox="0 0 24 24">
+      <svg aria-hidden data-g="nesw" viewBox="0 0 24 24">
         <path
           d="M5 19L19 5M9 19H5v-4M15 5h4v4"
           {...common}
@@ -321,7 +321,7 @@ function CursorGlyphs({
         />
         <path d="M5 19L19 5M9 19H5v-4M15 5h4v4" {...common} fill="none" />
       </svg>
-      <svg data-g="nwse" viewBox="0 0 24 24">
+      <svg aria-hidden data-g="nwse" viewBox="0 0 24 24">
         <path
           d="M5 5l14 14M5 9V5h4M19 15v4h-4"
           {...common}
@@ -331,7 +331,7 @@ function CursorGlyphs({
         />
         <path d="M5 5l14 14M5 9V5h4M19 15v4h-4" {...common} fill="none" />
       </svg>
-      <svg data-g="move" viewBox="0 0 24 24">
+      <svg aria-hidden data-g="move" viewBox="0 0 24 24">
         <path
           d="M12 3v18M3 12h18M9 6l3-3 3 3M9 18l3 3 3-3M6 9l-3 3 3 3M18 9l3 3-3 3"
           {...common}
@@ -345,12 +345,12 @@ function CursorGlyphs({
           fill="none"
         />
       </svg>
-      <svg data-g="not-allowed" viewBox="0 0 24 24">
+      <svg aria-hidden data-g="not-allowed" viewBox="0 0 24 24">
         <circle cx="12" cy="12" r="8" {...common} fill="none" strokeWidth="3.5" stroke={stroke} />
         <circle cx="12" cy="12" r="8" {...common} fill="none" />
         <path d="M6.5 6.5l11 11" {...common} fill="none" />
       </svg>
-      <svg data-g="wait" viewBox="0 0 24 24">
+      <svg aria-hidden data-g="wait" viewBox="0 0 24 24">
         <circle cx="12" cy="12" r="8" fill="none" stroke={stroke} strokeWidth="3.5" />
         <circle
           cx="12"
@@ -376,7 +376,7 @@ function CursorGlyphs({
           style={{ transformBox: 'view-box', transformOrigin: '12px 12px' }}
         />
       </svg>
-      <svg data-g="crosshair" viewBox="0 0 24 24">
+      <svg aria-hidden data-g="crosshair" viewBox="0 0 24 24">
         <path d="M12 2v20M2 12h20" fill="none" stroke={stroke} strokeWidth="3.5" />
         <path d="M12 2v20M2 12h20" fill="none" stroke={fill} strokeWidth="1.5" />
       </svg>

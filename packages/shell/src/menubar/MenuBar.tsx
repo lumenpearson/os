@@ -130,6 +130,9 @@ export function MenuBar() {
     })),
   ];
 
+  // Close the open menu when focus moves to another window. Keyed on the id
+  // alone: re-running on every bounds or title change would close it mid-use.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: the id is the intended trigger
   useEffect(() => {
     setOpen(null);
   }, [focused?.id]);

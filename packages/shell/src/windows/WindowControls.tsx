@@ -37,7 +37,7 @@ export function WindowControls({
           // deslop-ignore-next-line 19 — the unsaved-changes marker is a dot, so it is round.
           <span className="block size-1.5 rounded-full bg-[#4a1010]" />
         ) : (
-          <svg viewBox="0 0 10 10" className="size-2">
+          <svg aria-hidden viewBox="0 0 10 10" className="size-2">
             <path
               d="M2 2l6 6M8 2l-6 6"
               stroke="currentColor"
@@ -54,7 +54,7 @@ export function WindowControls({
         focused={focused}
         onClick={onMinimize}
       >
-        <svg viewBox="0 0 10 10" className="size-2">
+        <svg aria-hidden viewBox="0 0 10 10" className="size-2">
           <path d="M2 5h6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
         </svg>
       </Control>
@@ -65,7 +65,7 @@ export function WindowControls({
         focused={focused}
         onClick={onMaximize}
       >
-        <svg viewBox="0 0 10 10" className="size-2">
+        <svg aria-hidden viewBox="0 0 10 10" className="size-2">
           <path
             d="M2.5 6.5V2.5h4M7.5 3.5v4h-4"
             stroke="currentColor"

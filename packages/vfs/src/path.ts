@@ -106,7 +106,9 @@ export function uniqueName(name: string, taken: (candidate: string) => boolean):
 }
 
 // Characters that are illegal on Windows or ambiguous in a path: separators,
-// reserved punctuation, and ASCII control characters.
+// reserved punctuation, and ASCII control characters. The control range is the
+// point of the check — Windows rejects those bytes in a file name.
+// biome-ignore lint/suspicious/noControlCharactersInRegex: matching them is the intent
 const INVALID_NAME = /[\\/:*?"<>|\u0000-\u001f]/;
 
 export function isValidName(name: string): boolean {

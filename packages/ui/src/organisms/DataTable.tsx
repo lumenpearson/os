@@ -1,3 +1,4 @@
+// biome-ignore-all lint/a11y/useFocusableInteractive: the grid container is the tab stop and moves selection with the arrow keys; rows and cells are not focusable
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { type ReactNode, useMemo, useState } from 'react';
 import { cx } from '../cx';

@@ -134,13 +134,12 @@ export function MenuList({
     >
       {items.map((item, i) => {
         if (item.type === 'separator')
-          return (
-            <div key={item.id ?? `sep-${i}`} role="separator" className="lumen-menu-separator" />
-          );
+          return <hr key={item.id ?? `sep-${i}`} className="lumen-menu-separator" />;
         const disabled = item.enabled === false;
         const hasSub = Boolean(item.submenu);
         const checked = item.checked;
         return (
+          // biome-ignore lint/a11y/useAriaPropsSupportedByRole: aria-checked and the menuitemcheckbox/menuitemradio role both come from item.type
           <div
             key={item.id ?? `${item.label}-${i}`}
             ref={(el) => {

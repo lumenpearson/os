@@ -229,6 +229,10 @@ export function DesktopIcons() {
         height: area.height - 16,
       }}
       data-testid="desktop-icons"
+      role="listbox"
+      aria-label="Desktop"
+      aria-multiselectable="true"
+      tabIndex={-1}
       onPointerDown={(e) => {
         if (e.target === e.currentTarget) setSelected(new Set());
       }}
@@ -248,7 +252,7 @@ export function DesktopIcons() {
           <div
             key={entry.path}
             data-desktop-path={entry.path}
-            role="button"
+            role="option"
             tabIndex={0}
             aria-label={entry.name}
             aria-selected={isSelected}
@@ -279,6 +283,7 @@ export function DesktopIcons() {
             <FileTypeIcon entry={entry} size={size * 0.7} />
             {renaming === entry.path ? (
               <input
+                // biome-ignore lint/a11y/noAutofocus: the field replaces the name the user just chose to rename
                 autoFocus
                 defaultValue={entry.name}
                 aria-label="New name"

@@ -211,6 +211,9 @@ export function useJsonFile<T>(
   const [loaded, setLoaded] = useState(false);
   const pending = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // `fallback` is typically an inline literal, so it changes identity every
+  // render; only the path should re-read the file.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: fallback is a stable default by contract
   useEffect(() => {
     if (!path) return;
     let cancelled = false;
@@ -227,7 +230,6 @@ export function useJsonFile<T>(
     return () => {
       cancelled = true;
     };
-    // biome-ignore lint/correctness/useExhaustiveDependencies: fallback is a stable default
   }, [vfs, path]);
 
   const update = useCallback(

@@ -99,6 +99,8 @@ function FilePickerDialog({
     });
   }, [entries, options.mode, options.extensions]);
 
+  // Clear the selection when the folder changes.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: dir is the intended trigger
   useEffect(() => {
     setSelected(new Set());
   }, [dir]);
