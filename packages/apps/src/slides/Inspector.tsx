@@ -51,7 +51,7 @@ export function Inspector({
       className="flex w-64 shrink-0 flex-col border-l border-rule bg-surface"
     >
       <header className="flex h-9 shrink-0 items-center justify-between border-b border-rule pr-1 pl-3">
-        <h2 className="text-sm font-medium text-ink-2">Slide</h2>
+        <span className="text-sm font-medium text-ink-2">Slide</span>
         <IconButton label="Hide notes panel" size="sm" onClick={onClose}>
           <PanelRightClose />
         </IconButton>
