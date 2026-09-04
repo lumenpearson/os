@@ -6,7 +6,12 @@ body:
     id: host
     attributes:
       label: Host
-      options: [Web (browser), Desktop (Tauri, Windows), Landing site]
+      options:
+        - Web (browser)
+        - Desktop — Windows
+        - Desktop — macOS
+        - Desktop — Linux
+        - Landing site
     validations:
       required: true
   - type: input
