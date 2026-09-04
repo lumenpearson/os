@@ -1,3 +1,5 @@
+// deslop-ignore-file 19 24 — OS cursor shapes must be hand-drawn SVG (no icon set ships
+// them), and the round ones — the trail dots and the wait ring — are genuinely circular.
 import { useSettings } from '@lumen/kernel/react';
 import { useEffect, useRef } from 'react';
 
@@ -359,6 +361,11 @@ function CursorGlyphs({
           strokeWidth="1.5"
           strokeOpacity="0.3"
         />
+        {/*
+          The arc must turn around the viewBox centre, not its own bounding
+          box, or it orbits instead of spinning. transform-box: view-box makes
+          transform-origin resolve against the 24×24 coordinate system.
+        */}
         <path
           d="M12 4a8 8 0 0 1 8 8"
           fill="none"
@@ -366,6 +373,7 @@ function CursorGlyphs({
           strokeWidth="1.5"
           strokeLinecap="round"
           className="lumen-spin"
+          style={{ transformBox: 'view-box', transformOrigin: '12px 12px' }}
         />
       </svg>
       <svg data-g="crosshair" viewBox="0 0 24 24">

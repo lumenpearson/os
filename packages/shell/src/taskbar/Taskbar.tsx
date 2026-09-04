@@ -1,3 +1,4 @@
+// deslop-ignore-file 09 13 — <Mark> is the product wordmark; the scanner matches the substring 'mark'.
 import {
   type AppDefinition,
   useProcessStore,
@@ -174,6 +175,7 @@ export function Taskbar() {
               )}
               style={{ width: size, height: size }}
             >
+              {/* deslop-ignore-next-line 24 — the product wordmark, not a generated glyph. */}
               <Mark size={Math.round(size * 0.5)} />
             </button>
           </Tooltip>
@@ -221,6 +223,7 @@ export function Taskbar() {
                     <span
                       aria-hidden
                       className={cx(
+                        // deslop-ignore-next-line 19 — the running-app indicator is a 4px dot, flat and unanimated.
                         'absolute rounded-full bg-ink-2',
                         vertical
                           ? 'left-0.5 top-1/2 h-1 w-1 -translate-y-1/2'

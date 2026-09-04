@@ -34,6 +34,7 @@ export function WindowControls({
     >
       <Control label="Close" tone="close" enabled={closable} focused={focused} onClick={onClose}>
         {dirty ? (
+          // deslop-ignore-next-line 19 — the unsaved-changes marker is a dot, so it is round.
           <span className="block size-1.5 rounded-full bg-[#4a1010]" />
         ) : (
           <svg viewBox="0 0 10 10" className="size-2">
@@ -111,6 +112,7 @@ function Control({
       onPointerDown={(e) => e.stopPropagation()}
       onDoubleClick={(e) => e.stopPropagation()}
       className={cx(
+        // deslop-ignore-next-line 19 — window controls are circles by platform convention, not a max-radius pill.
         'flex size-3 items-center justify-center rounded-full border border-black/10 lumen-focus',
         'transition-[background-color] duration-(--duration-fast)',
         enabled && focused ? TONES[tone] : 'bg-surface-3 text-transparent',

@@ -1,3 +1,4 @@
+// deslop-ignore-file 12 — these h1s are 20px against 13px body: a 1.5x step, not a flat scale.
 import { isRecoveryKeyShape, normalizeRecoveryKey, passwordStrength } from '@lumen/kernel';
 import { useCurrentUser, useKernel } from '@lumen/kernel/react';
 import { Button, Checkbox, Field, Input } from '@lumen/ui';

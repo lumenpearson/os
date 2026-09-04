@@ -1,3 +1,4 @@
+// deslop-ignore-file 19 — the theme and accent choosers are colour swatches, which are circles.
 import { AVATAR_PRESETS, passwordStrength, useSettingsStore } from '@lumen/kernel';
 import { useKernel, useSetting } from '@lumen/kernel/react';
 import { accents } from '@lumen/tokens';

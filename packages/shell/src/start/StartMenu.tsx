@@ -91,6 +91,7 @@ export function StartMenu() {
       aria-label="Start menu"
       data-testid="start-menu"
       className={cx(
+        // deslop-ignore-next-line 22 — border and radius are on this element; the clipped children have no border of their own.
         'absolute z-[1200] flex w-[min(560px,calc(100vw-16px))] flex-col overflow-hidden rounded-lg border border-rule bg-chrome text-ink shadow-lg lumen-pop-enter',
         !settings.appearance.reduceTransparency && 'surface-blur',
         pos === 'bottom' && 'bottom-[calc(var(--lumen-taskbar-h)+8px)] left-1/2 -translate-x-1/2',

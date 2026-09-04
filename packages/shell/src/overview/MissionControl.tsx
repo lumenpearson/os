@@ -92,6 +92,7 @@ export function MissionControl() {
             )}
             style={{ left: item.x, top: item.y, width: item.width, height: item.height }}
           >
+            {/* deslop-ignore-next-line 19 — a scrim behind the window title, which floats over live window content. */}
             <span className="absolute -bottom-7 left-1/2 flex max-w-full -translate-x-1/2 items-center gap-1.5 rounded-sm bg-black/50 px-2 py-0.5 text-sm text-white">
               {Icon && <Icon size={14} />}
               <span className="truncate-1">{item.title}</span>

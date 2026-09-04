@@ -11,7 +11,8 @@
       "types": "./index.d.ts",
       "default": "./index.mjs"
     },
-    "./setup": "./setup.ts"
+    "./setup": "./setup.ts",
+    "./matchers": "./matchers.d.ts"
   },
   "dependencies": {
     "@testing-library/jest-dom": "^6.9.1",
@@ -22,5 +23,11 @@
   },
   "peerDependencies": {
     "vitest": "^5.0.0"
-  }
+  },
+  "files": [
+    "index.mjs",
+    "index.d.ts",
+    "setup.ts",
+    "matchers.d.ts"
+  ]
 }

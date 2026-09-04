@@ -149,6 +149,9 @@ export function Spotlight() {
         ref={ref}
         role="dialog"
         aria-label="Search"
+        // border and radius are on this same element, so the stroke wraps the arc;
+        // overflow-hidden only clips the result list, which has no border of its own.
+        // deslop-ignore-next-line 22
         className="w-[min(600px,calc(100vw-32px))] overflow-hidden rounded-lg border border-rule bg-surface shadow-lg lumen-pop-enter"
         style={{ ['--lumen-pop-origin' as string]: 'top center' }}
         onKeyDown={(e) => {
@@ -223,6 +226,7 @@ export function Spotlight() {
                     {r.detail}
                   </span>
                 </span>
+                {/* deslop-ignore-next-line 15 — U+21A9 is the keyboard's Return glyph, the standard hint that Enter activates the row; not decorative emoji. */}
                 {i === active && <span className="mono ml-auto text-xs opacity-70">↩</span>}
               </li>
             ))}

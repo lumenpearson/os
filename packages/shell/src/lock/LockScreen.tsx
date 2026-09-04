@@ -119,13 +119,14 @@ export default function LockScreen() {
                 }}
                 disabled={busy || lockoutMs > 0}
                 autoComplete="current-password"
-                className="h-9 rounded-full bg-white/90 pr-10 text-center text-md text-[#141517] placeholder:text-[#8b8f98] backdrop-blur-sm dark:bg-black/50 dark:text-white"
+                // deslop-ignore-next-line 19 — the field sits on a wallpaper; an opaque-enough tint is what makes it legible, not a glass effect.
+                className="h-9 rounded-md bg-white/90 pr-10 text-center text-md text-[#141517] placeholder:text-[#8b8f98] dark:bg-black/55 dark:text-white"
               />
               <button
                 type="submit"
                 aria-label="Unlock"
                 disabled={busy || lockoutMs > 0 || password.length === 0}
-                className="absolute right-1 top-1/2 flex size-7 -translate-y-1/2 items-center justify-center rounded-full bg-[#141517]/10 text-[#141517] lumen-focus disabled:opacity-30 dark:bg-white/15 dark:text-white"
+                className="absolute right-1 top-1/2 flex size-7 -translate-y-1/2 items-center justify-center rounded-sm bg-[#141517]/10 text-[#141517] lumen-focus disabled:opacity-30 dark:bg-white/15 dark:text-white"
               >
                 <ArrowRight className="size-4" />
               </button>
@@ -168,6 +169,7 @@ export default function LockScreen() {
               e.stopPropagation();
               setPowerOpen(true);
             }}
+            // deslop-ignore-next-line 19 — hover feedback for a control drawn over the wallpaper.
             className="text-white/85 hover:bg-white/10 hover:text-white"
             aria-haspopup="menu"
           >

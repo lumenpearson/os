@@ -1,4 +1,8 @@
 {
   "extends": "@lumen/config-typescript/app.json",
-  "include": ["src", "vitest.config.ts"]
+  "include": [
+    "src",
+    "vitest.config.ts",
+    "../config/vitest/matchers.d.ts"
+  ]
 }
