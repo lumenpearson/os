@@ -7,7 +7,6 @@ import {
 } from '@lumen/kernel';
 import { useKernel, useProcesses, useSetting, useSettings, useWindows } from '@lumen/kernel/react';
 import { AnchoredMenu, cx, type MenuEntry, Tooltip } from '@lumen/ui';
-import { LayoutGrid } from 'lucide-react';
 import { useMemo, useRef, useState } from 'react';
 import { Mark } from '../desktop/Wordmark';
 import { useShellStore } from '../shellStore';
@@ -247,16 +246,18 @@ export function Taskbar() {
               if (s.order.some((id) => !s.windows[id]?.minimized)) s.minimizeAll();
               else s.restoreAll();
             }}
+            // The strip carries no glyph: at the 12px this corner allows, any
+            // icon with internal detail turns to mush. The hairline is the
+            // affordance — the name lives in the tooltip and the aria-label.
             className={cx(
-              'flex items-center justify-center text-ink-3 hover:text-ink lumen-focus',
+              'lumen-focus hover:bg-ink/8 dark:hover:bg-white/8',
+              'transition-colors duration-(--duration-fast) ease-(--ease-standard)',
               vertical
-                ? 'mb-1 h-6 w-full border-t border-rule'
-                : 'ml-auto h-full w-4 border-l border-rule',
+                ? 'mb-1 h-4 w-full border-t border-rule'
+                : 'ml-auto h-full w-3 border-l border-rule',
               taskbar.centered && !vertical && 'absolute right-0 top-0',
             )}
-          >
-            <LayoutGrid className="size-3" />
-          </button>
+          />
         </Tooltip>
       </nav>
       <AnchoredMenu

@@ -32,10 +32,13 @@ export const WALLPAPERS: WallpaperPreset[] = [
     name: 'Dawn',
     tone: 'dark',
     svg: svg(
+      // The sun is drawn before the ground so the ground occludes its lower
+      // half: a disc sitting on the horizon reads as a rising sun, where a
+      // full disc with the horizon line across it reads as a mistake.
       `<rect width="1600" height="1000" fill="#20242c"/>
+       <circle cx="1180" cy="640" r="120" fill="#e8dfd0" opacity="0.9"/>
        <rect y="640" width="1600" height="360" fill="#1a1d24"/>
-       <circle cx="1180" cy="640" r="150" fill="#e8dfd0" opacity="0.92"/>
-       <rect y="640" width="1600" height="2" fill="#2f3440"/>`,
+       <rect y="639" width="1600" height="2" fill="#2f3440"/>`,
     ),
   },
   {
