@@ -52,21 +52,28 @@ export function FilePreview({ path, large }: FilePreviewProps) {
           <img
             src={url}
             alt={name}
-            className={cx('rounded-sm border border-rule object-contain', large ? 'max-h-[52vh]' : 'max-h-44')}
+            className={cx(
+              'rounded-sm border border-rule object-contain',
+              large ? 'max-h-[52vh]' : 'max-h-44',
+            )}
           />
         ) : (
           <FileTypeIcon entry={{ kind: stat?.kind ?? 'file', path }} size={large ? 96 : 64} />
         )}
       </div>
       <div className="min-w-0">
-        <p className={cx('break-words font-medium text-ink', large ? 'text-md' : 'text-base')}>{name}</p>
+        <p className={cx('break-words font-medium text-ink', large ? 'text-md' : 'text-base')}>
+          {name}
+        </p>
         {stat && <p className="text-sm text-ink-2">{kindLabel(stat)}</p>}
       </div>
       {error && <p className="text-sm text-danger">{error}</p>}
       {stat && (
         <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
           <dt className="text-ink-3">Size</dt>
-          <dd className="mono tabular-nums text-ink-2">{stat.kind === 'directory' ? '—' : formatBytes(stat.size)}</dd>
+          <dd className="mono tabular-nums text-ink-2">
+            {stat.kind === 'directory' ? '—' : formatBytes(stat.size)}
+          </dd>
           <dt className="text-ink-3">Created</dt>
           <dd className="mono tabular-nums text-ink-2">{formatDateTime(stat.createdAt)}</dd>
           <dt className="text-ink-3">Modified</dt>

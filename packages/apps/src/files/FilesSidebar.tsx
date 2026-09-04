@@ -1,6 +1,14 @@
 import { APPLICATIONS_DIR, HOME_SUBDIRS, TRASH_DIR } from '@lumen/kernel';
 import { useKernel } from '@lumen/kernel/react';
-import { AnchoredMenu, cx, type MenuEntry, Sidebar, type SidebarSection, useContextMenu } from '@lumen/ui';
+import {
+  AnchoredMenu,
+  cx,
+  type MenuEntry,
+  Sidebar,
+  type SidebarSection,
+  useContextMenu,
+  useElementSize,
+} from '@lumen/ui';
 import { basename, join } from '@lumen/vfs';
 import {
   AppWindow,
@@ -37,7 +45,10 @@ export interface Place {
 
 /** The standard home folders, in sidebar order. */
 export function standardPlaces(home: string): Place[] {
-  return [{ label: 'Home', path: home }, ...HOME_SUBDIRS.map((name) => ({ label: name, path: join(home, name) }))];
+  return [
+    { label: 'Home', path: home },
+    ...HOME_SUBDIRS.map((name) => ({ label: name, path: join(home, name) })),
+  ];
 }
 
 export interface FilesSidebarProps {
@@ -74,6 +85,7 @@ export function FilesSidebar({
   const menu = useContextMenu();
   const [menuPath, setMenuPath] = useState<string | null>(null);
   const [sectionDrop, setSectionDrop] = useState(false);
+  const [ref, size] = useElementSize<HTMLDivElement>();
 
   const sections = useMemo<SidebarSection[]>(() => {
     const item = (p: string, label: string, Icon: LucideIcon) => ({
@@ -90,7 +102,15 @@ export function FilesSidebar({
     });
     const standard = standardPlaces(home)
       .filter((p) => existing.has(p.path))
-      .map((p) => item(p.path, p.label, p.path === home ? House : (SUBDIR_ICONS[basename(p.path) as keyof typeof SUBDIR_ICONS] ?? Folder)));
+      .map((p) =>
+        item(
+          p.path,
+          p.label,
+          p.path === home
+            ? House
+            : (SUBDIR_ICONS[basename(p.path) as keyof typeof SUBDIR_ICONS] ?? Folder),
+        ),
+      );
     const user = favorites.map((p) => item(p, kernel.labelFor(p), Folder));
     return [
       { id: 'favorites', title: 'Favourites', items: [...standard, ...user] },
@@ -112,21 +132,31 @@ export function FilesSidebar({
   const menuItems: MenuEntry[] = menuPath
     ? [
         { id: 'open', label: 'Open', onSelect: () => onNavigate(menuPath) },
-        { id: 'open-window', label: 'Open in New Window', onSelect: () => onOpenNewWindow(menuPath) },
+        {
+          id: 'open-window',
+          label: 'Open in New Window',
+          onSelect: () => onOpenNewWindow(menuPath),
+        },
         ...(favorites.includes(menuPath)
           ? [
               { type: 'separator' } as MenuEntry,
-              { id: 'remove', label: 'Remove from Favourites', onSelect: () => onRemoveFavorite(menuPath) },
+              {
+                id: 'remove',
+                label: 'Remove from Favourites',
+                onSelect: () => onRemoveFavorite(menuPath),
+              },
             ]
           : []),
       ]
     : [];
 
-  const overSection = (e: DragEvent) => !(e.target as HTMLElement).closest('button') && hasPayload(e);
+  const overSection = (e: DragEvent) =>
+    !(e.target as HTMLElement).closest('button') && hasPayload(e);
 
   return (
     <div
-      className={cx('h-full', sectionDrop && 'outline-2 -outline-offset-2 outline-accent')}
+      ref={ref}
+      className={cx('h-full w-full', sectionDrop && 'outline-2 -outline-offset-2 outline-accent')}
       onDragOver={(e) => {
         if (!overSection(e)) {
           setSectionDrop(false);
@@ -148,7 +178,12 @@ export function FilesSidebar({
         onAddFavorites(draggedPaths(e));
       }}
     >
-      <Sidebar sections={sections} activeId={activeId} width={200} className="h-full" />
+      <Sidebar
+        sections={sections}
+        activeId={activeId}
+        width={size.width || 200}
+        className="h-full"
+      />
       <AnchoredMenu open={menu.open} at={menu.at} onClose={menu.close} items={menuItems} />
     </div>
   );

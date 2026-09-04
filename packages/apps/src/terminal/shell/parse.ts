@@ -333,7 +333,7 @@ export function parseScript(source: string): Statement[] {
       case '>>':
       case '<': {
         const next = tokens[i + 1];
-        if (!next || next.type !== 'word')
+        if (next?.type !== 'word')
           throw new ShellSyntaxError(`expected a file name after '${token.op}'`);
         cmd.redirects.push({ op: token.op, target: next.word });
         i++;

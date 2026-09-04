@@ -481,9 +481,9 @@ define({
     const { items, status } = await readInputs(ctx, 'cat', rest);
     for (const item of items) {
       if (flags.has('n')) {
-        splitLines(item.text).forEach((line, i) =>
-          ctx.stdout(`${String(i + 1).padStart(6)}  ${line}\n`),
-        );
+        splitLines(item.text).forEach((line, i) => {
+          ctx.stdout(`${String(i + 1).padStart(6)}  ${line}\n`);
+        });
       } else ctx.stdout(item.text);
     }
     return status;
@@ -1202,7 +1202,9 @@ define({
     if (set2 === undefined) throw new UsageError('missing second set');
     const to = charSet(set2);
     const map = new Map<string, string>();
-    from.forEach((c, i) => map.set(c, to[Math.min(i, to.length - 1)] ?? c));
+    from.forEach((c, i) => {
+      map.set(c, to[Math.min(i, to.length - 1)] ?? c);
+    });
     ctx.stdout([...ctx.stdin].map((c) => map.get(c) ?? c).join(''));
     return 0;
   },
@@ -1796,9 +1798,9 @@ define({
       return 0;
     }
     const width = String(ctx.state.history.length).length;
-    ctx.state.history.forEach((line, i) =>
-      ctx.stdout(`${String(i + 1).padStart(width + 2)}  ${line}\n`),
-    );
+    ctx.state.history.forEach((line, i) => {
+      ctx.stdout(`${String(i + 1).padStart(width + 2)}  ${line}\n`);
+    });
     return 0;
   },
 });

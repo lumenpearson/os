@@ -5,7 +5,7 @@ import { type KeyboardEvent, useEffect, useId, useMemo, useRef, useState } from 
 import { FileTypeIcon, useDirectory } from '../_sdk';
 import { EntryListBox, rowClasses } from './EntryListBox';
 import { FilePreview } from './FilePreview';
-import { type Selection, selectOnly, type SortState, sortEntries } from './logic';
+import { type Selection, type SortState, selectOnly, sortEntries } from './logic';
 import { RenameInput } from './RenameInput';
 import type { EntryHandlers, EntryViewState } from './types';
 
@@ -34,22 +34,24 @@ export function ColumnView(props: ColumnViewProps) {
   const single = selection.keys.size === 1 ? [...selection.keys][0] : undefined;
   const previewPath = useMemo(() => {
     if (single === undefined) return null;
-    const depth = columns.findIndex((c) => c === dirname(single));
-    const entry = depth >= 0 ? entriesByDepth.current.get(depth)?.find((e) => e.path === single) : undefined;
+    const depth = columns.indexOf(dirname(single));
+    const entry =
+      depth >= 0 ? entriesByDepth.current.get(depth)?.find((e) => e.path === single) : undefined;
     return entry && entry.kind === 'file' ? single : null;
   }, [single, columns]);
 
+  /** Reveal the rightmost pane whenever a column opens or the preview changes. */
   useEffect(() => {
     const el = scroller.current;
-    if (el) el.scrollLeft = el.scrollWidth;
-  }, [columns.length, previewPath]);
+    const last = previewPath ?? columns[columns.length - 1];
+    if (el && last) el.scrollLeft = el.scrollWidth;
+  }, [columns, previewPath]);
 
   useEffect(() => {
     if (focusDepth === null) return;
-    document.getElementById(columnId(focusDepth))?.focus({ preventScroll: true });
+    document.getElementById(`${base}-col-${focusDepth}`)?.focus({ preventScroll: true });
     setFocusDepth(null);
-    // biome-ignore lint/correctness/useExhaustiveDependencies: columnId is derived from a stable id
-  }, [focusDepth, columns.length]);
+  }, [focusDepth, base]);
 
   const pick = (depth: number, sel: Selection, entries: readonly DirEntry[]) => {
     onSelectionChange(sel);
@@ -167,7 +169,9 @@ function ColumnList({
       itemClassName={(entry, s) =>
         cx(
           'flex h-6 items-center gap-2 rounded-xs px-2',
-          s.selected ? rowClasses(true, focused && hasFocus) : entry.path === openChild && 'bg-selection',
+          s.selected
+            ? rowClasses(true, focused && hasFocus)
+            : entry.path === openChild && 'bg-selection',
           s.cursor && !s.selected && 'outline-2 -outline-offset-2 outline-accent',
           entry.path === dropTarget && 'bg-selection outline-2 -outline-offset-2 outline-accent',
           cutPaths.has(entry.path) && 'opacity-50',
@@ -177,16 +181,24 @@ function ColumnList({
         <>
           <FileTypeIcon entry={entry} size={16} />
           {renaming === entry.path ? (
-            <RenameInput path={entry.path} onCommit={(name) => onRenameCommit(entry.path, name)} onCancel={onRenameCancel} />
+            <RenameInput
+              path={entry.path}
+              onCommit={(name) => onRenameCommit(entry.path, name)}
+              onCancel={onRenameCancel}
+            />
           ) : (
             <span className="truncate-1 flex-1">{entry.name}</span>
           )}
-          {entry.kind === 'directory' && <ChevronRight aria-hidden className="size-3.5 shrink-0 opacity-60" />}
+          {entry.kind === 'directory' && (
+            <ChevronRight aria-hidden className="size-3.5 shrink-0 opacity-60" />
+          )}
         </>
       )}
     >
       {dir.error && <p className="p-3 text-sm text-danger">{dir.error.message}</p>}
-      {!dir.error && !dir.loading && entries.length === 0 && <p className="p-3 text-center text-sm text-ink-3">Empty</p>}
+      {!dir.error && !dir.loading && entries.length === 0 && (
+        <p className="p-3 text-center text-sm text-ink-3">Empty</p>
+      )}
     </EntryListBox>
   );
 }

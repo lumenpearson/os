@@ -31,7 +31,10 @@ describe('createDocument', () => {
     const writer = await createDocument(vfs, '/home', 'writer');
     expect(await vfs.readJson(writer)).toEqual({ version: 1, html: '' });
     const sheet = await createDocument(vfs, '/home', 'sheet');
-    expect(await vfs.readJson(sheet)).toEqual({ version: 1, sheets: [{ name: 'Sheet 1', cells: {} }] });
+    expect(await vfs.readJson(sheet)).toEqual({
+      version: 1,
+      sheets: [{ name: 'Sheet 1', cells: {} }],
+    });
     const slides = await createDocument(vfs, '/home', 'slides');
     expect(await vfs.readJson(slides)).toEqual({ version: 1, title: 'Untitled', slides: [] });
   });
@@ -39,7 +42,12 @@ describe('createDocument', () => {
 
 describe('transferInto', () => {
   it('moves items and skips ones already in the target', async () => {
-    const r = await transferInto(vfs, ['/home/docs/a.txt', '/home/pics/p.png'], '/home/pics', 'move');
+    const r = await transferInto(
+      vfs,
+      ['/home/docs/a.txt', '/home/pics/p.png'],
+      '/home/pics',
+      'move',
+    );
     expect(r.done).toEqual(['/home/pics/a.txt']);
     expect(r.failed).toEqual([]);
     expect(await names('/home/docs')).toEqual(['b.txt']);
@@ -95,7 +103,10 @@ describe('duplicate, trash, restore', () => {
 
 describe('importHostFiles', () => {
   it('writes each host file into the folder', async () => {
-    const files = [new File(['abc'], 'note.txt'), new File([new Uint8Array([1, 2, 3])], 'blob.bin')];
+    const files = [
+      new File(['abc'], 'note.txt'),
+      new File([new Uint8Array([1, 2, 3])], 'blob.bin'),
+    ];
     const r = await importHostFiles(vfs, '/home', files);
     expect(r.done).toEqual(['/home/note.txt', '/home/blob.bin']);
     expect(await vfs.readText('/home/note.txt')).toBe('abc');
@@ -106,7 +117,10 @@ describe('importHostFiles', () => {
 describe('readTextPreview', () => {
   it('returns the text, truncates long files and refuses big ones', async () => {
     expect(await readTextPreview(vfs, '/home/docs/a.txt')).toBe('hello');
-    await vfs.writeText('/home/long.txt', Array.from({ length: 100 }, (_, i) => `line ${i}`).join('\n'));
+    await vfs.writeText(
+      '/home/long.txt',
+      Array.from({ length: 100 }, (_, i) => `line ${i}`).join('\n'),
+    );
     const long = await readTextPreview(vfs, '/home/long.txt', { maxLines: 5 });
     expect(long?.split('\n')).toHaveLength(6);
     expect(long?.endsWith('…')).toBe(true);

@@ -52,11 +52,21 @@ export function ListView({
         accessor: rank,
         render: (row) => (
           <span data-path={row.path} className="flex h-full items-center gap-2 truncate-1">
-            <FileTypeIcon entry={row} size={16} className={cx(cutPaths.has(row.path) && 'opacity-50')} />
+            <FileTypeIcon
+              entry={row}
+              size={16}
+              className={cx(cutPaths.has(row.path) && 'opacity-50')}
+            />
             {renaming === row.path ? (
-              <RenameInput path={row.path} onCommit={(name) => onRenameCommit(row.path, name)} onCancel={onRenameCancel} />
+              <RenameInput
+                path={row.path}
+                onCommit={(name) => onRenameCommit(row.path, name)}
+                onCancel={onRenameCancel}
+              />
             ) : (
-              <span className={cx('truncate-1', cutPaths.has(row.path) && 'opacity-50')}>{row.name}</span>
+              <span className={cx('truncate-1', cutPaths.has(row.path) && 'opacity-50')}>
+                {row.name}
+              </span>
             )}
           </span>
         ),
@@ -127,7 +137,9 @@ export function ListView({
       onDragOverRow={onDragOver}
       onDropRow={onDrop}
       rowClassName={(row) =>
-        row.path === dropTarget ? 'bg-selection outline-2 -outline-offset-2 outline-accent' : undefined
+        row.path === dropTarget
+          ? 'bg-selection outline-2 -outline-offset-2 outline-accent'
+          : undefined
       }
       emptyState={emptyState}
     />

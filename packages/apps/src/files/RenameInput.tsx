@@ -16,7 +16,13 @@ export interface RenameInputProps {
  * Replaces an item's name in place. The stem is pre-selected; Enter commits,
  * Escape cancels, leaving the field commits when the name is valid.
  */
-export function RenameInput({ path, onCommit, onCancel, align = 'left', className }: RenameInputProps) {
+export function RenameInput({
+  path,
+  onCommit,
+  onCancel,
+  align = 'left',
+  className,
+}: RenameInputProps) {
   const vfs = useVfs();
   const name = basename(path);
   const [value, setValue] = useState(name);

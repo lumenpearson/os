@@ -15,9 +15,9 @@ import {
   gridStep,
   isEditableTarget,
   moveSelection,
+  type Selection,
   selectAll,
   selectClick,
-  type Selection,
   selectOnly,
 } from './logic';
 
@@ -110,10 +110,13 @@ export function EntryListBox({
       const next = gridStep(cursorIndex, order.length, columnCount(), e.key);
       const key = order[next];
       if (key === undefined) return;
-      onSelectionChange(e.shiftKey ? selectClick(selection, order, key, { shift: true }) : selectOnly(key));
+      onSelectionChange(
+        e.shiftKey ? selectClick(selection, order, key, { shift: true }) : selectOnly(key),
+      );
       return;
     }
-    const step = e.key === 'ArrowUp' ? -1 : e.key === 'ArrowDown' ? 1 : e.key === 'Home' ? 'home' : 'end';
+    const step =
+      e.key === 'ArrowUp' ? -1 : e.key === 'ArrowDown' ? 1 : e.key === 'Home' ? 'home' : 'end';
     onSelectionChange(moveSelection(selection, order, step, e.shiftKey));
   };
 
@@ -151,6 +154,7 @@ export function EntryListBox({
             id={idFor(index)}
             role="option"
             aria-selected={state.selected}
+            tabIndex={-1}
             data-index={index}
             data-path={entry.path}
             draggable

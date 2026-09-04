@@ -62,7 +62,7 @@ export function applyChunks(
   if (pending.length === 0) return blocks;
   const next = [...blocks];
   const index = new Map<number, number>();
-  next.forEach((b, i) => index.set(b.id, i));
+  for (let i = 0; i < next.length; i++) index.set((next[i] as Block).id, i);
   for (const { id, chunk } of pending) {
     const at = index.get(id);
     if (at === undefined) {

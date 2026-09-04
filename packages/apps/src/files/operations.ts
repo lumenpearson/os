@@ -13,9 +13,16 @@ export interface BatchResult {
 
 export type DocumentKind = 'text' | 'writer' | 'sheet' | 'slides';
 
-export const DOCUMENT_TEMPLATES: Record<DocumentKind, { label: string; name: string; content: string }> = {
+export const DOCUMENT_TEMPLATES: Record<
+  DocumentKind,
+  { label: string; name: string; content: string }
+> = {
   text: { label: 'Text', name: 'untitled.txt', content: '' },
-  writer: { label: 'Writer Document', name: 'Untitled.lwr', content: JSON.stringify({ version: 1, html: '' }) },
+  writer: {
+    label: 'Writer Document',
+    name: 'Untitled.lwr',
+    content: JSON.stringify({ version: 1, html: '' }),
+  },
   sheet: {
     label: 'Sheet',
     name: 'Untitled.lsd',
@@ -32,7 +39,10 @@ function message(e: unknown): string {
   return VfsError.is(e) ? e.message : e instanceof Error ? e.message : String(e);
 }
 
-async function batch(paths: readonly string[], run: (path: string) => Promise<string | null>): Promise<BatchResult> {
+async function batch(
+  paths: readonly string[],
+  run: (path: string) => Promise<string | null>,
+): Promise<BatchResult> {
   const result: BatchResult = { done: [], failed: [] };
   for (const path of paths) {
     try {
@@ -63,7 +73,8 @@ export function transferInto(
 ): Promise<BatchResult> {
   const target = normalize(targetDir);
   return batch(sources, async (source) => {
-    if (isInside(source, target, true)) throw new VfsError('EINVAL', source, 'A folder cannot be moved into itself.');
+    if (isInside(source, target, true))
+      throw new VfsError('EINVAL', source, 'A folder cannot be moved into itself.');
     if (operation === 'move' && dirname(source) === target) return null;
     return operation === 'move' ? vfs.moveInto(source, target) : vfs.copyInto(source, target);
   });
@@ -82,7 +93,11 @@ export function restoreAll(vfs: Vfs, paths: readonly string[]): Promise<BatchRes
 }
 
 /** Copy files dropped from the host OS into a folder. */
-export async function importHostFiles(vfs: Vfs, dir: string, files: Iterable<File>): Promise<BatchResult> {
+export async function importHostFiles(
+  vfs: Vfs,
+  dir: string,
+  files: Iterable<File>,
+): Promise<BatchResult> {
   const result: BatchResult = { done: [], failed: [] };
   for (const file of files) {
     try {
@@ -114,6 +129,7 @@ export async function readTextPreview(
 export function describeFailures(result: BatchResult, verb: string): string | null {
   if (result.failed.length === 0) return null;
   const first = result.failed[0];
-  if (result.failed.length === 1 && first) return `Could not ${verb} ${first.path.slice(first.path.lastIndexOf('/') + 1)}: ${first.error}`;
+  if (result.failed.length === 1 && first)
+    return `Could not ${verb} ${first.path.slice(first.path.lastIndexOf('/') + 1)}: ${first.error}`;
   return `Could not ${verb} ${result.failed.length} items.`;
 }

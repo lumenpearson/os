@@ -5,16 +5,47 @@ import { contextMenuFor, type FilesActions, type MenuState, menubarFor } from '.
 function actions(): FilesActions {
   const a = {} as Record<keyof FilesActions, ReturnType<typeof vi.fn>>;
   for (const key of [
-    'newWindow', 'newFolder', 'newDocument', 'open', 'openWith', 'getInfo', 'rename', 'duplicate', 'trash',
-    'putBack', 'emptyTrash', 'closeWindow', 'cut', 'copy', 'paste', 'selectAll', 'setView', 'toggleHidden',
-    'toggleSidebar', 'setSort', 'quickLook', 'back', 'forward', 'up', 'go', 'goToFolder', 'toggleFavorite',
+    'newWindow',
+    'newFolder',
+    'newDocument',
+    'open',
+    'openWith',
+    'getInfo',
+    'rename',
+    'duplicate',
+    'trash',
+    'putBack',
+    'emptyTrash',
+    'closeWindow',
+    'cut',
+    'copy',
+    'paste',
+    'selectAll',
+    'setView',
+    'toggleHidden',
+    'toggleSidebar',
+    'setSort',
+    'quickLook',
+    'back',
+    'forward',
+    'up',
+    'go',
+    'goToFolder',
+    'toggleFavorite',
   ] as const) {
     a[key] = vi.fn();
   }
   return a as unknown as FilesActions;
 }
 
-const file: DirEntry = { path: '/home/a.txt', name: 'a.txt', kind: 'file', size: 1, modifiedAt: 0, createdAt: 0 };
+const file: DirEntry = {
+  path: '/home/a.txt',
+  name: 'a.txt',
+  kind: 'file',
+  size: 1,
+  modifiedAt: 0,
+  createdAt: 0,
+};
 
 function state(patch: Partial<MenuState> = {}): MenuState {
   return {
@@ -45,14 +76,25 @@ describe('contextMenuFor', () => {
   it('offers creation and view commands on empty space', () => {
     const items = contextMenuFor(state(), actions(), id);
     expect(labels(items)).toEqual([
-      'New Folder', 'New Text File', 'New Document', 'Paste', 'Get Info', 'Show Hidden Files', 'Sort By', 'View',
+      'New Folder',
+      'New Text File',
+      'New Document',
+      'Paste',
+      'Get Info',
+      'Show Hidden Files',
+      'Sort By',
+      'View',
     ]);
     expect(items.find((i) => i.id === 'paste')?.enabled).toBe(false);
   });
 
   it('offers item commands for a selected file and wires them to actions', () => {
     const a = actions();
-    const items = contextMenuFor(state({ selection: [file.path], target: file, canPaste: true }), a, id);
+    const items = contextMenuFor(
+      state({ selection: [file.path], target: file, canPaste: true }),
+      a,
+      id,
+    );
     expect(labels(items)).toContain('Open');
     expect(labels(items)).toContain('Move to Trash');
     expect(labels(items)).not.toContain('Add to Favourites');
@@ -64,12 +106,20 @@ describe('contextMenuFor', () => {
   it('adds favourites for a single folder and Put Back inside the Trash', () => {
     const dir: DirEntry = { ...file, kind: 'directory', path: '/home/docs', name: 'docs' };
     const a = actions();
-    const items = contextMenuFor(state({ selection: [dir.path], target: dir, singleIsDirectory: true, isFavorite: true }), a, id);
+    const items = contextMenuFor(
+      state({ selection: [dir.path], target: dir, singleIsDirectory: true, isFavorite: true }),
+      a,
+      id,
+    );
     expect(labels(items)).toContain('Remove from Favourites');
     items.find((i) => i.id === 'favorite')?.onSelect?.();
     expect(a.toggleFavorite).toHaveBeenCalledWith('/home/docs');
 
-    const trashed = contextMenuFor(state({ selection: [file.path], target: file, inTrash: true, canPutBack: true }), a, id);
+    const trashed = contextMenuFor(
+      state({ selection: [file.path], target: file, inTrash: true, canPutBack: true }),
+      a,
+      id,
+    );
     expect(labels(trashed)).toContain('Put Back');
     expect(labels(trashed)).toContain('Delete Permanently');
     expect(trashed.find((i) => i.id === 'duplicate')?.enabled).toBe(false);

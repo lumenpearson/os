@@ -37,7 +37,9 @@ export function GridView({
       label="Files"
       className={cx(
         'lumen-scroll h-full content-start gap-1 p-3',
-        entries.length > 0 ? 'grid grid-cols-[repeat(auto-fill,minmax(92px,1fr))]' : 'flex flex-col',
+        entries.length > 0
+          ? 'grid grid-cols-[repeat(auto-fill,minmax(92px,1fr))]'
+          : 'flex flex-col',
       )}
       onSelectionChange={onSelectionChange}
       onOpen={onOpen}
@@ -67,7 +69,9 @@ export function GridView({
               onCancel={onRenameCancel}
             />
           ) : (
-            <span className="line-clamp-2 w-full break-words text-center text-sm leading-4">{entry.name}</span>
+            <span className="line-clamp-2 w-full break-words text-center text-sm leading-4">
+              {entry.name}
+            </span>
           )}
         </>
       )}

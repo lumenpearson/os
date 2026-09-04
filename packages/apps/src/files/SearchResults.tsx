@@ -66,7 +66,12 @@ export function SearchResults({
             ) : (
               <span className="truncate-1 text-base">{entry.name}</span>
             )}
-            <span className={cx('mono truncate-1 text-xs', s.selected && focused ? 'text-accent-ink/80' : 'text-ink-3')}>
+            <span
+              className={cx(
+                'mono truncate-1 text-xs',
+                s.selected && focused ? 'text-accent-ink/80' : 'text-ink-3',
+              )}
+            >
               {dirname(entry.path)}
             </span>
           </span>

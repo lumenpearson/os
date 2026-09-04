@@ -45,8 +45,19 @@ describe('tokenizer', () => {
 
   it('reads every operator', () => {
     expect(types('1+2-3*4/5^6&7')).toEqual([
-      'number', 'op', 'number', 'op', 'number', 'op', 'number', 'op',
-      'number', 'op', 'number', 'op', 'number',
+      'number',
+      'op',
+      'number',
+      'op',
+      'number',
+      'op',
+      'number',
+      'op',
+      'number',
+      'op',
+      'number',
+      'op',
+      'number',
     ]);
     expect(types('1<>2')).toEqual(['number', 'op', 'number']);
     expect(types('1<=2')).toEqual(['number', 'op', 'number']);
@@ -153,13 +164,14 @@ describe('parser', () => {
     expect(() => parse('=')).toThrow(ParseError);
   });
 
-  it('reports the position of the error', () => {
+  it('reports the position of the error inside the body', () => {
     try {
       parse('=1+@');
       expect.unreachable('should throw');
     } catch (e) {
       expect(e).toBeInstanceOf(ParseError);
-      expect((e as ParseError).position).toBe(3);
+      // positions index the formula body, with the leading "=" stripped
+      expect((e as ParseError).position).toBe(2);
     }
   });
 });

@@ -310,7 +310,9 @@ describe('misc', () => {
 
   it('formats the status line', () => {
     expect(statusText(1, 0, null)).toBe('1 item');
-    expect(statusText(3, 2, { used: 1024, quota: 3072 })).toBe('3 items · 2 selected · 2.0 KB free');
+    expect(statusText(3, 2, { used: 1024, quota: 3072 })).toBe(
+      '3 items · 2 selected · 2.0 KB free',
+    );
     expect(statusText(0, 0, { used: 2048, quota: null })).toBe('0 items · 2.0 KB used');
   });
 });

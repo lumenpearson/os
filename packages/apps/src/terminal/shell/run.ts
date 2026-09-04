@@ -222,7 +222,7 @@ export class Shell {
       }
     }
 
-    const outputs = redirects.filter((r) => r.op !== '<');
+    const outputs = redirects.filter((r): r is { op: '>' | '>>'; target: string } => r.op !== '<');
     let captured = '';
     const stdout = outputs.length > 0 ? (t: string) => (captured += t) : io.stdout;
 

@@ -145,7 +145,10 @@ describe('ranges', () => {
   });
 
   it('measures a range', () => {
-    expect(rangeSize(rangeOf({ col: 0, row: 0 }, { col: 2, row: 4 }))).toEqual({ rows: 5, cols: 3 });
+    expect(rangeSize(rangeOf({ col: 0, row: 0 }, { col: 2, row: 4 }))).toEqual({
+      rows: 5,
+      cols: 3,
+    });
   });
 
   it('formats a range, collapsing single cells', () => {

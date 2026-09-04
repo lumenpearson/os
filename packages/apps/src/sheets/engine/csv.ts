@@ -2,18 +2,23 @@
 
 export type Delimiter = ',' | ';' | '\t';
 
-/** Pick the delimiter that splits the first lines most consistently. */
+/**
+ * Pick the delimiter. Delimiters are counted with the quote state carried
+ * across newlines, so a quoted field holding a newline or a delimiter does not
+ * skew the result. One that splits every row into the same number of fields
+ * beats one that does not; a comma wins a tie.
+ */
 export function detectDelimiter(text: string): Delimiter {
-  const sample = text.split(/\r?\n/, 10).filter((l) => l.length > 0);
-  if (sample.length === 0) return ',';
-  const candidates: Delimiter[] = ['\t', ',', ';'];
+  const candidates: Delimiter[] = [',', '\t', ';'];
   let best: Delimiter = ',';
-  let bestScore = -1;
+  let bestScore = 0;
   for (const d of candidates) {
-    const counts = sample.map((l) => countOutsideQuotes(l, d));
+    const counts = countPerRow(text, d);
+    const total = counts.reduce((a, b) => a + b, 0);
+    if (total === 0) continue;
     const min = Math.min(...counts);
     const max = Math.max(...counts);
-    const score = min === 0 ? 0 : min === max ? min * 2 : min;
+    const score = min > 0 && min === max ? total * 2 + 1 : total;
     if (score > bestScore) {
       bestScore = score;
       best = d;
@@ -22,14 +27,31 @@ export function detectDelimiter(text: string): Delimiter {
   return best;
 }
 
-function countOutsideQuotes(line: string, delimiter: string): number {
-  let n = 0;
+/** How many delimiters each row holds, ignoring those inside quoted fields. */
+function countPerRow(text: string, delimiter: string): number[] {
+  const rows: number[] = [];
+  let count = 0;
   let quoted = false;
-  for (const ch of line) {
-    if (ch === '"') quoted = !quoted;
-    else if (ch === delimiter && !quoted) n++;
+  let started = false;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text.charAt(i);
+    started = true;
+    if (ch === '"') {
+      if (quoted && text.charAt(i + 1) === '"') i++;
+      else quoted = !quoted;
+      continue;
+    }
+    if (quoted) continue;
+    if (ch === delimiter) count++;
+    else if (ch === '\n' || ch === '\r') {
+      if (ch === '\r' && text.charAt(i + 1) === '\n') i++;
+      rows.push(count);
+      count = 0;
+      started = false;
+    }
   }
-  return n;
+  if (started) rows.push(count);
+  return rows;
 }
 
 export function parseDelimited(

@@ -73,10 +73,13 @@ export function sortEntries(entries: readonly DirEntry[], sort: SortState): DirE
  * Feeding it `direction * position` for rows we already ordered keeps its
  * header state and our folders-first order in agreement.
  */
-export function rankMap(sorted: readonly DirEntry[], direction: SortDirection): Map<string, number> {
+export function rankMap(
+  sorted: readonly DirEntry[],
+  direction: SortDirection,
+): Map<string, number> {
   const sign = direction === 'asc' ? 1 : -1;
   const out = new Map<string, number>();
-  sorted.forEach((e, i) => out.set(e.path, sign * i));
+  for (const [i, e] of sorted.entries()) out.set(e.path, sign * i);
   return out;
 }
 
@@ -146,7 +149,11 @@ export function selectOnly(key: string): Selection {
 }
 
 export function selectAll(order: readonly string[]): Selection {
-  return { keys: new Set(order), anchor: order[0] ?? null, cursor: order[order.length - 1] ?? null };
+  return {
+    keys: new Set(order),
+    anchor: order[0] ?? null,
+    cursor: order[order.length - 1] ?? null,
+  };
 }
 
 /** Plain click selects one; Shift extends from the anchor; Ctrl/Cmd toggles. */
@@ -287,7 +294,11 @@ export function nameTaken(name: string, siblings: readonly string[], self?: stri
 }
 
 /** Null when the name is usable, otherwise a short reason to show inline. */
-export function validateName(name: string, siblings: readonly string[], self?: string): string | null {
+export function validateName(
+  name: string,
+  siblings: readonly string[],
+  self?: string,
+): string | null {
   if (name.length === 0) return 'Enter a name.';
   if (name.trim() !== name) return 'Names cannot start or end with a space.';
   if (!isValidName(name)) return 'Names cannot contain / \\ : * ? " < > | or end with a dot.';

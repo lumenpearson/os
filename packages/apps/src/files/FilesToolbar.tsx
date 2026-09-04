@@ -23,8 +23,8 @@ import {
   Trash2,
 } from 'lucide-react';
 import { type DragEvent, useMemo, useRef, useState } from 'react';
+import { type Crumb, collapseCrumbs, crumbsFor, type SortState, type ViewMode } from './logic';
 import type { FilesActions } from './menus';
-import { collapseCrumbs, type Crumb, crumbsFor, type SortState, type ViewMode } from './logic';
 import { sortSubmenu } from './menus';
 
 export interface FilesToolbarProps {
@@ -77,10 +77,20 @@ export function FilesToolbar({
   const [sortOpen, setSortOpen] = useState(false);
   const highlighted = useRef<HTMLButtonElement | null>(null);
 
-  const crumbs = useMemo(() => collapseCrumbs(crumbsFor(path, home), narrow ? 3 : 5), [path, home, narrow]);
+  const crumbs = useMemo(
+    () => collapseCrumbs(crumbsFor(path, home), narrow ? 3 : 5),
+    [path, home, narrow],
+  );
   const items = crumbs.map((c, i) => ({
     label: c ? c.label : '…',
-    icon: i === 0 && c ? c.path === '/' ? <HardDrive className="size-3.5" /> : <House className="size-3.5" /> : undefined,
+    icon:
+      i === 0 && c ? (
+        c.path === '/' ? (
+          <HardDrive className="size-3.5" />
+        ) : (
+          <House className="size-3.5" />
+        )
+      ) : undefined,
     onSelect: c ? () => actions.go(c.path) : undefined,
   }));
 
@@ -117,7 +127,9 @@ export function FilesToolbar({
         className="mx-1 min-w-0 flex-1"
         onDragOver={(e) => {
           const crumb = crumbAt(e);
-          highlight(crumb ? ((e.target as HTMLElement).closest('button') as HTMLButtonElement) : null);
+          highlight(
+            crumb ? ((e.target as HTMLElement).closest('button') as HTMLButtonElement) : null,
+          );
           if (crumb) onDragOverFolder(crumb.path, e);
         }}
         onDragLeave={(e) => {
@@ -165,7 +177,11 @@ export function FilesToolbar({
           <FolderPlus />
         </IconButton>
         {!narrow && (
-          <IconButton label={sidebarVisible ? 'Hide sidebar' : 'Show sidebar'} active={!sidebarVisible} onClick={actions.toggleSidebar}>
+          <IconButton
+            label={sidebarVisible ? 'Hide sidebar' : 'Show sidebar'}
+            active={!sidebarVisible}
+            onClick={actions.toggleSidebar}
+          >
             <PanelLeft />
           </IconButton>
         )}

@@ -4,7 +4,7 @@
 //! in the kernel crate, where it is tested without a WebView.
 
 #![forbid(unsafe_code)]
-#![warn(clippy::unwrap_used, clippy::expect_used)]
+#![cfg_attr(not(test), warn(clippy::unwrap_used, clippy::expect_used))]
 
 mod commands;
 
