@@ -153,7 +153,7 @@ export function probeArchitecture(
   hostArch: string | null | undefined,
   hints: UaHints | null,
 ): Fact {
-  if (hostArch && hostArch.trim() && hostArch !== 'unknown') return known(hostArch);
+  if (hostArch?.trim() && hostArch !== 'unknown') return known(hostArch);
   const architecture = hints?.architecture?.trim();
   if (!architecture) return unknown(REASONS.architecture);
   const bitness = hints?.bitness?.trim();
