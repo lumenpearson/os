@@ -5,6 +5,7 @@ import {
   canUndo,
   createDeck,
   createHistory,
+  DEFAULT_PREFS,
   type Deck,
   type DeckAction,
   fitScale,
@@ -13,9 +14,11 @@ import {
   nextSelection,
   nextSlideId,
   normalizeDeck,
+  normalizePrefs,
   pushHistory,
   redo,
   reduceDeck,
+  replacePresent,
   SLIDE_WIDTH,
   serializeDeck,
   trimTrailingBullets,
@@ -199,6 +202,16 @@ describe('history', () => {
     expect(redo(start)).toBe(start);
   });
 
+  it('replaces the present without adding a step, and drops the redo stack', () => {
+    const start = applyAction(createHistory(deck()), { type: 'setTitle', title: 'One' });
+    const back = undo(start);
+    const typed = replacePresent(back, { ...back.present, title: 'Two' });
+    expect(typed.past).toEqual(back.past);
+    expect(typed.present.title).toBe('Two');
+    expect(canRedo(typed)).toBe(false);
+    expect(replacePresent(typed, typed.present)).toBe(typed);
+  });
+
   it(`keeps at most ${HISTORY_LIMIT} snapshots`, () => {
     let history = createHistory(createDeck());
     for (let i = 0; i < HISTORY_LIMIT + 20; i += 1) {
@@ -241,6 +254,17 @@ describe('trimTrailingBullets', () => {
   it('drops trailing blanks but keeps inner ones', () => {
     expect(trimTrailingBullets(['a', '', 'b', '', '  '])).toEqual(['a', '', 'b']);
     expect(trimTrailingBullets(['', ''])).toEqual([]);
+  });
+});
+
+describe('normalizePrefs', () => {
+  it('keeps booleans and falls back for anything else', () => {
+    expect(normalizePrefs({ thumbnails: false, notes: true })).toEqual({
+      thumbnails: false,
+      notes: true,
+    });
+    expect(normalizePrefs({ notes: 'yes' })).toEqual(DEFAULT_PREFS);
+    expect(normalizePrefs(null)).toEqual(DEFAULT_PREFS);
   });
 });
 

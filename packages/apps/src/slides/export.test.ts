@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Deck } from './deck';
-import { escapeHtml, exportDeckHtml } from './export';
+import { escapeHtml, exportDeckHtml, imageDataUrl, toBase64 } from './export';
 
 function wrap(slides: Deck['slides'], theme?: Deck['theme']): Deck {
   return { version: 1, title: 'Deck & Co', theme, slides };
@@ -15,6 +15,18 @@ describe('escapeHtml', () => {
 
   it('escapes ampersands once', () => {
     expect(escapeHtml('&lt;')).toBe('&amp;lt;');
+  });
+});
+
+describe('toBase64', () => {
+  it('encodes bytes the same as the platform, past the chunk boundary', () => {
+    expect(toBase64(new TextEncoder().encode('Slides'))).toBe('U2xpZGVz');
+    const long = new Uint8Array(0x8000 + 17).fill(7);
+    expect(toBase64(long)).toBe(btoa(String.fromCharCode(...long)));
+  });
+
+  it('builds a data URL for a mime type', () => {
+    expect(imageDataUrl('image/png', new Uint8Array([1, 2, 3]))).toBe('data:image/png;base64,AQID');
   });
 });
 

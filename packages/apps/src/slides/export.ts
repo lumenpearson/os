@@ -29,6 +29,20 @@ export function escapeHtml(value: string): string {
     .replace(/'/g, '&#39;');
 }
 
+/** Base64 for image bytes, chunked so a large picture cannot blow the stack. */
+export function toBase64(bytes: Uint8Array): string {
+  const chunk = 0x8000;
+  let binary = '';
+  for (let at = 0; at < bytes.length; at += chunk) {
+    binary += String.fromCharCode(...bytes.subarray(at, at + chunk));
+  }
+  return btoa(binary);
+}
+
+export function imageDataUrl(mime: string, bytes: Uint8Array): string {
+  return `data:${mime};base64,${toBase64(bytes)}`;
+}
+
 /** Paragraphs from a text block: blank lines separate, single breaks stay. */
 function paragraphs(text: string): string {
   return text

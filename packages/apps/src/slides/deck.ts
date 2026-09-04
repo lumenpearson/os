@@ -10,6 +10,8 @@ export const SLIDE_WIDTH = 960;
 export const SLIDE_HEIGHT = 540;
 /** Deck snapshots kept for undo. */
 export const HISTORY_LIMIT = 100;
+/** Consecutive edits to one field within this window collapse into one undo step. */
+export const COALESCE_MS = 600;
 /** The slide never draws narrower than this, however small the pane gets. */
 export const MIN_SLIDE_WIDTH = 320;
 
@@ -288,6 +290,15 @@ export function pushHistory(history: DeckHistory, next: Deck): DeckHistory {
   return { past: past.slice(Math.max(0, past.length - HISTORY_LIMIT)), present: next, future: [] };
 }
 
+/**
+ * Swap the present without recording a snapshot. Typing calls this so a
+ * sentence is one undo step rather than forty.
+ */
+export function replacePresent(history: DeckHistory, next: Deck): DeckHistory {
+  if (next === history.present) return history;
+  return { past: history.past, present: next, future: [] };
+}
+
 export function applyAction(history: DeckHistory, action: DeckAction): DeckHistory {
   return pushHistory(history, reduceDeck(history.present, action));
 }
@@ -314,6 +325,25 @@ export function redo(history: DeckHistory): DeckHistory {
   const [next, ...rest] = history.future;
   if (!next) return history;
   return { past: [...history.past, history.present], present: next, future: rest };
+}
+
+// ── window preferences ────────────────────────────────────────────────────
+
+/** Which side panels are open. Stored per user under `.config/slides.json`. */
+export interface SlidesPrefs {
+  thumbnails: boolean;
+  notes: boolean;
+}
+
+export const DEFAULT_PREFS: SlidesPrefs = { thumbnails: true, notes: true };
+
+export function normalizePrefs(value: unknown): SlidesPrefs {
+  const source = isRecord(value) ? value : {};
+  return {
+    thumbnails:
+      typeof source.thumbnails === 'boolean' ? source.thumbnails : DEFAULT_PREFS.thumbnails,
+    notes: typeof source.notes === 'boolean' ? source.notes : DEFAULT_PREFS.notes,
+  };
 }
 
 // ── geometry ──────────────────────────────────────────────────────────────
