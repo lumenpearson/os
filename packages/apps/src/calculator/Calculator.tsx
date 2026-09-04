@@ -114,7 +114,12 @@ export default function Calculator(_props: AppProps) {
     field.current?.focus();
   }, []);
 
-  useEffect(() => () => (flashTimer.current ? clearTimeout(flashTimer.current) : undefined), []);
+  useEffect(
+    () => () => {
+      if (flashTimer.current) clearTimeout(flashTimer.current);
+    },
+    [],
+  );
 
   const selection = (): Selection => {
     const input = field.current;
@@ -137,7 +142,18 @@ export default function Calculator(_props: AppProps) {
     setError(null);
   };
 
-  const record = (entry: TapeEntry) => patch({ tape: pushTape(tape, entry) });
+  /** Both of these fold into whatever is in the file, not into this render. */
+  const record = (entry: TapeEntry) =>
+    store((previous) => {
+      const current = normalizeData(previous);
+      return { ...current, tape: pushTape(current.tape, entry) };
+    });
+
+  const addToMemory = (delta: number) =>
+    store((previous) => {
+      const current = normalizeData(previous);
+      return { ...current, memory: current.memory + delta };
+    });
 
   const commit = () => {
     const outcome = evaluate(text, { angle });
@@ -190,7 +206,7 @@ export default function Calculator(_props: AppProps) {
     }
     const value = shownNumber();
     if (value === null) return;
-    patch({ memory: action === 'memory-add' ? memory + value : memory - value });
+    addToMemory(action === 'memory-add' ? value : -value);
   };
 
   // ── keys ────────────────────────────────────────────────────────────────
@@ -282,7 +298,10 @@ export default function Calculator(_props: AppProps) {
     if (key.id === 'clear')
       return { label: programmer ? (prog.entry === '' ? 'AC' : 'C') : clearLabel(text) };
     if (key.id === 'angle')
-      return { label: angle.toUpperCase(), name: angle === 'deg' ? 'Degrees' : 'Radians' };
+      return {
+        label: angle.toUpperCase(),
+        name: `Angle unit: ${angle === 'deg' ? 'degrees' : 'radians'}`,
+      };
     if (key.id === 'second') return { active: trigState.second };
     if (key.id === 'hyperbolic') return { active: trigState.hyperbolic };
     const trig = TRIG[key.id];
@@ -312,6 +331,14 @@ export default function Calculator(_props: AppProps) {
     if (value !== '') useClipboardStore.getState().copyText(value);
   };
 
+  /** Mod+C takes what is selected on the line, or the whole line. */
+  const copyLine = () => {
+    const input = field.current;
+    if (input && document.activeElement === input && input.selectionStart !== input.selectionEnd)
+      return copy(input.value.slice(input.selectionStart ?? 0, input.selectionEnd ?? 0));
+    copy(shown);
+  };
+
   const paste = async () => {
     let raw = useClipboardStore.getState().item?.text ?? '';
     try {
@@ -328,7 +355,7 @@ export default function Calculator(_props: AppProps) {
     buildCalculatorMenus(
       { mode, angle, showTape, hasTape: tape.length > 0 },
       {
-        copy: () => copy(shown),
+        copy: copyLine,
         copyResult: () => copy(programmer ? shown : (result ?? '')),
         paste: () => void paste(),
         clear,
@@ -348,12 +375,7 @@ export default function Calculator(_props: AppProps) {
   return (
     // The keyboard is the first input path: keystrokes are routed to the keys
     // from here, so they work wherever focus sits inside the window.
-    <div
-      className="flex h-full w-full flex-col bg-surface text-ink"
-      onKeyDown={onKeyDown}
-      role="application"
-      aria-label="Calculator"
-    >
+    <div className="flex h-full w-full flex-col bg-surface text-ink" onKeyDown={onKeyDown}>
       <Toolbar dense>
         <SegmentedControl
           size="sm"
@@ -365,7 +387,7 @@ export default function Calculator(_props: AppProps) {
         />
         <ToolbarSpacer />
         <IconButton
-          label="Show tape"
+          label={showTape ? 'Hide tape' : 'Show tape'}
           size="sm"
           active={showTape}
           onClick={() => patch({ showTape: !showTape })}

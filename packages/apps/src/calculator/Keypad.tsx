@@ -54,6 +54,7 @@ export function Keypad({ layout, onPress, flash, override }: KeypadProps) {
             key={key.id}
             type="button"
             data-key={key.id}
+            data-flash={flash === key.id || undefined}
             disabled={patch.disabled}
             aria-label={key.icon || name ? (name ?? label) : undefined}
             aria-pressed={patch.active}
