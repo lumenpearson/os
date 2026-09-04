@@ -57,6 +57,20 @@ export function playbackCommand(event: KeyLike): PlaybackCommand | null {
   return event.key.toLowerCase() === 'm' ? { type: 'mute' } : null;
 }
 
+/** Elements that answer the transport keys themselves. */
+const KEY_OWNING_TAGS = new Set(['INPUT', 'TEXTAREA', 'SELECT', 'BUTTON', 'OPTION']);
+
+/**
+ * True when the key press belongs to the control it landed on: the space bar
+ * on the play button is that button being pressed, not a second play command.
+ */
+export function ownsKeys(target: unknown): boolean {
+  if (typeof target !== 'object' || target === null) return false;
+  const el = target as { tagName?: unknown; isContentEditable?: unknown };
+  if (el.isContentEditable === true) return true;
+  return typeof el.tagName === 'string' && KEY_OWNING_TAGS.has(el.tagName.toUpperCase());
+}
+
 /** True when the duration is a number a seek bar can be drawn against. */
 export function isSeekable(duration: number): boolean {
   return Number.isFinite(duration) && duration > 0;

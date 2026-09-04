@@ -208,6 +208,25 @@ describe('Preview', () => {
     );
   });
 
+  it('dumps a binary file as hex', async () => {
+    const blob = Uint8Array.from([0x00, 0x01, 0x02, 0x41, 0x42, 0x43, 0x00, 0xff]);
+    await kernel.vfs.writeFile(join(folder, 'g-blob.bin'), blob);
+    mount(join(folder, 'g-blob.bin'));
+    expect(await screen.findByText('00000000')).toBeInTheDocument();
+    expect(screen.getByText(/00 01 02 41 42 43 00 FF/)).toBeInTheDocument();
+    expect(screen.getByText(/8 bytes, 16 per row/)).toBeInTheDocument();
+  });
+
+  it('gives audio a transport of its own', async () => {
+    const user = userEvent.setup();
+    await kernel.vfs.writeFile(join(folder, 'h-tone.mp3'), Uint8Array.from([0x49, 0x44, 0x33]));
+    mount(join(folder, 'h-tone.mp3'));
+    const play = await screen.findByRole('button', { name: 'Play' });
+    expect(screen.getByRole('slider', { name: 'Seek' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Mute' })).toBeInTheDocument();
+    await user.click(play);
+  });
+
   it('offers no zoom controls for a file with no pixels', async () => {
     mount(join(folder, 'd-plain.txt'));
     await screen.findByText(/first line/);

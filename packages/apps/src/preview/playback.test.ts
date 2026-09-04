@@ -3,6 +3,7 @@ import {
   clampTime,
   clampVolume,
   isSeekable,
+  ownsKeys,
   playbackCommand,
   SEEK_STEP,
   SEEK_STEP_LARGE,
@@ -59,6 +60,20 @@ describe('playbackCommand', () => {
   it('ignores keys it has no command for', () => {
     expect(playbackCommand(key('Tab'))).toBeNull();
     expect(playbackCommand(key('q'))).toBeNull();
+  });
+});
+
+describe('ownsKeys', () => {
+  it('leaves a key press on a control to that control', () => {
+    expect(ownsKeys({ tagName: 'BUTTON' })).toBe(true);
+    expect(ownsKeys({ tagName: 'input' })).toBe(true);
+    expect(ownsKeys({ tagName: 'DIV', isContentEditable: true })).toBe(true);
+  });
+
+  it('takes the keys that land on the player itself', () => {
+    expect(ownsKeys({ tagName: 'DIV' })).toBe(false);
+    expect(ownsKeys({ tagName: 'VIDEO' })).toBe(false);
+    expect(ownsKeys(null)).toBe(false);
   });
 });
 

@@ -1,3 +1,4 @@
+import { useElementSize } from '@lumen/ui';
 import { formatBytes } from '@lumen/vfs';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { BYTES_PER_ROW, formatHexCells, hexRows, rowCount, visibleRange } from '../hex';
@@ -18,41 +19,32 @@ const ROW_HEIGHT = 18;
  * costs the same as a 3 KB one. The row model lives in `hex.ts`.
  */
 export function HexView({ bytes, name, dropped = 0 }: HexViewProps) {
-  const scroller = useRef<HTMLDivElement>(null);
+  const [scroller, port] = useElementSize<HTMLDivElement>();
   const frame = useRef(0);
-  const [port, setPort] = useState({ top: 0, height: 0 });
+  const [scrollTop, setScrollTop] = useState(0);
   const total = rowCount(bytes.length);
 
-  // Scroll fires far faster than a frame; the window is recomputed once per
-  // frame and only when the row it starts on actually changed.
-  const measure = useCallback(() => {
-    const el = scroller.current;
-    if (!el) return;
-    setPort((current) =>
-      current.top === el.scrollTop && current.height === el.clientHeight
-        ? current
-        : { top: el.scrollTop, height: el.clientHeight },
-    );
-  }, []);
-
+  // Scroll fires far faster than a frame, so the window is recomputed once per
+  // frame; the height comes from the observer, so a resize is covered too.
   const onScroll = useCallback(() => {
     if (frame.current) return;
     frame.current = requestAnimationFrame(() => {
       frame.current = 0;
-      measure();
+      const el = scroller.current;
+      if (el) setScrollTop(el.scrollTop);
     });
-  }, [measure]);
+  }, [scroller]);
 
-  useEffect(() => {
-    measure();
-    return () => {
+  useEffect(
+    () => () => {
       if (frame.current) cancelAnimationFrame(frame.current);
-    };
-  }, [measure]);
+    },
+    [],
+  );
 
   const range = useMemo(
-    () => visibleRange(port.top, port.height, ROW_HEIGHT, total),
-    [port, total],
+    () => visibleRange(scrollTop, port.height, ROW_HEIGHT, total),
+    [scrollTop, port.height, total],
   );
   const rows = useMemo(() => hexRows(bytes, range.start, range.end - range.start), [bytes, range]);
 

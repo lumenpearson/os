@@ -16,6 +16,7 @@ import {
   clampTime,
   clampVolume,
   isSeekable,
+  ownsKeys,
   type PlaybackCommand,
   playbackCommand,
   seekBy,
@@ -74,7 +75,8 @@ export function MediaView({
   const play = useCallback(() => {
     const el = media.current;
     if (!el) return;
-    if (el.paused) void el.play().catch(() => setFailed(true));
+    // Older engines return nothing from play() instead of a promise.
+    if (el.paused) void Promise.resolve(el.play()).catch(() => setFailed(true));
     else el.pause();
   }, []);
 
@@ -134,6 +136,7 @@ export function MediaView({
   );
 
   const onKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (ownsKeys(event.target)) return;
     const command = playbackCommand(event);
     if (!command) return;
     event.preventDefault();

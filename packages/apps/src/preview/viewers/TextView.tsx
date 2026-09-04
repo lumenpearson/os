@@ -47,7 +47,7 @@ export function TextView({ text, markdown, dropped = 0, name }: TextViewProps) {
         tabIndex={0}
         role="document"
         aria-label={name}
-        className={cx('lumen-scroll min-h-0 flex-1 lumen-focus focus-visible:-outline-offset-2')}
+        className="lumen-scroll min-h-0 flex-1 lumen-focus focus-visible:-outline-offset-2"
       >
         {rendered ? (
           <div className={cx('mx-auto max-w-2xl px-6 py-5', PROSE)}>{rendered}</div>
@@ -65,8 +65,8 @@ export function TextView({ text, markdown, dropped = 0, name }: TextViewProps) {
 export function Truncation({ dropped }: { dropped: number }) {
   return (
     <p className="mono shrink-0 border-t border-rule bg-canvas px-4 py-1.5 text-xs text-ink-3">
-      <span className="tabular-nums">{dropped.toLocaleString()}</span> more characters in the file
-      than this window shows.
+      <span className="tabular-nums">{dropped.toLocaleString()}</span> characters at the end of the
+      file are not shown.
     </p>
   );
 }
