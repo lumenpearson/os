@@ -1,3 +1,5 @@
+// deslop-ignore-file 19 — a slider track and its thumb are round on every
+// platform that ships one; a squared-off thumb reads as a broken control.
 import { forwardRef, type InputHTMLAttributes } from 'react';
 import { cx } from '../cx';
 

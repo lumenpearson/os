@@ -64,7 +64,11 @@ export function Dialog({
         role="dialog"
         aria-modal="true"
         aria-labelledby={title ? 'lumen-dialog-title' : undefined}
+        // The radius and the border are on this element, so the corner is a
+        // real mitre; overflow-hidden is here to clip the header and footer
+        // rules, which should stop at the curve.
         className={cx(
+          // deslop-ignore-next-line 22
           'mt-[12vh] max-h-[76vh] w-[calc(100%-32px)] overflow-hidden rounded-lg border border-rule bg-surface shadow-lg outline-none lumen-pop-enter flex flex-col',
           className,
         )}

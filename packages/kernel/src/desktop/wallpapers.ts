@@ -1,3 +1,5 @@
+// deslop-ignore-file 24 — the SVG in this file is the wallpaper artwork,
+// which is the point of the module; these are compositions, not icons.
 /**
  * Built-in wallpapers, generated as SVG so they cost nothing to ship and
  * scale to any display. Each is a quiet, mostly flat composition: a base tone

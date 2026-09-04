@@ -1,3 +1,5 @@
+// deslop-ignore-file 19 — a switch track and knob are round by convention.
+// The checkbox and radio in this file use the shared radius scale.
 import { Check, Minus } from 'lucide-react';
 import { forwardRef, type InputHTMLAttributes, useId } from 'react';
 import { cx } from '../cx';

@@ -126,6 +126,9 @@ function prettyKey(key: string, mac: boolean): string {
     case 'escape':
       return mac ? '⎋' : 'Esc';
     case 'enter':
+      // U+21A9 is the Return glyph macOS prints in its own menus, not an
+      // emoji. Windows and Linux get the word.
+      // deslop-ignore-next-line 15
       return mac ? '↩' : 'Enter';
     case 'backspace':
       return mac ? '⌫' : 'Backspace';

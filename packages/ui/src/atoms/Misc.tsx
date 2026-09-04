@@ -1,3 +1,6 @@
+// deslop-ignore-file 19 24 — the round shapes here are the shapes themselves:
+// an avatar, a count badge, a progress bar with round caps, and a spinner
+// ring. The SVG is that ring, not a decorative icon.
 import type { HTMLAttributes, ReactNode } from 'react';
 import { cx } from '../cx';
 

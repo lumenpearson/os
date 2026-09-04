@@ -64,6 +64,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
     >
       {loading ? (
         <span
+          // deslop-ignore-next-line 19 — a spinner is a ring; the radius scale does not apply.
           className="size-3.5 rounded-full border-2 border-current border-t-transparent lumen-spin"
           aria-hidden
         />
