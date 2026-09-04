@@ -1,0 +1,5 @@
+{
+  "extends": "@lumen/config-typescript/app.json",
+  "compilerOptions": { "types": [] },
+  "include": ["src"]
+}

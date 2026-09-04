@@ -1,0 +1,281 @@
+import type { AccentId } from '@lumen/tokens';
+
+export type ThemeMode = 'light' | 'dark' | 'auto';
+export type DockPosition = 'bottom' | 'left' | 'right';
+export type FilesView = 'list' | 'grid' | 'columns';
+export type WallpaperFit = 'cover' | 'contain' | 'tile' | 'center';
+export type ScreensaverId = 'clock' | 'drift' | 'starfield' | 'none';
+export type CursorStyle = 'lumen' | 'classic' | 'native';
+export type DateFormat = 'auto' | 'iso' | 'us' | 'eu';
+
+export interface Settings {
+  appearance: {
+    theme: ThemeMode;
+    accent: AccentId;
+    contrast: 'normal' | 'high';
+    reduceMotion: boolean;
+    reduceTransparency: boolean;
+    /** 0.9 – 1.3 multiplier on the UI font size. */
+    fontScale: number;
+  };
+  desktop: {
+    /** Preset id ("preset:dawn") or a VFS path to an image. */
+    wallpaper: string;
+    wallpaperFit: WallpaperFit;
+    showIcons: boolean;
+    iconSize: 'small' | 'medium' | 'large';
+    sortBy: 'name' | 'kind' | 'date';
+    /** Menubar and desktop tint derived from the wallpaper. */
+    dynamicChrome: boolean;
+  };
+  taskbar: {
+    position: DockPosition;
+    /** Icon size in px. */
+    size: number;
+    autoHide: boolean;
+    magnify: boolean;
+    pinned: string[];
+    showRecents: boolean;
+    showLabels: boolean;
+    centered: boolean;
+  };
+  menubar: {
+    showClock: boolean;
+    clock24h: boolean;
+    showSeconds: boolean;
+    showDate: boolean;
+    showDayOfWeek: boolean;
+    showBattery: boolean;
+    showNetwork: boolean;
+    showSound: boolean;
+    showUser: boolean;
+  };
+  display: {
+    /** 0.75 – 1.75 */
+    scale: number;
+    /** Snap windows to edges while dragging. */
+    snapping: boolean;
+    /** Window shadows on/off (for weak machines). */
+    shadows: boolean;
+    /** Show a small overlay with FPS and memory. */
+    performanceOverlay: boolean;
+  };
+  lock: {
+    /** 0 = never. Minutes of idle before the screen locks. */
+    autoLockMinutes: number;
+    /** 0 = never. Minutes of idle before the screensaver starts. */
+    screensaverMinutes: number;
+    screensaver: ScreensaverId;
+    requirePasswordOnWake: boolean;
+    showHint: boolean;
+    showClock: boolean;
+    /** Text shown on the lock screen (e.g. "If found, call…"). */
+    message: string;
+  };
+  sound: {
+    volume: number;
+    muted: boolean;
+    uiSounds: boolean;
+    startupSound: boolean;
+  };
+  notifications: {
+    doNotDisturb: boolean;
+    showPreviews: boolean;
+    sound: boolean;
+    /** Banner duration in ms. */
+    duration: number;
+    /** Apps muted by id. */
+    muted: string[];
+  };
+  region: {
+    locale: string;
+    timeZone: string;
+    firstDayOfWeek: 0 | 1;
+    dateFormat: DateFormat;
+    temperature: 'c' | 'f';
+    measurement: 'metric' | 'imperial';
+  };
+  keyboard: {
+    /** User overrides of global shortcuts, action id → keys. */
+    shortcuts: Record<string, string>;
+    /** Mod = Ctrl or Meta, so Windows and macOS keyboards both feel native. */
+    modifier: 'auto' | 'ctrl' | 'meta';
+  };
+  cursor: {
+    style: CursorStyle;
+    /** 1 – 2 */
+    size: number;
+    /** 'auto' picks by theme; otherwise 'light' | 'dark'. */
+    color: 'auto' | 'light' | 'dark';
+    /** Motion trail behind the cursor. */
+    trail: boolean;
+  };
+  files: {
+    showHidden: boolean;
+    showExtensions: boolean;
+    defaultView: FilesView;
+    /** Folder opened by new Files windows. */
+    home: string;
+    confirmDelete: boolean;
+    singleClickOpen: boolean;
+  };
+  network: {
+    wifi: boolean;
+    bluetooth: boolean;
+    airplane: boolean;
+    /** Simulated network name. */
+    ssid: string;
+  };
+  power: {
+    /** 0 = never. */
+    sleepAfterMinutes: number;
+    lowPowerMode: boolean;
+  };
+  privacy: {
+    /** Keep a Recents list. */
+    recents: boolean;
+    /** Keep the session log. */
+    logging: boolean;
+  };
+  updates: {
+    channel: 'stable' | 'beta';
+    automatic: boolean;
+    lastChecked: number | null;
+  };
+  setup: {
+    completed: boolean;
+    /** Version that ran the setup, for migrations. */
+    version: string;
+    completedAt: number | null;
+  };
+}
+
+export const SETTINGS_VERSION = 1;
+
+export function defaultSettings(): Settings {
+  const tz = safeTimeZone();
+  return {
+    appearance: {
+      theme: 'auto',
+      accent: 'blue',
+      contrast: 'normal',
+      reduceMotion: false,
+      reduceTransparency: false,
+      fontScale: 1,
+    },
+    desktop: {
+      wallpaper: 'preset:dawn',
+      wallpaperFit: 'cover',
+      showIcons: true,
+      iconSize: 'medium',
+      sortBy: 'name',
+      dynamicChrome: true,
+    },
+    taskbar: {
+      position: 'bottom',
+      size: 44,
+      autoHide: false,
+      magnify: false,
+      pinned: ['lumen.files', 'lumen.browser', 'lumen.terminal', 'lumen.notes', 'lumen.settings'],
+      showRecents: true,
+      showLabels: false,
+      centered: true,
+    },
+    menubar: {
+      showClock: true,
+      clock24h: false,
+      showSeconds: false,
+      showDate: true,
+      showDayOfWeek: true,
+      showBattery: true,
+      showNetwork: true,
+      showSound: true,
+      showUser: false,
+    },
+    display: { scale: 1, snapping: true, shadows: true, performanceOverlay: false },
+    lock: {
+      autoLockMinutes: 15,
+      screensaverMinutes: 10,
+      screensaver: 'clock',
+      requirePasswordOnWake: true,
+      showHint: true,
+      showClock: true,
+      message: '',
+    },
+    sound: { volume: 0.7, muted: false, uiSounds: true, startupSound: true },
+    notifications: {
+      doNotDisturb: false,
+      showPreviews: true,
+      sound: true,
+      duration: 6000,
+      muted: [],
+    },
+    region: {
+      locale: safeLocale(),
+      timeZone: tz,
+      firstDayOfWeek: 1,
+      dateFormat: 'auto',
+      temperature: 'c',
+      measurement: 'metric',
+    },
+    keyboard: { shortcuts: {}, modifier: 'auto' },
+    cursor: { style: 'lumen', size: 1, color: 'auto', trail: false },
+    files: {
+      showHidden: false,
+      showExtensions: true,
+      defaultView: 'list',
+      home: '',
+      confirmDelete: true,
+      singleClickOpen: false,
+    },
+    network: { wifi: true, bluetooth: false, airplane: false, ssid: 'Lumen Wi-Fi' },
+    power: { sleepAfterMinutes: 0, lowPowerMode: false },
+    privacy: { recents: true, logging: true },
+    updates: { channel: 'stable', automatic: true, lastChecked: null },
+    setup: { completed: false, version: '0.1.0', completedAt: null },
+  };
+}
+
+function safeTimeZone(): string {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+  } catch {
+    return 'UTC';
+  }
+}
+
+function safeLocale(): string {
+  try {
+    return typeof navigator !== 'undefined' && navigator.language ? navigator.language : 'en-US';
+  } catch {
+    return 'en-US';
+  }
+}
+
+/** Deep-merge a stored (possibly older / partial) settings object over the defaults. */
+export function mergeSettings(stored: unknown): Settings {
+  const base = defaultSettings();
+  if (!stored || typeof stored !== 'object') return base;
+  return deepMerge(
+    base as unknown as Record<string, unknown>,
+    stored as Record<string, unknown>,
+  ) as unknown as Settings;
+}
+
+function deepMerge<T extends Record<string, unknown>>(base: T, patch: Record<string, unknown>): T {
+  const out: Record<string, unknown> = { ...base };
+  for (const [key, value] of Object.entries(patch)) {
+    if (!(key in base)) continue;
+    const current = base[key];
+    if (isPlainObject(current) && isPlainObject(value)) {
+      out[key] = deepMerge(current as Record<string, unknown>, value as Record<string, unknown>);
+    } else if (Array.isArray(current) ? Array.isArray(value) : typeof current === typeof value) {
+      out[key] = value;
+    }
+  }
+  return out as T;
+}
+
+function isPlainObject(v: unknown): v is Record<string, unknown> {
+  return typeof v === 'object' && v !== null && !Array.isArray(v);
+}

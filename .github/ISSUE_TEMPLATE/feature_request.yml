@@ -1,0 +1,19 @@
+name: Feature request
+description: Propose an app, a setting, or a shell behaviour
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to do?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposal
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options: [shell, apps, kernel, vfs, desktop (Rust), landing, tooling]

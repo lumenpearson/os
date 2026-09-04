@@ -1,0 +1,35 @@
+name: Bug report
+description: Something in Lumen OS does not behave as expected
+labels: [bug]
+body:
+  - type: dropdown
+    id: host
+    attributes:
+      label: Host
+      options: [Web (browser), Desktop (Tauri, Windows), Landing site]
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version / commit
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: 1. Open Files → 2. …
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual
+  - type: input
+    id: viewport
+    attributes:
+      label: Viewport / display scale
+      placeholder: 1920×1080 @ 125%

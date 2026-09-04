@@ -1,0 +1,125 @@
+import { cx } from '@lumen/ui';
+
+interface Props {
+  focused: boolean;
+  closable: boolean;
+  minimizable: boolean;
+  maximizable: boolean;
+  dirty: boolean;
+  onClose: () => void;
+  onMinimize: () => void;
+  onMaximize: () => void;
+}
+
+/**
+ * Close / minimize / zoom. Three small circles that reveal their glyph on
+ * hover as a group; a dot marks unsaved changes. Inactive windows show them
+ * as neutral discs.
+ */
+export function WindowControls({
+  focused,
+  closable,
+  minimizable,
+  maximizable,
+  dirty,
+  onClose,
+  onMinimize,
+  onMaximize,
+}: Props) {
+  return (
+    <div
+      className="group/controls flex items-center gap-2"
+      data-no-drag
+      data-testid="window-controls"
+    >
+      <Control label="Close" tone="close" enabled={closable} focused={focused} onClick={onClose}>
+        {dirty ? (
+          <span className="block size-1.5 rounded-full bg-[#4a1010]" />
+        ) : (
+          <svg viewBox="0 0 10 10" className="size-2">
+            <path
+              d="M2 2l6 6M8 2l-6 6"
+              stroke="currentColor"
+              strokeWidth="1.4"
+              strokeLinecap="round"
+            />
+          </svg>
+        )}
+      </Control>
+      <Control
+        label="Minimize"
+        tone="minimize"
+        enabled={minimizable}
+        focused={focused}
+        onClick={onMinimize}
+      >
+        <svg viewBox="0 0 10 10" className="size-2">
+          <path d="M2 5h6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+        </svg>
+      </Control>
+      <Control
+        label="Zoom"
+        tone="zoom"
+        enabled={maximizable}
+        focused={focused}
+        onClick={onMaximize}
+      >
+        <svg viewBox="0 0 10 10" className="size-2">
+          <path
+            d="M2.5 6.5V2.5h4M7.5 3.5v4h-4"
+            stroke="currentColor"
+            strokeWidth="1.4"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </Control>
+    </div>
+  );
+}
+
+const TONES = {
+  close: 'bg-[#ec5f59] text-[#4a1010]',
+  minimize: 'bg-[#e1b13c] text-[#5a3d05]',
+  zoom: 'bg-[#5fc25b] text-[#0f4a12]',
+};
+
+function Control({
+  label,
+  tone,
+  enabled,
+  focused,
+  onClick,
+  children,
+}: {
+  label: string;
+  tone: keyof typeof TONES;
+  enabled: boolean;
+  focused: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      disabled={!enabled}
+      onClick={(e) => {
+        e.stopPropagation();
+        onClick();
+      }}
+      onPointerDown={(e) => e.stopPropagation()}
+      onDoubleClick={(e) => e.stopPropagation()}
+      className={cx(
+        'flex size-3 items-center justify-center rounded-full border border-black/10 lumen-focus',
+        'transition-[background-color] duration-(--duration-fast)',
+        enabled && focused ? TONES[tone] : 'bg-surface-3 text-transparent',
+        enabled
+          ? '[&>*]:opacity-0 group-hover/controls:[&>*]:opacity-100 focus-visible:[&>*]:opacity-100'
+          : 'opacity-50',
+      )}
+    >
+      {children}
+    </button>
+  );
+}

@@ -1,0 +1,182 @@
+/*
+ * Lumen OS design tokens.
+ *
+ * One neutral ramp, one accent. Type: IBM Plex Sans for UI text, JetBrains Mono
+ * for accents (labels, values, shortcuts, paths, the clock). Tailwind v4 reads
+ * the @theme block; plain CSS reads the same custom properties.
+ */
+@import "tailwindcss";
+
+@theme {
+  --font-sans:
+    "IBM Plex Sans Variable", "IBM Plex Sans", "Segoe UI Variable", "Segoe UI", system-ui,
+    sans-serif;
+  --font-mono:
+    "JetBrains Mono Variable", "JetBrains Mono", "Cascadia Mono", Consolas, ui-monospace, monospace;
+
+  /* type scale: few steps, real jumps */
+  --text-2xs: 10px;
+  --text-2xs--line-height: 14px;
+  --text-xs: 11px;
+  --text-xs--line-height: 15px;
+  --text-sm: 12px;
+  --text-sm--line-height: 16px;
+  --text-base: 13px;
+  --text-base--line-height: 18px;
+  --text-md: 15px;
+  --text-md--line-height: 20px;
+  --text-lg: 20px;
+  --text-lg--line-height: 26px;
+  --text-xl: 28px;
+  --text-xl--line-height: 34px;
+  --text-2xl: 40px;
+  --text-2xl--line-height: 46px;
+  --text-3xl: 64px;
+  --text-3xl--line-height: 68px;
+
+  /* spacing scale with real jumps */
+  --spacing: 4px;
+
+  /* radii: one scale; nested radius = outer − padding */
+  --radius-xs: 3px;
+  --radius-sm: 5px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-full: 9999px;
+
+  /* motion */
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --ease-spring: cubic-bezier(0.32, 1.25, 0.6, 1);
+  --duration-fast: 120ms;
+  --duration-base: 180ms;
+  --duration-slow: 260ms;
+  --duration-window: 220ms;
+
+  /* colours are defined per scheme below and referenced here */
+  --color-canvas: var(--lumen-canvas);
+  --color-surface: var(--lumen-surface);
+  --color-surface-2: var(--lumen-surface-2);
+  --color-surface-3: var(--lumen-surface-3);
+  --color-chrome: var(--lumen-chrome);
+  --color-ink: var(--lumen-ink);
+  --color-ink-2: var(--lumen-ink-2);
+  --color-ink-3: var(--lumen-ink-3);
+  --color-ink-inverse: var(--lumen-ink-inverse);
+  --color-rule: var(--lumen-rule);
+  --color-rule-strong: var(--lumen-rule-strong);
+  --color-accent: var(--lumen-accent);
+  --color-accent-ink: var(--lumen-accent-ink);
+  --color-accent-soft: var(--lumen-accent-soft);
+  --color-selection: var(--lumen-selection);
+  --color-danger: var(--lumen-danger);
+  --color-ok: var(--lumen-ok);
+  --color-warn: var(--lumen-warn);
+  --color-scrim: var(--lumen-scrim);
+
+  --shadow-sm: var(--lumen-shadow-sm);
+  --shadow-md: var(--lumen-shadow-md);
+  --shadow-lg: var(--lumen-shadow-lg);
+  --shadow-window: var(--lumen-shadow-window);
+  --shadow-window-active: var(--lumen-shadow-window-active);
+}
+
+:root {
+  color-scheme: light;
+
+  /* accent (overridden from Settings → Appearance through --lumen-accent-h/s/l) */
+  --lumen-accent-h: 218;
+  --lumen-accent-s: 92%;
+  --lumen-accent-l: 58%;
+  --lumen-accent: hsl(var(--lumen-accent-h) var(--lumen-accent-s) var(--lumen-accent-l));
+  --lumen-accent-ink: #ffffff;
+  --lumen-accent-soft: hsl(
+    var(--lumen-accent-h) var(--lumen-accent-s) var(--lumen-accent-l) /
+    0.14
+  );
+  --lumen-selection: hsl(var(--lumen-accent-h) var(--lumen-accent-s) var(--lumen-accent-l) / 0.22);
+
+  --lumen-canvas: #f4f4f5;
+  --lumen-surface: #ffffff;
+  --lumen-surface-2: #ececee;
+  --lumen-surface-3: #e1e2e5;
+  --lumen-chrome: rgb(246 246 247 / 0.82);
+  --lumen-ink: #141517;
+  --lumen-ink-2: #5b5e66;
+  --lumen-ink-3: #8b8f98;
+  --lumen-ink-inverse: #f7f7f8;
+  --lumen-rule: rgb(0 0 0 / 0.09);
+  --lumen-rule-strong: rgb(0 0 0 / 0.18);
+  --lumen-danger: #d43f3f;
+  --lumen-ok: #2f8a58;
+  --lumen-warn: #c27b12;
+  --lumen-scrim: rgb(0 0 0 / 0.32);
+
+  --lumen-shadow-sm: 0 1px 2px rgb(0 0 0 / 0.08);
+  --lumen-shadow-md: 0 4px 12px rgb(0 0 0 / 0.1), 0 1px 2px rgb(0 0 0 / 0.06);
+  --lumen-shadow-lg: 0 12px 28px rgb(0 0 0 / 0.16), 0 2px 6px rgb(0 0 0 / 0.08);
+  --lumen-shadow-window: 0 8px 24px rgb(0 0 0 / 0.16), 0 0 0 1px rgb(0 0 0 / 0.1);
+  --lumen-shadow-window-active: 0 18px 44px rgb(0 0 0 / 0.24), 0 0 0 1px rgb(0 0 0 / 0.14);
+
+  /* shell metrics; the display-scale setting multiplies through --lumen-scale */
+  --lumen-scale: 1;
+  --lumen-menubar-h: 26px;
+  --lumen-taskbar-h: 52px;
+  --lumen-window-titlebar-h: 36px;
+  --lumen-cursor-size: 20px;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --lumen-accent-l: 62%;
+  --lumen-canvas: #1b1c1f;
+  --lumen-surface: #232428;
+  --lumen-surface-2: #2b2c31;
+  --lumen-surface-3: #35363c;
+  --lumen-chrome: rgb(30 31 35 / 0.78);
+  --lumen-ink: #ececee;
+  --lumen-ink-2: #a3a6ae;
+  --lumen-ink-3: #6f737c;
+  --lumen-ink-inverse: #141517;
+  --lumen-rule: rgb(255 255 255 / 0.09);
+  --lumen-rule-strong: rgb(255 255 255 / 0.18);
+  --lumen-danger: #e35d5d;
+  --lumen-ok: #4caf7a;
+  --lumen-warn: #d9962a;
+  --lumen-scrim: rgb(0 0 0 / 0.5);
+  --lumen-shadow-sm: 0 1px 2px rgb(0 0 0 / 0.3);
+  --lumen-shadow-md: 0 4px 12px rgb(0 0 0 / 0.36), 0 1px 2px rgb(0 0 0 / 0.24);
+  --lumen-shadow-lg: 0 12px 28px rgb(0 0 0 / 0.46), 0 2px 6px rgb(0 0 0 / 0.3);
+  --lumen-shadow-window: 0 8px 24px rgb(0 0 0 / 0.42), 0 0 0 1px rgb(255 255 255 / 0.08);
+  --lumen-shadow-window-active: 0 18px 44px rgb(0 0 0 / 0.56), 0 0 0 1px rgb(255 255 255 / 0.12);
+}
+
+:root[data-contrast="high"] {
+  --lumen-rule: rgb(0 0 0 / 0.32);
+  --lumen-rule-strong: rgb(0 0 0 / 0.6);
+  --lumen-ink-2: #303238;
+  --lumen-ink-3: #4a4d55;
+}
+:root[data-theme="dark"][data-contrast="high"] {
+  --lumen-rule: rgb(255 255 255 / 0.32);
+  --lumen-rule-strong: rgb(255 255 255 / 0.6);
+  --lumen-ink-2: #d5d7dc;
+  --lumen-ink-3: #b3b6bd;
+}
+
+:root[data-motion="reduced"] {
+  --duration-fast: 0ms;
+  --duration-base: 0ms;
+  --duration-slow: 0ms;
+  --duration-window: 0ms;
+}
+@media (prefers-reduced-motion: reduce) {
+  :root:not([data-motion="full"]) {
+    --duration-fast: 0ms;
+    --duration-base: 0ms;
+    --duration-slow: 0ms;
+    --duration-window: 0ms;
+  }
+}

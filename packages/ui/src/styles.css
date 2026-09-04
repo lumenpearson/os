@@ -1,0 +1,151 @@
+/*
+ * Component styles that are awkward as utilities: focus rings, native
+ * control resets, menu keyboard states. Everything else is Tailwind utilities
+ * over the tokens in @lumen/tokens.
+ */
+@layer components {
+  .lumen-control {
+    height: 28px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--lumen-rule-strong);
+    background: var(--lumen-surface);
+    color: var(--lumen-ink);
+    padding: 0 8px;
+    font-size: var(--text-base);
+    line-height: 26px;
+    transition:
+      border-color var(--duration-fast) var(--ease-standard),
+      background-color var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard);
+  }
+  .lumen-control:hover:not(:disabled) {
+    border-color: var(--lumen-ink-3);
+  }
+  .lumen-control:focus-visible,
+  .lumen-control:focus-within {
+    outline: none;
+    border-color: var(--lumen-accent);
+    box-shadow: 0 0 0 3px var(--lumen-accent-soft);
+  }
+  .lumen-control:disabled,
+  .lumen-control[aria-disabled="true"] {
+    opacity: 0.5;
+  }
+  .lumen-control::placeholder {
+    color: var(--lumen-ink-3);
+  }
+
+  .lumen-focus:focus-visible {
+    outline: 2px solid var(--lumen-accent);
+    outline-offset: 1px;
+  }
+
+  .lumen-menu {
+    min-width: 200px;
+    padding: 4px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--lumen-rule);
+    background: var(--lumen-surface);
+    box-shadow: var(--lumen-shadow-lg);
+    color: var(--lumen-ink);
+  }
+  :root[data-transparency="full"] .lumen-menu {
+    background: color-mix(in srgb, var(--lumen-surface) 86%, transparent);
+    backdrop-filter: blur(24px) saturate(1.4);
+    -webkit-backdrop-filter: blur(24px) saturate(1.4);
+  }
+  .lumen-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    height: 26px;
+    padding: 0 8px 0 24px;
+    border-radius: var(--radius-sm);
+    font-size: var(--text-base);
+    white-space: nowrap;
+    position: relative;
+    user-select: none;
+  }
+  .lumen-menu-item[data-active="true"] {
+    background: var(--lumen-accent);
+    color: var(--lumen-accent-ink);
+  }
+  .lumen-menu-item[data-active="true"] .lumen-menu-shortcut {
+    color: color-mix(in srgb, var(--lumen-accent-ink) 78%, transparent);
+  }
+  .lumen-menu-item[aria-disabled="true"] {
+    color: var(--lumen-ink-3);
+  }
+  .lumen-menu-item[data-danger="true"]:not([data-active="true"]) {
+    color: var(--lumen-danger);
+  }
+  .lumen-menu-shortcut {
+    margin-left: auto;
+    padding-left: 24px;
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: var(--lumen-ink-3);
+    letter-spacing: 0.02em;
+  }
+  .lumen-menu-separator {
+    height: 1px;
+    margin: 4px 8px;
+    background: var(--lumen-rule);
+  }
+
+  .lumen-scroll {
+    overflow: auto;
+    overscroll-behavior: contain;
+  }
+
+  .lumen-list-row {
+    display: grid;
+    align-items: center;
+    height: 24px;
+    padding: 0 8px;
+    border-radius: var(--radius-xs);
+    font-size: var(--text-base);
+  }
+  .lumen-list-row[aria-selected="true"] {
+    background: var(--lumen-selection);
+  }
+  .lumen-list-row[aria-selected="true"][data-focused="true"] {
+    background: var(--lumen-accent);
+    color: var(--lumen-accent-ink);
+  }
+
+  .lumen-pop-enter {
+    animation: lumen-pop var(--duration-base) var(--ease-out);
+    transform-origin: var(--lumen-pop-origin, top left);
+  }
+  @keyframes lumen-pop {
+    from {
+      opacity: 0;
+      transform: scale(0.96) translateY(-2px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  .lumen-fade-enter {
+    animation: lumen-fade var(--duration-base) var(--ease-out);
+  }
+  @keyframes lumen-fade {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  .lumen-spin {
+    animation: lumen-spin 0.8s linear infinite;
+    transform-origin: 50% 50%;
+  }
+  @keyframes lumen-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+}

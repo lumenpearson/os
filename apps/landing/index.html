@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <title>Lumen OS</title>
+    <meta name="description" content="Lumen OS is a desktop environment written in TypeScript and React. It runs in the browser, or on Windows through Tauri with a Rust kernel for sandboxed file access." />
+    <link rel="canonical" href="%SITE_URL%/" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Lumen OS" />
+    <meta property="og:title" content="Lumen OS" />
+    <meta property="og:description" content="A desktop environment in TypeScript. Runs in the browser, or on Windows through Tauri." />
+    <meta property="og:url" content="%SITE_URL%/" />
+    <meta property="og:image" content="%SITE_URL%/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Lumen OS" />
+    <meta name="twitter:description" content="A desktop environment in TypeScript. Runs in the browser, or on Windows through Tauri." />
+    <meta name="twitter:image" content="%SITE_URL%/og.png" />
+    <script>
+      // Apply the stored theme before first paint so the page does not flash.
+      (() => {
+        let dark = false;
+        try {
+          const stored = localStorage.getItem('lumen-landing-theme');
+          dark = stored ? stored === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+        } catch {
+          dark = false;
+        }
+        document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

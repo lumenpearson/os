@@ -1,0 +1,59 @@
+{
+  "name": "lumen-os",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Lumen OS — a desktop operating environment written in TypeScript. Runs natively on Windows through Tauri and in any browser.",
+  "license": "MIT",
+  "author": "Lumen Pearson",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lumenpearson/os"
+  },
+  "packageManager": "pnpm@10.33.0",
+  "engines": {
+    "node": ">=22",
+    "pnpm": ">=10"
+  },
+  "scripts": {
+    "dev": "turbo run dev --parallel",
+    "dev:web": "turbo run dev --filter=@lumen/web",
+    "dev:landing": "turbo run dev --filter=@lumen/landing",
+    "dev:desktop": "pnpm --filter @lumen/desktop tauri dev",
+    "build": "turbo run build",
+    "build:web": "turbo run build --filter=@lumen/web",
+    "build:landing": "turbo run build --filter=@lumen/landing",
+    "build:desktop": "pnpm --filter @lumen/desktop tauri build",
+    "lint": "turbo run lint",
+    "lint:fix": "biome check --write .",
+    "format": "biome format --write .",
+    "format:check": "biome format .",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "test:e2e": "turbo run test:e2e",
+    "check": "turbo run lint typecheck test build",
+    "deslop": "node .claude/skills/kill-ai-slop/scripts/scan.mjs . --exclude=node_modules --exclude=dist --exclude=target --exclude=.claude",
+    "rust:fmt": "cargo fmt --all",
+    "rust:clippy": "cargo clippy --workspace --all-targets -- -D warnings",
+    "rust:test": "cargo test --workspace",
+    "clean": "turbo run clean && rimraf node_modules",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.12",
+    "@commitlint/cli": "^21.2.2",
+    "@commitlint/config-conventional": "^21.2.2",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.4.1",
+    "rimraf": "^6.0.1",
+    "turbo": "^2.10.12",
+    "typescript": "5.9.3"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx,mjs,cjs,json,jsonc,css}": [
+      "biome check --write --no-errors-on-unmatched"
+    ],
+    "*.rs": [
+      "rustfmt --edition 2021"
+    ]
+  }
+}
