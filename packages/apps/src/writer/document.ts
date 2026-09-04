@@ -3,7 +3,7 @@
  * the exporters. All of it is pure: read a string, return a string.
  */
 import { basename, extname } from '@lumen/vfs';
-import { escapeHtml } from './dom';
+import { escapeHtml, parseBody } from './dom';
 import { htmlToMarkdown } from './markdown';
 import { EMPTY_DOCUMENT, sanitizeDocument } from './sanitize';
 import { htmlToPlainText } from './stats';
@@ -161,10 +161,12 @@ export function htmlTitle(raw: string): string | null {
 /** True when the document holds nothing but empty markup. */
 export function isEmptyDocument(html: string): boolean {
   if (/<(hr|img)\b/i.test(html)) return false;
-  const text = html
-    .replace(/<[^>]*>/g, '')
-    .split(String.fromCharCode(160))
-    .join(' ');
+  // Read the text through the parser rather than by stripping tags with a
+  // regular expression. `<[^>]*>` leaves an unterminated `<script` behind, and
+  // although this predicate only ever compares its result to the empty string,
+  // a tag-stripping regex sitting in a file next to the sanitiser is an
+  // invitation to reuse it where the output does reach the DOM.
+  const text = (parseBody(html).textContent ?? '').split(String.fromCharCode(160)).join(' ');
   return text.trim() === '';
 }
 

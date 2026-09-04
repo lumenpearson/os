@@ -42,11 +42,18 @@ export const useSettingsStore = create<SettingsStore>((set) => ({
       let cur: Record<string, unknown> = next;
       for (let i = 0; i < parts.length - 1; i++) {
         const key = parts[i] as string;
+        // Every settings path names something the schema already defines, so
+        // requiring the key to be an own property is both the correct check
+        // and what keeps "__proto__.x" from walking onto Object.prototype and
+        // assigning there. Reaching an inherited key means the path is wrong.
+        if (!Object.hasOwn(cur, key)) return s;
         const child = cur[key];
         if (typeof child !== 'object' || child === null) return s;
         cur = child as Record<string, unknown>;
       }
-      cur[parts[parts.length - 1] as string] = value;
+      const leaf = parts[parts.length - 1] as string;
+      if (!Object.hasOwn(cur, leaf)) return s;
+      cur[leaf] = value;
       return { settings: next as unknown as Settings };
     });
     events.emit('settings:change', { path });
