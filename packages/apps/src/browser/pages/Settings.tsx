@@ -71,7 +71,7 @@ export function BrowserSettings({
       <SettingsGroup title="Startup">
         <SettingsRow
           label="Homepage"
-          description="Home and every new window open here."
+          description="The Home button and every new tab open here."
           htmlFor={homeId}
           stacked
         >
@@ -121,7 +121,11 @@ export function BrowserSettings({
       </SettingsGroup>
 
       <SettingsGroup title="Appearance">
-        <SettingsRow label="Bookmarks bar" description="A row of starred pages under the toolbar.">
+        <SettingsRow
+          label="Bookmarks bar"
+          description="A row of starred pages under the toolbar."
+          htmlFor={barId}
+        >
           <Switch
             id={barId}
             checked={data.showBookmarksBar}

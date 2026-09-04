@@ -56,9 +56,7 @@ export function Start({ bookmarks, history, engine, onNavigate }: StartProps) {
             <Label>Bookmarks</Label>
           </h2>
           {favorites.length === 0 ? (
-            <p className="text-base text-ink-3">
-              Star a page and it is kept here for the next time.
-            </p>
+            <p className="text-base text-ink-3">Star a page to keep it here.</p>
           ) : (
             <ul className="grid grid-cols-[repeat(auto-fill,minmax(9rem,1fr))] gap-2">
               {favorites.map((b) => (
@@ -93,26 +91,32 @@ export function Start({ bookmarks, history, engine, onNavigate }: StartProps) {
             <p className="text-base text-ink-3">Pages you visit show up here.</p>
           ) : (
             <ul className="flex flex-col">
-              {recent.map((v) => (
-                <li key={v.id}>
-                  <button
-                    type="button"
-                    title={v.url}
-                    onClick={() => onNavigate(v.url)}
-                    className="flex w-full items-baseline gap-3 rounded-sm px-2 py-1.5 text-left transition-colors duration-(--duration-fast) ease-(--ease-standard) hover:bg-surface-2 lumen-focus"
-                  >
-                    <span className="min-w-0 flex-1 truncate-1 text-base text-ink">
-                      {v.title || displayUrl(v.url)}
-                    </span>
-                    <span className="mono max-w-[38%] truncate-1 text-xs text-ink-3">
-                      {displayUrl(v.url)}
-                    </span>
-                    <span className="mono shrink-0 text-xs text-ink-3 tabular-nums">
-                      {formatRelative(v.visitedAt)}
-                    </span>
-                  </button>
-                </li>
-              ))}
+              {recent.map((v) => {
+                const address = displayUrl(v.url);
+                const label = v.title || address;
+                return (
+                  <li key={v.id}>
+                    <button
+                      type="button"
+                      title={v.url}
+                      onClick={() => onNavigate(v.url)}
+                      className="flex w-full items-baseline gap-3 rounded-sm px-2 py-1.5 text-left transition-colors duration-(--duration-fast) ease-(--ease-standard) hover:bg-surface-2 lumen-focus"
+                    >
+                      <span className="min-w-0 flex-1 truncate-1 text-base text-ink">{label}</span>
+                      {/* The title of a framed page is its host, so the address
+                          is only worth repeating when it says something more. */}
+                      {address !== label && (
+                        <span className="mono max-w-[38%] truncate-1 text-xs text-ink-3">
+                          {address}
+                        </span>
+                      )}
+                      <span className="mono shrink-0 text-xs text-ink-3 tabular-nums">
+                        {formatRelative(v.visitedAt)}
+                      </span>
+                    </button>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </section>

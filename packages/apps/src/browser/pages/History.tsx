@@ -69,34 +69,40 @@ export function HistoryPage({ history, onNavigate, onRemove, onClearAll }: Histo
                 )}
               </div>
               <ul className="divide-y divide-rule rounded-md border border-rule bg-surface">
-                {visits.map((v) => (
-                  <li key={v.id} className="group flex items-center gap-3 px-3 py-2">
-                    <span className="mono w-14 shrink-0 text-xs text-ink-3 tabular-nums">
-                      {formatTime(v.visitedAt)}
-                    </span>
-                    <button
-                      type="button"
-                      title={v.url}
-                      onClick={() => onNavigate(v.url)}
-                      className="min-w-0 flex-1 rounded-xs text-left lumen-focus"
-                    >
-                      <span className="block truncate-1 text-base text-ink">
-                        {v.title || displayUrl(v.url)}
+                {visits.map((v) => {
+                  const address = displayUrl(v.url);
+                  const name = v.title || address;
+                  return (
+                    <li key={v.id} className="group flex items-center gap-3 px-3 py-2">
+                      <span className="mono w-14 shrink-0 text-xs text-ink-3 tabular-nums">
+                        {formatTime(v.visitedAt)}
                       </span>
-                      <span className="mono block truncate-1 text-xs text-ink-3">
-                        {displayUrl(v.url)}
-                      </span>
-                    </button>
-                    <IconButton
-                      label={`Remove ${v.title || displayUrl(v.url)} from history`}
-                      size="sm"
-                      onClick={() => onRemove(v.id)}
-                      className="opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100"
-                    >
-                      <X />
-                    </IconButton>
-                  </li>
-                ))}
+                      <button
+                        type="button"
+                        title={v.url}
+                        onClick={() => onNavigate(v.url)}
+                        className="min-w-0 flex-1 rounded-xs text-left lumen-focus"
+                      >
+                        <span className="block truncate-1 text-base text-ink">{name}</span>
+                        {/* A framed page is named after its host, so the address
+                            is only worth a second line when it says more. */}
+                        {address !== name && (
+                          <span className="mono block truncate-1 text-xs text-ink-3">
+                            {address}
+                          </span>
+                        )}
+                      </button>
+                      <IconButton
+                        label={`Remove ${name} from history`}
+                        size="sm"
+                        onClick={() => onRemove(v.id)}
+                        className="opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100"
+                      >
+                        <X />
+                      </IconButton>
+                    </li>
+                  );
+                })}
               </ul>
             </section>
           );

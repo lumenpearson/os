@@ -63,13 +63,18 @@ function unquote(value: string): string {
   return quote === '"' ? inner.replace(/\\(["\\])/g, '$1') : inner;
 }
 
-/** Values that would not survive a re-read as themselves get double quotes. */
+/**
+ * Values that would not survive a re-read as themselves get double quotes.
+ * A bare colon is left alone: an ISO timestamp is the commonest value in these
+ * blocks, and quoting it would rewrite the line on every save.
+ */
 function quoteIfNeeded(value: string): string {
   const risky =
     value === '' ||
     value !== value.trim() ||
     /^["'#>|&*!%@`[{-]/.test(value) ||
-    /[\n:]/.test(value);
+    value.endsWith(':') ||
+    /: | #|\n/.test(value);
   if (!risky) return value;
   return `"${value.replace(/([\\"])/g, '\\$1').replace(/\n/g, '\\n')}"`;
 }

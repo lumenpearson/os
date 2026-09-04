@@ -94,36 +94,38 @@ export function Library({
         <p className="text-base text-ink-2">No bookmark matches “{query.trim()}”.</p>
       ) : (
         <ul className="divide-y divide-rule rounded-md border border-rule bg-surface">
-          {shown.map((b) => (
-            <li key={b.id} className="group flex items-center gap-3 px-3 py-2">
-              <button
-                type="button"
-                title={b.url}
-                onClick={() => onNavigate(b.url)}
-                className="min-w-0 flex-1 rounded-xs text-left lumen-focus"
-              >
-                <span className="block truncate-1 text-base text-ink">
-                  {b.title || displayUrl(b.url)}
-                </span>
-                <span className="mono block truncate-1 text-xs text-ink-3">
-                  {displayUrl(b.url)}
-                </span>
-              </button>
-              {b.addedAt > 0 && (
-                <span className="mono shrink-0 text-xs text-ink-3 tabular-nums">
-                  {formatDate(b.addedAt, 'short')}
-                </span>
-              )}
-              <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity duration-(--duration-fast) ease-(--ease-standard) group-hover:opacity-100 group-focus-within:opacity-100">
-                <IconButton label={`Rename ${b.title}`} size="sm" onClick={() => void rename(b)}>
-                  <Pencil />
-                </IconButton>
-                <IconButton label={`Remove ${b.title}`} size="sm" onClick={() => onRemove(b.id)}>
-                  <X />
-                </IconButton>
-              </div>
-            </li>
-          ))}
+          {shown.map((b) => {
+            const address = displayUrl(b.url);
+            const name = b.title || address;
+            return (
+              <li key={b.id} className="group flex items-center gap-3 px-3 py-2">
+                <button
+                  type="button"
+                  title={b.url}
+                  onClick={() => onNavigate(b.url)}
+                  className="min-w-0 flex-1 rounded-xs text-left lumen-focus"
+                >
+                  <span className="block truncate-1 text-base text-ink">{name}</span>
+                  {address !== name && (
+                    <span className="mono block truncate-1 text-xs text-ink-3">{address}</span>
+                  )}
+                </button>
+                {b.addedAt > 0 && (
+                  <span className="mono shrink-0 text-xs text-ink-3 tabular-nums">
+                    {formatDate(b.addedAt, 'short')}
+                  </span>
+                )}
+                <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity duration-(--duration-fast) ease-(--ease-standard) group-hover:opacity-100 group-focus-within:opacity-100">
+                  <IconButton label={`Rename ${name}`} size="sm" onClick={() => void rename(b)}>
+                    <Pencil />
+                  </IconButton>
+                  <IconButton label={`Remove ${name}`} size="sm" onClick={() => onRemove(b.id)}>
+                    <X />
+                  </IconButton>
+                </div>
+              </li>
+            );
+          })}
         </ul>
       )}
     </SettingsPage>
