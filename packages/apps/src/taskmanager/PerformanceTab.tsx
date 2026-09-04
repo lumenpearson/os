@@ -1,7 +1,8 @@
 /**
  * Live charts for everything this platform can measure. Sampling runs on one
- * interval, stops when the document is hidden or the window is minimized, and
- * clears the buffers when the interval changes so a chart never mixes rates.
+ * interval and stops when the document is hidden or the window is minimized.
+ * The buffers start again whenever sampling starts, so a chart never mixes
+ * two rates or hides a pause behind a straight line.
  */
 import { useProcessStore } from '@lumen/kernel';
 import { usePlatform, useVfs } from '@lumen/kernel/react';
