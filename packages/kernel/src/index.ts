@@ -18,6 +18,7 @@ export { seedApplications, seedHome, seedSystem } from './fs/seed';
 export type { KernelOptions } from './kernel';
 export { createKernel, getKernel, Kernel } from './kernel';
 export { log, useLogStore } from './log/store';
+export { findMenuShortcut, menusClaimShortcut } from './menu/shortcuts';
 export { useMenuStore } from './menu/store';
 export type { PostNotificationInput } from './notifications/store';
 export { selectUnreadCount, useNotificationStore } from './notifications/store';

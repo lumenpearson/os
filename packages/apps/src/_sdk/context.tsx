@@ -1,10 +1,10 @@
 import {
   type AppId,
   events,
+  findMenuShortcut,
   formatShortcut,
   getKernel,
   type LaunchArgs,
-  type MenuItemTemplate,
   type MenuTemplate,
   matchesShortcut,
   type Pid,
@@ -137,7 +137,7 @@ export function useAppMenus(menus: MenuTemplate[], deps: unknown[] = []) {
     if (!focused) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.defaultPrevented) return;
-      const item = findShortcut(stable, e, modifier);
+      const item = findMenuShortcut(stable, e, modifier);
       if (item?.onSelect) {
         e.preventDefault();
         e.stopPropagation();
@@ -147,29 +147,6 @@ export function useAppMenus(menus: MenuTemplate[], deps: unknown[] = []) {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [focused, stable, modifier]);
-}
-
-function findShortcut(
-  menus: MenuTemplate[],
-  e: KeyboardEvent,
-  modifier: 'auto' | 'ctrl' | 'meta',
-): MenuItemTemplate | null {
-  const walk = (items: MenuItemTemplate[]): MenuItemTemplate | null => {
-    for (const it of items) {
-      if (it.shortcut && it.enabled !== false && matchesShortcut(e, it.shortcut, modifier))
-        return it;
-      if (it.submenu) {
-        const found = walk(it.submenu);
-        if (found) return found;
-      }
-    }
-    return null;
-  };
-  for (const m of menus) {
-    const found = walk(m.items);
-    if (found) return found;
-  }
-  return null;
 }
 
 /** A single shortcut bound while the window is focused. */

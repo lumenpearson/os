@@ -3,6 +3,8 @@ import {
   type GlobalShortcutId,
   getSettings,
   matchesShortcut,
+  menusClaimShortcut,
+  useMenuStore,
   useWindowStore,
 } from '@lumen/kernel';
 import { useKernel } from '@lumen/kernel/react';
@@ -82,13 +84,27 @@ export function useGlobalShortcuts() {
               : windows.minimize(focused.id)),
         ],
       ];
+      // A focused app may reinterpret the window-scoped chords: Mod+W means
+      // "close this tab" in a browser and "close this window" everywhere else.
+      // Since this listener runs in the capture phase and stops propagation,
+      // an app that binds the same chord would never see the key at all, so
+      // ask its menus first and stand aside when they claim it. The shell's
+      // own chords — Spotlight, lock, Mission Control — are never claimable.
+      const appClaims =
+        focused !== undefined &&
+        menusClaimShortcut(
+          useMenuStore.getState().byWindow[focused.id],
+          e,
+          settings.keyboard.modifier,
+        );
+
       for (const [id, run] of actions) {
-        if (hit(id)) {
-          e.preventDefault();
-          e.stopPropagation();
-          run();
-          return;
-        }
+        if (!hit(id)) continue;
+        if (appClaims && id.startsWith('window.')) return;
+        e.preventDefault();
+        e.stopPropagation();
+        run();
+        return;
       }
       if (
         e.key === 'Escape' &&

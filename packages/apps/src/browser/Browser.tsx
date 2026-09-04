@@ -1,4 +1,3 @@
-import { matchesShortcut } from '@lumen/kernel';
 import { useKernel, useSetting } from '@lumen/kernel/react';
 import { EmptyState, type MenuEntry, useLatest } from '@lumen/ui';
 import { join } from '@lumen/vfs';
@@ -8,7 +7,6 @@ import {
   type AppProps,
   useAppMenus,
   useArgs,
-  useCloseGuard,
   useJsonFile,
   useShortcut,
   useShortcutLabel,
@@ -247,42 +245,6 @@ export default function Browser({ args }: AppProps) {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [focused, keyboard.modifier, stateRef]);
-
-  // ── Mod+W: the tab, not the window ──────────────────────────────────────
-
-  // The shell owns Mod+W ("close window") and handles it in the capture phase,
-  // so a menu shortcut in the app never sees the key. While more than one tab
-  // is open the tab is what should close, so the key is claimed here and the
-  // guard below — which answers a turn later, after this listener has run —
-  // keeps the window. Anything else that asks to close (the title bar's ✕,
-  // Quit) never sets the claim and closes the window as it should.
-  const claimedClose = useRef(false);
-  useEffect(() => {
-    if (!focused) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (!matchesShortcut(e, SHORTCUTS.closeTab, keyboard.modifier)) return;
-      const current = stateRef.current;
-      if (current.tabs.length <= 1 || !current.activeId) return;
-      e.preventDefault();
-      claimedClose.current = true;
-      setTimeout(() => {
-        claimedClose.current = false;
-      }, 0);
-      dispatch({ type: 'close', id: current.activeId });
-    };
-    window.addEventListener('keydown', onKey, true);
-    return () => window.removeEventListener('keydown', onKey, true);
-  }, [focused, keyboard.modifier, stateRef]);
-
-  useCloseGuard(
-    useCallback(
-      () =>
-        new Promise<boolean>((resolve) => {
-          setTimeout(() => resolve(!claimedClose.current), 0);
-        }),
-      [],
-    ),
-  );
 
   // ── the toolbar's overflow menu ─────────────────────────────────────────
 
