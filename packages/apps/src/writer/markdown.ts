@@ -37,7 +37,7 @@ function renderBlock(node: ChildNode): string {
     case 'h1':
     case 'h2':
     case 'h3': {
-      const heading = inlineChildren(node).trim();
+      const heading = tidy(inlineChildren(node).trim());
       return heading === '' ? '' : `${'#'.repeat(Number(tag.slice(1)))} ${heading}`;
     }
     case 'hr':
@@ -52,7 +52,7 @@ function renderBlock(node: ChildNode): string {
     case 'br':
       return '';
     default:
-      return escapeStart(inlineChildren(node).trim());
+      return escapeStart(tidy(inlineChildren(node).trim()));
   }
 }
 
@@ -76,7 +76,7 @@ function renderItem(item: Element, marker: string): string {
       nested.push(renderList(child, tag === 'ol'));
     else inline.push(child);
   }
-  const text = inline.map(renderInline).join('').trim();
+  const text = tidy(inline.map(renderInline).join('').trim());
   const indent = ' '.repeat(marker.length);
   return [`${marker}${text}`, ...nested.map((block) => indentBy(block, indent))].join('\n');
 }
@@ -152,6 +152,11 @@ function indentBy(text: string, indent: string): string {
     .split('\n')
     .map((line) => (line === '' ? line : indent + line))
     .join('\n');
+}
+
+/** Collapse the double spaces that fall out of inline markers, not hard breaks. */
+function tidy(text: string): string {
+  return text.replace(/ {2,}(?!\n)/g, ' ');
 }
 
 function escapeText(text: string): string {

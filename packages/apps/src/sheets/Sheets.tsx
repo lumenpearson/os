@@ -11,7 +11,7 @@ import {
   ToolbarGroup,
   useDialogs,
 } from '@lumen/ui';
-import { basename, extname, join } from '@lumen/vfs';
+import { basename, dirname, extname, join } from '@lumen/vfs';
 import { AlignCenter, AlignLeft, AlignRight, Bold, Italic, Plus, X } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -40,6 +40,7 @@ import {
 } from './engine/refs';
 import { FunctionsDialog } from './FunctionsDialog';
 import { type EditorState, Grid, type Selection } from './Grid';
+import { buildMenus } from './menus';
 import {
   acceptsReference,
   addSheet,
@@ -57,6 +58,8 @@ import {
   insertColumns,
   insertReference,
   insertRows,
+  MAX_COLS,
+  MAX_ROWS,
   parseCellInput,
   parseWorkbook,
   pushHistory,
@@ -131,6 +134,8 @@ export default function Sheets({ args: initialArgs }: AppProps) {
   const [editor, setEditor] = useState<EditorState | null>(null);
   const [nameDraft, setNameDraft] = useState<string | null>(null);
   const [showFunctions, setShowFunctions] = useState(false);
+  /** Rows and columns the user has travelled to beyond the used area. */
+  const [floor, setFloor] = useState({ rows: 0, cols: 0 });
   const gridRoot = useRef<HTMLDivElement>(null);
   const buffer = useRef<{ block: Array<Array<string | number | undefined>>; origin: Coord } | null>(
     null,
@@ -219,6 +224,7 @@ export default function Sheets({ args: initialArgs }: AppProps) {
         setKind(documentKind);
         setPath(target);
         setActive(0);
+        setFloor({ rows: 0, cols: 0 });
         setSelection({ anchor: ORIGIN, focus: ORIGIN });
         setEditor(null);
         setPast([]);
@@ -271,7 +277,7 @@ export default function Sheets({ args: initialArgs }: AppProps) {
       mode: 'save',
       title: 'Save As',
       defaultName: suggested,
-      startDir: path ? join(path, '..') : join(kernel.home, 'Documents'),
+      startDir: path ? dirname(path) : join(kernel.home, 'Documents'),
       extensions: ['.lsd'],
     });
     if (typeof target !== 'string') return false;
@@ -289,7 +295,7 @@ export default function Sheets({ args: initialArgs }: AppProps) {
       mode: 'save',
       title: 'Export CSV',
       defaultName: `${stem}.csv`,
-      startDir: path ? join(path, '..') : join(kernel.home, 'Documents'),
+      startDir: path ? dirname(path) : join(kernel.home, 'Documents'),
       extensions: ['.csv'],
     });
     if (typeof target !== 'string') return;
@@ -338,22 +344,43 @@ export default function Sheets({ args: initialArgs }: AppProps) {
 
   // ── selection and editing ───────────────────────────────────────────────
 
-  const size = useMemo(() => gridSize(sheet), [sheet]);
+  const size = useMemo(() => gridSize(sheet, floor), [sheet, floor]);
   /** The bottom-right of the filled area, where End and Ctrl+End land. */
   const lastUsed = useMemo(() => {
     const used = usedBounds(sheet);
     return { col: Math.max(0, used.cols - 1), row: Math.max(0, used.rows - 1) };
   }, [sheet]);
 
+  /** Keep enough grid drawn to reach a cell the selection has travelled to. */
+  const growTo = useCallback((...cells: Coord[]) => {
+    const row = Math.max(...cells.map((c) => c.row)) + 2;
+    const col = Math.max(...cells.map((c) => c.col)) + 2;
+    setFloor((f) =>
+      f.rows >= row && f.cols >= col
+        ? f
+        : { rows: Math.max(f.rows, row), cols: Math.max(f.cols, col) },
+    );
+  }, []);
+
+  const selectRange = useCallback(
+    (anchor: Coord, focus: Coord) => {
+      growTo(anchor, focus);
+      setSelection({ anchor, focus });
+    },
+    [growTo],
+  );
+
+  /** Move the selection, growing the grid when it travels past the drawn edge. */
   const moveTo = useCallback(
     (cell: Coord, extend = false) => {
       const clamped = {
-        col: Math.max(0, Math.min(size.cols - 1, cell.col)),
-        row: Math.max(0, Math.min(size.rows - 1, cell.row)),
+        col: Math.max(0, Math.min(MAX_COLS - 1, cell.col)),
+        row: Math.max(0, Math.min(MAX_ROWS - 1, cell.row)),
       };
+      growTo(clamped);
       setSelection((s) => ({ anchor: extend ? s.anchor : clamped, focus: clamped }));
     },
-    [size.cols, size.rows],
+    [growTo],
   );
 
   const step = useCallback(
@@ -459,11 +486,11 @@ export default function Sheets({ args: initialArgs }: AppProps) {
     updateSheet((s) => writeBlock(s, target, block, fromBuffer && held ? held.origin : undefined));
     const height = block.length - 1;
     const width = Math.max(...block.map((line) => line.length)) - 1;
-    setSelection({
-      anchor: target,
-      focus: { col: target.col + Math.max(0, width), row: target.row + Math.max(0, height) },
+    selectRange(target, {
+      col: target.col + Math.max(0, width),
+      row: target.row + Math.max(0, height),
     });
-  }, [range.start, updateSheet]);
+  }, [range.start, updateSheet, selectRange]);
 
   const selectAll = useCallback(() => {
     setSelection({ anchor: ORIGIN, focus: { col: size.cols - 1, row: size.rows - 1 } });
@@ -593,7 +620,16 @@ export default function Sheets({ args: initialArgs }: AppProps) {
         return;
       case 'Escape':
         e.preventDefault();
-        setSelection({ anchor: selection.anchor, focus: selection.anchor });
+        // Collapse a range first; a second Escape leaves the grid so Tab can
+        // reach the sheet tabs, since Tab itself moves between cells.
+        if (
+          selection.anchor.col === selection.focus.col &&
+          selection.anchor.row === selection.focus.row
+        ) {
+          (e.target as HTMLElement).blur();
+        } else {
+          setSelection({ anchor: selection.anchor, focus: selection.anchor });
+        }
         return;
       default:
         break;
@@ -607,171 +643,55 @@ export default function Sheets({ args: initialArgs }: AppProps) {
   // ── menus ───────────────────────────────────────────────────────────────
 
   useAppMenus(
-    [
+    buildMenus(
       {
-        id: 'file',
-        label: 'File',
-        items: [
-          {
-            id: 'new',
-            label: 'New',
-            shortcut: 'Mod+N',
-            onSelect: () => launch('lumen.sheets', {}),
-          },
-          { id: 'open', label: 'Open…', shortcut: 'Mod+O', onSelect: () => void open() },
-          { type: 'separator', id: 'file-sep-1' },
-          { id: 'save', label: 'Save', shortcut: 'Mod+S', onSelect: () => void save() },
-          {
-            id: 'save-as',
-            label: 'Save As…',
-            shortcut: 'Shift+Mod+S',
-            onSelect: () => void saveAs(),
-          },
-          { id: 'export', label: 'Export CSV…', onSelect: () => void exportCsv() },
-          { type: 'separator', id: 'file-sep-2' },
-          { id: 'close', label: 'Close', shortcut: 'Mod+W', onSelect: () => void close() },
-        ],
+        canUndo: past.length > 0,
+        canRedo: future.length > 0,
+        bold: activeStyle?.bold ?? false,
+        italic: activeStyle?.italic ?? false,
+        align: activeStyle?.align,
+        format: activeStyle?.format ?? 'general',
+        canDeleteSheet: workbook.sheets.length > 1,
       },
       {
-        id: 'edit',
-        label: 'Edit',
-        items: [
-          {
-            id: 'undo',
-            label: 'Undo',
-            shortcut: 'Mod+Z',
-            enabled: past.length > 0,
-            onSelect: undo,
-          },
-          {
-            id: 'redo',
-            label: 'Redo',
-            shortcut: 'Shift+Mod+Z',
-            enabled: future.length > 0,
-            onSelect: redo,
-          },
-          { type: 'separator', id: 'edit-sep-1' },
-          { id: 'cut', label: 'Cut', shortcut: 'Mod+X', onSelect: cut },
-          { id: 'copy', label: 'Copy', shortcut: 'Mod+C', onSelect: copy },
-          { id: 'paste', label: 'Paste', shortcut: 'Mod+V', onSelect: () => void paste() },
-          {
-            id: 'clear',
-            label: 'Clear',
-            shortcut: 'Delete',
-            onSelect: () => {
-              if (!editingText()) clearSelection();
-            },
-          },
-          { type: 'separator', id: 'edit-sep-2' },
-          {
-            id: 'select-all',
-            label: 'Select All',
-            shortcut: 'Mod+A',
-            onSelect: () => {
-              if (!editingText()) selectAll();
-            },
-          },
-        ],
+        newWindow: () => launch('lumen.sheets', {}),
+        open: () => void open(),
+        save: () => void save(),
+        saveAs: () => void saveAs(),
+        exportCsv: () => void exportCsv(),
+        close: () => void close(),
+        undo,
+        redo,
+        cut,
+        copy,
+        paste: () => void paste(),
+        // Delete and Select All belong to whatever text field has the caret.
+        clear: () => {
+          if (!editingText()) clearSelection();
+        },
+        selectAll: () => {
+          if (!editingText()) selectAll();
+        },
+        toggleBold,
+        toggleItalic,
+        setAlign,
+        setFormat,
+        insertRowAbove: () => insertRowAt(range.start.row),
+        insertRowBelow: () => insertRowAt(range.end.row + 1),
+        insertColumnLeft: () => insertColumnAt(range.start.col),
+        insertColumnRight: () => insertColumnAt(range.end.col + 1),
+        deleteRow: () =>
+          updateSheet((s) => deleteRows(s, range.start.row, range.end.row - range.start.row + 1)),
+        deleteColumn: () =>
+          updateSheet((s) =>
+            deleteColumns(s, range.start.col, range.end.col - range.start.col + 1),
+          ),
+        addSheet: addNewSheet,
+        renameSheet: () => void renameSheetAt(active),
+        deleteSheet: () => void deleteSheetAt(active),
+        showFunctions: () => setShowFunctions(true),
       },
-      {
-        id: 'format',
-        label: 'Format',
-        items: [
-          {
-            id: 'bold',
-            label: 'Bold',
-            shortcut: 'Mod+B',
-            type: 'checkbox',
-            checked: activeStyle?.bold ?? false,
-            onSelect: toggleBold,
-          },
-          {
-            id: 'italic',
-            label: 'Italic',
-            shortcut: 'Mod+I',
-            type: 'checkbox',
-            checked: activeStyle?.italic ?? false,
-            onSelect: toggleItalic,
-          },
-          { type: 'separator', id: 'format-sep-1' },
-          {
-            id: 'align',
-            label: 'Align',
-            type: 'submenu',
-            submenu: (['left', 'center', 'right'] as const).map((align) => ({
-              id: `align-${align}`,
-              label: align === 'left' ? 'Left' : align === 'center' ? 'Center' : 'Right',
-              type: 'radio' as const,
-              checked: activeStyle?.align === align,
-              onSelect: () => setAlign(align),
-            })),
-          },
-          {
-            id: 'number',
-            label: 'Number',
-            type: 'submenu',
-            submenu: NUMBER_FORMATS.map((format) => ({
-              id: `format-${format.value}`,
-              label: format.label,
-              type: 'radio' as const,
-              checked: (activeStyle?.format ?? 'general') === format.value,
-              onSelect: () => setFormat(format.value),
-            })),
-          },
-        ],
-      },
-      {
-        id: 'insert',
-        label: 'Insert',
-        items: [
-          { id: 'row-above', label: 'Row Above', onSelect: () => insertRowAt(range.start.row) },
-          { id: 'row-below', label: 'Row Below', onSelect: () => insertRowAt(range.end.row + 1) },
-          { id: 'col-left', label: 'Column Left', onSelect: () => insertColumnAt(range.start.col) },
-          {
-            id: 'col-right',
-            label: 'Column Right',
-            onSelect: () => insertColumnAt(range.end.col + 1),
-          },
-          { type: 'separator', id: 'insert-sep-1' },
-          {
-            id: 'delete-row',
-            label: 'Delete Row',
-            onSelect: () =>
-              updateSheet((s) =>
-                deleteRows(s, range.start.row, range.end.row - range.start.row + 1),
-              ),
-          },
-          {
-            id: 'delete-col',
-            label: 'Delete Column',
-            onSelect: () =>
-              updateSheet((s) =>
-                deleteColumns(s, range.start.col, range.end.col - range.start.col + 1),
-              ),
-          },
-        ],
-      },
-      {
-        id: 'sheet',
-        label: 'Sheet',
-        items: [
-          { id: 'add-sheet', label: 'Add Sheet', onSelect: addNewSheet },
-          { id: 'rename-sheet', label: 'Rename…', onSelect: () => void renameSheetAt(active) },
-          {
-            id: 'delete-sheet',
-            label: 'Delete Sheet',
-            danger: true,
-            enabled: workbook.sheets.length > 1,
-            onSelect: () => void deleteSheetAt(active),
-          },
-        ],
-      },
-      {
-        id: 'help',
-        label: 'Help',
-        items: [{ id: 'functions', label: 'Functions…', onSelect: () => setShowFunctions(true) }],
-      },
-    ],
+    ),
     [
       past.length,
       future.length,
@@ -825,7 +745,7 @@ export default function Sheets({ args: initialArgs }: AppProps) {
 
   const goToName = () => {
     const parsed = nameDraft ? parseRefOrRange(nameDraft) : null;
-    if (parsed) setSelection({ anchor: parsed.start, focus: parsed.end });
+    if (parsed) selectRange(parsed.start, parsed.end);
     setNameDraft(null);
     focusGrid();
   };
@@ -928,7 +848,7 @@ export default function Sheets({ args: initialArgs }: AppProps) {
           sheet={sheet}
           values={values}
           selection={selection}
-          onSelectionChange={setSelection}
+          onSelectionChange={(next) => selectRange(next.anchor, next.focus)}
           editor={editor}
           onEditorChange={setEditor}
           onCommit={commitCell}
@@ -936,6 +856,7 @@ export default function Sheets({ args: initialArgs }: AppProps) {
           onColumnResize={(col, width) => updateSheet((s) => setColumnWidth(s, col, width))}
           onRowResize={(row, height) => updateSheet((s) => setRowHeight(s, row, height))}
           onReferencePick={onReferencePick}
+          size={size}
           locale={locale}
           currency={currency}
         />

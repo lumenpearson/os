@@ -64,7 +64,8 @@ const ALIGNMENTS: Array<{ value: Alignment; label: string }> = [
 ];
 
 export function buildMenus(state: WriterMenuState, actions: WriterActions): MenuTemplate[] {
-  const editable = !state.readOnly;
+  // Reading mode locks the page, so the commands that would write to it rest.
+  const editable = !state.readOnly && !state.readingMode;
   return [
     {
       id: 'file',
@@ -73,7 +74,13 @@ export function buildMenus(state: WriterMenuState, actions: WriterActions): Menu
         { id: 'new', label: 'New', shortcut: 'Mod+N', onSelect: actions.newDocument },
         { id: 'open', label: 'Open…', shortcut: 'Mod+O', onSelect: actions.open },
         separator,
-        { id: 'save', label: 'Save', shortcut: 'Mod+S', enabled: editable, onSelect: actions.save },
+        {
+          id: 'save',
+          label: 'Save',
+          shortcut: 'Mod+S',
+          enabled: !state.readOnly,
+          onSelect: actions.save,
+        },
         { id: 'save-as', label: 'Save As…', shortcut: 'Shift+Mod+S', onSelect: actions.saveAs },
         separator,
         { id: 'export-html', label: 'Export as HTML…', onSelect: () => actions.exportAs('html') },

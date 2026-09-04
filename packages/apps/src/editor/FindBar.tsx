@@ -31,6 +31,8 @@ export interface FindBarProps {
   inputRef: RefObject<HTMLInputElement | null>;
   onPatch: (patch: Partial<FindState>) => void;
   onNavigate: (forward: boolean) => void;
+  /** Raised while a field here holds focus, so Edit commands stand down. */
+  onFieldFocus: (focused: boolean) => void;
   onReplace: () => void;
   onReplaceAll: () => void;
   onClose: () => void;
@@ -54,6 +56,7 @@ export function FindBar({
   inputRef,
   onPatch,
   onNavigate,
+  onFieldFocus,
   onReplace,
   onReplaceAll,
   onClose,
@@ -72,6 +75,8 @@ export function FindBar({
           placeholder="Find"
           aria-label="Find"
           invalid={Boolean(error)}
+          onFocus={() => onFieldFocus(true)}
+          onBlur={() => onFieldFocus(false)}
           onChange={(e) => onPatch({ query: e.target.value })}
           onKeyDown={(e) => {
             if (e.key === 'Enter') {
@@ -143,6 +148,8 @@ export function FindBar({
             placeholder="Replace with"
             aria-label="Replace with"
             disabled={readOnly}
+            onFocus={() => onFieldFocus(true)}
+            onBlur={() => onFieldFocus(false)}
             onChange={(e) => onPatch({ replacement: e.target.value })}
             onKeyDown={(e) => {
               if (e.key === 'Enter') {

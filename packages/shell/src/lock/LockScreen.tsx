@@ -142,7 +142,9 @@ export default function LockScreen() {
             aria-live="polite"
           >
             {error && <span>{error}</span>}
-            {!error && failedAttempts > 0 && settings.lock.showHint && user?.hint && (
+            {/* The hint earns its place after a wrong attempt, which is exactly
+                when an error is showing — so it sits alongside, not instead. */}
+            {failedAttempts > 0 && settings.lock.showHint && user?.hint && (
               <span>Hint: {user.hint}</span>
             )}
           </div>

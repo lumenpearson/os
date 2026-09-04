@@ -7,6 +7,11 @@ import type { MenuItemTemplate, MenuTemplate } from '@lumen/kernel';
 export interface EditorMenuState {
   hasPath: boolean;
   readOnly: boolean;
+  /**
+   * Focus is in the find or replace field. The Edit commands belong to the
+   * document, so they stand down and let the browser edit the field.
+   */
+  fieldFocused: boolean;
   canUndo: boolean;
   canRedo: boolean;
   hasSelection: boolean;
@@ -76,14 +81,14 @@ export function buildEditorMenus(state: EditorMenuState, actions: EditorActions)
           id: 'undo',
           label: 'Undo',
           shortcut: 'Mod+Z',
-          enabled: state.canUndo && !state.readOnly,
+          enabled: state.canUndo && !state.readOnly && !state.fieldFocused,
           onSelect: actions.undo,
         },
         {
           id: 'redo',
           label: 'Redo',
           shortcut: 'Shift+Mod+Z',
-          enabled: state.canRedo && !state.readOnly,
+          enabled: state.canRedo && !state.readOnly && !state.fieldFocused,
           onSelect: actions.redo,
         },
         separator,
@@ -91,24 +96,30 @@ export function buildEditorMenus(state: EditorMenuState, actions: EditorActions)
           id: 'cut',
           label: 'Cut',
           shortcut: 'Mod+X',
-          enabled: state.hasSelection && !state.readOnly,
+          enabled: state.hasSelection && !state.readOnly && !state.fieldFocused,
           onSelect: actions.cut,
         },
         {
           id: 'copy',
           label: 'Copy',
           shortcut: 'Mod+C',
-          enabled: state.hasSelection,
+          enabled: state.hasSelection && !state.fieldFocused,
           onSelect: actions.copy,
         },
         {
           id: 'paste',
           label: 'Paste',
           shortcut: 'Mod+V',
-          enabled: !state.readOnly,
+          enabled: !state.readOnly && !state.fieldFocused,
           onSelect: actions.paste,
         },
-        { id: 'select-all', label: 'Select All', shortcut: 'Mod+A', onSelect: actions.selectAll },
+        {
+          id: 'select-all',
+          label: 'Select All',
+          shortcut: 'Mod+A',
+          enabled: !state.fieldFocused,
+          onSelect: actions.selectAll,
+        },
         separator,
         { id: 'find', label: 'Find…', shortcut: 'Mod+F', onSelect: actions.find },
         {

@@ -6,9 +6,19 @@
  */
 import { isText } from './dom';
 
-/** Names shared with the stylesheet in styles.ts. */
-export const HIGHLIGHT_ALL = 'lumen-writer-match';
-export const HIGHLIGHT_CURRENT = 'lumen-writer-match-current';
+/**
+ * Highlight registry names. They are global to the page, so each window gets
+ * its own pair and one Writer window cannot wipe another's search.
+ */
+export interface HighlightNames {
+  all: string;
+  current: string;
+}
+
+export function highlightNames(windowId: string): HighlightNames {
+  const suffix = windowId.replace(/[^a-zA-Z0-9_-]/g, '') || 'window';
+  return { all: `lumen-writer-match-${suffix}`, current: `lumen-writer-current-${suffix}` };
+}
 
 export interface Match {
   start: number;
@@ -109,19 +119,23 @@ export function supportsHighlights(): boolean {
 }
 
 /** Paint every match, and the current one on top. Returns false without the API. */
-export function showMatches(ranges: Range[], current: Range | null): boolean {
+export function showMatches(
+  names: HighlightNames,
+  ranges: Range[],
+  current: Range | null,
+): boolean {
   const api = highlightApi();
   if (api === null) return false;
-  paint(api, HIGHLIGHT_ALL, ranges);
-  paint(api, HIGHLIGHT_CURRENT, current === null ? [] : [current]);
+  paint(api, names.all, ranges);
+  paint(api, names.current, current === null ? [] : [current]);
   return true;
 }
 
-export function clearMatches(): void {
+export function clearMatches(names: HighlightNames): void {
   const api = highlightApi();
   if (api === null) return;
-  api.registry.delete(HIGHLIGHT_ALL);
-  api.registry.delete(HIGHLIGHT_CURRENT);
+  api.registry.delete(names.all);
+  api.registry.delete(names.current);
 }
 
 function paint(

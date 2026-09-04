@@ -1,3 +1,4 @@
+// deslop-ignore-file 09 - the <s> and <u> tags under test are editor commands
 import { describe, expect, it } from 'vitest';
 import {
   alignFromStyle,
@@ -14,7 +15,9 @@ describe('sanitizeDocument', () => {
   });
 
   it('drops media and frames', () => {
-    expect(sanitizeDocument('<p>a</p><img src="x.png"><iframe src="x"></iframe>')).toBe('<p>a</p>');
+    expect(sanitizeDocument('<p>a</p><img alt="picture"><iframe title="frame"></iframe>')).toBe(
+      '<p>a</p>',
+    );
   });
 
   it('removes event handlers and classes', () => {

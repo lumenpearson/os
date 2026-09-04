@@ -14,6 +14,7 @@ import {
 import {
   type AppProps,
   formatDate,
+  useApp,
   useAppMenus,
   useArgs,
   useCloseGuard,
@@ -40,6 +41,7 @@ import {
 import {
   ALIGN_COMMANDS,
   type Alignment,
+  anchorHtml,
   type BlockType,
   closestLink,
   type EditorState,
@@ -50,7 +52,6 @@ import {
   isInsideList,
   type Mark,
   readEditorState,
-  anchorHtml,
   unwrapElement,
 } from './editing';
 import { FindBar } from './FindBar';
@@ -58,6 +59,7 @@ import {
   buildTextIndex,
   clearMatches,
   findMatches,
+  highlightNames,
   rangeForMatch,
   scrollRangeIntoView,
   selectRange,
@@ -68,7 +70,7 @@ import { htmlToMarkdown } from './markdown';
 import { buildMenus, type ExportFormat, type WriterActions } from './menus';
 import { EMPTY_DOCUMENT, normalizeLinkInput, sanitizeHtml } from './sanitize';
 import { htmlToPlainText, type TextStats, textStats } from './stats';
-import { WRITER_CSS } from './styles';
+import { writerCss } from './styles';
 import { WriterToolbar } from './WriterToolbar';
 
 const APP_ID = 'lumen.writer';
@@ -109,6 +111,7 @@ export default function Writer({ args: launchArgs }: AppProps) {
   const pickFile = useFilePicker();
   const notify = useNotify();
   const { launch } = useLauncher();
+  const { windowId } = useApp();
   const controls = useWindowControls();
   const shortcutLabel = useShortcutLabel();
 
@@ -133,15 +136,21 @@ export default function Writer({ args: launchArgs }: AppProps) {
   const [matchIndex, setMatchIndex] = useState(0);
   const [matchCount, setMatchCount] = useState(0);
 
-  const name = path === null ? 'Untitled' : basename(path);
+  const highlights = useMemo(() => highlightNames(windowId), [windowId]);
+  const css = useMemo(() => writerCss(highlights), [highlights]);
+
+  const documentName = path === null ? 'Untitled' : basename(path);
   const title = documentTitle(path);
-  useTitle(name);
+  useTitle(documentName);
   useDirty(dirty);
 
-  const setDocumentPath = controls.setDocument;
+  // The window object changes as the window moves; keep the commands stable.
+  const controlsRef = useRef(controls);
+  controlsRef.current = controls;
+
   useEffect(() => {
-    setDocumentPath(path);
-  }, [setDocumentPath, path]);
+    controlsRef.current.setDocument(path);
+  }, [path]);
 
   // ── document state ──────────────────────────────────────────────────────
 
@@ -154,32 +163,40 @@ export default function Writer({ args: launchArgs }: AppProps) {
     page.dataset.empty = String(isEmptyDocument(page.innerHTML));
   }, []);
 
-  const applyFind = useCallback((text: string, index: number) => {
-    const page = pageRef.current;
-    if (page === null) return;
-    clearMatches();
-    if (text === '') {
-      setMatchCount(0);
-      setMatchIndex(0);
-      return;
-    }
-    const textIndex = buildTextIndex(page);
-    const matches = findMatches(textIndex.text, text);
-    setMatchCount(matches.length);
-    if (matches.length === 0) return;
-    const at = Math.min(Math.max(index, 0), matches.length - 1);
-    setMatchIndex(at);
-    const ranges: Range[] = [];
-    for (const match of matches) {
-      const range = rangeForMatch(textIndex, match);
-      if (range !== null) ranges.push(range);
-    }
-    const current = ranges[at] ?? null;
-    if (!showMatches(ranges, current) && current !== null) selectRange(current);
-    if (current !== null && scrollRef.current !== null) {
-      scrollRangeIntoView(current, scrollRef.current);
-    }
-  }, []);
+  /**
+   * Paint the matches. `reveal` is off while the document is being edited:
+   * without the Highlight API the current match is shown by selecting it,
+   * which would move the caret out from under the writer.
+   */
+  const applyFind = useCallback(
+    (text: string, index: number, reveal = true) => {
+      const page = pageRef.current;
+      if (page === null) return;
+      clearMatches(highlights);
+      if (text === '') {
+        setMatchCount(0);
+        setMatchIndex(0);
+        return;
+      }
+      const textIndex = buildTextIndex(page);
+      const matches = findMatches(textIndex.text, text);
+      setMatchCount(matches.length);
+      if (matches.length === 0) return;
+      const at = Math.min(Math.max(index, 0), matches.length - 1);
+      setMatchIndex(at);
+      const ranges: Range[] = [];
+      for (const match of matches) {
+        const range = rangeForMatch(textIndex, match);
+        if (range !== null) ranges.push(range);
+      }
+      const current = ranges[at] ?? null;
+      const painted = showMatches(highlights, ranges, current);
+      if (!reveal || current === null) return;
+      if (!painted) selectRange(current);
+      if (scrollRef.current !== null) scrollRangeIntoView(current, scrollRef.current);
+    },
+    [highlights],
+  );
 
   const findState = useRef({ open: false, query: '', index: 0 });
   findState.current = { open: findOpen, query, index: matchIndex };
@@ -193,10 +210,17 @@ export default function Writer({ args: launchArgs }: AppProps) {
       setDirty(page.innerHTML !== savedHtml.current);
       refreshStats();
       const find = findState.current;
-      if (find.open) applyFind(find.query, find.index);
+      if (find.open) applyFind(find.query, find.index, false);
     }, SYNC_DELAY);
   }, [refreshStats, applyFind]);
 
+  /** Typing: the selection listener already keeps the toolbar in step. */
+  const onInput = useCallback(() => {
+    setDirty(true);
+    scheduleSync();
+  }, [scheduleSync]);
+
+  /** After a command, where the selection may not have moved at all. */
   const markEdited = useCallback(() => {
     const page = pageRef.current;
     if (page === null) return;
@@ -267,9 +291,9 @@ export default function Writer({ args: launchArgs }: AppProps) {
       document.removeEventListener('selectionchange', onSelectionChange);
       if (frame.current !== null) cancelAnimationFrame(frame.current);
       if (syncTimer.current !== null) clearTimeout(syncTimer.current);
-      clearMatches();
+      clearMatches(highlights);
     };
-  }, []);
+  }, [highlights]);
 
   // ── commands ────────────────────────────────────────────────────────────
 
@@ -288,13 +312,13 @@ export default function Writer({ args: launchArgs }: AppProps) {
   }, []);
 
   const command = useCallback(
-    (name_: string, value?: string) => {
-      if (readOnly) return;
+    (name: string, value?: string) => {
+      if (readOnly || readingMode) return;
       focusPage();
-      exec(name_, value);
+      exec(name, value);
       markEdited();
     },
-    [readOnly, focusPage, markEdited],
+    [readOnly, readingMode, focusPage, markEdited],
   );
 
   // ── files ───────────────────────────────────────────────────────────────
@@ -340,7 +364,7 @@ export default function Writer({ args: launchArgs }: AppProps) {
   const confirmDiscard = useCallback(async (): Promise<boolean> => {
     if (!dirty) return true;
     const choice = await dialogs.choose({
-      title: `Save changes to ${name}?`,
+      title: `Save changes to ${documentName}?`,
       message: 'Changes since the last save will be lost.',
       buttons: [
         { id: 'discard', label: "Don't Save" },
@@ -350,7 +374,7 @@ export default function Writer({ args: launchArgs }: AppProps) {
     });
     if (choice === 'save') return save();
     return choice === 'discard';
-  }, [dirty, name, dialogs, save]);
+  }, [dirty, documentName, dialogs, save]);
 
   useCloseGuard(dirty ? confirmDiscard : null);
 
@@ -405,7 +429,7 @@ export default function Writer({ args: launchArgs }: AppProps) {
 
   const link = useCallback(async () => {
     const page = pageRef.current;
-    if (page === null || readOnly) return;
+    if (page === null || readOnly || readingMode) return;
     const selection = document.getSelection();
     const existing = closestLink(selection?.anchorNode ?? null, page);
     const collapsed = selection === null || selection.isCollapsed;
@@ -439,11 +463,11 @@ export default function Writer({ args: launchArgs }: AppProps) {
     if (collapsed) exec('insertHTML', anchorHtml(href, href));
     else exec('createLink', href);
     markEdited();
-  }, [readOnly, dialogs, focusPage, markEdited]);
+  }, [readOnly, readingMode, dialogs, focusPage, markEdited]);
 
   const removeLink = useCallback(() => {
     const page = pageRef.current;
-    if (page === null || readOnly) return;
+    if (page === null || readOnly || readingMode) return;
     const selection = document.getSelection();
     if (selection !== null && !selection.isCollapsed) {
       command('unlink');
@@ -453,15 +477,15 @@ export default function Writer({ args: launchArgs }: AppProps) {
     if (existing === null) return;
     unwrapElement(existing);
     markEdited();
-  }, [readOnly, command, markEdited]);
+  }, [readOnly, readingMode, command, markEdited]);
 
   const clearFormatting = useCallback(() => {
-    if (readOnly) return;
+    if (readOnly || readingMode) return;
     focusPage();
     exec('removeFormat');
     exec('unlink');
     markEdited();
-  }, [readOnly, focusPage, markEdited]);
+  }, [readOnly, readingMode, focusPage, markEdited]);
 
   const selectAll = useCallback(() => {
     const active = document.activeElement;
@@ -474,7 +498,7 @@ export default function Writer({ args: launchArgs }: AppProps) {
   }, [focusPage]);
 
   const pasteFromClipboard = useCallback(async () => {
-    if (readOnly) return;
+    if (readOnly || readingMode) return;
     try {
       const clipboard = navigator.clipboard;
       if (typeof clipboard?.read === 'function') {
@@ -494,24 +518,27 @@ export default function Writer({ args: launchArgs }: AppProps) {
     } catch {
       notify('Could not read the clipboard', 'Use the paste shortcut inside the page instead.');
     }
-  }, [readOnly, focusPage, markEdited, notify]);
+  }, [readOnly, readingMode, focusPage, markEdited, notify]);
 
   // ── find ────────────────────────────────────────────────────────────────
 
   const openFind = useCallback(() => {
     setFindOpen(true);
     setReadingMode(false);
-    requestAnimationFrame(() => findInputRef.current?.select());
   }, []);
+
+  useEffect(() => {
+    if (findOpen) findInputRef.current?.select();
+  }, [findOpen]);
 
   const closeFind = useCallback(() => {
     setFindOpen(false);
     setQuery('');
-    clearMatches();
+    clearMatches(highlights);
     setMatchCount(0);
     setMatchIndex(0);
     focusPage();
-  }, [focusPage]);
+  }, [focusPage, highlights]);
 
   const step = useCallback(
     (direction: 1 | -1) => {
@@ -528,11 +555,11 @@ export default function Writer({ args: launchArgs }: AppProps) {
 
   useEffect(() => {
     if (!findOpen) {
-      clearMatches();
+      clearMatches(highlights);
       return;
     }
     applyFind(query, 0);
-  }, [findOpen, query, applyFind]);
+  }, [findOpen, query, applyFind, highlights]);
 
   useShortcut('Escape', () => {
     if (findOpen) closeFind();
@@ -548,7 +575,7 @@ export default function Writer({ args: launchArgs }: AppProps) {
       save: () => void save(),
       saveAs: () => void saveAs(),
       exportAs: (format) => void exportAs(format),
-      closeWindow: () => void controls.close(),
+      closeWindow: () => void controlsRef.current.close(),
       undo: () => command('undo'),
       redo: () => command('redo'),
       cut: () => command('cut'),
@@ -574,7 +601,10 @@ export default function Writer({ args: launchArgs }: AppProps) {
       insertRule: () => command('insertHorizontalRule'),
       insertDate: () => command('insertText', formatDate(Date.now())),
       toggleReadingMode: () => setReadingMode((value) => !value),
-      toggleFullScreen: () => controls.setFullscreen(!controls.window?.fullscreen),
+      toggleFullScreen: () => {
+        const current = controlsRef.current;
+        current.setFullscreen(current.window?.fullscreen !== true);
+      },
       showShortcuts: () =>
         void dialogs.alert({
           title: 'Keyboard shortcuts',
@@ -602,7 +632,6 @@ export default function Writer({ args: launchArgs }: AppProps) {
       save,
       saveAs,
       exportAs,
-      controls,
       command,
       focusPage,
       pasteFromClipboard,
@@ -668,7 +697,7 @@ export default function Writer({ args: launchArgs }: AppProps) {
 
   return (
     <div className="flex h-full w-full flex-col bg-canvas">
-      <style>{WRITER_CSS}</style>
+      <style>{css}</style>
       {!readingMode && (
         <WriterToolbar
           editor={editor}
@@ -720,7 +749,7 @@ export default function Writer({ args: launchArgs }: AppProps) {
             contentEditable={editable}
             suppressContentEditableWarning
             className="writer-page mx-auto max-w-[720px] rounded-md border border-rule bg-surface shadow-sm"
-            onInput={markEdited}
+            onInput={onInput}
             onPaste={onPaste}
             onKeyDown={onKeyDown}
           />

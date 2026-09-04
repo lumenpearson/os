@@ -2,10 +2,13 @@
  * The page itself: a sheet of paper on the canvas. These rules style content
  * the editor creates at runtime (headings, lists, quotes, code), which
  * utility classes cannot reach, so they ship as one scoped stylesheet.
+ *
+ * deslop-ignore-file 09 34 — the underline here is a link and the mono is a
+ * code block; both are document content the writer asked for.
  */
-import { HIGHLIGHT_ALL, HIGHLIGHT_CURRENT } from './find';
+import type { HighlightNames } from './find';
 
-export const WRITER_CSS = `
+const PAGE_CSS = `
 .writer-scroll { container-type: inline-size; }
 .writer-page {
   --writer-pad: 64px;
@@ -64,6 +67,12 @@ export const WRITER_CSS = `
 .writer-page pre code { background: none; padding: 0; font-size: inherit; }
 .writer-page a { color: var(--lumen-accent); text-decoration: underline; text-underline-offset: 2px; }
 .writer-page hr { border: 0; border-top: 1px solid var(--lumen-rule-strong); margin: 24px 0; }
-::highlight(${HIGHLIGHT_ALL}) { background-color: var(--lumen-selection); }
-::highlight(${HIGHLIGHT_CURRENT}) { background-color: var(--lumen-accent); color: var(--lumen-accent-ink); }
 `;
+
+/** The page rules plus this window's two find highlights. */
+export function writerCss(names: HighlightNames): string {
+  return `${PAGE_CSS}
+::highlight(${names.all}) { background-color: var(--lumen-selection); }
+::highlight(${names.current}) { background-color: var(--lumen-accent); color: var(--lumen-accent-ink); }
+`;
+}

@@ -115,6 +115,7 @@ const EXPORT_CSS = [
   'h3{font-size:16px;line-height:1.4;margin:1.3em 0 .5em;font-weight:600}',
   'p{margin:0 0 .75em}ul,ol{margin:0 0 .75em;padding-left:1.5em}',
   'blockquote{margin:1em 0;padding-left:1em;border-left:2px solid #d8d8dc;color:#5b5e66}',
+  // deslop-ignore-next-line 34 — mono is the code block of the exported document
   "pre,code{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:13px}",
   'pre{background:#f2f2f4;border-radius:5px;padding:12px 14px;white-space:pre-wrap}',
   'code{background:#f2f2f4;border-radius:3px;padding:1px 4px}',

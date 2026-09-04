@@ -30,7 +30,7 @@ export const Switch = forwardRef<HTMLInputElement, SwitchProps>(function Switch(
           type="checkbox"
           // biome-ignore lint/a11y/useAriaPropsForRole: a native checkbox maps its checked state to aria-checked
           role="switch"
-          className="peer sr-only"
+          className="peer absolute inset-0 z-10 m-0 cursor-pointer opacity-0 disabled:cursor-default"
           checked={checked}
           disabled={disabled}
           {...rest}
@@ -84,7 +84,7 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(function Che
           ref={ref}
           id={inputId}
           type="checkbox"
-          className="peer sr-only"
+          className="peer absolute inset-0 z-10 m-0 cursor-pointer opacity-0 disabled:cursor-default"
           disabled={disabled}
           aria-checked={indeterminate ? 'mixed' : undefined}
           {...rest}
@@ -137,7 +137,7 @@ export const Radio = forwardRef<HTMLInputElement, RadioProps>(function Radio(
           ref={ref}
           id={inputId}
           type="radio"
-          className="peer sr-only"
+          className="peer absolute inset-0 z-10 m-0 cursor-pointer opacity-0 disabled:cursor-default"
           disabled={disabled}
           {...rest}
         />

@@ -38,6 +38,7 @@ import {
   COALESCE_MS,
   canRedo,
   canUndo,
+  clampFontSize,
   createHistory,
   DEFAULT_FONT_SIZE,
   DEFAULT_PREFS,
@@ -88,6 +89,15 @@ function describe(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
+/** A selection plus the end the caret sits on, which is what Ln/Col reports. */
+interface Caret extends TextSelection {
+  backward: boolean;
+}
+
+function caretOffset(caret: Caret): number {
+  return caret.backward ? caret.start : caret.end;
+}
+
 export default function Editor(props: AppProps) {
   const args = useArgs(props.args);
   const kernel = useKernel();
@@ -104,10 +114,11 @@ export default function Editor(props: AppProps) {
   );
   const prefs = useMemo(() => normalizePrefs(stored), [stored]);
 
-  const [caret, setCaret] = useState<TextSelection>({ start: 0, end: 0 });
+  const [caret, setCaret] = useState<Caret>({ start: 0, end: 0, backward: false });
   const [find, setFind] = useState<FindState>(EMPTY_FIND);
   const [matchIndex, setMatchIndex] = useState(-1);
   const [preview, setPreview] = useState(false);
+  const [fieldFocused, setFieldFocused] = useState(false);
   const [undoable, setUndoable] = useState({ undo: false, redo: false });
 
   const textarea = useRef<HTMLTextAreaElement>(null);
@@ -125,6 +136,15 @@ export default function Editor(props: AppProps) {
 
   const [frame, size] = useElementSize<HTMLDivElement>();
   const narrow = size.width > 0 && size.width < NARROW_WIDTH;
+
+  // The caret drives the status bar; a backward drag reports its start.
+  const moveCaret = useCallback((selection: TextSelection, backward = false) => {
+    setCaret((prev) =>
+      prev.start === selection.start && prev.end === selection.end && prev.backward === backward
+        ? prev
+        : { start: selection.start, end: selection.end, backward },
+    );
+  }, []);
 
   // ── history ─────────────────────────────────────────────────────────────
 
@@ -147,7 +167,7 @@ export default function Editor(props: AppProps) {
     (result: EditResult, options: { merge?: boolean } = {}) => {
       pendingSelection.current = result.selection;
       latest.current.doc.setText(result.text);
-      setCaret(result.selection);
+      moveCaret(result.selection);
       history.current = recordSnapshot(
         history.current,
         { text: result.text, selection: result.selection },
@@ -156,18 +176,18 @@ export default function Editor(props: AppProps) {
       );
       syncUndoable();
     },
-    [latest, syncUndoable],
+    [latest, syncUndoable, moveCaret],
   );
 
   const restore = useCallback(
     (snapshot: Snapshot) => {
       pendingSelection.current = snapshot.selection;
       latest.current.doc.setText(snapshot.text);
-      setCaret(snapshot.selection);
+      moveCaret(snapshot.selection);
       textarea.current?.focus();
       syncUndoable();
     },
-    [latest, syncUndoable],
+    [latest, syncUndoable, moveCaret],
   );
 
   const undo = useCallback(() => {
@@ -196,12 +216,11 @@ export default function Editor(props: AppProps) {
   const readCaret = useCallback(() => {
     const area = textarea.current;
     if (!area) return;
-    setCaret((prev) =>
-      prev.start === area.selectionStart && prev.end === area.selectionEnd
-        ? prev
-        : { start: area.selectionStart, end: area.selectionEnd },
+    moveCaret(
+      { start: area.selectionStart, end: area.selectionEnd },
+      area.selectionDirection === 'backward',
     );
-  }, []);
+  }, [moveCaret]);
 
   useEffect(() => {
     const onSelectionChange = () => {
@@ -238,6 +257,12 @@ export default function Editor(props: AppProps) {
     [latest, syncScroll],
   );
 
+  const closeFind = useCallback(() => {
+    setFind((state) => ({ ...state, open: false }));
+    setFieldFocused(false);
+    textarea.current?.focus();
+  }, []);
+
   // ── typing ──────────────────────────────────────────────────────────────
 
   const onChange = useCallback(
@@ -260,7 +285,7 @@ export default function Editor(props: AppProps) {
       if (event.key === 'Escape') {
         if (find.open) {
           event.preventDefault();
-          setFind((state) => ({ ...state, open: false }));
+          closeFind();
           return;
         }
         // Tab types an indent here, so Escape first releases it for focus.
@@ -281,7 +306,7 @@ export default function Editor(props: AppProps) {
         applyEdit(newlineWithIndent(text, selection));
       }
     },
-    [applyEdit, find.open, latest],
+    [applyEdit, find.open, latest, closeFind],
   );
 
   // ── find and replace ────────────────────────────────────────────────────
@@ -305,10 +330,10 @@ export default function Editor(props: AppProps) {
       const area = textarea.current;
       if (!match || !area) return;
       area.setSelectionRange(match.start, match.end);
-      setCaret({ start: match.start, end: match.end });
+      moveCaret({ start: match.start, end: match.end }, true);
       revealOffset(match.start);
     },
-    [revealOffset],
+    [revealOffset, moveCaret],
   );
 
   // Incremental search: while the query is being typed the first match after
@@ -332,7 +357,7 @@ export default function Editor(props: AppProps) {
     if (matches.length === 0) return;
     const index =
       matchIndex < 0
-        ? nextMatchFrom(matches, caret.start, forward)
+        ? nextMatchFrom(matches, forward ? caret.end : caret.start, forward)
         : stepMatch(matches.length, matchIndex, forward);
     setMatchIndex(index);
     selectMatch(index, matches);
@@ -354,12 +379,10 @@ export default function Editor(props: AppProps) {
       query: seed ?? state.query,
     }));
     if (seed !== null) setMatchIndex(-1);
-    requestAnimationFrame(() => findInput.current?.select());
-  }, []);
-
-  const closeFind = useCallback(() => {
-    setFind((state) => ({ ...state, open: false }));
-    textarea.current?.focus();
+    requestAnimationFrame(() => {
+      findInput.current?.focus();
+      findInput.current?.select();
+    });
   }, []);
 
   const replaceCurrent = () => {
@@ -436,9 +459,9 @@ export default function Editor(props: AppProps) {
     const path = typeof chosen === 'string' ? chosen : (chosen?.[0] ?? null);
     if (!path) return;
     setFind(EMPTY_FIND);
-    setCaret({ start: 0, end: 0 });
+    moveCaret({ start: 0, end: 0 });
     await latest.current.doc.load(path);
-  }, [confirmDiscard, pick, latest]);
+  }, [confirmDiscard, pick, latest, moveCaret]);
 
   const goToLine = useCallback(async () => {
     const text = latest.current.text;
@@ -459,9 +482,9 @@ export default function Editor(props: AppProps) {
     const area = textarea.current;
     area?.focus();
     area?.setSelectionRange(offset, offset);
-    setCaret({ start: offset, end: offset });
+    moveCaret({ start: offset, end: offset });
     revealOffset(offset);
-  }, [dialogs, latest, revealOffset]);
+  }, [dialogs, latest, revealOffset, moveCaret]);
 
   // ── clipboard ───────────────────────────────────────────────────────────
 
@@ -501,8 +524,8 @@ export default function Editor(props: AppProps) {
     if (!area) return;
     area.focus();
     area.select();
-    setCaret({ start: 0, end: area.value.length });
-  }, []);
+    moveCaret({ start: 0, end: area.value.length });
+  }, [moveCaret]);
 
   // ── view commands ───────────────────────────────────────────────────────
 
@@ -510,7 +533,7 @@ export default function Editor(props: AppProps) {
     (delta: number) => {
       storePrefs((current) => {
         const value = normalizePrefs(current);
-        return { ...value, fontSize: value.fontSize + delta };
+        return { ...value, fontSize: clampFontSize(value.fontSize + delta) };
       });
     },
     [storePrefs],
@@ -576,6 +599,7 @@ export default function Editor(props: AppProps) {
   const menuState = {
     hasPath: doc.path !== null,
     readOnly,
+    fieldFocused: find.open && fieldFocused,
     canUndo: undoable.undo,
     canRedo: undoable.redo,
     hasSelection: caret.end > caret.start,
@@ -589,6 +613,7 @@ export default function Editor(props: AppProps) {
     actions,
     menuState.hasPath,
     menuState.readOnly,
+    menuState.fieldFocused,
     menuState.canUndo,
     menuState.canRedo,
     menuState.hasSelection,
@@ -600,7 +625,9 @@ export default function Editor(props: AppProps) {
 
   // ── render ──────────────────────────────────────────────────────────────
 
-  const position = lineColumnAt(doc.text, caret.start);
+  const position = lineColumnAt(doc.text, caretOffset(caret));
+  const words = useMemo(() => wordCount(doc.text), [doc.text]);
+  const lineEnding = useMemo(() => detectLineEnding(doc.text), [doc.text]);
   const pane = (
     <TextPane
       text={doc.text}
@@ -635,6 +662,7 @@ export default function Editor(props: AppProps) {
             inputRef={findInput}
             onPatch={patchFind}
             onNavigate={navigate}
+            onFieldFocus={setFieldFocused}
             onReplace={replaceCurrent}
             onReplaceAll={replaceEvery}
             onClose={closeFind}
@@ -646,9 +674,9 @@ export default function Editor(props: AppProps) {
           line={position.line}
           column={position.column}
           selectionLength={caret.end - caret.start}
-          words={wordCount(doc.text)}
+          words={words}
           characters={doc.text.length}
-          lineEnding={detectLineEnding(doc.text)}
+          lineEnding={lineEnding}
           typeLabel={doc.path ? typeInfo(doc.path).label : 'Plain Text'}
           readOnly={readOnly}
           narrow={narrow}

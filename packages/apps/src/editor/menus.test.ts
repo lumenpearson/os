@@ -5,6 +5,7 @@ import { buildEditorMenus, type EditorActions, type EditorMenuState } from './me
 const state: EditorMenuState = {
   hasPath: true,
   readOnly: false,
+  fieldFocused: false,
   canUndo: true,
   canRedo: false,
   hasSelection: false,
@@ -85,6 +86,14 @@ describe('buildEditorMenus', () => {
     expect(item(menus, 'edit', 'find')?.enabled).not.toBe(false);
     const withSelection = buildEditorMenus({ ...state, hasSelection: true }, actions());
     expect(item(withSelection, 'edit', 'copy')?.enabled).toBe(true);
+  });
+
+  it('stands down while the find field has focus', () => {
+    const menus = buildEditorMenus({ ...state, fieldFocused: true, hasSelection: true }, actions());
+    for (const id of ['undo', 'cut', 'copy', 'paste', 'select-all']) {
+      expect(item(menus, 'edit', id)?.enabled).toBe(false);
+    }
+    expect(item(menus, 'edit', 'find')?.enabled).not.toBe(false);
   });
 
   it('checks the view toggles and only offers preview for Markdown', () => {

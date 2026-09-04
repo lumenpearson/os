@@ -19,6 +19,8 @@ import {
   insertColumns,
   insertReference,
   insertRows,
+  MAX_COLS,
+  MAX_ROWS,
   MIN_COLS,
   MIN_ROWS,
   parseCellInput,
@@ -227,6 +229,25 @@ describe('bounds and grid size', () => {
   it('grows past the used area', () => {
     const big = gridSize(sheet({ A400: 1 }));
     expect(big.rows).toBeGreaterThan(400);
+  });
+
+  it('never falls below the floor the view asks for', () => {
+    const grown = gridSize(sheet({ A1: 1 }), { rows: 400, cols: 80 });
+    expect(grown.rows).toBe(400);
+    expect(grown.cols).toBe(80);
+  });
+
+  it('ignores a floor under the default size', () => {
+    expect(gridSize(sheet({ A1: 1 }), { rows: 10, cols: 2 })).toEqual({
+      rows: MIN_ROWS,
+      cols: MIN_COLS,
+    });
+  });
+
+  it('stops at the maximum grid', () => {
+    const huge = gridSize(sheet({ A1: 1 }), { rows: 1e9, cols: 1e9 });
+    expect(huge.rows).toBe(MAX_ROWS);
+    expect(huge.cols).toBe(MAX_COLS);
   });
 });
 

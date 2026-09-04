@@ -77,7 +77,7 @@ test.describe('Lumen OS', () => {
 
     await page.keyboard.press('Control+Space');
     await expect(page.getByTestId('spotlight')).toBeVisible();
-    await page.getByLabel('Search').fill('12*12');
+    await page.getByRole('textbox', { name: 'Search' }).fill('12*12');
     await expect(page.getByText('144')).toBeVisible();
     await page.keyboard.press('Escape');
 

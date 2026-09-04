@@ -176,6 +176,18 @@ describe('Sheets', () => {
     expect(screen.getByText('Count 2')).toBeInTheDocument();
   });
 
+  it('grows the grid when the selection travels past the last row', async () => {
+    const user = userEvent.setup();
+    mount();
+    const nameBox = screen.getByLabelText('Name box');
+    await user.clear(nameBox);
+    await user.type(nameBox, 'A400{Enter}');
+    expect(nameBox).toHaveValue('A400');
+    grid().focus();
+    await user.keyboard('{ArrowDown}');
+    expect(nameBox).toHaveValue('A401');
+  });
+
   it('navigates from the name box', async () => {
     const user = userEvent.setup();
     mount();
@@ -290,9 +302,9 @@ describe('Sheets', () => {
     await user.keyboard('99{Enter}');
     await user.keyboard('{Control>}s{/Control}');
     await waitFor(async () => {
-      const saved = await kernel.vfs.readJson<{ sheets: Array<{ cells: Record<string, unknown> }> }>(
-        '/Documents/Budget.lsd',
-      );
+      const saved = await kernel.vfs.readJson<{
+        sheets: Array<{ cells: Record<string, unknown> }>;
+      }>('/Documents/Budget.lsd');
       expect(saved.sheets[0]?.cells.C1).toBe(99);
     });
   });

@@ -15,8 +15,8 @@ import { isError } from './engine/values';
 import { indexAt, offsets, visibleWindow } from './geometry';
 import {
   columnWidth,
+  DEFAULT_COL_WIDTH,
   DEFAULT_ROW_HEIGHT,
-  gridSize,
   MIN_COL_WIDTH,
   rowHeight,
   type SheetData,
@@ -56,6 +56,8 @@ export interface GridProps {
   onRowResize: (row: number, height: number) => void;
   /** A click on a cell while a formula is open inserts its reference. */
   onReferencePick: (range: RangeRef) => boolean;
+  /** How many rows and columns to draw; the view grows it as the selection travels. */
+  size: { rows: number; cols: number };
   locale: string;
   currency: string;
   containerRef?: React.RefObject<HTMLDivElement | null>;
@@ -79,6 +81,7 @@ export function Grid({
   onColumnResize,
   onRowResize,
   onReferencePick,
+  size,
   locale,
   currency,
   containerRef,
@@ -88,11 +91,13 @@ export function Grid({
   const colHeader = useRef<HTMLDivElement>(null);
   const rowHeader = useRef<HTMLDivElement>(null);
   const editorInput = useRef<HTMLInputElement>(null);
+  const content = useRef<HTMLDivElement>(null);
   const [viewport, setViewport] = useState({ width: 0, height: 0 });
   const [scroll, setScroll] = useState({ left: 0, top: 0 });
-  const dragging = useRef<'cells' | 'fill' | null>(null);
+  const dragging = useRef<'cells' | 'fill' | 'pick' | null>(null);
+  /** Where a formula reference drag started. */
+  const pickAnchor = useRef<Coord | null>(null);
 
-  const size = useMemo(() => gridSize(sheet), [sheet]);
   const colOffsets = useMemo(
     () => offsets(size.cols, (i) => columnWidth(sheet, i)),
     [size.cols, sheet],
@@ -197,6 +202,9 @@ export function Grid({
     const cell = cellAt(e.clientX, e.clientY);
     if (editor && onReferencePick(rangeOf(cell, cell))) {
       e.preventDefault();
+      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+      dragging.current = 'pick';
+      pickAnchor.current = cell;
       return;
     }
     if (editor) onCommit(editor.cell, editor.text, 'none');
@@ -208,18 +216,23 @@ export function Grid({
   };
 
   const onCellPointerMove = (e: React.PointerEvent) => {
+    if (dragging.current === 'pick') {
+      const from = pickAnchor.current;
+      if (from) onReferencePick(rangeOf(from, cellAt(e.clientX, e.clientY)));
+      return;
+    }
     if (dragging.current !== 'cells') return;
     const cell = cellAt(e.clientX, e.clientY);
     if (cell.col !== selection.focus.col || cell.row !== selection.focus.row) {
-      if (editor && onReferencePick(rangeOf(selection.anchor, cell))) return;
       onSelectionChange({ anchor: selection.anchor, focus: cell });
     }
   };
 
   const endDrag = (e: React.PointerEvent) => {
-    if (dragging.current === 'cells') {
+    if (dragging.current === 'cells' || dragging.current === 'pick') {
       (e.currentTarget as HTMLElement).releasePointerCapture?.(e.pointerId);
       dragging.current = null;
+      pickAnchor.current = null;
     }
   };
 
@@ -297,13 +310,13 @@ export function Grid({
     const min = axis === 'col' ? MIN_COL_WIDTH : 14;
     let latest = startSize;
     let raf = 0;
-    const target = axis === 'col' ? colHeader.current : rowHeader.current;
+    // The guide lives in the scrolled content, so it spans the grid and moves with it.
     const line = document.createElement('div');
     line.style.cssText =
       axis === 'col'
         ? 'position:absolute;top:0;bottom:0;width:1px;background:var(--lumen-accent);pointer-events:none;z-index:5'
         : 'position:absolute;left:0;right:0;height:1px;background:var(--lumen-accent);pointer-events:none;z-index:5';
-    target?.appendChild(line);
+    content.current?.appendChild(line);
     const place = () => {
       raf = 0;
       const base = axis === 'col' ? (colOffsets[index] ?? 0) : (rowOffsets[index] ?? 0);
@@ -426,7 +439,7 @@ export function Grid({
           aria-label={`Resize column ${colToLetters(col)}`}
           tabIndex={-1}
           onPointerDown={(e) => startResize(e, 'col', col)}
-          onDoubleClick={() => onColumnResize(col, 96)}
+          onDoubleClick={() => onColumnResize(col, DEFAULT_COL_WIDTH)}
           className="absolute -right-1 top-0 h-full w-2 cursor-col-resize border-0 bg-transparent p-0"
         />
       </div>,
@@ -498,7 +511,11 @@ export function Grid({
         className="lumen-scroll absolute bottom-0 right-0 outline-none"
         style={{ left: HEADER_W, top: HEADER_H }}
       >
-        <div className="relative text-base" style={{ width: totalWidth, height: totalHeight }}>
+        <div
+          ref={content}
+          className="relative text-base"
+          style={{ width: totalWidth, height: totalHeight }}
+        >
           {cellRows}
           <div
             aria-hidden

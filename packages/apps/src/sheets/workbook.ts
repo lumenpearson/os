@@ -257,12 +257,19 @@ export function usedBounds(sheet: SheetData): { rows: number; cols: number } {
   return { rows, cols };
 }
 
-/** The grid size to render: the used area plus room to keep going. */
-export function gridSize(sheet: SheetData): { rows: number; cols: number } {
+/**
+ * The grid size to render: the used area plus room to keep going, never below
+ * the default 200 × 52 and never below `floor`, which the view raises as the
+ * selection travels past the current edge.
+ */
+export function gridSize(
+  sheet: SheetData,
+  floor: { rows: number; cols: number } = { rows: 0, cols: 0 },
+): { rows: number; cols: number } {
   const used = usedBounds(sheet);
   return {
-    rows: Math.min(MAX_ROWS, Math.max(MIN_ROWS, used.rows + 40)),
-    cols: Math.min(MAX_COLS, Math.max(MIN_COLS, used.cols + 8)),
+    rows: Math.min(MAX_ROWS, Math.max(MIN_ROWS, used.rows + 40, floor.rows)),
+    cols: Math.min(MAX_COLS, Math.max(MIN_COLS, used.cols + 8, floor.cols)),
   };
 }
 
