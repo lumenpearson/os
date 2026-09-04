@@ -46,7 +46,7 @@ export function Overview({ section }: { section: Section }) {
       <div className="flex items-center gap-4 border-b border-rule px-4 py-4">
         <LumenMark size={44} />
         <div className="flex min-w-0 flex-col gap-1">
-          <h1 className="text-2xl font-semibold tracking-tight text-ink">Lumen OS</h1>
+          <h1 className="text-xl font-semibold tracking-tight text-ink">Lumen OS</h1>
           <p className="mono text-sm tabular-nums text-ink-2">{heroSubline(section)}</p>
         </div>
       </div>

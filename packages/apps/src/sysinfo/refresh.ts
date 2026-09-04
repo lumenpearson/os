@@ -25,9 +25,18 @@ export const MAX_FRAMES = 400;
  * interval, so they are dropped before the median is taken.
  */
 export const MAX_INTERVAL_MS = 100;
+/**
+ * No display refreshes faster than a thousand times a second, so a shorter
+ * gap is a frame clock that does not tick in real time (a headless runtime, a
+ * synchronous shim) rather than a very fast monitor. Dropping these is what
+ * keeps the row from printing a six-figure rate as if it were a measurement.
+ */
+export const MIN_INTERVAL_MS = 1;
 
 export const NOT_ENOUGH_FRAMES =
   'Too few animation frames arrived to measure a rate. The window may be hidden or throttled.';
+export const NO_PLAUSIBLE_INTERVAL =
+  'The gaps between animation frames were not ones a display could produce, so no rate was measured.';
 
 /** Positive, plausible gaps between consecutive timestamps. */
 export function frameIntervals(timestamps: readonly number[]): number[] {
@@ -38,7 +47,7 @@ export function frameIntervals(timestamps: readonly number[]): number[] {
     if (previous === undefined || current === undefined) continue;
     if (!Number.isFinite(previous) || !Number.isFinite(current)) continue;
     const delta = current - previous;
-    if (delta > 0 && delta <= MAX_INTERVAL_MS) out.push(delta);
+    if (delta >= MIN_INTERVAL_MS && delta <= MAX_INTERVAL_MS) out.push(delta);
   }
   return out;
 }
@@ -69,7 +78,14 @@ export function estimateRefreshRate(timestamps: readonly number[]): RefreshEstim
   const spanMs = Math.round(span(timestamps));
   const intervals = frameIntervals(timestamps);
   if (intervals.length < MIN_FRAMES - 1) {
-    return { hz: null, frames, spanMs, reason: NOT_ENOUGH_FRAMES };
+    // Enough frames arrived, but none of the gaps between them was one a
+    // display could have produced — a different fault, and a different line.
+    return {
+      hz: null,
+      frames,
+      spanMs,
+      reason: frames >= MIN_FRAMES ? NO_PLAUSIBLE_INTERVAL : NOT_ENOUGH_FRAMES,
+    };
   }
   const middle = median(intervals);
   if (!Number.isFinite(middle) || middle <= 0) {

@@ -6,6 +6,8 @@ import {
   MAX_FRAMES,
   MIN_FRAMES,
   median,
+  NO_PLAUSIBLE_INTERVAL,
+  NOT_ENOUGH_FRAMES,
   sampleFrames,
 } from './refresh';
 
@@ -47,6 +49,11 @@ describe('frameIntervals', () => {
 
   it('drops gaps that are a throttled tab rather than a frame', () => {
     expect(frameIntervals([0, 16, 2000, 2016])).toEqual([16, 16]);
+  });
+
+  it('drops gaps too short for any display, keeping the fastest real one', () => {
+    expect(frameIntervals([0, 0.01, 0.02, 0.03])).toEqual([]);
+    expect(frameIntervals([0, 1, 2])).toEqual([1, 1]);
   });
 
   it('drops zero and negative gaps and non-finite timestamps', () => {
@@ -102,6 +109,18 @@ describe('estimateRefreshRate', () => {
     const estimate = estimateRefreshRate([0, 500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500]);
     expect(estimate.hz).toBeNull();
     expect(estimate.spanMs).toBe(4500);
+    expect(estimate.reason).toBe(NO_PLAUSIBLE_INTERVAL);
+  });
+
+  it('prints no rate at all where the frame clock does not tick in real time', () => {
+    const estimate = estimateRefreshRate(run(MAX_FRAMES, 0.01, 0));
+    expect(estimate.hz).toBeNull();
+    expect(estimate.frames).toBe(MAX_FRAMES);
+    expect(estimate.reason).toBe(NO_PLAUSIBLE_INTERVAL);
+  });
+
+  it('still blames the frame count when there were too few to judge', () => {
+    expect(estimateRefreshRate(run(MIN_FRAMES - 2, 16)).reason).toBe(NOT_ENOUGH_FRAMES);
   });
 
   it('has no rate and no span for an empty run', () => {

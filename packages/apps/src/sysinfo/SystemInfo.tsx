@@ -210,28 +210,35 @@ export default function SystemInfo(_props: AppProps) {
   );
 }
 
+/** How many values this sheet holds, how many it could not take, and when. */
 function StatusBar({
   reading,
   total,
   missing,
   at,
+  failure,
 }: {
   reading: boolean;
   total: number;
   missing: number;
   at: number | undefined;
+  failure: string | null;
 }) {
   if (total === 0) return <span>{reading ? 'Taking readings…' : 'No readings'}</span>;
   return (
     <>
-      <span className="tabular-nums">{total} values</span>
-      <span className="tabular-nums text-ink-3">{missing} unavailable here</span>
+      <span className="shrink-0 tabular-nums">{total} values</span>
+      <span className="shrink-0 tabular-nums text-ink-3">{missing} unavailable here</span>
       <ToolbarSpacer />
-      <span className="tabular-nums text-ink-3">
-        {reading || at === undefined
-          ? 'Taking readings…'
-          : `Read ${formatTime(at, { seconds: true })}`}
-      </span>
+      {failure ? (
+        <span className="min-w-0 truncate text-danger">Last reading failed: {failure}</span>
+      ) : (
+        <span className="min-w-0 truncate tabular-nums text-ink-3">
+          {reading || at === undefined
+            ? 'Taking readings…'
+            : `Read ${formatTime(at, { seconds: true })}`}
+        </span>
+      )}
     </>
   );
 }
@@ -271,7 +278,7 @@ function Readings({
     );
   }
   return (
-    <div className="lumen-scroll flex-1">
+    <div className="lumen-scroll min-h-0 flex-1">
       <div className="mx-auto flex max-w-2xl flex-col gap-6 px-6 py-6">
         {overview && <Overview section={overview} />}
         {rest.map((section) => (
