@@ -463,12 +463,9 @@ export default function Terminal({ args: initialArgs }: AppProps) {
           setLine(el.value.slice(el.selectionStart ?? 0), 0);
           return;
         }
-        if (key === 'k') {
-          e.preventDefault();
-          setLine(el.value.slice(0, el.selectionStart ?? 0));
-          return;
-        }
         if (key === 'a') {
+          // Readline's "start of line" wins over Select All at the input;
+          // Select All stays available from the Edit menu.
           e.preventDefault();
           el.setSelectionRange(0, 0);
           return;
@@ -476,12 +473,6 @@ export default function Terminal({ args: initialArgs }: AppProps) {
         if (key === 'e') {
           e.preventDefault();
           el.setSelectionRange(el.value.length, el.value.length);
-          return;
-        }
-        if (key === 'w') {
-          e.preventDefault();
-          const upto = el.value.slice(0, el.selectionStart ?? 0).replace(/\S+\s*$/, '');
-          setLine(upto + el.value.slice(el.selectionStart ?? 0), upto.length);
           return;
         }
         if (key === 'd' && el.value === '') {
@@ -662,14 +653,13 @@ export default function Terminal({ args: initialArgs }: AppProps) {
           </div>
         ))}
         <div className="flex items-baseline whitespace-pre-wrap">
-          <label htmlFor="lsh-input" className="shrink-0">
+          <span className="shrink-0">
             <PromptLabel user={prompt.user} path={prompt.path} />
-            <span className="sr-only">Command</span>
-          </label>
+          </span>
           <input
-            id="lsh-input"
             ref={input}
             type="text"
+            aria-label="Command"
             autoComplete="off"
             autoCorrect="off"
             autoCapitalize="off"

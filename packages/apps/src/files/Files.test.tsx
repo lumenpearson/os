@@ -132,9 +132,14 @@ describe('Files', () => {
     const user = userEvent.setup();
     mount(cases);
     await findItem('notes.md');
-    await user.click(screen.getByRole('button', { name: 'Documents' }));
+    await user.click(
+      within(screen.getByRole('navigation', { name: 'Sidebar' })).getByRole('button', {
+        name: 'Documents',
+      }),
+    );
     await waitFor(() => expect(missing('notes.md')).not.toBeInTheDocument());
-    await user.click(screen.getByRole('button', { name: 'Home' }));
+    const sidebar = within(screen.getByRole('navigation', { name: 'Sidebar' }));
+    await user.click(sidebar.getByRole('button', { name: 'Home' }));
     expect(await findItem('Cases')).toBeInTheDocument();
   });
 
@@ -255,9 +260,9 @@ describe('Files', () => {
     mount(cases);
     await findItem('notes.md');
     await user.click(within(area()).getByRole('columnheader', { name: /Name/ }));
-    await waitFor(() => expect(names()).toEqual(['Work', 'notes.md', 'todo.txt']));
-    await user.click(within(area()).getByRole('columnheader', { name: /Name/ }));
     await waitFor(() => expect(names()).toEqual(['Work', 'todo.txt', 'notes.md']));
+    await user.click(within(area()).getByRole('columnheader', { name: /Name/ }));
+    await waitFor(() => expect(names()).toEqual(['Work', 'notes.md', 'todo.txt']));
   });
 
   it('opens Get Info from the context menu', async () => {
@@ -288,6 +293,41 @@ describe('Files', () => {
 
     expect(await findItem('.hidden')).toBeInTheDocument();
     expect(useSettingsStore.getState().settings.files.showHidden).toBe(true);
+  });
+
+  it('sorts from the toolbar menu', async () => {
+    const user = userEvent.setup();
+    mount(cases);
+    await findItem('notes.md');
+    await user.click(screen.getByRole('button', { name: 'Sort' }));
+
+    const menu = await screen.findByRole('menu');
+    await user.click(within(menu).getByText('Descending'));
+    await waitFor(() => expect(names()).toEqual(['Work', 'todo.txt', 'notes.md']));
+  });
+
+  it('previews a text file in Quick Look with the space bar', async () => {
+    const user = userEvent.setup();
+    mount(cases);
+    await user.click(await findItem('todo.txt'));
+    await user.keyboard(' ');
+
+    const dialog = await screen.findByRole('dialog');
+    await waitFor(() => expect(within(dialog).getByText(/one/)).toBeInTheDocument());
+    expect(within(dialog).getByText('Plain Text')).toBeInTheDocument();
+  });
+
+  it('jumps to a typed path from Go to Folder', async () => {
+    const user = userEvent.setup();
+    mount(cases);
+    await findItem('notes.md');
+    await user.keyboard('{Shift>}{Control>}g{/Control}{/Shift}');
+
+    const input = await screen.findByRole('textbox');
+    await user.clear(input);
+    await user.type(input, '~/Cases/Work{Enter}');
+    await waitFor(() => expect(missing('notes.md')).not.toBeInTheDocument());
+    expect(screen.getByRole('button', { name: 'Work' })).toBeInTheDocument();
   });
 
   it('contributes its menubar menus while focused', async () => {

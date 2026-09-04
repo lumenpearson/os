@@ -323,18 +323,15 @@ export default function Files({ args }: AppProps) {
     [run, vfs, notify],
   );
 
+  /** Move or copy into `target`, selecting the results when they land in view. */
   const transfer = useCallback(
-    (sources: string[], target: string, operation: 'move' | 'copy') =>
-      run(async () => {
-        const result = report(
-          await transferInto(vfs, sources, target, operation),
-          operation === 'move' ? 'move' : 'copy',
-        );
-        if (result.done.length > 0 && dirname(result.done[0] as string) === path) {
-          setSelection(selectAll(result.done));
-        }
-      }),
-    [run, report, vfs, path],
+    async (sources: string[], target: string, operation: 'move' | 'copy') => {
+      const result = report(await transferInto(vfs, sources, target, operation), operation);
+      if (result.done.length > 0 && dirname(result.done[0] as string) === path) {
+        setSelection(selectAll(result.done));
+      }
+    },
+    [report, vfs, path],
   );
 
   const dropOnFolder = useCallback(
@@ -352,7 +349,7 @@ export default function Files({ args }: AppProps) {
       const sources = draggedPaths(e);
       const operation = operationFor(e);
       if (!canDrop(sources, target, operation)) return;
-      void transfer(sources, target, operation);
+      void run(() => transfer(sources, target, operation));
     },
     [run, report, vfs, transfer],
   );

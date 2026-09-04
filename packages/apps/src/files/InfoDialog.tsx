@@ -71,7 +71,9 @@ export function InfoDialog({ path, onClose }: InfoDialogProps) {
         <FileTypeIcon entry={{ kind: stat?.kind ?? 'file', path }} size={40} />
         <div className="min-w-0">
           <p className="truncate-1 text-md font-medium text-ink">{name}</p>
-          {stat && <p className="text-sm text-ink-2">{kindLabel(stat)}</p>}
+          {size !== null && (
+            <p className="mono text-sm tabular-nums text-ink-2">{formatBytes(size)}</p>
+          )}
         </div>
       </div>
       {error && <p className="pb-2 text-sm text-danger">{error}</p>}

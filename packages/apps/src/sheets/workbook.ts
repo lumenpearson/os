@@ -713,6 +713,16 @@ export function acceptsReference(text: string, caret = text.length): boolean {
   return /[+\-*/^&=<>(,:%]$/.test(before);
 }
 
+/**
+ * True when the text just before the caret is a reference the next click
+ * should replace, which is how a spreadsheet stays in "point" mode after one
+ * cell has been picked.
+ */
+export function endsWithReference(text: string, caret = text.length): boolean {
+  if (!text.startsWith('=')) return false;
+  return /\$?[A-Za-z]{1,3}\$?\d+(:\$?[A-Za-z]{1,3}\$?\d+)?$/.test(text.slice(0, caret));
+}
+
 /** Insert a reference at the caret, replacing a reference already sitting there. */
 export function insertReference(
   text: string,
