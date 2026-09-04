@@ -84,6 +84,16 @@ export function canPreview(path: string): boolean {
   return viewerKind(path) !== 'unsupported';
 }
 
+/** Formats that cannot carry an alpha channel; a checkerboard behind one lies. */
+const OPAQUE_EXTENSIONS = new Set(['.jpg', '.jpeg', '.bmp']);
+
+/** True when the file may be transparent, so the checkerboard means something. */
+export function hasTransparency(path: string): boolean {
+  const kind = viewerKind(path);
+  if (kind !== 'image' && kind !== 'svg') return false;
+  return !OPAQUE_EXTENSIONS.has(extname(path));
+}
+
 /** True when the viewer draws pixels the zoom controls apply to. */
 export function isZoomable(kind: ViewerKind): boolean {
   return kind === 'image' || kind === 'svg';

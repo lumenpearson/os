@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { canPreview, isZoomable, looksTextual, refineKind, SNIFF_LIMIT, viewerKind } from './kind';
+import {
+  canPreview,
+  hasTransparency,
+  isZoomable,
+  looksTextual,
+  refineKind,
+  SNIFF_LIMIT,
+  viewerKind,
+} from './kind';
 
 const bytes = (...values: number[]) => Uint8Array.from(values);
 const ascii = (text: string) => Uint8Array.from(text, (c) => c.charCodeAt(0) & 0xff);
@@ -114,5 +122,25 @@ describe('refineKind', () => {
   it('never overrides a decided viewer', () => {
     expect(refineKind('image', ascii('not really'))).toBe('image');
     expect(refineKind('unsupported', ascii('plain'))).toBe('unsupported');
+  });
+});
+
+describe('hasTransparency', () => {
+  it('expects an alpha channel from the formats that have one', () => {
+    expect(hasTransparency('/logo.png')).toBe(true);
+    expect(hasTransparency('/logo.svg')).toBe(true);
+    expect(hasTransparency('/loop.gif')).toBe(true);
+    expect(hasTransparency('/shot.webp')).toBe(true);
+  });
+
+  it('does not draw a checkerboard behind an opaque format', () => {
+    expect(hasTransparency('/photo.jpg')).toBe(false);
+    expect(hasTransparency('/photo.JPEG')).toBe(false);
+    expect(hasTransparency('/scan.bmp')).toBe(false);
+  });
+
+  it('says nothing about files that are not pictures', () => {
+    expect(hasTransparency('/notes.txt')).toBe(false);
+    expect(hasTransparency('/paper.pdf')).toBe(false);
   });
 });
