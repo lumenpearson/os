@@ -26,7 +26,7 @@ import {
   retitle,
   scoreNote,
   tagCounts,
-} from './notes';
+} from './library';
 
 const DAY = 86_400_000;
 

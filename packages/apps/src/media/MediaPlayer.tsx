@@ -36,7 +36,7 @@ import { SeekBar } from './SeekBar';
 import { Transport } from './Transport';
 import { clamp, seekBy, timeAtFraction } from './time';
 import { VideoStage } from './VideoStage';
-import { Visualiser } from './Visualiser';
+import { Visualiser } from './VisualiserCanvas';
 
 /** Below this width the playlist moves under the stage and the sliders go. */
 const NARROW_WIDTH = 560;

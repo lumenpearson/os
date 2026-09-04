@@ -13,7 +13,7 @@ import {
   useState,
 } from 'react';
 import { type AppProps, useAppMenus, useJsonFile } from '../_sdk';
-import { Bases } from './Bases';
+import { Bases } from './BasesPanel';
 import { BASE_PREFIX, BASES, type Base, isDigitOfBase, parseBase, type WordSize } from './bases';
 import { Display } from './Display';
 import { type AngleUnit, canonicalizeInput, evaluate } from './expression';

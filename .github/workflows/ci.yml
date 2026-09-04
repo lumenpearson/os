@@ -26,6 +26,9 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      # Catches module names that differ only by case before the macOS and
+      # Windows builds do, since those are the only jobs that would notice.
+      - run: pnpm check:portability
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm test -- --run

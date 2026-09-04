@@ -5,7 +5,7 @@
  */
 import { basename, join, type Vfs } from '@lumen/vfs';
 import { formatCreated, withEntry } from './frontmatter';
-import { buildNote, fileNameForTitle, type Note, retitle } from './notes';
+import { buildNote, fileNameForTitle, type Note, retitle } from './library';
 
 export const NOTE_EXTENSIONS = ['.md', '.markdown'] as const;
 

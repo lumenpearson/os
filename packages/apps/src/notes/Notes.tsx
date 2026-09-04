@@ -36,10 +36,6 @@ import {
   useWindowControls,
 } from '../_sdk';
 import { frontPinned, frontTitle, parseDocument, serializeDocument } from './frontmatter';
-import { toggleTaskAt, toPlainText } from './markdown';
-import { buildNotesMenus, type NotesActions } from './menus';
-import { NoteEditor } from './NoteEditor';
-import { NoteList } from './NoteList';
 import {
   countCharacters,
   countWords,
@@ -56,7 +52,11 @@ import {
   type SortKey,
   tagCounts,
   type ViewMode,
-} from './notes';
+} from './library';
+import { toggleTaskAt, toPlainText } from './markdown';
+import { buildNotesMenus, type NotesActions } from './menus';
+import { NoteEditor } from './NoteEditor';
+import { NoteList } from './NoteList';
 import {
   createNote,
   duplicateNote,

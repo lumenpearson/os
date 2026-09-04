@@ -1,6 +1,6 @@
 import { Sidebar, type SidebarSection } from '@lumen/ui';
 import { Hash, NotebookText } from 'lucide-react';
-import type { TagCount } from './notes';
+import type { TagCount } from './library';
 
 export interface TagRailProps {
   tags: readonly TagCount[];

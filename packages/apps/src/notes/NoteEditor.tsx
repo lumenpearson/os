@@ -1,7 +1,7 @@
 import { cx, useElementSize } from '@lumen/ui';
 import type { ChangeEvent, RefObject } from 'react';
+import type { ViewMode } from './library';
 import { MarkdownView } from './MarkdownView';
-import type { ViewMode } from './notes';
 
 /** Under this the split view stacks instead of sitting side by side. */
 export const SPLIT_STACK_WIDTH = 620;

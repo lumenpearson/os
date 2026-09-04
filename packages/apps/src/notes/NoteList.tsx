@@ -9,7 +9,7 @@ import {
   useRef,
 } from 'react';
 import { formatRelative } from '../_sdk';
-import { highlightParts, type NoteRow, type Range, SORT_LABELS, type SortKey } from './notes';
+import { highlightParts, type NoteRow, type Range, SORT_LABELS, type SortKey } from './library';
 
 const SORT_OPTIONS = (['modified', 'created', 'title'] as SortKey[]).map((value) => ({
   value,

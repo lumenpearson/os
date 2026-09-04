@@ -3,7 +3,7 @@
  * command reads the same whether it is clicked or typed as a shortcut.
  */
 import type { MenuItemTemplate, MenuTemplate } from '@lumen/kernel';
-import { SORT_LABELS, type SortKey, VIEW_LABELS, type ViewMode } from './notes';
+import { SORT_LABELS, type SortKey, VIEW_LABELS, type ViewMode } from './library';
 import type { InlineFormat, ListStyle } from './wrap';
 
 export interface NotesMenuState {

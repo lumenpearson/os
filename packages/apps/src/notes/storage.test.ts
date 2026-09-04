@@ -1,7 +1,7 @@
 import { MemoryAdapter, Vfs } from '@lumen/vfs';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { parseDocument } from './frontmatter';
-import { buildNote } from './notes';
+import { buildNote } from './library';
 import {
   createNote,
   duplicateNote,
