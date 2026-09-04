@@ -210,6 +210,16 @@ export function useJsonFile<T>(
   const [loading, setLoading] = useState(Boolean(path));
   const [loaded, setLoaded] = useState(false);
   const pending = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /**
+   * Set as soon as the caller writes, and never cleared for this path. The
+   * read below started before that write and therefore knows less, so it must
+   * not land on top of it — including its `catch`, which is the common case on
+   * a first run where the file does not exist yet. Without this, a value set
+   * in the first few milliseconds after launch (a launch argument, or a fast
+   * click) is reverted on screen while the debounced write still reaches disk,
+   * leaving the state and the file disagreeing.
+   */
+  const written = useRef(false);
 
   // `fallback` is typically an inline literal, so it changes identity every
   // render; only the path should re-read the file.
@@ -217,11 +227,13 @@ export function useJsonFile<T>(
   useEffect(() => {
     if (!path) return;
     let cancelled = false;
+    written.current = false;
     setLoading(true);
+    const stale = () => cancelled || written.current;
     vfs
       .readJson<T>(path)
-      .then((v) => !cancelled && setValue(v))
-      .catch(() => !cancelled && setValue(fallback))
+      .then((v) => !stale() && setValue(v))
+      .catch(() => !stale() && setValue(fallback))
       .finally(() => {
         if (cancelled) return;
         setLoading(false);
@@ -234,6 +246,7 @@ export function useJsonFile<T>(
 
   const update = useCallback(
     (next: T | ((prev: T) => T)) => {
+      written.current = true;
       setValue((prev) => {
         const v = typeof next === 'function' ? (next as (p: T) => T)(prev) : next;
         if (path) {
