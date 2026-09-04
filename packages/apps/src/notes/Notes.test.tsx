@@ -236,6 +236,28 @@ describe('the File menu', () => {
   });
 });
 
+describe('the View menu', () => {
+  it('folds the tag rail away and brings it back', async () => {
+    const { windowId } = mount();
+    await waitFor(() => expect(rows()).toHaveLength(2));
+    expect(screen.getByRole('button', { name: /work/ })).toBeInTheDocument();
+
+    await act(async () => command(windowId, 'view', 'show-tags').onSelect?.());
+    await waitFor(() => expect(screen.queryByRole('button', { name: /work/ })).toBeNull());
+
+    await act(async () => command(windowId, 'view', 'show-tags').onSelect?.());
+    await waitFor(() => expect(screen.getByRole('button', { name: /work/ })).toBeInTheDocument());
+  });
+
+  it('switches the pane the note is shown in', async () => {
+    const { windowId } = mount({ path: join(dir, 'Ideas.md') });
+    await waitFor(() => expect(area().value).toBe(IDEAS));
+    await act(async () => command(windowId, 'view', 'view-preview').onSelect?.());
+    await waitFor(() => expect(screen.queryByRole('textbox', { name: 'Note text' })).toBeNull());
+    expect(screen.getByRole('heading', { name: 'Ideas' })).toBeInTheDocument();
+  });
+});
+
 describe('the list', () => {
   it('makes a new note and opens it', async () => {
     const user = userEvent.setup();

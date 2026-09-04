@@ -9,6 +9,8 @@ export interface VideoStageProps {
    *  audio graph keeps its one source node. */
   active: boolean;
   playing: boolean;
+  /** What is playing, shown with the controls. */
+  caption?: ReactNode;
   /** The transport, shown over the picture. */
   controls: ReactNode;
   /** The media element itself. It never moves in the tree. */
@@ -24,6 +26,7 @@ export interface VideoStageProps {
 export function VideoStage({
   active,
   playing,
+  caption,
   controls,
   children,
   onPointerActivate,
@@ -93,6 +96,7 @@ export function VideoStage({
             visible ? 'opacity-100' : 'pointer-events-none opacity-0',
           )}
         >
+          {caption}
           {controls}
         </div>
       )}

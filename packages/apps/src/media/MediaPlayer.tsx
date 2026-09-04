@@ -83,6 +83,8 @@ export default function MediaPlayer({ args: initialArgs }: AppProps) {
   const [playing, setPlaying] = useState(false);
   const [duration, setDuration] = useState(Number.NaN);
   const [bytes, setBytes] = useState<number | null>(null);
+  /** The picture's own pixels, once the file has told us. */
+  const [frame, setFrame] = useState<{ width: number; height: number } | null>(null);
   const [failure, setFailure] = useState<PlaybackFailure | null>(null);
 
   const element = useRef<HTMLVideoElement | null>(null);
@@ -225,7 +227,12 @@ export default function MediaPlayer({ args: initialArgs }: AppProps) {
       setPlaying(false);
       advance(1, true);
     };
-    const onMetadata = () => setDuration(media.duration);
+    const onMetadata = () => {
+      setDuration(media.duration);
+      setFrame(
+        media.videoWidth > 0 ? { width: media.videoWidth, height: media.videoHeight } : null,
+      );
+    };
     const onCanPlay = () => {
       if (wanted.current && media.paused) startPlayback();
     };
@@ -269,6 +276,7 @@ export default function MediaPlayer({ args: initialArgs }: AppProps) {
     setFailure(null);
     setDuration(Number.NaN);
     setBytes(null);
+    setFrame(null);
     if (!trackPath) return;
     let cancelled = false;
     kernel.addRecent(trackPath, 'lumen.media');
@@ -546,6 +554,18 @@ export default function MediaPlayer({ args: initialArgs }: AppProps) {
         <VideoStage
           active={isVideo}
           playing={playing}
+          caption={
+            track && (
+              <div className="flex min-w-0 items-baseline gap-3">
+                <span className="truncate-1 text-base text-ink">{track.name}</span>
+                {frame && (
+                  <span className="mono shrink-0 text-xs text-ink-3 tabular-nums">
+                    {frame.width}×{frame.height}
+                  </span>
+                )}
+              </div>
+            )
+          }
           controls={transport}
           onPointerActivate={focusRoot}
         >
