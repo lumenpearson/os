@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { events } from '../events';
 import type { AppId, LaunchArgs, Pid, Process, WindowId } from '../types';
+import { stepLoad } from './load';
 
 interface ProcessStore {
   processes: Record<Pid, Process>;
@@ -9,14 +10,17 @@ interface ProcessStore {
   exit: (pid: Pid) => void;
   attachWindow: (pid: Pid, windowId: WindowId) => void;
   detachWindow: (pid: Pid, windowId: WindowId) => void;
-  /** Simulated load tick for the browser build. */
-  tick: () => void;
+  /** When the load figures were last stepped, so the model can use real time. */
+  tickedAt: number | null;
+  /** Step the load model. `now` is injectable so tests do not need a clock. */
+  tick: (now?: number) => void;
   findByApp: (appId: AppId) => Process[];
 }
 
 export const useProcessStore = create<ProcessStore>((set, get) => ({
   processes: {},
   nextPid: 100,
+  tickedAt: null,
   spawn: (appId, name, args, background = false) => {
     const pid = get().nextPid;
     const process: Process = {
@@ -63,21 +67,28 @@ export const useProcessStore = create<ProcessStore>((set, get) => ({
         },
       };
     }),
-  tick: () =>
+  tick: (now = Date.now()) =>
     set((s) => {
       const next: Record<Pid, Process> = {};
+      const elapsed = s.tickedAt === null ? 1_000 : Math.max(0, now - s.tickedAt);
       let changed = false;
       for (const p of Object.values(s.processes)) {
-        const target = p.windowIds.length > 0 ? 1.5 + Math.random() * 6 : 0.2 + Math.random();
-        const cpu = Math.max(
-          0,
-          Math.min(100, p.cpu + (target - p.cpu) * 0.4 + (Math.random() - 0.5) * 2),
+        // The model in ./load.ts decides what a process costs from what it is
+        // doing: its windows, whether it is in the foreground, how long ago it
+        // started. Elapsed time drives the easing, so a tab that was in the
+        // background for a minute comes back with the figures it should have.
+        const reading = stepLoad(
+          { cpu: p.cpu, memory: p.memory },
+          {
+            windows: p.windowIds.length,
+            background: p.background || p.windowIds.length === 0,
+            age: Math.max(0, now - p.startedAt),
+          },
+          elapsed,
+          Math.random(),
         );
-        const memory = Math.max(
-          8 * 1024 * 1024,
-          p.memory + Math.round((Math.random() - 0.5) * 512 * 1024),
-        );
-        const rounded = Math.round(cpu * 10) / 10;
+        const memory = reading.memory;
+        const rounded = reading.cpu;
         // Hand back the same object when neither reading moved. Every consumer
         // of useProcesses() compares by reference, so replacing an unchanged
         // process re-renders the taskbar — which only reads appId and pid —
@@ -85,8 +96,8 @@ export const useProcessStore = create<ProcessStore>((set, get) => ({
         next[p.pid] = rounded === p.cpu && memory === p.memory ? p : { ...p, cpu: rounded, memory };
         if (next[p.pid] !== p) changed = true;
       }
-      if (!changed) return s;
-      return { processes: next };
+      if (!changed) return { tickedAt: now };
+      return { processes: next, tickedAt: now };
     }),
   findByApp: (appId) => Object.values(get().processes).filter((p) => p.appId === appId),
 }));

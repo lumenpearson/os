@@ -24,7 +24,23 @@ export { findMenuShortcut, menusClaimShortcut } from './menu/shortcuts';
 export { useMenuStore } from './menu/store';
 export type { PostNotificationInput } from './notifications/store';
 export { selectUnreadCount, useNotificationStore } from './notifications/store';
+export type { LoadReading, LoadSubject } from './process/load';
+export { stepLoad, systemLoad, targetCpu, targetMemory } from './process/load';
 export { useProcessStore } from './process/store';
+export {
+  autostartServices,
+  SERVICES,
+  serviceById,
+  servicesByCategory,
+} from './services/catalogue';
+export { useServiceStore } from './services/store';
+export type {
+  ServiceCategory,
+  ServiceDefinition,
+  ServiceStartup,
+  ServiceState,
+  ServiceStatus,
+} from './services/types';
 export { useSessionStore } from './session/store';
 export * from './settings/schema';
 export type { SettingsPath } from './settings/store';

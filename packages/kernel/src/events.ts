@@ -6,6 +6,8 @@ export interface KernelEvents {
   'session:change': { from: SessionState; to: SessionState };
   'session:activity': { at: number };
   'process:start': { pid: Pid; appId: AppId; args: LaunchArgs };
+  'service:start': { id: string };
+  'service:stop': { id: string };
   'process:exit': { pid: Pid; appId: AppId };
   /** A singleton app was launched again; the running instance receives the new args. */
   'process:args': { pid: Pid; args: LaunchArgs };

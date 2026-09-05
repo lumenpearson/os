@@ -25,6 +25,7 @@ import { log, useLogStore } from './log/store';
 import { useMenuStore } from './menu/store';
 import { useNotificationStore } from './notifications/store';
 import { useProcessStore } from './process/store';
+import { useServiceStore } from './services/store';
 import { useSessionStore } from './session/store';
 import { getSettings, useSettingsStore } from './settings/store';
 import { applyThemeToDocument, stopFollowingSystemTheme } from './theme/apply';
@@ -127,6 +128,8 @@ export class Kernel {
     }
     const next: SessionState = user ? 'locked' : 'setup';
     useSessionStore.getState().transition(next);
+    // The services a real machine would be running come up with the session.
+    useServiceStore.getState().boot(Date.now());
     if (!this.tickTimer && !this.platform.capabilities.hostProcesses) {
       this.tickTimer = setInterval(() => useProcessStore.getState().tick(), 2000);
     }
