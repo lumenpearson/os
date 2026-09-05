@@ -4,8 +4,33 @@ import { useKernel, useSetting, useSettings, useVfs, useWorkArea } from '@lumen/
 import { AnchoredMenu, cx, type MenuEntry, useDialogs } from '@lumen/ui';
 import { basename, type DirEntry, dirname, isValidName, join } from '@lumen/vfs';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { type IconBox, marqueeRect, type Point, sameSelection, touchesBox } from './marquee';
 
 const ICON_SIZES = { small: 56, medium: 72, large: 96 } as const;
+
+/** Manhattan distance a press has to travel before it counts as a drag, in px. */
+const DRAG_THRESHOLD = 4;
+
+/** Where every icon sits inside the icon layer, measured once per drag. */
+function iconBoxes(root: HTMLElement): IconBox[] {
+  const origin = root.getBoundingClientRect();
+  const boxes: IconBox[] = [];
+  for (const el of root.querySelectorAll<HTMLElement>('[data-desktop-path]')) {
+    const path = el.dataset.desktopPath;
+    if (!path) continue;
+    const rect = el.getBoundingClientRect();
+    boxes.push({
+      path,
+      box: {
+        x: rect.left - origin.left,
+        y: rect.top - origin.top,
+        width: rect.width,
+        height: rect.height,
+      },
+    });
+  }
+  return boxes;
+}
 
 /** Files in ~/Desktop as icons with drag-to-arrange, rename and a context menu. */
 export function DesktopIcons() {
@@ -26,6 +51,11 @@ export function DesktopIcons() {
     () => kernel.state.desktopIcons,
   );
   const rootRef = useRef<HTMLDivElement>(null);
+  const marqueeRef = useRef<HTMLDivElement>(null);
+  /** Ends a rectangle drag that is still running and puts the selection back. */
+  const abortMarquee = useRef<(() => void) | null>(null);
+
+  useEffect(() => () => abortMarquee.current?.(), []);
 
   const refresh = useCallback(() => {
     vfs
@@ -133,6 +163,88 @@ export function DesktopIcons() {
     el.addEventListener('pointerup', onUp);
   };
 
+  /**
+   * A press on empty desktop draws the selection rectangle. The rectangle is
+   * written straight to the element inside a frame, so only a change of
+   * selection reaches React; a press that never travels far enough stays a
+   * click and just clears the selection.
+   */
+  const startMarquee = (e: React.PointerEvent<HTMLDivElement>) => {
+    const root = rootRef.current;
+    if (!root) return;
+    // Shift and Meta/Ctrl add to what is already selected; a plain press replaces it.
+    const additive = e.shiftKey || e.metaKey || e.ctrlKey;
+    const before = selected;
+    const base = additive ? selected : new Set<string>();
+    if (!additive) setSelected(base);
+    if (e.button !== 0) return;
+
+    const origin = root.getBoundingClientRect();
+    const boxes = iconBoxes(root);
+    const pointerId = e.pointerId;
+    const from: Point = { x: e.clientX - origin.left, y: e.clientY - origin.top };
+    let to = from;
+    let applied: ReadonlySet<string> = base;
+    let moved = false;
+    let raf = 0;
+
+    const draw = () => {
+      raf = 0;
+      const rect = marqueeRect(from, to);
+      const el = marqueeRef.current;
+      if (el) {
+        el.hidden = false;
+        el.style.transform = `translate(${rect.x}px, ${rect.y}px)`;
+        el.style.width = `${rect.width}px`;
+        el.style.height = `${rect.height}px`;
+      }
+      const next = new Set(base);
+      for (const icon of boxes) if (touchesBox(rect, icon.box)) next.add(icon.path);
+      if (sameSelection(next, applied)) return;
+      applied = next;
+      setSelected(next);
+    };
+
+    const onMove = (ev: PointerEvent) => {
+      to = { x: ev.clientX - origin.left, y: ev.clientY - origin.top };
+      if (!moved && Math.abs(to.x - from.x) + Math.abs(to.y - from.y) < DRAG_THRESHOLD) return;
+      moved = true;
+      if (!raf) raf = requestAnimationFrame(draw);
+    };
+
+    const stop = () => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', stop);
+      window.removeEventListener('pointercancel', cancel);
+      window.removeEventListener('keydown', onKeyDown);
+      if (raf) cancelAnimationFrame(raf);
+      raf = 0;
+      if (root.hasPointerCapture(pointerId)) root.releasePointerCapture(pointerId);
+      const el = marqueeRef.current;
+      if (el) el.hidden = true;
+      abortMarquee.current = null;
+    };
+
+    const cancel = () => {
+      stop();
+      setSelected(before);
+    };
+
+    const onKeyDown = (ev: KeyboardEvent) => {
+      if (ev.key !== 'Escape') return;
+      ev.preventDefault();
+      cancel();
+    };
+
+    // Captured so the release still arrives when the pointer leaves the window.
+    root.setPointerCapture(pointerId);
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', stop);
+    window.addEventListener('pointercancel', cancel);
+    window.addEventListener('keydown', onKeyDown);
+    abortMarquee.current = cancel;
+  };
+
   const commitRename = async (entry: DirEntry, name: string) => {
     setRenaming(null);
     const n = name.trim();
@@ -234,7 +346,7 @@ export function DesktopIcons() {
       aria-multiselectable="true"
       tabIndex={-1}
       onPointerDown={(e) => {
-        if (e.target === e.currentTarget) setSelected(new Set());
+        if (e.target === e.currentTarget) startMarquee(e);
       }}
       onContextMenu={(e) => {
         if (e.target !== e.currentTarget) return;
@@ -311,6 +423,14 @@ export function DesktopIcons() {
           </div>
         );
       })}
+      {/* Geometry is written to this element during the drag, never through state. */}
+      <div
+        ref={marqueeRef}
+        hidden
+        aria-hidden
+        data-testid="desktop-marquee"
+        className="pointer-events-none absolute top-0 left-0 border border-accent bg-selection"
+      />
       <AnchoredMenu
         open={menu !== null}
         onClose={() => setMenu(null)}

@@ -51,8 +51,12 @@ export function Dialog({
   const target = container ?? document.body;
   return createPortal(
     <div
+      // The scrim is the sheet's containing block: it covers the window body
+      // the dialog was portalled into, so every size below is measured
+      // against that box and not against the viewport. Its padding is the
+      // margin the sheet may never cross, at any window size.
       className={cx(
-        'absolute inset-0 z-[1400] flex items-start justify-center bg-scrim lumen-fade-enter',
+        'absolute inset-0 z-[1400] flex items-center justify-center bg-scrim p-4 lumen-fade-enter',
         !container && 'fixed',
       )}
       onPointerDown={(e) => {
@@ -66,17 +70,23 @@ export function Dialog({
         aria-labelledby={title ? 'lumen-dialog-title' : undefined}
         // The radius and the border are on this element, so the corner is a
         // real mitre; overflow-hidden is here to clip the header and footer
-        // rules, which should stop at the curve.
+        // rules, which should stop at the curve. It also means the frame
+        // itself can never scroll: the body below is the only scroller.
         className={cx(
           // deslop-ignore-next-line 22
-          'mt-[12vh] max-h-[76vh] w-[calc(100%-32px)] overflow-hidden rounded-lg border border-rule bg-surface shadow-lg outline-none lumen-pop-enter flex flex-col',
+          'flex max-h-full w-full flex-col overflow-hidden rounded-lg border border-rule bg-surface shadow-lg outline-none lumen-pop-enter',
           className,
         )}
-        style={{ maxWidth: width, ['--lumen-pop-origin' as string]: 'top center' }}
+        style={{
+          // `min()` keeps the preferred width from beating the container: on a
+          // narrow window the sheet is the window minus the scrim padding.
+          maxWidth: `min(100%, ${width}px)`,
+          ['--lumen-pop-origin' as string]: 'top center',
+        }}
         tabIndex={-1}
       >
         {(title || !persistent) && (
-          <div className="flex items-center gap-2 px-4 pt-3.5 pb-1">
+          <div className="flex shrink-0 items-center gap-2 px-4 pt-3.5 pb-1">
             {title && (
               <h2 id="lumen-dialog-title" className="text-md font-semibold text-ink">
                 {title}
@@ -89,8 +99,12 @@ export function Dialog({
             )}
           </div>
         )}
-        <div className="lumen-scroll px-4 py-2 text-base">{children}</div>
-        {actions && <div className="flex justify-end gap-2 px-4 pb-4 pt-3">{actions}</div>}
+        {/* min-h-0 lets this shrink below its content, which is what turns
+            overflow into a scroll here instead of a clip on the frame. */}
+        <div data-testid="dialog-body" className="lumen-scroll min-h-0 flex-1 px-4 py-2 text-base">
+          {children}
+        </div>
+        {actions && <div className="flex shrink-0 justify-end gap-2 px-4 pb-4 pt-3">{actions}</div>}
       </div>
     </div>,
     target,
