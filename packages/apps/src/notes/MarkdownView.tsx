@@ -28,6 +28,9 @@ const PROSE = [
   '[&_table]:my-3 [&_table]:w-full [&_table]:border-collapse [&_table]:text-sm',
   '[&_th]:border [&_th]:border-rule [&_th]:bg-surface-2 [&_th]:px-2 [&_th]:py-1 [&_th]:text-left [&_th]:font-medium',
   '[&_td]:border [&_td]:border-rule [&_td]:px-2 [&_td]:py-1 [&_td]:tabular-nums',
+  // Every other body row takes a faint wash, so the eye can carry a value
+  // across a wide table without losing its line.
+  '[&_tbody_tr:nth-child(even)]:bg-surface-2/40',
 ].join(' ');
 
 export interface MarkdownViewProps {

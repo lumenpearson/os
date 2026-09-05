@@ -211,7 +211,7 @@ export function EntryTable({
 
           <div ref={bodyRef} className="p-1">
             {rows.length === 0 && <p className="p-6 text-center text-sm text-ink-3">{empty}</p>}
-            {rows.map((row) => {
+            {rows.map((row, index) => {
               const { node } = row;
               const isSelected = selected.has(node.id);
               return (
@@ -226,6 +226,9 @@ export function EntryTable({
                   onDoubleClick={() => node.isDirectory && onToggle(node.id)}
                   className={cx(
                     'lumen-list-row cursor-default px-0',
+                    // Every other row takes a faint wash. Selection and the
+                    // cursor are stronger and paint over it.
+                    index % 2 === 1 && !isSelected && 'bg-surface-2/40',
                     node.id === cursor && !isSelected && 'bg-surface-2',
                   )}
                   style={{ gridTemplateColumns: template }}

@@ -4,7 +4,7 @@
  * when a button is pressed.
  */
 
-import { Button, Label } from '@lumen/ui';
+import { Button, cx, Label } from '@lumen/ui';
 import { type CSSProperties, useMemo } from 'react';
 import { formatDelta, formatStopwatch } from './duration';
 import { now } from './frames';
@@ -98,7 +98,7 @@ export function StopwatchTab({ state, onToggle, onLap, onReset }: StopwatchTabPr
                   </td>
                 </tr>
               )}
-              {laps.map((lap) => {
+              {laps.map((lap, index) => {
                 const mark =
                   lap.number === extremes.fastest
                     ? 'fastest'
@@ -106,7 +106,15 @@ export function StopwatchTab({ state, onToggle, onLap, onReset }: StopwatchTabPr
                       ? 'slowest'
                       : null;
                 return (
-                  <tr key={lap.number} className="border-t border-rule text-ink">
+                  <tr
+                    key={lap.number}
+                    className={cx(
+                      'border-t border-rule text-ink',
+                      // Every other lap takes a faint wash, so a long list of
+                      // near-identical times stays readable across its columns.
+                      index % 2 === 1 && 'bg-surface-2/40',
+                    )}
+                  >
                     <th scope="row" className="px-3 py-1.5 text-left text-base font-normal">
                       <span className="flex items-baseline gap-2">
                         {lap.number}
