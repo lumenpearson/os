@@ -9,6 +9,7 @@ import {
   type EventInput,
   groupByDay,
   MIN_DURATION,
+  newEventId,
   normalizeData,
   normalizeEvent,
   type Occurrence,
@@ -282,5 +283,12 @@ describe('a day in the calendar', () => {
     ];
     const found = sortOccurrences(expandEvents(events, '2026-09-04', '2026-09-04'));
     expect(found.map((o) => displayTitle(o.event))).toEqual(['Public holiday', 'Standup', 'Call']);
+  });
+});
+
+describe('newEventId', () => {
+  it('never repeats itself, even inside one millisecond', () => {
+    const ids = Array.from({ length: 500 }, () => newEventId());
+    expect(new Set(ids).size).toBe(ids.length);
   });
 });

@@ -258,6 +258,16 @@ export function createEvent(input: EventInput, id: string, now: number): Calenda
   };
 }
 
+/**
+ * A fresh event id. The clock alone is not enough — two events made in the
+ * same millisecond would collide — so a counter rides along with it.
+ */
+let sequence = 0;
+export function newEventId(): string {
+  sequence += 1;
+  return `e${Date.now().toString(36)}${sequence.toString(36)}`;
+}
+
 /** The title as shown when the field was left empty. */
 export const UNTITLED = 'New Event';
 

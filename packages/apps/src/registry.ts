@@ -1,6 +1,7 @@
 import type { AppDefinition } from '@lumen/kernel';
 import browser from './browser';
 import calculator from './calculator';
+import calendar from './calendar';
 import clock from './clock';
 import consoleApp from './console';
 import editor from './editor';
@@ -38,6 +39,7 @@ export const builtinApps: AppDefinition[] = [
   preview,
   media,
   calculator,
+  calendar,
   clock,
   settings,
   taskmanager,

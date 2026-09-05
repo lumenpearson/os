@@ -225,7 +225,6 @@ function MonthCell({
   return (
     // A cell is the grid's focus stop; the chips inside are reached from the
     // day, the agenda or search, which is where an event is a real tab stop.
-    // biome-ignore lint/a11y/useSemanticElements: a gridcell cannot be a button
     <div
       ref={register}
       role="gridcell"
