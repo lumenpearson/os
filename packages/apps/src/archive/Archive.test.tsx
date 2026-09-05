@@ -24,6 +24,9 @@ import { METHOD_STORED, writeZip, type ZipSource } from './zip';
 
 const Dummy = () => null;
 
+/** The window width the observer below reports; a test may narrow it. */
+let frameWidth = 1000;
+
 /** happy-dom measures everything as zero, so report a real window's box. */
 class SizedResizeObserver {
   private readonly callback: ResizeObserverCallback;
@@ -34,13 +37,13 @@ class SizedResizeObserver {
     const entry = {
       target,
       contentRect: {
-        width: 1000,
+        width: frameWidth,
         height: 620,
         x: 0,
         y: 0,
         top: 0,
         left: 0,
-        right: 1000,
+        right: frameWidth,
         bottom: 620,
       },
     } as unknown as ResizeObserverEntry;
@@ -145,6 +148,7 @@ async function confirmPicker(user: ReturnType<typeof userEvent.setup>, label: st
 const readText = async (path: string) => kernel.vfs.readText(path);
 
 beforeEach(async () => {
+  frameWidth = 1000;
   vi.useFakeTimers({ shouldAdvanceTime: true, now: NOW });
   const platform = createWebPlatform();
   kernel = createKernel({
@@ -199,6 +203,39 @@ describe('an empty window', () => {
     await mount();
     expect(command('file', 'extract-all').enabled).toBe(false);
     expect(command('edit', 'find').enabled).toBe(false);
+  });
+});
+
+describe('the inset title bar', () => {
+  /** The row the close, minimize and zoom controls are drawn over. */
+  const firstRow = () => screen.getAllByRole('toolbar')[0] as HTMLElement;
+
+  it('keeps the width of the window controls clear at the start of the row', async () => {
+    expect(definition.window.titleBar).toBe('inset');
+    await mount();
+    expect(firstRow().className).toContain('ps-(--lumen-window-controls-w)');
+  });
+
+  it('names the app in the row while no archive is open', async () => {
+    await mount();
+    expect(within(firstRow()).getByText('Archive Utility')).toBeInTheDocument();
+  });
+
+  it('names the open archive in the row, as the title bar used to', async () => {
+    await mount({ path: join(home, 'sample.zip') });
+    expect(within(firstRow()).getByText('sample.zip')).toBeInTheDocument();
+    expect(within(firstRow()).queryByText('Archive Utility')).not.toBeInTheDocument();
+  });
+
+  it('drops a button the File menu carries rather than crowd the name out', async () => {
+    // 380px, the narrowest window the app allows, is 68px shorter than it was.
+    frameWidth = 380;
+    await mount({ path: join(home, 'sample.zip') });
+    const row = within(firstRow());
+    expect(row.getByText('sample.zip')).toBeInTheDocument();
+    expect(row.getByRole('button', { name: 'Extract All' })).toBeInTheDocument();
+    expect(row.queryByRole('button', { name: 'Extract Selected' })).not.toBeInTheDocument();
+    expect(command('file', 'extract-selected').shortcut).toBe('Shift+Mod+E');
   });
 });
 

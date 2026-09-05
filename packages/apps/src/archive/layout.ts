@@ -23,6 +23,13 @@ export const MIN_NAME_WIDTH = 180;
 
 const DETAILS_WIDTH = 224;
 
+/**
+ * Below this the toolbar cannot hold four buttons, a search field and the
+ * archive's name at once — the window controls float over its left end and
+ * take 68px of it — so the two parts the File menu also carries drop out.
+ */
+const TIGHT_TOOLBAR_WIDTH = 480;
+
 /** Widths at which each column stops earning its place. */
 const COLUMN_STEPS: Array<{ column: Exclude<SortColumn, 'name'>; from: number }> = [
   { column: 'size', from: 0 },
@@ -38,6 +45,11 @@ export interface ArchiveLayout {
   detailsWidth: number;
   /** Toolbar buttons drop their labels and keep their icons. */
   compactToolbar: boolean;
+  /**
+   * The toolbar is down to the archive's name, the two ways in and Extract
+   * All. Extract Selected stays on the File menu, where it is anyway.
+   */
+  tightToolbar: boolean;
   /** The table scrolls sideways below this. */
   minTableWidth: number;
 }
@@ -56,6 +68,9 @@ export function layoutFor(width: number, options: { showDetails: boolean }): Arc
     showDetails: options.showDetails && width >= 760,
     detailsWidth: DETAILS_WIDTH,
     compactToolbar: width < 620,
+    // A window that has not been measured yet reads as 0: assume the room is
+    // there rather than hiding a button and putting it straight back.
+    tightToolbar: width > 0 && width < TIGHT_TOOLBAR_WIDTH,
     minTableWidth: MIN_NAME_WIDTH + fixed,
   };
 }

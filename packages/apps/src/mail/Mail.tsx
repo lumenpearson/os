@@ -203,6 +203,13 @@ export default function Mail(_props: AppProps) {
     pane,
     hasSelection: selected !== null,
   });
+  /**
+   * The toolbar is the title bar, so it starts 68px in and carries the
+   * mailbox's name. Below this there is no room for every action as well:
+   * Reply, Reply All and Forward step out, keeping their place on the
+   * Message menu and their keys.
+   */
+  const narrow = width > 0 && width < SIDEBAR_BREAKPOINT;
 
   useEscape(() => setSidebarOpen(false), layout.sidebarOverlay);
 
@@ -516,7 +523,7 @@ export default function Mail(_props: AppProps) {
     <div ref={frameRef} className="relative flex h-full min-h-0 w-full">
       <AppFrame
         toolbar={
-          <Toolbar dense>
+          <Toolbar dense windowControls>
             {layout.back ? (
               <IconButton size="sm" label="Back to list" onClick={() => setPane('list')}>
                 <ChevronLeft />
@@ -531,35 +538,40 @@ export default function Mail(_props: AppProps) {
                 <PanelLeft />
               </IconButton>
             )}
+            <span className="truncate-1 mr-1 min-w-0 max-w-48 text-base font-medium text-ink">
+              {title}
+            </span>
             <IconButton size="sm" label="New message" onClick={() => actions.newMessage()}>
               <SquarePen />
             </IconButton>
-            <ToolbarGroup className="ml-1">
-              <IconButton
-                size="sm"
-                label="Reply"
-                disabled={!selected}
-                onClick={() => actions.reply(false)}
-              >
-                <CornerUpLeft />
-              </IconButton>
-              <IconButton
-                size="sm"
-                label="Reply all"
-                disabled={!selected}
-                onClick={() => actions.reply(true)}
-              >
-                <ReplyAll />
-              </IconButton>
-              <IconButton
-                size="sm"
-                label="Forward"
-                disabled={!selected}
-                onClick={() => actions.forward()}
-              >
-                <Forward />
-              </IconButton>
-            </ToolbarGroup>
+            {!narrow && (
+              <ToolbarGroup className="ml-1">
+                <IconButton
+                  size="sm"
+                  label="Reply"
+                  disabled={!selected}
+                  onClick={() => actions.reply(false)}
+                >
+                  <CornerUpLeft />
+                </IconButton>
+                <IconButton
+                  size="sm"
+                  label="Reply all"
+                  disabled={!selected}
+                  onClick={() => actions.reply(true)}
+                >
+                  <ReplyAll />
+                </IconButton>
+                <IconButton
+                  size="sm"
+                  label="Forward"
+                  disabled={!selected}
+                  onClick={() => actions.forward()}
+                >
+                  <Forward />
+                </IconButton>
+              </ToolbarGroup>
+            )}
             <ToolbarGroup className="ml-1">
               {selectionInTrash ? (
                 <IconButton
@@ -599,21 +611,23 @@ export default function Mail(_props: AppProps) {
               </IconButton>
             </ToolbarGroup>
             <ToolbarSpacer />
-            <SearchField
-              ref={searchRef}
-              size="sm"
-              aria-label="Search mail"
-              placeholder="Search"
-              value={query}
-              onChange={setQuery}
-              className={width > 0 && width < SIDEBAR_BREAKPOINT ? 'w-28' : 'w-52'}
-              onKeyDown={(e) => {
-                // Keep typing keys — Delete included — inside the field rather
-                // than letting them reach the window's menu shortcuts.
-                e.stopPropagation();
-                if (e.key === 'Escape') setQuery('');
-              }}
-            />
+            {/* Fixed, so the row's slack goes to the mailbox name, not here. */}
+            <div className={narrow ? 'w-28 shrink-0' : 'w-52 shrink-0'}>
+              <SearchField
+                ref={searchRef}
+                size="sm"
+                aria-label="Search mail"
+                placeholder="Search"
+                value={query}
+                onChange={setQuery}
+                onKeyDown={(e) => {
+                  // Keep typing keys — Delete included — inside the field rather
+                  // than letting them reach the window's menu shortcuts.
+                  e.stopPropagation();
+                  if (e.key === 'Escape') setQuery('');
+                }}
+              />
+            </div>
           </Toolbar>
         }
         sidebar={layout.sidebar ? sidebar : undefined}

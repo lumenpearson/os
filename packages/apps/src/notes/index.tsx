@@ -14,7 +14,7 @@ export default defineApp({
   category: 'office',
   icon: createAppIcon({ glyph: NotebookPen, tone: 'amber' }),
   component: lazy(() => import('./Notes')),
-  window: { width: 900, height: 620, minWidth: 380, minHeight: 300 },
+  window: { width: 900, height: 620, minWidth: 380, minHeight: 300, titleBar: 'inset' },
   pinnedByDefault: true,
   keywords: ['note', 'markdown', 'write', 'todo', 'journal'],
 });

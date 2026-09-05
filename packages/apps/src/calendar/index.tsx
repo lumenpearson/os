@@ -14,7 +14,7 @@ export default defineApp({
   category: 'office',
   icon: createAppIcon({ glyph: CalendarDays, tone: 'graphite' }),
   component: lazy(() => import('./Calendar')),
-  window: { width: 1000, height: 680, minWidth: 420, minHeight: 360 },
+  window: { width: 1000, height: 680, minWidth: 420, minHeight: 360, titleBar: 'inset' },
   singleton: true,
   keywords: ['calendar', 'events', 'schedule', 'agenda', 'appointments', 'month', 'week'],
 });

@@ -46,6 +46,15 @@ describe('layoutFor', () => {
     expect(layoutFor(620, { showDetails: false }).compactToolbar).toBe(false);
   });
 
+  it('drops the toolbar parts the File menu also carries in the narrowest window', () => {
+    // The window controls sit in this row now, so 68px of it is spoken for.
+    expect(layoutFor(380, { showDetails: false }).tightToolbar).toBe(true);
+    expect(layoutFor(479, { showDetails: false }).tightToolbar).toBe(true);
+    expect(layoutFor(480, { showDetails: false }).tightToolbar).toBe(false);
+    // Unmeasured: keep the full row rather than flash a button away and back.
+    expect(layoutFor(0, { showDetails: false }).tightToolbar).toBe(false);
+  });
+
   it('reports a minimum the table can scroll inside', () => {
     expect(layoutFor(380, { showDetails: false }).minTableWidth).toBe(MIN_NAME_WIDTH + 88);
     expect(layoutFor(1200, { showDetails: false }).minTableWidth).toBe(

@@ -88,11 +88,19 @@ const LIMITS = { depth: 32, maxBytes: 192 * 1024 * 1024, sizeOf: sizeOfSnapshot 
 type Snapshot = ImageData | null;
 
 /**
- * The narrowest window that still fits the colour well, the tool options and
- * the zoom controls on one row. Below it the options take a row of their own
- * rather than being squeezed out of reach.
+ * The narrowest window that still fits the picture's name, the colour well,
+ * the tool options and the zoom controls on one row. Below it the options
+ * take a row of their own rather than being squeezed out of reach.
  */
-const OPTIONS_INLINE_WIDTH = 640;
+const OPTIONS_INLINE_WIDTH = 800;
+
+/**
+ * Narrower again, and the recently used colours go too. The two wells and
+ * Swap stay: they are the tool, the swatches are the shortcut.
+ */
+const RECENT_COLOURS_WIDTH = 560;
+
+const NO_COLOURS: readonly string[] = [];
 
 /**
  * The face the text tool draws with. The document is a bitmap, so this is
@@ -591,21 +599,26 @@ export default function Paint(_props: AppProps) {
   }, [focused, setPrefs]);
 
   const tool = isToolId(prefs.tool) ? prefs.tool : DEFAULT_PREFS.tool;
-  // Below this the colour well, the tool options and the zoom controls cannot
-  // share one row, so the options take a row of their own. Width 0 is the
-  // frame before its first measurement: assume there is room.
-  const stackOptions = frame.width > 0 && frame.width < OPTIONS_INLINE_WIDTH;
+  // Width 0 is the frame before its first measurement: assume there is room.
+  const measured = frame.width > 0;
+  const stackOptions = measured && frame.width < OPTIONS_INLINE_WIDTH;
+  const showRecent = !measured || frame.width >= RECENT_COLOURS_WIDTH;
 
   return (
     <div ref={frameRef} className="flex h-full min-h-0 w-full flex-col">
       <AppFrame
         toolbar={
           <>
-            <Toolbar dense>
+            <Toolbar dense windowControls>
+              {/* The window has no title bar of its own: this row names the
+                  picture, and "Edited" while it has unsaved changes. */}
+              <span className="truncate-1 mr-1 min-w-0 max-w-56 text-base font-medium text-ink">
+                {documentTitle(path, dirty)}
+              </span>
               <ColourWell
                 foreground={prefs.foreground}
                 background={prefs.background}
-                recent={prefs.recent}
+                recent={showRecent ? prefs.recent : NO_COLOURS}
                 onForeground={useColour}
                 onBackground={(background) => setPrefs({ background })}
                 onSwap={() =>

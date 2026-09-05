@@ -19,6 +19,9 @@ import definition from './index';
 
 const Dummy = () => null;
 
+/** The window width the observer below reports; a test may narrow it. */
+let frameWidth = 1000;
+
 /**
  * happy-dom gives every element a zero size and its ResizeObserver is a stub,
  * so the window would measure as too narrow for the sidebar. This one reports
@@ -33,13 +36,13 @@ class SizedResizeObserver {
     const entry = {
       target,
       contentRect: {
-        width: 1000,
+        width: frameWidth,
         height: 680,
         x: 0,
         y: 0,
         top: 0,
         left: 0,
-        right: 1000,
+        right: frameWidth,
         bottom: 680,
       },
     } as unknown as ResizeObserverEntry;
@@ -128,6 +131,7 @@ async function addEvent(user: ReturnType<typeof userEvent.setup>, title: string)
 }
 
 beforeEach(async () => {
+  frameWidth = 1000;
   vi.useFakeTimers({ shouldAdvanceTime: true, now: NOW });
   const platform = createWebPlatform();
   kernel = createKernel({
@@ -160,6 +164,36 @@ describe('the app definition', () => {
     expect(definition.category).toBe('office');
     expect(definition.singleton).toBe(true);
     expect(definition.keywords).toContain('agenda');
+  });
+});
+
+describe('the inset title bar', () => {
+  it('draws no band of its own and keeps the controls clear of the toolbar', async () => {
+    expect(definition.window.titleBar).toBe('inset');
+    await mount();
+    // The first row of the window is the one the close, minimize and zoom
+    // circles are drawn over, so it starts past their width.
+    expect(screen.getAllByRole('toolbar')[0]?.className).toContain(
+      'ps-(--lumen-window-controls-w)',
+    );
+  });
+
+  it('still says what the window is showing, now that the title bar is gone', async () => {
+    await mount();
+    expect(heading()).toHaveTextContent('September 2026');
+    expect(screen.getByRole('radiogroup', { name: 'View' })).toBeInTheDocument();
+  });
+
+  it('keeps the range readable in the narrowest window by shortening the views', async () => {
+    // 420px: the row has 68px less to spend, so the view switch takes initials
+    // and the date range — the only thing naming the window — keeps its room.
+    frameWidth = 420;
+    await mount();
+    const views = screen.getByRole('radiogroup', { name: 'View' });
+    const month = within(views).getByRole('radio', { name: 'Month' });
+    expect(month).toHaveTextContent('M');
+    expect(month).toHaveAttribute('title', 'Month');
+    expect(heading()).toHaveTextContent('September 2026');
   });
 });
 

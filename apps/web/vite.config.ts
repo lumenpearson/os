@@ -1,4 +1,4 @@
-import { cpSync, existsSync, readFileSync, statSync } from 'node:fs';
+import { cpSync, readFileSync } from 'node:fs';
 import { join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import tailwindcss from '@tailwindcss/vite';
@@ -46,17 +46,31 @@ function storeCatalogue(): Plugin {
           res.end();
           return;
         }
-        if (!existsSync(file) || !statSync(file).isFile()) return next();
+        // Read it and see, rather than asking first and reading second: two
+        // calls leave a window in which the answer to the first stops being
+        // true. A directory or a missing file throws, and both mean the same
+        // thing here — not ours, pass it on.
+        let body: Buffer;
+        try {
+          body = readFileSync(file);
+        } catch {
+          return next();
+        }
         const dot = file.lastIndexOf('.');
         res.setHeader('Content-Type', CONTENT_TYPES[file.slice(dot)] ?? 'application/octet-stream');
-        res.end(readFileSync(file));
+        res.end(body);
       });
     },
     closeBundle() {
-      if (!existsSync(STORE_DIR)) return;
-      cpSync(STORE_DIR, fileURLToPath(new URL('./dist/store/', import.meta.url)), {
-        recursive: true,
-      });
+      try {
+        cpSync(STORE_DIR, fileURLToPath(new URL('./dist/store/', import.meta.url)), {
+          recursive: true,
+        });
+      } catch (e) {
+        // A checkout that has never run `pnpm store` has no catalogue, which
+        // is not a build failure; anything else is.
+        if ((e as NodeJS.ErrnoException).code !== 'ENOENT') throw e;
+      }
     },
   };
 }

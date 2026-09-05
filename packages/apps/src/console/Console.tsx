@@ -59,8 +59,17 @@ const LEVEL_LABEL: Record<LogLevel, string> = {
   error: 'Error',
 };
 
+// How much of the row survives at a given width, measured on the row itself.
+// The window controls float over its left end and take 68px of it, so the
+// parts the menubar also carries leave first. Pause is not one of them: the
+// row is the only place the paused state shows now the title bar is gone.
+
 /** Below this the source filter drops out; the search box is worth more. */
 const SOURCES_AT = 700;
+/** Below this Export (Mod+S) and Clear (Mod+K) drop out. */
+const ACTIONS_AT = 460;
+/** Below this Follow Tail (Mod+T) goes too, and the search gives up more. */
+const FOLLOW_AT = 400;
 
 export default function Console(_props: AppProps) {
   const kernel = useKernel();
@@ -167,6 +176,8 @@ export default function Console(_props: AppProps) {
   );
 
   const showSources = width === 0 || width >= SOURCES_AT;
+  const showActions = width === 0 || width >= ACTIONS_AT;
+  const showFollow = width === 0 || width >= FOLLOW_AT;
   const empty =
     all.length === 0
       ? {
@@ -183,8 +194,15 @@ export default function Console(_props: AppProps) {
   return (
     <AppFrame
       toolbar={
-        <Toolbar dense>
+        <Toolbar dense windowControls>
           <div ref={toolbarRef} className="flex min-w-0 flex-1 items-center gap-1.5">
+            {/*
+              The window has no title bar of its own, so the row says what it
+              is. It is also the strip the window drags from, which a plain
+              span is.
+            */}
+            <span className="shrink-0 pr-0.5 text-base font-medium text-ink">Console</span>
+
             <div className="flex shrink-0 items-center gap-0.5" role="group" aria-label="Levels">
               {LEVELS.map((level) => (
                 <Button
@@ -221,9 +239,10 @@ export default function Console(_props: AppProps) {
             <SearchField
               ref={searchRef}
               size="sm"
-              // The four level buttons and the icons keep their size; the
-              // search field is the one control here that can give up width.
-              className="min-w-16 max-w-56"
+              // The name, the four level buttons and the icons keep their
+              // size; the search field is the one control here that can give
+              // up width, and in the narrowest window it gives up more.
+              className={cx('max-w-56', showFollow ? 'min-w-16' : 'min-w-12')}
               placeholder="Search, or /regex/"
               aria-label="Search log"
               value={search}
@@ -232,14 +251,16 @@ export default function Console(_props: AppProps) {
 
             <ToolbarSpacer />
 
-            <IconButton
-              size="sm"
-              label={follow ? 'Stop following the tail' : 'Follow the tail'}
-              aria-pressed={follow}
-              onClick={() => setFollow((f) => !f)}
-            >
-              <ArrowDownToLine className={cx('size-3.5', follow ? undefined : 'text-ink-3')} />
-            </IconButton>
+            {showFollow && (
+              <IconButton
+                size="sm"
+                label={follow ? 'Stop following the tail' : 'Follow the tail'}
+                aria-pressed={follow}
+                onClick={() => setFollow((f) => !f)}
+              >
+                <ArrowDownToLine className={cx('size-3.5', follow ? undefined : 'text-ink-3')} />
+              </IconButton>
+            )}
             <IconButton
               size="sm"
               label={capture.paused ? 'Resume capture' : 'Pause capture'}
@@ -248,12 +269,16 @@ export default function Console(_props: AppProps) {
             >
               {capture.paused ? <Play className="size-3.5" /> : <Pause className="size-3.5" />}
             </IconButton>
-            <IconButton size="sm" label="Export log" onClick={() => void exportLog()}>
-              <Download className="size-3.5" />
-            </IconButton>
-            <IconButton size="sm" label="Clear" onClick={clear}>
-              <Trash2 className="size-3.5" />
-            </IconButton>
+            {showActions && (
+              <>
+                <IconButton size="sm" label="Export log" onClick={() => void exportLog()}>
+                  <Download className="size-3.5" />
+                </IconButton>
+                <IconButton size="sm" label="Clear" onClick={clear}>
+                  <Trash2 className="size-3.5" />
+                </IconButton>
+              </>
+            )}
           </div>
         </Toolbar>
       }

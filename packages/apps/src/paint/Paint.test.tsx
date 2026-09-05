@@ -26,24 +26,18 @@ const Dummy = () => null;
  * stub, so the viewport would never settle. This one answers with a real
  * window's box on the first observation, as a browser does.
  */
+let viewport = { width: 800, height: 560 };
+
 class SizedResizeObserver {
   private readonly callback: ResizeObserverCallback;
   constructor(callback: ResizeObserverCallback) {
     this.callback = callback;
   }
   observe(target: Element) {
+    const { width, height } = viewport;
     const entry = {
       target,
-      contentRect: {
-        width: 800,
-        height: 560,
-        x: 0,
-        y: 0,
-        top: 0,
-        left: 0,
-        right: 800,
-        bottom: 560,
-      },
+      contentRect: { width, height, x: 0, y: 0, top: 0, left: 0, right: width, bottom: height },
     } as unknown as ResizeObserverEntry;
     this.callback([entry], this as unknown as ResizeObserver);
   }
@@ -111,10 +105,18 @@ async function choose(menu: string, id: string) {
 const prefsPath = () => join(home, '.config', 'paint.json');
 const saved = () => kernel.vfs.readJson<PaintPrefs>(prefsPath());
 
+/** The window's own top row: with an inset title bar it is the title bar. */
+function topRow(): HTMLElement {
+  const [row] = screen.getAllByRole('toolbar');
+  if (!row) throw new Error('the window has no toolbar');
+  return row;
+}
+
 const tools = () => screen.getByRole('toolbar', { name: 'Tools' });
 const tool = (name: RegExp) => within(tools()).getByRole('button', { name });
 
 beforeEach(async () => {
+  viewport = { width: 800, height: 560 };
   globalThis.ResizeObserver = SizedResizeObserver as unknown as typeof ResizeObserver;
   const platform = createWebPlatform();
   kernel = createKernel({
@@ -142,6 +144,41 @@ describe('the app definition', () => {
     // An editor rather than a viewer, and below Preview, which stays what a
     // double-click on a photo opens.
     expect(definition.fileAssociations?.[0]).toMatchObject({ role: 'editor', priority: 1 });
+  });
+});
+
+describe('the inset title bar', () => {
+  it('asks for no title bar band of its own', () => {
+    expect(definition.window?.titleBar).toBe('inset');
+  });
+
+  it('leaves the window controls their place and names the picture', async () => {
+    await mount();
+    expect(topRow().className).toContain('ps-(--lumen-window-controls-w)');
+    expect(within(topRow()).getByText('Untitled')).toBeInTheDocument();
+  });
+
+  it('keeps the name and drops the swatches on the narrowest window', async () => {
+    await kernel.vfs.writeJson(
+      join(home, '.config', 'paint.json'),
+      { recent: ['#ff0000'] },
+      { recursive: true },
+    );
+    await mount();
+    expect(screen.getByRole('group', { name: 'Recent colours' })).toBeInTheDocument();
+
+    cleanup();
+    viewport = { width: 480, height: 380 };
+    await mount();
+    expect(within(topRow()).getByText('Untitled')).toBeInTheDocument();
+    expect(screen.queryByRole('group', { name: 'Recent colours' })).not.toBeInTheDocument();
+
+    // The tool options take a row of their own, which starts under the
+    // controls and so needs no gutter.
+    const rows = screen.getAllByRole('toolbar');
+    expect(rows).toHaveLength(3);
+    expect(rows[0]?.className).toContain('ps-(--lumen-window-controls-w)');
+    expect(rows[1]?.className).not.toContain('ps-(--lumen-window-controls-w)');
   });
 });
 

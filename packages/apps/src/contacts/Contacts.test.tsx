@@ -101,6 +101,13 @@ async function choose(menu: string, id: string) {
   await settle();
 }
 
+/** The window's own top row: with an inset title bar it is the title bar. */
+function topRow(): HTMLElement {
+  const [row] = screen.getAllByRole('toolbar');
+  if (!row) throw new Error('the window has no toolbar');
+  return row;
+}
+
 const dataPath = () => join(home, '.config', 'contacts.json');
 const saved = () => kernel.vfs.readJson<ContactsData>(dataPath());
 const list = () => screen.getByRole('list', { name: 'Contacts' });
@@ -157,6 +164,27 @@ describe('the app definition', () => {
     expect(definition.fileAssociations).toEqual([
       { extensions: ['.vcf'], role: 'editor', priority: 1 },
     ]);
+  });
+});
+
+describe('the inset title bar', () => {
+  it('asks for no title bar band of its own', () => {
+    expect(definition.window?.titleBar).toBe('inset');
+  });
+
+  it('leaves the window controls their place and names the window', async () => {
+    await mount();
+    expect(topRow().className).toContain('ps-(--lumen-window-controls-w)');
+    expect(within(topRow()).getByText('Contacts')).toBeInTheDocument();
+  });
+
+  it('still names the window on the narrowest one it opens at', async () => {
+    globalThis.ResizeObserver = sizedObserver(380, 320);
+    await mount();
+    expect(within(topRow()).getByText('Contacts')).toBeInTheDocument();
+    expect(
+      within(topRow()).getByRole('searchbox', { name: 'Search contacts' }),
+    ).toBeInTheDocument();
   });
 });
 

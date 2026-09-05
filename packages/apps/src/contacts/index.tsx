@@ -14,7 +14,7 @@ export default defineApp({
   category: 'office',
   icon: createAppIcon({ glyph: Users, tone: 'teal' }),
   component: lazy(() => import('./Contacts')),
-  window: { width: 900, height: 640, minWidth: 380, minHeight: 320 },
+  window: { width: 900, height: 640, minWidth: 380, minHeight: 320, titleBar: 'inset' },
   singleton: true,
   fileAssociations: [{ extensions: ['.vcf'], role: 'editor', priority: 1 }],
   keywords: ['contacts', 'address book', 'people', 'vcard', 'phone', 'email', 'groups'],

@@ -108,6 +108,13 @@ async function choose(menu: string, id: string) {
 const dataPath = () => join(home, '.config', 'mail.json');
 const saved = () => kernel.vfs.readJson<MailData>(dataPath());
 
+/** The window's own top row: with an inset title bar it is the title bar. */
+function topRow(): HTMLElement {
+  const [row] = screen.getAllByRole('toolbar');
+  if (!row) throw new Error('the window has no toolbar');
+  return row;
+}
+
 const list = () => screen.getByRole('listbox', { name: 'Messages' });
 const rows = () => within(list()).getAllByRole('option');
 const mailboxButton = (name: RegExp) => screen.getByRole('button', { name });
@@ -148,6 +155,33 @@ describe('the app definition', () => {
     expect(definition.category).toBe('internet');
     expect(definition.singleton).toBe(true);
     expect(definition.window).toMatchObject({ minWidth: 420, minHeight: 340 });
+  });
+});
+
+describe('the inset title bar', () => {
+  it('asks for no title bar band of its own', () => {
+    expect(definition.window?.titleBar).toBe('inset');
+  });
+
+  it('leaves the window controls their place and names the mailbox', async () => {
+    await mount();
+    expect(topRow().className).toContain('ps-(--lumen-window-controls-w)');
+    expect(within(topRow()).getByText('Inbox')).toBeInTheDocument();
+  });
+
+  it('follows the reader from one mailbox to another', async () => {
+    await mount();
+    await click(mailboxButton(/^Sent/));
+    expect(within(topRow()).getByText('Sent')).toBeInTheDocument();
+    expect(within(topRow()).queryByText('Inbox')).not.toBeInTheDocument();
+  });
+
+  it('gives up the reply actions before the name on a narrow window', async () => {
+    viewport = { width: 460, height: 520 };
+    await mount();
+    expect(within(topRow()).getByText('Inbox')).toBeInTheDocument();
+    expect(within(topRow()).queryByRole('button', { name: 'Reply' })).not.toBeInTheDocument();
+    expect(within(topRow()).getByRole('button', { name: 'New message' })).toBeInTheDocument();
   });
 });
 

@@ -14,7 +14,7 @@ export default defineApp({
   category: 'utilities',
   icon: createAppIcon({ glyph: FileArchive, tone: 'graphite' }),
   component: lazy(() => import('./Archive')),
-  window: { width: 820, height: 560, minWidth: 380, minHeight: 300 },
+  window: { width: 820, height: 560, minWidth: 380, minHeight: 300, titleBar: 'inset' },
   fileAssociations: [{ extensions: ['.zip'], role: 'editor', priority: 1 }],
   keywords: ['zip', 'archive', 'compress', 'extract', 'unzip'],
 });

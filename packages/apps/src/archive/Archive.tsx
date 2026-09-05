@@ -110,7 +110,9 @@ export default function Archive(props: AppProps) {
   const currentEntry =
     current && current.entry >= 0 ? (doc?.archive.entries[current.entry] ?? null) : null;
 
-  useTitle(doc?.path ? basename(doc.path) : 'Archive Utility');
+  /** What this window is: the archive in it, or the app until there is one. */
+  const windowName = doc?.path ? basename(doc.path) : 'Archive Utility';
+  useTitle(windowName);
   useEffect(() => {
     setDocument(doc?.path ?? null);
   }, [doc?.path, setDocument]);
@@ -348,7 +350,12 @@ export default function Archive(props: AppProps) {
 
   return (
     <div ref={frame} className="flex h-full min-h-0 w-full flex-col bg-surface text-ink">
-      <Toolbar dense>
+      <Toolbar dense windowControls>
+        {/*
+          The window has no title bar of its own now, so this row names it.
+          It is also the strip the window drags from, which a plain span is.
+        */}
+        <span className="truncate-1 min-w-0 pr-1 text-base font-medium text-ink">{windowName}</span>
         <Button
           size="sm"
           icon={<FolderOpen className="size-3.5" />}
@@ -369,7 +376,7 @@ export default function Archive(props: AppProps) {
         >
           {label('New Archive')}
         </Button>
-        <span aria-hidden className="mx-1 h-4 w-px bg-rule" />
+        {!layout.tightToolbar && <span aria-hidden className="mx-1 h-4 w-px bg-rule" />}
         <Button
           size="sm"
           icon={<FolderInput className="size-3.5" />}
@@ -380,26 +387,34 @@ export default function Archive(props: AppProps) {
         >
           {label('Extract All')}
         </Button>
-        <Button
-          size="sm"
-          icon={<FolderDown className="size-3.5" />}
-          aria-label="Extract Selected"
-          title="Extract Selected"
-          disabled={busy || selectedIndices.length === 0}
-          onClick={() => latest.current.extractSelected()}
-        >
-          {label('Extract Selected')}
-        </Button>
+        {!layout.tightToolbar && (
+          <Button
+            size="sm"
+            icon={<FolderDown className="size-3.5" />}
+            aria-label="Extract Selected"
+            title="Extract Selected"
+            disabled={busy || selectedIndices.length === 0}
+            onClick={() => latest.current.extractSelected()}
+          >
+            {label('Extract Selected')}
+          </Button>
+        )}
         <ToolbarSpacer />
-        <SearchField
-          ref={searchRef}
-          value={query}
-          onChange={setQuery}
-          placeholder="Find"
-          aria-label="Find in archive"
-          disabled={!doc}
-          className={cx('h-6', layout.compactToolbar ? 'w-28' : 'w-48')}
-        />
+        {/* Fixed width, so the name at the far left is what gives way first. */}
+        <div className="shrink-0">
+          <SearchField
+            ref={searchRef}
+            value={query}
+            onChange={setQuery}
+            placeholder="Find"
+            aria-label="Find in archive"
+            disabled={!doc}
+            className={cx(
+              'h-6',
+              layout.tightToolbar ? 'w-24' : layout.compactToolbar ? 'w-28' : 'w-48',
+            )}
+          />
+        </div>
       </Toolbar>
 
       <div className="flex min-h-0 flex-1">

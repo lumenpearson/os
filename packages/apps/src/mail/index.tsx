@@ -14,7 +14,7 @@ export default defineApp({
   category: 'internet',
   icon: createAppIcon({ glyph: Mail, tone: 'blue' }),
   component: lazy(() => import('./Mail')),
-  window: { width: 1040, height: 700, minWidth: 420, minHeight: 340 },
+  window: { width: 1040, height: 700, minWidth: 420, minHeight: 340, titleBar: 'inset' },
   singleton: true,
   keywords: ['mail', 'inbox', 'message', 'compose', 'draft'],
 });

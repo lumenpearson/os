@@ -194,6 +194,24 @@ async function worstSpill(page: Page): Promise<{ px: number; where: string }> {
   });
 }
 
+/**
+ * The worst spill once the layout has stopped moving.
+ *
+ * A ResizeObserver settles a frame or two after the drag, so an immediate
+ * reading catches the layout mid-thought. This waits for a clean one, and
+ * returns the last reading either way — a failure has to name the app and the
+ * element, and an assertion that throws here would report neither.
+ */
+async function settledSpill(page: Page): Promise<{ px: number; where: string }> {
+  const deadline = Date.now() + 5_000;
+  let last = await worstSpill(page);
+  while (last.px > 2 && Date.now() < deadline) {
+    await page.waitForTimeout(200);
+    last = await worstSpill(page);
+  }
+  return last;
+}
+
 /** Drag the east then the south edge inward; the window stops at its minimum. */
 async function shrinkToMinimum(page: Page) {
   const frame = page.getByTestId('window').first();
@@ -222,11 +240,8 @@ test.describe('every app at its declared minimum size', () => {
       await launch(page, name);
       await expect(page.getByTestId('window').first()).toBeVisible();
       await shrinkToMinimum(page);
+      const spill = await settledSpill(page);
       // One hairline of slack: borders round in and out of the client box.
-      await expect
-        .poll(async () => (await worstSpill(page)).px, { timeout: 5_000 })
-        .toBeLessThanOrEqual(2);
-      const spill = await worstSpill(page);
       if (spill.px > 2) spills.push(`${name}: ${spill.px}px — ${spill.where}`);
       await page.keyboard.press('Control+w');
       await expect(page.getByTestId('window')).toHaveCount(0);

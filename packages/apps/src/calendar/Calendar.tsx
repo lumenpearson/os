@@ -274,7 +274,7 @@ export default function Calendar(_props: AppProps) {
     <div ref={frameRef} className="flex h-full min-h-0 w-full">
       <AppFrame
         toolbar={
-          <Toolbar dense>
+          <Toolbar dense windowControls>
             <IconButton size="sm" label="Previous" onClick={() => latest.current.step(-1)}>
               <ChevronLeft className="size-3.5" />
             </IconButton>
@@ -284,12 +284,20 @@ export default function Calendar(_props: AppProps) {
             <IconButton size="sm" label="Next" onClick={() => latest.current.step(1)}>
               <ChevronRight className="size-3.5" />
             </IconButton>
+            {/* The window has no title bar of its own, so this line is what
+                names it: the range in view, as the title used to read it. */}
             <span className="truncate-1 pl-1 text-md font-medium text-ink">{title}</span>
             <ToolbarSpacer />
             <SegmentedControl
               size="sm"
               aria-label="View"
-              options={VIEWS.map((id) => ({ value: id, label: VIEW_LABELS[id] }))}
+              options={VIEWS.map((id) =>
+                // Initials once the row is short of the width the controls took:
+                // the tooltip and the accessible name stay the whole word.
+                layout.compactViews
+                  ? { value: id, icon: VIEW_LABELS[id].charAt(0), title: VIEW_LABELS[id] }
+                  : { value: id, label: VIEW_LABELS[id] },
+              )}
               value={view}
               onChange={(next) => setPrefs({ view: next })}
             />

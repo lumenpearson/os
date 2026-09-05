@@ -14,7 +14,7 @@ export default defineApp({
   category: 'media',
   icon: createAppIcon({ glyph: Paintbrush, tone: 'graphite' }),
   component: lazy(() => import('./Paint')),
-  window: { width: 980, height: 700, minWidth: 480, minHeight: 380 },
+  window: { width: 980, height: 700, minWidth: 480, minHeight: 380, titleBar: 'inset' },
   // Below Preview, which stays what a double-click opens: opening a photo to
   // look at it is the common case, and editing it is the deliberate one.
   fileAssociations: [

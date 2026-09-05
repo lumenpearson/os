@@ -46,6 +46,13 @@ function mount(args: Record<string, unknown> = {}) {
   return { ...view, windowId };
 }
 
+/** The window's own top row: with an inset title bar it is the title bar. */
+function topRow(): HTMLElement {
+  const [row] = screen.getAllByRole('toolbar');
+  if (!row) throw new Error('the window has no toolbar');
+  return row;
+}
+
 const area = () => screen.getByRole('textbox', { name: 'Note text' }) as HTMLTextAreaElement;
 const list = () => screen.getByRole('listbox', { name: 'Notes' });
 const rows = () => within(list()).getAllByRole('option');
@@ -78,6 +85,24 @@ beforeEach(async () => {
   dir = notesDir(kernel.home);
   await kernel.vfs.writeText(join(dir, 'Ideas.md'), IDEAS, { recursive: true });
   await kernel.vfs.writeText(join(dir, 'Tasks.md'), TASKS, { recursive: true });
+});
+
+describe('the inset title bar', () => {
+  it('asks for no title bar band of its own', () => {
+    expect(definition.window?.titleBar).toBe('inset');
+  });
+
+  it('leaves the window controls their place and names the open note', async () => {
+    mount();
+    await waitFor(() => expect(area().value).toContain('# Tasks'));
+    expect(topRow().className).toContain('ps-(--lumen-window-controls-w)');
+    expect(within(topRow()).getByText('Tasks')).toBeInTheDocument();
+  });
+
+  it('follows the note the window was launched with', async () => {
+    mount({ path: join(dir, 'Ideas.md') });
+    await waitFor(() => expect(within(topRow()).getByText('Ideas')).toBeInTheDocument());
+  });
 });
 
 describe('opening', () => {

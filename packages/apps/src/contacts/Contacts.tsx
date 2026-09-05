@@ -440,7 +440,9 @@ export default function Contacts(props: AppProps) {
     <div ref={root} className="flex h-full min-h-0 w-full">
       <AppFrame
         toolbar={
-          <Toolbar dense>
+          <Toolbar dense windowControls>
+            {/* The window has no title bar of its own, so this row names it. */}
+            <span className="truncate-1 mr-1 min-w-0 text-base font-medium text-ink">Contacts</span>
             {layout.canSidebar && (
               <IconButton
                 size="sm"

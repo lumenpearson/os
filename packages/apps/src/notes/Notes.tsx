@@ -552,31 +552,38 @@ export default function Notes(props: AppProps) {
     <div ref={rootRef} className="flex h-full w-full flex-col">
       <AppFrame
         toolbar={
-          <Toolbar dense>
+          <Toolbar dense windowControls>
             {layout.back && (
               <IconButton label="Back to notes" size="sm" onClick={() => setPane('list')}>
                 <ChevronLeft />
               </IconButton>
             )}
-            <SearchField
-              ref={searchInput}
-              size="sm"
-              value={query}
-              onChange={setQuery}
-              onKeyDown={onSearchKeyDown}
-              onFocus={() => setSearchFocused(true)}
-              onBlur={() => setSearchFocused(false)}
-              placeholder="Search notes"
-              aria-label="Search notes"
-              className="max-w-64 min-w-24"
-            />
+            {/* The window has no title bar of its own, so this row names it. */}
+            <span className="truncate-1 mr-1 min-w-0 max-w-56 text-base font-medium text-ink">
+              {title}
+            </span>
+            <div className="min-w-20 max-w-64 flex-1">
+              <SearchField
+                ref={searchInput}
+                size="sm"
+                value={query}
+                onChange={setQuery}
+                onKeyDown={onSearchKeyDown}
+                onFocus={() => setSearchFocused(true)}
+                onBlur={() => setSearchFocused(false)}
+                placeholder="Search notes"
+                aria-label="Search notes"
+              />
+            </div>
             {query.trim() !== '' && (
               <span className="mono shrink-0 text-2xs tabular-nums text-ink-3">
                 {totalMatches} in {rows.length}
               </span>
             )}
             <ToolbarSpacer />
-            {selected !== null && layout.editor && (
+            {/* Folded to the editor alone, the row gives the switcher's place
+                to the note's name; View still carries the three modes. */}
+            {selected !== null && layout.editor && !layout.back && (
               <SegmentedControl
                 size="sm"
                 aria-label="View mode"
