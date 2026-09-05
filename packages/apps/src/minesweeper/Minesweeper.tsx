@@ -5,7 +5,7 @@ import { Clock, Flag, RotateCcw } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { type AppProps, useApp, useAppMenus, useJsonFile } from '../_sdk';
 import { BestTimesDialog } from './BestTimesDialog';
-import { Board } from './Board';
+import { Board } from './BoardGrid';
 import { CustomDialog } from './CustomDialog';
 import { type BoardConfig, DIFFICULTY_LABEL, describeConfig, presetOf } from './difficulty';
 import { formatClock, statusMessage } from './labels';

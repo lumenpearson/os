@@ -64,7 +64,6 @@
     "homepage": "https://github.com/lumenpearson/os",
     "copyright": "Copyright (c) 2026 Lumen Pearson",
     "license": "MIT",
-    "licenseFile": "../../../LICENSE",
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",

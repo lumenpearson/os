@@ -77,6 +77,17 @@ declare it as a dependency so the package manager installs it; the AppImage
 expects it to be present already, which it is on any desktop system with a
 current GNOME or a browser that uses it.
 
+## The MSI and the licence file
+
+Tauri's `bundle.licenseFile` is handed to both packagers, and NSIS and WiX do
+not want the same thing. NSIS accepts a plain-text file; WiX's `light.exe`
+rejects one and fails the whole MSI, which is what took the Windows job down
+once already. If a licence has to appear in the installer, it needs to be RTF
+and pointed at WiX specifically — not the repository's plain `LICENSE`.
+
+The bundle keeps `"license": "MIT"` as metadata, which costs nothing and is
+read by the package managers on Linux.
+
 ## Signing
 
 None of the bundles are signed. In practice:
