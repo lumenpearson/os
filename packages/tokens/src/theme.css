@@ -129,6 +129,10 @@
   --lumen-menubar-h: 26px;
   --lumen-taskbar-h: 52px;
   --lumen-window-titlebar-h: 36px;
+  /* Close, minimize and zoom, plus the padding either side of them. A window
+     whose app draws its own toolbar in that row keeps this much clear on the
+     left, so the controls never sit on top of a control of the app's. */
+  --lumen-window-controls-w: 68px;
   --lumen-cursor-size: 20px;
 }
 

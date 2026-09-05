@@ -192,6 +192,22 @@ export interface Settings {
     automatic: boolean;
     lastChecked: number | null;
   };
+  /**
+   * Where the package catalogue is fetched from. The store is a directory of
+   * static files, so this is a base URL and nothing more: a relative path is
+   * served by whatever host serves Lumen itself, and an absolute one points at
+   * a store deployed on its own. Moving the store between hosts is this one
+   * setting.
+   */
+  store: {
+    origin: string;
+    /** Refresh the catalogue on its own, rather than only when asked. */
+    autoSync: boolean;
+    /** Minutes between refreshes. 0 leaves it to the Refresh button. */
+    syncMinutes: number;
+    /** When the catalogue was last fetched, so a stale one can be shown as such. */
+    lastSync: number | null;
+  };
   setup: {
     completed: boolean;
     /** Version that ran the setup, for migrations. */
@@ -199,6 +215,12 @@ export interface Settings {
     completedAt: number | null;
   };
 }
+
+/**
+ * The catalogue that ships with Lumen, served beside it. A store deployed on
+ * its own host is an absolute URL here instead; nothing else changes.
+ */
+export const DEFAULT_STORE_ORIGIN = '/store/';
 
 export const SETTINGS_VERSION = 1;
 
@@ -306,6 +328,7 @@ export function defaultSettings(): Settings {
     power: { sleepAfterMinutes: 0, lowPowerMode: false },
     privacy: { recents: true, logging: true },
     updates: { channel: 'stable', automatic: true, lastChecked: null },
+    store: { origin: DEFAULT_STORE_ORIGIN, autoSync: true, syncMinutes: 360, lastSync: null },
     setup: { completed: false, version: '0.1.0', completedAt: null },
   };
 }

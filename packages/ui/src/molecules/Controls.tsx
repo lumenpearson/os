@@ -185,15 +185,23 @@ export function Tabs<T extends string>({ tabs, value, onChange, className }: Tab
 export interface ToolbarProps extends HTMLAttributes<HTMLDivElement> {
   /** Compact height for window toolbars. */
   dense?: boolean;
+  /**
+   * This is the top row of a window whose title bar is inset, so the close,
+   * minimize and zoom controls are drawn over it. Keep their width clear on
+   * the left. Set it on the first toolbar only — the ones below it start
+   * beneath the controls and need no gutter.
+   */
+  windowControls?: boolean;
 }
 
-export function Toolbar({ dense, className, children, ...rest }: ToolbarProps) {
+export function Toolbar({ dense, windowControls, className, children, ...rest }: ToolbarProps) {
   return (
     <div
       role="toolbar"
       className={cx(
         'flex shrink-0 items-center gap-1 border-b border-rule bg-canvas px-2',
         dense ? 'h-9' : 'h-11',
+        windowControls && 'ps-(--lumen-window-controls-w)',
         className,
       )}
       {...rest}
