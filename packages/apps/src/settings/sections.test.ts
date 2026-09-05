@@ -9,10 +9,11 @@ import {
 } from './sections';
 
 describe('SETTINGS_SECTIONS', () => {
-  it('lists the eighteen sections in display order', () => {
+  it('lists the nineteen sections in display order', () => {
     expect(SECTION_IDS).toEqual([
       'general',
       'appearance',
+      'animation',
       'wallpaper',
       'taskbar',
       'display',

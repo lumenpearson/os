@@ -12,6 +12,7 @@ import {
 import {
   Bell,
   Folder,
+  Gauge,
   Globe,
   HardDrive,
   Image,
@@ -53,6 +54,7 @@ import {
 const ICONS: Record<SectionId, ComponentType<{ className?: string }>> = {
   general: SlidersHorizontal,
   appearance: Palette,
+  animation: Gauge,
   wallpaper: Image,
   taskbar: PanelBottom,
   display: Monitor,

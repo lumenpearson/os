@@ -9,7 +9,7 @@ import {
   Slider,
   Switch,
 } from '@lumen/ui';
-import { percentLabel } from '../logic';
+import { percentLabel, pixelLabel } from '../logic';
 import { ChoiceGroup, Row } from '../Row';
 
 type ThemeMode = 'light' | 'dark' | 'auto';
@@ -100,7 +100,10 @@ const CONTRAST: SegmentedOption<'normal' | 'high'>[] = [
 export function AppearancePage() {
   const [appearance, patch] = useSetting('appearance');
   return (
-    <SettingsPage title="Appearance" description="Theme, accent colour, contrast and type size.">
+    <SettingsPage
+      title="Appearance"
+      description="Theme, accent colour, contrast, blur and type size."
+    >
       <SettingsGroup title="Theme">
         <Row
           id="appearance.theme"
@@ -173,12 +176,31 @@ export function AppearancePage() {
         </Row>
         <Row
           id="appearance.transparency"
+          htmlFor="appearance-transparency"
           label="Reduce transparency"
           description="Solid menus and chrome instead of blur."
         >
           <Switch
+            id="appearance-transparency"
             checked={appearance.reduceTransparency}
             onChange={(e) => patch({ reduceTransparency: e.target.checked })}
+          />
+        </Row>
+        <Row
+          id="appearance.blur"
+          label="Blur"
+          description="Blur behind menus, sheets and panels. 0 leaves those surfaces opaque."
+          stacked
+        >
+          <Slider
+            aria-label="Blur"
+            min={0}
+            max={40}
+            step={1}
+            value={appearance.blur}
+            onChange={(blur) => patch({ blur })}
+            disabled={appearance.reduceTransparency}
+            showValue={pixelLabel}
           />
         </Row>
         <Row id="appearance.fontScale" label="Font size" stacked>

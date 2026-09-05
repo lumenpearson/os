@@ -107,6 +107,17 @@ export function percentLabel(value: number): string {
   return `${Math.round(value * 100)}%`;
 }
 
+/** Animation speed as a multiplier; 0 stops every animation, so it reads "Off". */
+export function speedLabel(speed: number): string {
+  if (speed <= 0) return 'Off';
+  const n = Number.isInteger(speed) ? String(speed) : speed.toFixed(2).replace(/0+$/, '');
+  return `${n}×`;
+}
+
+export function pixelLabel(px: number): string {
+  return `${Math.round(px)} px`;
+}
+
 // ── storage ─────────────────────────────────────────────────────────────
 
 export interface FolderSize {

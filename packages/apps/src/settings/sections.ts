@@ -7,6 +7,7 @@
 export type SectionId =
   | 'general'
   | 'appearance'
+  | 'animation'
   | 'wallpaper'
   | 'taskbar'
   | 'display'
@@ -40,6 +41,11 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
     id: 'appearance',
     label: 'Appearance',
     keywords: ['theme', 'dark', 'light', 'accent', 'colour', 'color', 'font', 'contrast', 'motion'],
+  },
+  {
+    id: 'animation',
+    label: 'Animation',
+    keywords: ['motion', 'transitions', 'speed', 'duration', 'minimise', 'minimize', 'drag'],
   },
   { id: 'wallpaper', label: 'Wallpaper', keywords: ['desktop', 'background', 'picture', 'icons'] },
   {
@@ -109,7 +115,7 @@ export function sectionById(id: SectionId): SettingsSection {
 
 /** Sidebar groups, in display order. Unlabelled: the gap alone separates them. */
 export const SIDEBAR_GROUPS: SectionId[][] = [
-  ['general', 'appearance', 'wallpaper', 'taskbar', 'display'],
+  ['general', 'appearance', 'animation', 'wallpaper', 'taskbar', 'display'],
   ['security', 'notifications', 'sound', 'network'],
   ['keyboard', 'cursor', 'region', 'files', 'storage'],
   ['privacy', 'power', 'reset', 'about'],
@@ -147,7 +153,22 @@ export const SETTINGS_ROWS: SettingsRowIndex[] = [
   row('appearance', 'contrast', 'Contrast', ['high contrast', 'accessibility']),
   row('appearance', 'motion', 'Reduce motion', ['animation', 'accessibility']),
   row('appearance', 'transparency', 'Reduce transparency', ['blur', 'glass']),
+  row('appearance', 'blur', 'Blur', ['transparency', 'glass', 'frosted', 'opaque']),
   row('appearance', 'fontScale', 'Font size', ['text size', 'zoom', 'accessibility']),
+  row('animation', 'speed', 'Animation speed', ['duration', 'faster', 'slower', 'off', 'motion']),
+  row('animation', 'windows', 'Open and close', ['window', 'zoom', 'scale']),
+  row('animation', 'minimize', 'Minimise', ['minimize', 'taskbar', 'slide', 'fade']),
+  row('animation', 'windowMove', 'Smooth a window while it is dragged', [
+    'move',
+    'drag',
+    'smoothing',
+    'lag',
+  ]),
+  row('animation', 'menus', 'Menus', ['popover', 'start menu', 'context menu']),
+  row('animation', 'dialogs', 'Dialogs', ['sheet', 'alert', 'prompt']),
+  row('animation', 'panels', 'Panels', ['taskbar', 'system bar', 'control centre']),
+  row('animation', 'pages', 'Pages', ['views', 'transition', 'navigation']),
+  row('animation', 'press', 'Press', ['click', 'mouse button', 'right click', 'feedback']),
   row('wallpaper', 'picker', 'Wallpaper', ['background', 'picture', 'image']),
   row('wallpaper', 'fit', 'Fit', ['cover', 'contain', 'tile', 'center']),
   row('wallpaper', 'icons', 'Desktop icons', ['show icons']),

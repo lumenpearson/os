@@ -1,6 +1,7 @@
 import type { ComponentType } from 'react';
 import type { SectionId } from '../sections';
 import { AboutPage } from './About';
+import { AnimationPage } from './Animation';
 import { AppearancePage } from './Appearance';
 import { CursorPage } from './Cursor';
 import { DisplayPage } from './Display';
@@ -22,6 +23,7 @@ import { WallpaperPage } from './Wallpaper';
 export const PAGES: Record<SectionId, ComponentType> = {
   general: GeneralPage,
   appearance: AppearancePage,
+  animation: AnimationPage,
   wallpaper: WallpaperPage,
   taskbar: TaskbarPage,
   display: DisplayPage,

@@ -9,9 +9,11 @@ import {
   movePinned,
   networkStatus,
   parseMinutes,
+  pixelLabel,
   removePinned,
   rotateCredentials,
   setMuted,
+  speedLabel,
   storageBreakdown,
   updateStatus,
   viewportLabel,
@@ -28,6 +30,22 @@ describe('minutes', () => {
     expect(parseMinutes('5')).toBe(5);
     expect(parseMinutes('x')).toBe(0);
     expect(parseMinutes('-3')).toBe(0);
+  });
+});
+
+describe('labels', () => {
+  it('reads a zero animation speed as Off', () => {
+    expect(speedLabel(0)).toBe('Off');
+  });
+  it('writes other speeds as a multiplier, without trailing zeros', () => {
+    expect(speedLabel(1)).toBe('1×');
+    expect(speedLabel(0.5)).toBe('0.5×');
+    expect(speedLabel(1.25)).toBe('1.25×');
+    expect(speedLabel(1.1)).toBe('1.1×');
+  });
+  it('writes a pixel amount with its unit', () => {
+    expect(pixelLabel(0)).toBe('0 px');
+    expect(pixelLabel(14)).toBe('14 px');
   });
 });
 
