@@ -20,6 +20,7 @@ import settings from './settings';
 import sheets from './sheets';
 import slides from './slides';
 import software from './software';
+import solitaire from './solitaire';
 import storage from './storage';
 import sudoku from './sudoku';
 import sysinfo from './sysinfo';
@@ -68,5 +69,6 @@ export const builtinApps: AppDefinition[] = [
   chess,
   sudoku,
   twenty48,
+  solitaire,
   webapp,
 ];

@@ -79,4 +79,5 @@ export const apps: readonly AppEntry[] = [
   },
   { name: 'Sudoku', summary: 'Generated puzzles at four grades, with pencil marks and hints.' },
   { name: '2048', summary: 'Slide the tiles together until one of them reads 2048.' },
+  { name: 'Solitaire', summary: 'Klondike, one card or three, with undo and a clock.' },
 ];
