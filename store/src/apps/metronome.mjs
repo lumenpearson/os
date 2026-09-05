@@ -1,5 +1,7 @@
 // deslop-ignore-file 34 — the tempo, the bar count and the beat are values;
 // design rule 1 sets values in the monospace face.
+// deslop-ignore-file 19 — the beat indicators are circles because a beat is a
+// point in time, not a card with rounded corners.
 
 /**
  * Metronome: clicks scheduled ahead of time on the Web Audio clock rather than
@@ -31,7 +33,7 @@ input[type="range"] { padding: 0; }
 const BODY = `
 <h1>Metronome</h1>
 <p id="tempo" class="mono">120</p>
-<p id="tempoName">Allegro moderato</p>
+<p id="tempoName">Allegro</p>
 <div id="beats" role="img" aria-label="Beat indicator"></div>
 <div class="actions">
   <button id="toggle">Start</button>

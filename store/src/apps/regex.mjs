@@ -1,5 +1,7 @@
 // deslop-ignore-file 34 — the pattern, the flags and the group table are
 // values; design rule 1 sets values in the monospace face.
+// deslop-ignore-file 09 13 — the <mark> is the result, not decoration: this
+// program exists to show which part of the subject a pattern matched.
 
 /**
  * Regex Tester: a pattern, its flags and a subject, with every match painted

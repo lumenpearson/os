@@ -15,6 +15,7 @@ is the clearest review of a catalogue change.
 ```
 FORMAT.md               the contract, shared with the OS client
 README.md               this file
+biome.json              keeps the generated JSON out of the formatter
 index.json              generated — the catalogue the storefront draws
 packages/<id>.json      generated — one package, in full
 payload/<id>-<ver>.json generated — the bytes a download pulls
@@ -80,7 +81,11 @@ deliberate copy of the OS's rather than an import, and the font files live in
    `SOURCE` — and nothing else.
 3. **Give it a package.json.** `{ "type": "module", "scripts": { "store":
    "node scripts/build-store.mjs" } }` is enough. The build uses only Node's
-   standard library, so there are no dependencies to install.
+   standard library, so there are no dependencies to install. `store/biome.json`
+   exists so that this repository's formatter leaves the generated JSON alone —
+   a reformatted payload would no longer match its recorded digest. Keep the
+   same exclusion in whatever formatter the new repository uses, or delete the
+   file if it has none.
 4. **Deploy it as static files.** Any static host will do — object storage
    behind a CDN, GitHub Pages, a plain nginx root. Three things matter:
    - serve `.json` as `application/json`;

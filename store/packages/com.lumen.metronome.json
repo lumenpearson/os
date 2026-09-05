@@ -6,7 +6,7 @@
   "version": "1.1.0",
   "publisher": "Lumen",
   "category": "media",
-  "size": 9440,
+  "size": 9431,
   "price": "free",
   "keywords": [
     "metronome",
@@ -18,7 +18,7 @@
   "updated": "2026-08-26T09:00:00Z",
   "description": "Thirty to two hundred and sixty beats per minute, two to seven beats in a bar, with the downbeat pitched higher when accenting is on. The tempo carries its Italian name, which is the reason most people look a number up in the first place.\n\nClicks are booked against the Web Audio clock a tenth of a second ahead rather than played from a timer, so the beat holds when the frame is throttled or the main thread stalls. The beat lights and the bar count follow the audio clock rather than leading it, so what you see is what you just heard.\n\nTap tempo averages the last five taps inside three seconds. Space starts and stops; T taps.",
   "payload": "payload/com.lumen.metronome-1.1.0.json",
-  "sha256": "0e8fa45a07b371d5884b4149037cb9687bbabfe96742149f21f933892ed91060",
+  "sha256": "be8845b4a99375a06ef58a74369677a703095567705c566698594ae1adec7ab9",
   "requires": {
     "os": ">=0.1.0"
   },

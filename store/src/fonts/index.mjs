@@ -44,8 +44,8 @@ export const PLEX_ITALIC = {
     'asked for. This package adds the italic.\n\n' +
     'It is the Latin subset of the variable italic from the same release the OS ' +
     'vendors, covering weights 100 to 700 on one axis, so emphasis in a document ' +
-    'is drawn rather than sloped by the renderer. Synthesised obliques ruin the ' +
-    'a and the g of this face in particular; the real italic redraws them.\n\n' +
+    'is drawn rather than sloped by the renderer. A synthesised oblique only ' +
+    'slants the upright; a drawn italic changes the letterforms.\n\n' +
     'The file is embedded in the payload as a data URL, so installing it makes ' +
     'no second request. IBM Plex is licensed under the SIL Open Font License ' +
     '1.1; the licence travels with the package.',
@@ -120,12 +120,13 @@ export const SEVEN = {
     'unit notch at every join, so the segments read as separate bars at any ' +
     'size. Every glyph has the same advance, so a counter does not shuffle as ' +
     'it counts.\n\n' +
-    'It is a display face and nothing else. There are no lowercase letters, no ' +
-    'punctuation beyond what a readout needs, and no attempt at text. Set it ' +
-    'large, in a clock, a timer, a meter or a lap list.\n\n' +
+    'It is a display face and nothing else. There are no letters beyond the six ' +
+    'a hex digit needs — a to f render as the same segment shapes as A to F — ' +
+    'and no punctuation beyond what a readout uses. Set it large, in a clock, a ' +
+    'timer, a meter or a lap list.\n\n' +
     'The outlines are computed from the segment layout rather than taken from ' +
     'any existing typeface, and the file is built by this repository during the ' +
-    'catalogue build, which is why it weighs about two kilobytes.',
+    'catalogue build, which is why it is a little over three kilobytes.',
   releaseNotes: 'First release.',
   requires: { os: '>=0.1.0' },
   capabilities: ['fonts'],

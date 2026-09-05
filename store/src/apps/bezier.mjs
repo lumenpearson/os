@@ -1,5 +1,7 @@
 // deslop-ignore-file 34 — the control point coordinates and the resulting
 // declaration are values; design rule 1 sets values in the monospace face.
+// deslop-ignore-file 19 24 — the round shapes are a curve's control handles
+// and the dot that travels the preview track, not soft corners or an icon.
 
 /**
  * Bezier Editor: the two control points of a CSS cubic-bezier() timing

@@ -96,7 +96,8 @@ export const DESK_SET = {
     'and the metronome the way a physical one would be set; the block face gives ' +
     'a terminal the eighth blocks and box rules that meet exactly, which is what ' +
     'a sparkline in a status line needs.\n\n' +
-    'Five packages, about a hundred and twenty kilobytes together.',
+    'Five packages, and the two faces between them are smaller than one ' +
+    'subset of a web font.',
   releaseNotes: 'Added the block face.',
   requires: { os: '>=0.1.0' },
   capabilities: ['storage', 'audio'],

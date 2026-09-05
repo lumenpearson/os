@@ -113,7 +113,9 @@ function assertJsonSafe(value, where, path, seen = new Set()) {
   if (seen.has(value)) fail(where, `${at} is part of a cycle`);
   seen.add(value);
   if (Array.isArray(value)) {
-    value.forEach((item, index) => assertJsonSafe(item, where, `${at}[${index}]`, seen));
+    value.forEach((item, index) => {
+      assertJsonSafe(item, where, `${at}[${index}]`, seen);
+    });
   } else {
     for (const [key, item] of Object.entries(value)) {
       assertJsonSafe(item, where, `${at}.${key}`, seen);
@@ -250,7 +252,9 @@ function validatePackage(pkg, byId) {
     requireString(capability, where, 'a capability', { max: 24 });
   }
   if (!Array.isArray(pkg.screenshots)) fail(where, 'screenshots must be an array');
-  pkg.screenshots.forEach((art, index) => requireArtwork(art, where, `screenshots[${index}]`));
+  pkg.screenshots.forEach((art, index) => {
+    requireArtwork(art, where, `screenshots[${index}]`);
+  });
 
   if (pkg.kind === 'bundle') {
     validateBundle(pkg, byId, where);
