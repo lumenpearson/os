@@ -77,4 +77,6 @@ export const apps: readonly AppEntry[] = [
     name: 'Chess',
     summary: 'The complete rules, checked against published move counts, and an opponent.',
   },
+  { name: 'Sudoku', summary: 'Generated puzzles at four grades, with pencil marks and hints.' },
+  { name: '2048', summary: 'Slide the tiles together until one of them reads 2048.' },
 ];

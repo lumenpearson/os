@@ -21,9 +21,11 @@ import sheets from './sheets';
 import slides from './slides';
 import software from './software';
 import storage from './storage';
+import sudoku from './sudoku';
 import sysinfo from './sysinfo';
 import taskmanager from './taskmanager';
 import terminal from './terminal';
+import twenty48 from './twenty48';
 import units from './units';
 import webapp from './webapp';
 import workbench from './workbench';
@@ -64,5 +66,7 @@ export const builtinApps: AppDefinition[] = [
   software,
   minesweeper,
   chess,
+  sudoku,
+  twenty48,
   webapp,
 ];
