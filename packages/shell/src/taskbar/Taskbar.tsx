@@ -5,10 +5,13 @@ import {
   useRegistryStore,
   useWindowStore,
 } from '@lumen/kernel';
+
 import { useKernel, useProcesses, useSetting, useSettings, useWindows } from '@lumen/kernel/react';
 import { AnchoredMenu, cx, type MenuEntry, Tooltip } from '@lumen/ui';
 import { useMemo, useRef, useState } from 'react';
 import { Mark } from '../desktop/Wordmark';
+import { useEdgeReveal } from '../hooks/useEdgeReveal';
+import { useImmersive } from '../hooks/useImmersive';
 import { useShellStore } from '../shellStore';
 
 /**
@@ -52,6 +55,13 @@ export function Taskbar() {
   const size = taskbar.size;
   const autoHide = taskbar.autoHide;
   const hidden = autoHide && !revealed && !startOpen;
+  // Full screen slides it away as well; the edge it left from brings it back.
+  const immersive = useImmersive().taskbar;
+  const edgeRevealed = useEdgeReveal(
+    taskbar.position === 'bottom' ? 'bottom' : taskbar.position,
+    immersive,
+  );
+  const immersiveHidden = immersive && !edgeRevealed && !revealed && !startOpen;
 
   const activate = (app: AppDefinition) => {
     const entry = running.get(app.id);
@@ -145,7 +155,7 @@ export function Taskbar() {
             : 'inset-x-0 bottom-0 h-(--lumen-taskbar-h) flex-row border-t border-rule',
           taskbar.position === 'left' && 'left-0 border-r',
           taskbar.position === 'right' && 'right-0 border-l',
-          hidden &&
+          (hidden || immersiveHidden) &&
             (taskbar.position === 'bottom'
               ? 'translate-y-full'
               : taskbar.position === 'left'

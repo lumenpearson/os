@@ -7,6 +7,7 @@ import {
   useRegistryStore,
   useWindowStore,
 } from '@lumen/kernel';
+
 import {
   useClock,
   useCurrentUser,
@@ -29,6 +30,8 @@ import {
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Mark } from '../desktop/Wordmark';
+import { useEdgeReveal } from '../hooks/useEdgeReveal';
+import { useImmersive } from '../hooks/useImmersive';
 import { useShellStore } from '../shellStore';
 import { BatteryStatus } from './BatteryStatus';
 import { ClockPopover } from './ClockPopover';
@@ -137,6 +140,9 @@ export function MenuBar() {
     setOpen(null);
   }, [focused?.id]);
 
+  const immersive = useImmersive().systemBar;
+  const revealed = useEdgeReveal('top', immersive);
+
   return (
     <div
       ref={barRef}
@@ -146,6 +152,10 @@ export function MenuBar() {
       className={cx(
         'absolute inset-x-0 top-0 z-[1001] flex h-(--lumen-menubar-h) items-stretch bg-chrome text-ink select-none',
         !settings.appearance.reduceTransparency && 'surface-blur',
+        'transition-transform duration-(--duration-base) ease-(--ease-standard)',
+        // Full screen takes the display; the bar comes back when the pointer
+        // reaches the top of it, or whenever a menu is open on it.
+        immersive && !revealed && open === null && '-translate-y-full',
       )}
       onKeyDown={(e) => {
         if (open === null) return;
