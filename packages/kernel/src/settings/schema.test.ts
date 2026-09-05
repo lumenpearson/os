@@ -61,3 +61,31 @@ describe('useSettingsStore.set', () => {
     expect(getSettings().lock).not.toHaveProperty('invented');
   });
 });
+
+describe('leaves whose default is null', () => {
+  it('keeps a stored number, because typeof null is object and would reject it', () => {
+    const stored = defaultSettings();
+    stored.updates.lastChecked = 1712345678;
+    stored.setup.completedAt = 1712345679;
+
+    const merged = mergeSettings(JSON.parse(JSON.stringify(stored)));
+
+    expect(merged.updates.lastChecked).toBe(1712345678);
+    expect(merged.setup.completedAt).toBe(1712345679);
+  });
+
+  it('still accepts null back, which is what "not set yet" means', () => {
+    const merged = mergeSettings({ updates: { lastChecked: null } });
+    expect(merged.updates.lastChecked).toBeNull();
+  });
+
+  it('refuses an object where a primitive belongs', () => {
+    const merged = mergeSettings({ updates: { lastChecked: { when: 1 } } });
+    expect(merged.updates.lastChecked).toBeNull();
+  });
+
+  it('refuses null where a real default belongs', () => {
+    const merged = mergeSettings({ updates: { automatic: null } });
+    expect(merged.updates.automatic).toBe(true);
+  });
+});

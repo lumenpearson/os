@@ -5,6 +5,14 @@ import type { Settings } from '../settings/schema';
 let mediaQuery: MediaQueryList | null = null;
 let mediaListener: (() => void) | null = null;
 let lastTheme: 'light' | 'dark' | null = null;
+/**
+ * The settings the OS-theme listener should re-apply. It is held here rather
+ * than captured in the listener's closure: the listener is installed once and
+ * would otherwise keep replaying whichever settings happened to be current on
+ * the first call, silently reverting every later change to accent, scale and
+ * the rest the moment the OS flipped between light and dark.
+ */
+let latest: Settings | null = null;
 
 export function resolveTheme(mode: Settings['appearance']['theme']): 'light' | 'dark' {
   if (mode !== 'auto') return mode;
@@ -54,16 +62,28 @@ export function applyThemeToDocument(settings: Settings): void {
   }
 
   // follow the OS theme while in auto mode
+  latest = settings;
   if (settings.appearance.theme === 'auto' && typeof matchMedia === 'function') {
     if (!mediaQuery) mediaQuery = matchMedia('(prefers-color-scheme: dark)');
     if (!mediaListener) {
-      mediaListener = () => applyThemeToDocument(settings);
+      mediaListener = () => {
+        if (latest) applyThemeToDocument(latest);
+      };
       mediaQuery.addEventListener?.('change', mediaListener);
     }
   } else if (mediaQuery && mediaListener) {
     mediaQuery.removeEventListener?.('change', mediaListener);
     mediaListener = null;
   }
+}
+
+/** Drop the OS-theme listener and forget the settings it would replay. */
+export function stopFollowingSystemTheme(): void {
+  if (mediaQuery && mediaListener) mediaQuery.removeEventListener?.('change', mediaListener);
+  mediaListener = null;
+  mediaQuery = null;
+  latest = null;
+  lastTheme = null;
 }
 
 function clamp(v: number, lo: number, hi: number) {

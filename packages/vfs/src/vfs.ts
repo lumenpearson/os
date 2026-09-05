@@ -221,7 +221,15 @@ export class Vfs {
       return n;
     }
     await this.ensureDir(this.trashPath);
-    const dest = await this.moveInto(n, this.trashPath);
+    // Reserve the index's own name. On the first ever trash operation the
+    // index file does not exist yet, so a user file called .trash-index.json
+    // would be moved to exactly that path and then overwritten by the index
+    // written two lines below — destroying it with no way back.
+    const taken = new Set((await this.readDir(this.trashPath)).map((e) => e.name.toLowerCase()));
+    taken.add(TRASH_INDEX.toLowerCase());
+    const free = uniqueName(basename(n), (candidate) => taken.has(candidate.toLowerCase()));
+    const dest = join(this.trashPath, free);
+    await this.rename(n, dest);
     const index = await this.readTrashIndex();
     index[basename(dest)] = { origin: n, deletedAt: Date.now() };
     await this.writeTrashIndex(index);

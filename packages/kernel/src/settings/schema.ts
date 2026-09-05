@@ -269,11 +269,26 @@ function deepMerge<T extends Record<string, unknown>>(base: T, patch: Record<str
     const current = base[key];
     if (isPlainObject(current) && isPlainObject(value)) {
       out[key] = deepMerge(current as Record<string, unknown>, value as Record<string, unknown>);
-    } else if (Array.isArray(current) ? Array.isArray(value) : typeof current === typeof value) {
+    } else if (acceptsLeaf(current, value)) {
       out[key] = value;
     }
   }
   return out as T;
+}
+
+/**
+ * Whether a stored leaf may replace its default.
+ *
+ * Comparing `typeof` alone is wrong wherever the default is `null`, because
+ * `typeof null` is 'object': a stored number would be judged the wrong shape
+ * and thrown away, so a setting like `updates.lastChecked` could never survive
+ * a reload. A null default means "not set yet", and any primitive — or null
+ * again — is a legitimate value for it.
+ */
+function acceptsLeaf(current: unknown, value: unknown): boolean {
+  if (current === null) return value === null || typeof value !== 'object';
+  if (Array.isArray(current)) return Array.isArray(value);
+  return typeof current === typeof value && typeof value !== 'object';
 }
 
 function isPlainObject(v: unknown): v is Record<string, unknown> {

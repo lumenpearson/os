@@ -1,7 +1,7 @@
 import { useRegistryStore, useWindowStore } from '@lumen/kernel';
 import { useWindows, useWorkArea } from '@lumen/kernel/react';
 import { cx, useEscape } from '@lumen/ui';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useShellStore } from '../shellStore';
 
 /**
@@ -37,7 +37,23 @@ export function MissionControl() {
     });
   }, [windows, area]);
 
+  /**
+   * Whether the overlay was open on the previous run, so the effect can tell a
+   * genuine close from the many times it re-runs for unrelated reasons.
+   */
+  const wasOpen = useRef(false);
+
   useEffect(() => {
+    const closing = wasOpen.current && !open;
+    wasOpen.current = open;
+    // While Mission Control is shut this effect still re-runs on every window
+    // change — a move, a resize, a focus, an open. It must not touch the frames
+    // then: writing an inline transform and a 260ms transition onto every
+    // window makes dragging trail the pointer, and the inline `transition`
+    // shorthand overrides the frame's own transition classes so windows stop
+    // animating as they open and close.
+    if (!open && !closing) return;
+
     const root = document.querySelector<HTMLElement>('[data-testid="window-layer"]');
     if (!root) return;
     for (const w of windows) {
@@ -49,16 +65,20 @@ export function MissionControl() {
         el.style.transform = `translate3d(${item.x}px, ${item.y}px, 0) scale(${item.scale})`;
         el.style.transformOrigin = 'top left';
         el.style.pointerEvents = 'none';
-      } else {
-        el.style.transition = open ? '' : 'transform var(--duration-slow) var(--ease-standard)';
-        el.style.transform = `translate3d(${w.bounds.x}px, ${w.bounds.y}px, 0)`;
-        el.style.pointerEvents = '';
-        const done = () => {
-          el.style.transition = '';
-          el.removeEventListener('transitionend', done);
-        };
-        el.addEventListener('transitionend', done);
+        continue;
       }
+      // Closing: ease back to the real bounds, then hand every property we
+      // touched back to React's style prop rather than leaving ours behind.
+      el.style.transition = 'transform var(--duration-slow) var(--ease-standard)';
+      el.style.transform = `translate3d(${w.bounds.x}px, ${w.bounds.y}px, 0)`;
+      el.style.pointerEvents = '';
+      const done = () => {
+        el.style.transition = '';
+        el.style.transform = '';
+        el.style.transformOrigin = '';
+        el.removeEventListener('transitionend', done);
+      };
+      el.addEventListener('transitionend', done);
     }
   }, [open, layout, windows]);
 

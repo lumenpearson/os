@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { VfsError } from './errors';
 import { IndexedDbAdapter } from './idb';
 import { MemoryAdapter } from './memory';
+import { basename } from './path';
 import type { VfsAdapter } from './types';
 import { Vfs } from './vfs';
 
@@ -101,5 +102,47 @@ describe.each(adapters)('Vfs over %s adapter', (_name, make) => {
     const hits = await fs.search('/', { query: 'report' });
     expect(hits.map((h) => h.name)).toEqual(['Report.md']);
     expect(await fs.du('/Users')).toBe(5);
+  });
+});
+
+describe('the trash index cannot be clobbered by a file of the same name', () => {
+  it('moves a user file called .trash-index.json aside rather than onto the index', async () => {
+    const fs = new Vfs(new MemoryAdapter());
+    await fs.mkdir('/U', { recursive: true });
+    await fs.writeText('/U/.trash-index.json', 'IMPORTANT USER DATA');
+
+    const dest = await fs.trash('/U/.trash-index.json');
+
+    expect(dest).not.toBe('/Trash/.trash-index.json');
+    expect(await fs.readText(dest)).toBe('IMPORTANT USER DATA');
+    // And the real index is still an index, holding the entry for that file.
+    const index = await fs.readJson<Record<string, { origin: string }>>('/Trash/.trash-index.json');
+    expect(index[basename(dest)]?.origin).toBe('/U/.trash-index.json');
+  });
+
+  it('restores it to where it came from', async () => {
+    const fs = new Vfs(new MemoryAdapter());
+    await fs.mkdir('/U', { recursive: true });
+    await fs.writeText('/U/.trash-index.json', 'IMPORTANT USER DATA');
+    const dest = await fs.trash('/U/.trash-index.json');
+
+    const back = await fs.restoreFromTrash(dest);
+
+    expect(back).toBe('/U/.trash-index.json');
+    expect(await fs.readText(back)).toBe('IMPORTANT USER DATA');
+  });
+});
+
+describe('renaming a directory onto a file', () => {
+  it('is refused, rather than silently destroying the file', async () => {
+    const fs = new Vfs(new MemoryAdapter());
+    await fs.mkdir('/d');
+    await fs.writeText('/d/inner.txt', 'i');
+    await fs.writeText('/f.txt', 'PAYROLL');
+
+    await expect(fs.rename('/d', '/f.txt')).rejects.toMatchObject({ code: 'ENOTDIR' });
+
+    expect(await fs.readText('/f.txt')).toBe('PAYROLL');
+    expect((await fs.stat('/f.txt')).kind).toBe('file');
   });
 });

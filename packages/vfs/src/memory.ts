@@ -154,6 +154,10 @@ export class MemoryAdapter implements VfsAdapter {
     const existing = dst.parent.children?.get(dst.name);
     if (existing) {
       if (existing.kind === 'directory' && node.kind === 'file') throw new VfsError('EISDIR', to);
+      // The mirror case, and the dangerous one: renaming a directory onto an
+      // existing file would drop the file's node and take its bytes with it,
+      // silently. The other two adapters refuse this, and so does POSIX.
+      if (existing.kind === 'file' && node.kind === 'directory') throw new VfsError('ENOTDIR', to);
       if (existing.kind === 'directory' && (existing.children?.size ?? 0) > 0)
         throw new VfsError('ENOTEMPTY', to);
     }
