@@ -48,14 +48,23 @@ export function FilePreview({ path, large }: FilePreviewProps) {
   const name = basename(path);
   return (
     <div className="lumen-scroll flex h-full flex-col gap-4 p-4">
-      <div className="flex items-center justify-center py-2">
+      <div
+        className={cx(
+          'flex items-center justify-center py-2',
+          // The large preview takes the room the panel has left and gives it
+          // back as the panel shrinks. `min-h-0` is what lets it shrink at
+          // all: a flex item's floor is its content unless it is told
+          // otherwise, and an image's content is its natural size.
+          large && 'min-h-0 flex-1',
+        )}
+      >
         {kind === 'image' && url ? (
           <img
             src={url}
             alt={name}
             className={cx(
               'rounded-sm border border-rule object-contain',
-              large ? 'max-h-[52vh]' : 'max-h-44',
+              large ? 'max-h-full' : 'max-h-44',
             )}
           />
         ) : (

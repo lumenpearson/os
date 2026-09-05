@@ -940,7 +940,10 @@ export default function Files({ args }: AppProps) {
           title={basename(quickLook)}
           width={640}
           container={container}
-          className="h-[70vh]"
+          // Quick Look fills the window it belongs to. The height used to be
+          // 70vh, which is the screen's and not the window's: a small window
+          // on a tall screen asked for a sheet taller than itself.
+          className="h-full"
         >
           <FilePreview path={quickLook} large />
         </Dialog>
