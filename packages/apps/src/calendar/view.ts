@@ -153,3 +153,31 @@ export function moveForKey(key: string, modifier: boolean): GridMove | null {
       return null;
   }
 }
+
+// ── fitting the window ────────────────────────────────────────────────────
+
+/** Below this the sidebar folds away and the toolbar keeps the width. */
+export const SIDEBAR_WIDTH = 720;
+/** Below this the week column is dropped from the month grid. */
+export const WEEK_NUMBER_WIDTH = 560;
+/** Below this the view switch shows initials instead of words. */
+export const COMPACT_VIEW_WIDTH = 660;
+/** Below this the weekday headers shrink to one letter. */
+export const NARROW_DAY_WIDTH = 480;
+
+export interface CalendarLayout {
+  sidebar: boolean;
+  weekNumbers: boolean;
+  compactViews: boolean;
+  narrowDays: boolean;
+}
+
+/** What fits at this window width. */
+export function layoutFor(width: number, options: { showSidebar: boolean }): CalendarLayout {
+  return {
+    sidebar: options.showSidebar && width >= SIDEBAR_WIDTH,
+    weekNumbers: width >= WEEK_NUMBER_WIDTH,
+    compactViews: width < COMPACT_VIEW_WIDTH,
+    narrowDays: width < NARROW_DAY_WIDTH,
+  };
+}

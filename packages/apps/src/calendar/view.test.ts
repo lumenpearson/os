@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { FormatOptions } from './format';
 import {
   AGENDA_DAYS,
+  layoutFor,
   moveFocus,
   moveForKey,
   stepCursor,
@@ -88,5 +89,30 @@ describe('moveFocus', () => {
     expect(moveForKey('PageDown', false)).toBe('page-forward');
     expect(moveForKey('a', false)).toBeNull();
     expect(moveForKey('Enter', false)).toBeNull();
+  });
+});
+
+describe('layoutFor', () => {
+  it('gives everything room in a wide window', () => {
+    expect(layoutFor(940, { showSidebar: true })).toEqual({
+      sidebar: true,
+      weekNumbers: true,
+      compactViews: false,
+      narrowDays: false,
+    });
+  });
+
+  it('drops the sidebar, then the week numbers, then the words', () => {
+    expect(layoutFor(700, { showSidebar: true }).sidebar).toBe(false);
+    expect(layoutFor(600, { showSidebar: true })).toMatchObject({
+      weekNumbers: true,
+      compactViews: true,
+    });
+    expect(layoutFor(500, { showSidebar: true }).weekNumbers).toBe(false);
+    expect(layoutFor(380, { showSidebar: true }).narrowDays).toBe(true);
+  });
+
+  it('keeps the sidebar hidden when the user closed it', () => {
+    expect(layoutFor(1200, { showSidebar: false }).sidebar).toBe(false);
   });
 });

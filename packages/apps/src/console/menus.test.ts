@@ -1,8 +1,16 @@
 import type { MenuItemTemplate, MenuTemplate } from '@lumen/kernel';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, type MockedFunction, vi } from 'vitest';
 import { buildConsoleMenus, type ConsoleActions, type ConsoleMenuState } from './menus';
 
-const actions = (): ConsoleActions & { [K in keyof ConsoleActions]: ReturnType<typeof vi.fn> } => ({
+/**
+ * Each action keeps its own signature while also being a spy. The intersection
+ * this replaced asked for `ReturnType<typeof vi.fn>`, which is a mock of an
+ * unknown procedure — a bare `vi.fn()` satisfies that half but not the call
+ * signature the interface declares, so nothing could ever be assigned.
+ */
+type MockedActions = { [K in keyof ConsoleActions]: MockedFunction<ConsoleActions[K]> };
+
+const actions = (): MockedActions => ({
   exportLog: vi.fn(),
   clear: vi.fn(),
   toggleFollow: vi.fn(),

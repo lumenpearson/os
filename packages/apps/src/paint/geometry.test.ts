@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   clampRect,
-  discOffsets,
+  discSpans,
   dragRect,
   ellipsePath,
   ellipseSpans,
@@ -312,17 +312,26 @@ describe('ellipsePath', () => {
   });
 });
 
-describe('discOffsets', () => {
+/** The brush stamp as a set of pixels, for the shape assertions below. */
+const stampPoints = (diameter: number): Point[] => {
+  const points: Point[] = [];
+  for (const span of discSpans(diameter)) {
+    for (let x = span.x0; x <= span.x1; x++) points.push({ x, y: span.y });
+  }
+  return points;
+};
+
+describe('discSpans', () => {
   it('is a single pixel at size 1', () => {
-    expect(discOffsets(1)).toEqual([{ x: 0, y: 0 }]);
+    expect(stampPoints(1)).toEqual([{ x: 0, y: 0 }]);
   });
 
   it('rounds the corners off from size 4 up', () => {
-    expect(discOffsets(2)).toHaveLength(4);
-    expect(discOffsets(3)).toHaveLength(9);
-    expect(discOffsets(4)).toHaveLength(12);
-    expect(discOffsets(5)).toHaveLength(21);
-    expect(unique(discOffsets(5)).has('-2,-2')).toBe(false);
+    expect(stampPoints(2)).toHaveLength(4);
+    expect(stampPoints(3)).toHaveLength(9);
+    expect(stampPoints(4)).toHaveLength(12);
+    expect(stampPoints(5)).toHaveLength(21);
+    expect(unique(stampPoints(5)).has('-2,-2')).toBe(false);
   });
 
   it('covers the same pixels as an ellipse of the same size', () => {
@@ -333,12 +342,12 @@ describe('discOffsets', () => {
         fromEllipse.add(`${x - anchor},${span.y - anchor}`);
       }
     }
-    expect(unique(discOffsets(9))).toEqual(fromEllipse);
+    expect(unique(stampPoints(9))).toEqual(fromEllipse);
   });
 
   it('stays inside the diameter and is centred', () => {
     for (const size of [1, 2, 3, 4, 5, 8, 9, 32]) {
-      const offsets = discOffsets(size);
+      const offsets = stampPoints(size);
       const xs = offsets.map((p) => p.x);
       expect(Math.max(...xs) - Math.min(...xs) + 1).toBeLessThanOrEqual(size);
       expect(offsets).toHaveLength(unique(offsets).size);
@@ -346,15 +355,15 @@ describe('discOffsets', () => {
   });
 
   it('is symmetric for odd sizes', () => {
-    const offsets = unique(discOffsets(9));
-    for (const p of discOffsets(9)) {
+    const offsets = unique(stampPoints(9));
+    for (const p of stampPoints(9)) {
       expect(offsets.has(`${-p.x},${p.y}`)).toBe(true);
       expect(offsets.has(`${p.x},${-p.y}`)).toBe(true);
     }
   });
 
   it('treats a nonsense size as one pixel', () => {
-    expect(discOffsets(0)).toEqual([{ x: 0, y: 0 }]);
-    expect(discOffsets(-4)).toEqual([{ x: 0, y: 0 }]);
+    expect(stampPoints(0)).toEqual([{ x: 0, y: 0 }]);
+    expect(stampPoints(-4)).toEqual([{ x: 0, y: 0 }]);
   });
 });

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   clip,
   describeThrown,
+  exportFileName,
   flattenPayload,
   formatClock,
   formatConsoleArgs,
@@ -315,5 +316,15 @@ describe('serializeLog', () => {
     expect(text.endsWith('\n')).toBe(true);
     expect(text).toContain('second');
     expect(text.trimEnd().split('\n')).toHaveLength(7);
+  });
+});
+
+describe('exportFileName', () => {
+  it('names the file after the moment it was written', () => {
+    expect(exportFileName(AT)).toBe('console-2026-09-04-030405.log');
+  });
+
+  it('still has a name when the clock does not', () => {
+    expect(exportFileName(Number.NaN)).toBe('console.log');
   });
 });

@@ -240,6 +240,15 @@ export function serializeRecord(record: LogRecord, options: FlattenOptions = {})
   return [head, ...payload].join('\n');
 }
 
+/** A file name that sorts by when it was written: console-2026-09-04-030405.log */
+export function exportFileName(timestamp: number): string {
+  const d = new Date(timestamp);
+  if (Number.isNaN(d.getTime())) return 'console.log';
+  const date = `${d.getFullYear()}-${pad(d.getMonth() + 1, 2)}-${pad(d.getDate(), 2)}`;
+  const time = `${pad(d.getHours(), 2)}${pad(d.getMinutes(), 2)}${pad(d.getSeconds(), 2)}`;
+  return `console-${date}-${time}.log`;
+}
+
 export interface ExportMeta {
   exportedAt: number;
   /** Records the buffer held; the file has the filtered ones. */

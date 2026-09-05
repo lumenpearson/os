@@ -226,16 +226,16 @@ export function ellipsePath(rect: Rect): Point[] {
 }
 
 /**
- * The pixels a brush of this diameter covers, as offsets from the pixel under
- * the cursor. Even sizes lean down and right, which is the only way to centre
- * an even disc on a pixel grid.
+ * The rows a brush of this diameter covers, as spans offset from the pixel
+ * under the cursor. Even sizes lean down and right, which is the only way to
+ * centre an even disc on a pixel grid.
  */
-export function discOffsets(diameter: number): Point[] {
+export function discSpans(diameter: number): Span[] {
   const size = Math.max(1, Math.round(diameter));
   const anchor = Math.floor((size - 1) / 2);
-  const offsets: Point[] = [];
-  for (const span of ellipseSpans({ x: 0, y: 0, width: size, height: size })) {
-    for (let x = span.x0; x <= span.x1; x++) offsets.push({ x: x - anchor, y: span.y - anchor });
-  }
-  return offsets;
+  return ellipseSpans({ x: 0, y: 0, width: size, height: size }).map((span) => ({
+    y: span.y - anchor,
+    x0: span.x0 - anchor,
+    x1: span.x1 - anchor,
+  }));
 }
