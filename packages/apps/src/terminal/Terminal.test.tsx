@@ -122,3 +122,13 @@ describe('Terminal', () => {
     });
   });
 });
+
+describe('focus', () => {
+  it('puts the caret on the prompt when the empty space is clicked', async () => {
+    const { input } = await mount();
+    input.blur();
+    expect(document.activeElement).not.toBe(input);
+    await userEvent.click(screen.getByRole('log', { name: 'Terminal output' }));
+    expect(document.activeElement).toBe(input);
+  });
+});

@@ -16,6 +16,7 @@ import { useKernel } from '@lumen/kernel/react';
 import { cx } from '@lumen/ui';
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { useShellStore } from '../shellStore';
+import { isDragSurface, titleBarHeight } from './drag';
 import { useSnapPreview } from './SnapPreview';
 import { WindowControls } from './WindowControls';
 
@@ -56,6 +57,18 @@ export const WindowFrame = memo(function WindowFrame({ id }: { id: WindowId }) {
   const frameRef = useRef<HTMLDivElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
   const [container, setContainer] = useState<HTMLDivElement | null>(null);
+  /**
+   * Stable, and it has to be: React detaches and re-attaches a ref callback
+   * whose identity changed, which for an inline one is every render. The
+   * detach passes null, so the window body — which is where every dialog in
+   * the app is portalled — was thrown away and rebuilt on each render, and
+   * the kernel's two-second load tick renders this component. That is what
+   * made open dialogs blink.
+   */
+  const setBody = useCallback((el: HTMLDivElement | null) => {
+    bodyRef.current = el;
+    setContainer(el);
+  }, []);
   const [mounted, setMounted] = useState(false);
   const [closing, setClosing] = useState(false);
   const [minimizing, setMinimizing] = useState(false);
@@ -85,8 +98,17 @@ export const WindowFrame = memo(function WindowFrame({ id }: { id: WindowId }) {
   const onTitlePointerDown = (e: React.PointerEvent) => {
     if (!win || e.button !== 0) return;
     const target = e.target as HTMLElement;
-    if (target.closest('button, input, select, textarea, [data-no-drag]')) return;
     if (win.fullscreen) return;
+    const frame = frameRef.current;
+    if (
+      !isDragSurface({
+        offsetY: e.clientY - (frame?.getBoundingClientRect().top ?? 0),
+        titleBarHeight: titleBarHeight(frame),
+        target,
+        frame,
+      })
+    )
+      return;
     e.preventDefault();
     useWindowStore.getState().focus(id);
     const el = frameRef.current;
@@ -153,6 +175,21 @@ export const WindowFrame = memo(function WindowFrame({ id }: { id: WindowId }) {
     el.addEventListener('pointermove', onMove);
     el.addEventListener('pointerup', onUp);
     el.addEventListener('pointercancel', onUp);
+  };
+
+  const onTitleDoubleClick = (e: React.MouseEvent) => {
+    if (!win || win.options.maximizable === false) return;
+    const frame = frameRef.current;
+    if (
+      !isDragSurface({
+        offsetY: e.clientY - (frame?.getBoundingClientRect().top ?? 0),
+        titleBarHeight: titleBarHeight(frame),
+        target: e.target as HTMLElement,
+        frame,
+      })
+    )
+      return;
+    useWindowStore.getState().toggleMaximize(id);
   };
 
   // ── resize ────────────────────────────────────────────────────────────
@@ -235,6 +272,10 @@ export const WindowFrame = memo(function WindowFrame({ id }: { id: WindowId }) {
       onPointerDownCapture={() => {
         if (!focused) useWindowStore.getState().focus(id);
       }}
+      // The title bar of an inset window belongs to the app, which draws its
+      // own toolbar there, so the frame decides what starts a drag.
+      onPointerDown={onTitlePointerDown}
+      onDoubleClick={onTitleDoubleClick}
       className={cx(
         'absolute left-0 top-0 flex flex-col overflow-hidden bg-surface text-ink outline-none will-change-transform',
         fullscreen ? 'rounded-none' : 'rounded-lg border border-rule',
@@ -256,11 +297,6 @@ export const WindowFrame = memo(function WindowFrame({ id }: { id: WindowId }) {
               : 'pointer-events-none absolute left-0 top-0 z-10 h-(--lumen-window-titlebar-h) w-full',
           )}
           data-testid="window-titlebar"
-          onPointerDown={onTitlePointerDown}
-          onDoubleClick={(e) => {
-            if ((e.target as HTMLElement).closest('button')) return;
-            if (win.options.maximizable !== false) useWindowStore.getState().toggleMaximize(id);
-          }}
         >
           <div
             className={cx(
@@ -306,10 +342,7 @@ export const WindowFrame = memo(function WindowFrame({ id }: { id: WindowId }) {
         </header>
       )}
       <div
-        ref={(el) => {
-          bodyRef.current = el;
-          if (el !== container) setContainer(el);
-        }}
+        ref={setBody}
         className={cx('relative min-h-0 flex-1', !focused && 'lumen-window-inactive')}
         data-testid="window-body"
       >

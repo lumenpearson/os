@@ -32,7 +32,14 @@ export function WindowControls({
       data-no-drag
       data-testid="window-controls"
     >
-      <Control label="Close" tone="close" enabled={closable} focused={focused} onClick={onClose}>
+      <Control
+        label="Close"
+        tone="close"
+        enabled={closable}
+        focused={focused}
+        revealed={dirty}
+        onClick={onClose}
+      >
         {dirty ? (
           // deslop-ignore-next-line 19 — the unsaved-changes marker is a dot, so it is round.
           <span className="block size-1.5 rounded-full bg-[#4a1010]" />
@@ -90,6 +97,7 @@ function Control({
   tone,
   enabled,
   focused,
+  revealed,
   onClick,
   children,
 }: {
@@ -97,6 +105,8 @@ function Control({
   tone: keyof typeof TONES;
   enabled: boolean;
   focused: boolean;
+  /** Show the glyph without waiting for the pointer: the unsaved marker. */
+  revealed?: boolean;
   onClick: () => void;
   children: React.ReactNode;
 }) {
@@ -116,9 +126,15 @@ function Control({
         'flex size-3 items-center justify-center rounded-full border border-black/10 lumen-focus',
         'transition-[background-color] duration-(--duration-fast)',
         enabled && focused ? TONES[tone] : 'bg-surface-3 text-transparent',
-        enabled
-          ? '[&>*]:opacity-0 group-hover/controls:[&>*]:opacity-100 focus-visible:[&>*]:opacity-100'
-          : 'opacity-50',
+        !enabled && 'opacity-50',
+        // An inactive window is a neutral row of discs and stays one: the
+        // pointer passing over it is not a reason to light up someone else's
+        // window. Only the window in front answers the hover.
+        enabled && focused
+          ? revealed
+            ? '[&>*]:opacity-100'
+            : '[&>*]:opacity-0 group-hover/controls:[&>*]:opacity-100 focus-visible:[&>*]:opacity-100'
+          : '[&>*]:opacity-0',
       )}
     >
       {children}

@@ -2,6 +2,16 @@
 // them), and the round ones — the trail dots and the wait ring — are genuinely circular.
 import { useSettings } from '@lumen/kernel/react';
 import { useEffect, useRef } from 'react';
+import {
+  ARROW_CLASSIC_HOTSPOT,
+  ARROW_CLASSIC_PATH,
+  ARROW_HOTSPOT,
+  ARROW_PATH,
+  CENTRED_TRANSFORM,
+  hotspotOrigin,
+  hotspotTransform,
+  POINTER_HOTSPOT,
+} from './hotspots';
 
 type Shape =
   | 'arrow'
@@ -241,21 +251,18 @@ function CursorGlyphs({
         [data-testid='os-cursor'][data-shape='wait'] svg[data-g='wait'],
         [data-testid='os-cursor'][data-shape='crosshair'] svg[data-g='crosshair'] { display: block; }
         [data-testid='os-cursor'][data-shape='none'] { opacity: 0 !important; }
-        [data-testid='os-cursor'][data-pressed='true'] svg[data-g='arrow'] { transform: scale(0.92); transform-origin: 2px 2px; }
+        [data-testid='os-cursor'][data-pressed='true'] svg[data-g='arrow'] { transform: ${hotspotTransform(classic ? ARROW_CLASSIC_HOTSPOT : ARROW_HOTSPOT)} scale(0.92); transform-origin: ${hotspotOrigin(classic ? ARROW_CLASSIC_HOTSPOT : ARROW_HOTSPOT)}; }
         [data-testid='os-cursor'] svg[data-g='text'], [data-testid='os-cursor'] svg[data-g='ew'], [data-testid='os-cursor'] svg[data-g='ns'],
         [data-testid='os-cursor'] svg[data-g='nesw'], [data-testid='os-cursor'] svg[data-g='nwse'], [data-testid='os-cursor'] svg[data-g='move'],
         [data-testid='os-cursor'] svg[data-g='grab'], [data-testid='os-cursor'] svg[data-g='grabbing'], [data-testid='os-cursor'] svg[data-g='not-allowed'],
-        [data-testid='os-cursor'] svg[data-g='wait'], [data-testid='os-cursor'] svg[data-g='crosshair'] { transform: translate(-50%, -50%); }
+        [data-testid='os-cursor'] svg[data-g='wait'], [data-testid='os-cursor'] svg[data-g='crosshair'] { transform: ${CENTRED_TRANSFORM}; }
+        /* The pointed shapes click with their point, so each is pulled back by
+           where that point sits inside its own drawing. */
+        [data-testid='os-cursor'] svg[data-g='arrow'] { transform: ${hotspotTransform(classic ? ARROW_CLASSIC_HOTSPOT : ARROW_HOTSPOT)}; }
+        [data-testid='os-cursor'] svg[data-g='pointer'] { transform: ${hotspotTransform(POINTER_HOTSPOT)}; }
       `}</style>
       <svg aria-hidden data-g="arrow" viewBox="0 0 24 24">
-        {classic ? (
-          <path d="M3 2l0 17 4.5-4.2 3 6.7 3.2-1.4-3-6.6 6.3-.4z" {...common} />
-        ) : (
-          <path
-            d="M4 2.5v16.8l4.2-3.9 2.8 6.3c.2.5.8.7 1.3.5l1.9-.8c.5-.2.7-.8.5-1.3l-2.8-6.3 5.7-.5z"
-            {...common}
-          />
-        )}
+        <path d={classic ? ARROW_CLASSIC_PATH : ARROW_PATH} {...common} />
       </svg>
       <svg aria-hidden data-g="pointer" viewBox="0 0 24 24">
         <path

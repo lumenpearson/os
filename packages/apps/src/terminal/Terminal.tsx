@@ -514,8 +514,9 @@ export default function Terminal({ args: initialArgs }: AppProps) {
   }, [copySelection, paste]);
 
   const focusInput = useCallback(() => {
-    // Clicking to select text must not steal the selection.
-    if (window.getSelection()?.toString()) return;
+    // A drag that selected text keeps its selection; a plain click does not.
+    const selection = window.getSelection();
+    if (selection && !selection.isCollapsed) return;
     input.current?.focus();
   }, []);
 
@@ -615,6 +616,10 @@ export default function Terminal({ args: initialArgs }: AppProps) {
       className="flex h-full w-full flex-col bg-canvas text-ink"
       style={{ fontSize, lineHeight: 1.45 }}
       onPointerDown={focusInput}
+      // Pointer-down alone is not enough: the browser moves focus after it, to
+      // the body, because the surface under the pointer cannot hold focus. The
+      // click that follows puts it back on the prompt.
+      onClick={focusInput}
     >
       <div
         ref={scroller}
