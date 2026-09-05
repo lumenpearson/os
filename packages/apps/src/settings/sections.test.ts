@@ -9,7 +9,7 @@ import {
 } from './sections';
 
 describe('SETTINGS_SECTIONS', () => {
-  it('lists the nineteen sections in display order', () => {
+  it('lists the twenty sections in display order', () => {
     expect(SECTION_IDS).toEqual([
       'general',
       'appearance',
@@ -26,6 +26,7 @@ describe('SETTINGS_SECTIONS', () => {
       'region',
       'files',
       'storage',
+      'store',
       'privacy',
       'power',
       'reset',

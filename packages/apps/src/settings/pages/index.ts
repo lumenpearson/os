@@ -17,6 +17,7 @@ import { ResetPage } from './Reset';
 import { SecurityPage } from './Security';
 import { SoundPage } from './Sound';
 import { StoragePage } from './Storage';
+import { StorePage } from './Store';
 import { TaskbarPage } from './Taskbar';
 import { WallpaperPage } from './Wallpaper';
 
@@ -36,6 +37,7 @@ export const PAGES: Record<SectionId, ComponentType> = {
   region: RegionPage,
   files: FilesPage,
   storage: StoragePage,
+  store: StorePage,
   privacy: PrivacyPage,
   power: PowerPage,
   reset: ResetPage,

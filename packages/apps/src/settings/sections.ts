@@ -20,6 +20,7 @@ export type SectionId =
   | 'region'
   | 'files'
   | 'storage'
+  | 'store'
   | 'privacy'
   | 'power'
   | 'reset'
@@ -91,6 +92,11 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
     keywords: ['finder', 'explorer', 'hidden', 'extensions', 'home folder', 'trash'],
   },
   { id: 'storage', label: 'Storage', keywords: ['disk', 'space', 'usage', 'trash', 'quota'] },
+  {
+    id: 'store',
+    label: 'Store',
+    keywords: ['software', 'catalogue', 'catalog', 'packages', 'apps', 'fonts', 'icons', 'install'],
+  },
   { id: 'privacy', label: 'Privacy', keywords: ['recents', 'history', 'log', 'telemetry'] },
   { id: 'power', label: 'Power', keywords: ['sleep', 'restart', 'shut down', 'battery', 'energy'] },
   { id: 'reset', label: 'Reset', keywords: ['defaults', 'erase', 'factory', 'start over'] },
@@ -117,7 +123,7 @@ export function sectionById(id: SectionId): SettingsSection {
 export const SIDEBAR_GROUPS: SectionId[][] = [
   ['general', 'appearance', 'animation', 'wallpaper', 'taskbar', 'display'],
   ['security', 'notifications', 'sound', 'network'],
-  ['keyboard', 'cursor', 'region', 'files', 'storage'],
+  ['keyboard', 'cursor', 'region', 'files', 'storage', 'store'],
   ['privacy', 'power', 'reset', 'about'],
 ];
 
@@ -246,6 +252,10 @@ export const SETTINGS_ROWS: SettingsRowIndex[] = [
   row('storage', 'trash', 'Empty Trash', ['delete', 'free space']),
   row('storage', 'home', 'Home directory', ['location', 'move', 'explorer']),
   row('storage', 'details', 'Storage app', ['details']),
+  row('store', 'origin', 'Address', ['catalogue', 'catalog', 'url', 'origin', 'repository']),
+  row('store', 'lastSync', 'Last fetched', ['sync', 'updated', 'refreshed']),
+  row('store', 'autoSync', 'Fetch the catalogue on its own', ['automatic', 'refresh', 'sync']),
+  row('store', 'syncMinutes', 'How often', ['interval', 'hourly', 'daily', 'refresh']),
   row('privacy', 'recents', 'Keep Recents', ['history', 'recent files']),
   row('privacy', 'logging', 'Keep session log', ['logs', 'diagnostics']),
   row('privacy', 'note', 'Data', ['telemetry', 'analytics', 'offline']),

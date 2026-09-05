@@ -28,6 +28,7 @@ import {
   SearchX,
   Shield,
   SlidersHorizontal,
+  Store,
   Volume2,
   Wifi,
 } from 'lucide-react';
@@ -67,6 +68,7 @@ const ICONS: Record<SectionId, ComponentType<{ className?: string }>> = {
   region: Globe,
   files: Folder,
   storage: HardDrive,
+  store: Store,
   privacy: Shield,
   power: Power,
   reset: RotateCcw,
