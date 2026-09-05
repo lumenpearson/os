@@ -66,6 +66,7 @@ export const useProcessStore = create<ProcessStore>((set, get) => ({
   tick: () =>
     set((s) => {
       const next: Record<Pid, Process> = {};
+      let changed = false;
       for (const p of Object.values(s.processes)) {
         const target = p.windowIds.length > 0 ? 1.5 + Math.random() * 6 : 0.2 + Math.random();
         const cpu = Math.max(
@@ -76,8 +77,15 @@ export const useProcessStore = create<ProcessStore>((set, get) => ({
           8 * 1024 * 1024,
           p.memory + Math.round((Math.random() - 0.5) * 512 * 1024),
         );
-        next[p.pid] = { ...p, cpu: Math.round(cpu * 10) / 10, memory };
+        const rounded = Math.round(cpu * 10) / 10;
+        // Hand back the same object when neither reading moved. Every consumer
+        // of useProcesses() compares by reference, so replacing an unchanged
+        // process re-renders the taskbar — which only reads appId and pid —
+        // twice a minute for nothing.
+        next[p.pid] = rounded === p.cpu && memory === p.memory ? p : { ...p, cpu: rounded, memory };
+        if (next[p.pid] !== p) changed = true;
       }
+      if (!changed) return s;
       return { processes: next };
     }),
   findByApp: (appId) => Object.values(get().processes).filter((p) => p.appId === appId),

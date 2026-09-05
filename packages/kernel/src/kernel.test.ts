@@ -5,6 +5,7 @@ import { useRegistryStore } from './apps/registry';
 import { createKernel, type Kernel } from './kernel';
 import { useProcessStore } from './process/store';
 import { useSessionStore } from './session/store';
+import { useSettingsStore } from './settings/store';
 import type { AppDefinition } from './types';
 import { useWindowStore } from './window/store';
 
@@ -161,5 +162,30 @@ describe('kernel', () => {
     expect(useSessionStore.getState().state).toBe('sleeping');
     kernel.wake();
     expect(useSessionStore.getState().state).toBe('locked');
+  });
+});
+
+describe('disposing a kernel', () => {
+  it('stops it listening, so a replaced kernel cannot write over the live one', async () => {
+    const platform = createWebPlatform();
+    const first = createKernel({
+      platform: { ...platform, adapter: new MemoryAdapter() },
+      apps: [],
+      autoSetup: { name: 'Ada' },
+    });
+    await first.boot();
+
+    let writes = 0;
+    const original = first.saveSettings.bind(first);
+    first.saveSettings = async () => {
+      writes += 1;
+      return original();
+    };
+
+    first.dispose();
+    useSettingsStore.getState().patch('appearance', { accent: 'green' });
+    await new Promise((r) => setTimeout(r, 600));
+
+    expect(writes).toBe(0);
   });
 });

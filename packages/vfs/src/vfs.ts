@@ -108,6 +108,10 @@ export class Vfs {
     options?: WriteOptions,
   ): Promise<void> {
     const n = normalize(path);
+    // The three adapters each rejected this differently — EINVAL, EISDIR and
+    // EIO — so a caller branching on the code to say "that is a folder" was
+    // right on one platform and wrong on the others. Decide it here, once.
+    if (n === SEP) throw new VfsError('EISDIR', n);
     const existed = await this.exists(n);
     const bytes = await toBytes(data);
     await this.adapter.writeFile(n, bytes, options);
@@ -161,8 +165,13 @@ export class Vfs {
     const st = await this.stat(nf);
     if (st.kind === 'file') {
       if (this.adapter.copyFile) {
+        // Ask before copying: the fast path used to report 'create'
+        // unconditionally while the fallback, which goes through writeFile,
+        // reported 'change' for an overwrite — so the same `cp` said
+        // different things on the desktop and on the web.
+        const existed = await this.exists(nt);
         await this.adapter.copyFile(nf, nt);
-        this.emit({ type: 'create', path: nt, kind: 'file' });
+        this.emit({ type: existed ? 'change' : 'create', path: nt, kind: 'file' });
       } else {
         await this.writeFile(nt, await this.readFile(nf));
       }

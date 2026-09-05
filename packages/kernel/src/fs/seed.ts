@@ -30,7 +30,7 @@ export async function seedHome(vfs: Vfs, username: string, displayName: string):
   const desktop = join(home, 'Desktop');
   const projects = join(home, 'Projects');
 
-  await vfs.writeText(join(desktop, 'Welcome.md'), welcomeMarkdown(displayName));
+  await vfs.writeText(join(desktop, 'Welcome.md'), welcomeMarkdown(displayName, username));
   await vfs.writeText(join(docs, 'Getting started.txt'), gettingStarted());
   await vfs.writeJson(join(docs, 'Budget.lsd'), sampleSheet());
   await vfs.writeJson(join(docs, 'Roadmap.lsl'), sampleSlides());
@@ -64,7 +64,7 @@ export async function seedApplications(
   }
 }
 
-function welcomeMarkdown(name: string): string {
+function welcomeMarkdown(name: string, username: string): string {
   return `# Welcome, ${name}
 
 This is your desktop. A few things worth knowing:
@@ -75,7 +75,7 @@ This is your desktop. A few things worth knowing:
 - The **Start** button on the left of the taskbar lists every app.
 - **Settings → Appearance** changes theme, accent and wallpaper.
 
-Your files live in \`/Users/${name.toLowerCase()}\`. Everything is stored locally.
+Your files live in \`${homeDir(username)}\`. Everything is stored locally.
 `;
 }
 

@@ -27,7 +27,7 @@ import { useNotificationStore } from './notifications/store';
 import { useProcessStore } from './process/store';
 import { useSessionStore } from './session/store';
 import { getSettings, useSettingsStore } from './settings/store';
-import { applyThemeToDocument } from './theme/apply';
+import { applyThemeToDocument, stopFollowingSystemTheme } from './theme/apply';
 import type {
   AppDefinition,
   AppId,
@@ -69,6 +69,14 @@ export class Kernel {
   private stateFile: PersistedState = defaultState();
   private saveTimer: ReturnType<typeof setTimeout> | null = null;
   private tickTimer: ReturnType<typeof setInterval> | null = null;
+  private settingsTimer: ReturnType<typeof setTimeout> | null = null;
+  /**
+   * Everything boot() subscribed to. createKernel replaces the instance and
+   * calls dispose() on the old one, so without these a replaced kernel keeps
+   * its store and file-system listeners alive and carries on writing settings
+   * over the top of the live one.
+   */
+  private readonly subscriptions: Array<() => void> = [];
   private readonly bootStartedAt = performance.now();
   private readonly autoSetup: KernelOptions['autoSetup'];
   /** Close requests waiting for an app's answer (unsaved changes). */
@@ -97,18 +105,20 @@ export class Kernel {
         .map((a) => ({ id: a.id, name: a.name, description: a.description })),
     );
     applyThemeToDocument(getSettings());
-    useSettingsStore.subscribe((s) => applyThemeToDocument(s.settings));
+    this.subscriptions.push(useSettingsStore.subscribe((s) => applyThemeToDocument(s.settings)));
     useLogStore.getState().setEnabled(getSettings().privacy.logging);
 
-    this.vfs.subscribe((e) => {
-      if (
-        e.path.startsWith(APPLICATIONS_DIR) ||
-        e.to?.startsWith(APPLICATIONS_DIR) ||
-        extname(e.path) === '.app'
-      ) {
-        void this.refreshInstalledApps();
-      }
-    });
+    this.subscriptions.push(
+      this.vfs.subscribe((e) => {
+        if (
+          e.path.startsWith(APPLICATIONS_DIR) ||
+          e.to?.startsWith(APPLICATIONS_DIR) ||
+          extname(e.path) === '.app'
+        ) {
+          void this.refreshInstalledApps();
+        }
+      }),
+    );
 
     let user = currentUser();
     if (!user && this.autoSetup) {
@@ -491,11 +501,12 @@ export class Kernel {
       useSettingsStore.getState().hydrate(null);
       await this.saveSettings();
     }
-    let settingsTimer: ReturnType<typeof setTimeout> | null = null;
-    useSettingsStore.subscribe(() => {
-      if (settingsTimer) clearTimeout(settingsTimer);
-      settingsTimer = setTimeout(() => void this.saveSettings(), 400);
-    });
+    this.subscriptions.push(
+      useSettingsStore.subscribe(() => {
+        if (this.settingsTimer) clearTimeout(this.settingsTimer);
+        this.settingsTimer = setTimeout(() => void this.saveSettings(), 400);
+      }),
+    );
   }
 
   saveSettings(): Promise<void> {
@@ -545,6 +556,12 @@ export class Kernel {
   dispose(): void {
     if (this.tickTimer) clearInterval(this.tickTimer);
     if (this.saveTimer) clearTimeout(this.saveTimer);
+    if (this.settingsTimer) clearTimeout(this.settingsTimer);
+    this.tickTimer = null;
+    this.saveTimer = null;
+    this.settingsTimer = null;
+    for (const off of this.subscriptions.splice(0)) off();
+    stopFollowingSystemTheme();
   }
 }
 

@@ -146,3 +146,53 @@ describe('renaming a directory onto a file', () => {
     expect((await fs.stat('/f.txt')).kind).toBe('file');
   });
 });
+
+describe('writing to the root', () => {
+  it('reports EISDIR whichever adapter is underneath', async () => {
+    // The three adapters each rejected this differently — EINVAL, EISDIR and
+    // EIO — so a caller branching on the code was right on one platform only.
+    for (const adapter of [new MemoryAdapter(), new IndexedDbAdapter('root-code-test')]) {
+      const fs = new Vfs(adapter);
+      await expect(fs.writeText('/', 'x')).rejects.toMatchObject({ code: 'EISDIR' });
+    }
+  });
+});
+
+describe('copying over a file that already exists', () => {
+  /**
+   * MemoryAdapter has no copyFile, so it takes the fallback path through
+   * writeFile, which was always right. The bug lived in the fast path, which
+   * only the Tauri adapter has — so the test has to provide one.
+   */
+  class CopyingAdapter extends MemoryAdapter {
+    async copyFile(from: string, to: string): Promise<void> {
+      await this.writeFile(to, await this.readFile(from));
+    }
+  }
+
+  it('reports a change, not a create, on the adapter fast path', async () => {
+    const fs = new Vfs(new CopyingAdapter());
+    await fs.writeText('/a.txt', 'A');
+    await fs.writeText('/b.txt', 'B');
+    const seen: string[] = [];
+    const off = fs.subscribe((e) => seen.push(`${e.type}:${e.path}`));
+
+    await fs.copy('/a.txt', '/b.txt');
+    await fs.copy('/a.txt', '/c.txt');
+    off();
+
+    expect(seen).toContain('change:/b.txt');
+    expect(seen).toContain('create:/c.txt');
+  });
+
+  it('agrees with the adapter that has no fast path', async () => {
+    const plain = new Vfs(new MemoryAdapter());
+    await plain.writeText('/a.txt', 'A');
+    await plain.writeText('/b.txt', 'B');
+    const seen: string[] = [];
+    const off = plain.subscribe((e) => seen.push(`${e.type}:${e.path}`));
+    await plain.copy('/a.txt', '/b.txt');
+    off();
+    expect(seen).toContain('change:/b.txt');
+  });
+});

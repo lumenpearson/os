@@ -42,12 +42,12 @@ export class IndexedDbAdapter implements VfsAdapter {
         const meta = db.createObjectStore(STORE_META, { keyPath: 'path' });
         meta.createIndex('parent', 'parent');
         db.createObjectStore(STORE_DATA);
-      };
-      req.onsuccess = () => {
-        this.db = req.result;
+        // The root row belongs to the schema, so it is written once when the
+        // database is created. Writing it on every connection instead reset
+        // the root's timestamps on every page load, and cost a readwrite
+        // transaction at boot for a row that had not changed.
         const now = Date.now();
-        const tx = this.db.transaction(STORE_META, 'readwrite');
-        tx.objectStore(STORE_META).put({
+        meta.put({
           path: SEP,
           parent: '',
           name: '',
@@ -56,6 +56,10 @@ export class IndexedDbAdapter implements VfsAdapter {
           createdAt: now,
           modifiedAt: now,
         } satisfies Row);
+      };
+      req.onsuccess = () => {
+        this.db = req.result;
+        const tx = this.db.transaction(STORE_META, 'readonly');
         tx.oncomplete = () => resolve(this.db as IDBDatabase);
         tx.onerror = () => reject(new VfsError('EIO', SEP, String(tx.error)));
       };
