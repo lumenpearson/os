@@ -88,6 +88,7 @@ export function fromFields(fields: DurationFields): number {
 }
 
 /**
+ * deslop-ignore-next-line 30 — a zero-padded minute field, not a section marker.
  * What a keystroke in one of the three fields means. Digits only: `"07"` is 7,
  * an empty field is 0, and anything over the field's maximum is clamped rather
  * than rejected, so holding a key never wedges the input.

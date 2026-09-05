@@ -51,6 +51,8 @@ export function formatTimeOfDay(minutes: number, o: FormatOptions): string {
   return formatter(o.locale, options).format(clockInstant(minutes));
 }
 
+// A zero-padded hour in a 24-hour gutter, not a numbered section.
+// deslop-ignore-next-line 30
 /** The gutter label for an hour line: "9 AM" or "09". */
 export function formatHourLabel(hour: number, o: FormatOptions): string {
   if (!o.hour12) return String(hour).padStart(2, '0');

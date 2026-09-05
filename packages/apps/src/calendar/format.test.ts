@@ -34,6 +34,7 @@ describe('times', () => {
 
   it('labels the hour lines of the grid', () => {
     expect(plain(formatHourLabel(9, us))).toBe('9 AM');
+    // deslop-ignore-next-line 30 — the zero-padded hour this formats.
     expect(plain(formatHourLabel(9, gb))).toBe('09');
     expect(plain(formatHourLabel(0, gb))).toBe('00');
   });

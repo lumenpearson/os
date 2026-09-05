@@ -69,6 +69,7 @@ describe('the typed fields', () => {
 
   it('takes digits, an empty field as zero, and nothing else', () => {
     expect(parseField('7', 'minutes')).toBe(7);
+    // deslop-ignore-next-line 30 — the zero-padded minutes this parses.
     expect(parseField('07', 'minutes')).toBe(7);
     expect(parseField('  9 ', 'seconds')).toBe(9);
     expect(parseField('', 'hours')).toBe(0);

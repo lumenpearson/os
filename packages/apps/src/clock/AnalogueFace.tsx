@@ -1,3 +1,6 @@
+// deslop-ignore-file 24 — the SVG here is a clock face: the dial ring, the
+// tick marks and the centre pin. Drawing a watch dial is what this file is
+// for, and circles are the shape a dial has.
 /**
  * The analogue face. The hands are placed by `rotate(angle 50 50)` written to
  * the SVG on every frame — the angle comes from the instant itself, including
