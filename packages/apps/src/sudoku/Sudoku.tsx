@@ -59,6 +59,12 @@ import { DEFAULT_DATA, fromSaved, normalizeData, type SudokuPrefs, toSaved } fro
 const COUNTS_FROM = 460;
 /** Below this the difficulty select leaves the toolbar; the menu still has it. */
 const SELECT_FROM = 480;
+/**
+ * Below this Undo and Redo leave the toolbar: the window controls now sit in
+ * this row, and what is left has to fit beside them at the smallest width.
+ * Edit → Undo and Mod+Z are unaffected.
+ */
+const HISTORY_FROM = 400;
 /** The board is written to disk this often while it is being played. */
 const SAVE_EVERY = 15_000;
 
@@ -280,7 +286,9 @@ export default function Sudoku(_props: AppProps) {
     <div ref={frame} className="flex h-full min-h-0 w-full">
       <AppFrame
         toolbar={
-          <Toolbar dense>
+          <Toolbar dense windowControls>
+            {/* The window has no title bar of its own, so this row names it. */}
+            <span className="truncate-1 mr-1 min-w-0 text-base font-medium text-ink">Sudoku</span>
             <Button size="sm" variant="secondary" onClick={() => void newPuzzle(prefs.difficulty)}>
               New puzzle
             </Button>
@@ -294,20 +302,24 @@ export default function Sudoku(_props: AppProps) {
               />
             )}
             <ToolbarSpacer />
-            <IconButton
-              label="Undo"
-              disabled={!play || !canUndo(play)}
-              onClick={() => commands.current.undo()}
-            >
-              <Undo2 />
-            </IconButton>
-            <IconButton
-              label="Redo"
-              disabled={!play || !canRedo(play)}
-              onClick={() => commands.current.redo()}
-            >
-              <Redo2 />
-            </IconButton>
+            {(width === 0 || width >= HISTORY_FROM) && (
+              <>
+                <IconButton
+                  label="Undo"
+                  disabled={!play || !canUndo(play)}
+                  onClick={() => commands.current.undo()}
+                >
+                  <Undo2 />
+                </IconButton>
+                <IconButton
+                  label="Redo"
+                  disabled={!play || !canRedo(play)}
+                  onClick={() => commands.current.redo()}
+                >
+                  <Redo2 />
+                </IconButton>
+              </>
+            )}
             <IconButton
               label="Pencil marks"
               active={prefs.pencil}

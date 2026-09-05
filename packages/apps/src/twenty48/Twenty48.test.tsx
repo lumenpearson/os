@@ -3,7 +3,7 @@ import { KernelProvider } from '@lumen/kernel/react';
 import { createWebPlatform } from '@lumen/platform';
 import { DialogProvider } from '@lumen/ui';
 import { join, MemoryAdapter } from '@lumen/vfs';
-import { act, cleanup, render, screen } from '@testing-library/react';
+import { act, cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { AppProvider, FileDialogProvider } from '../_sdk';
@@ -119,6 +119,7 @@ describe('the app definition', () => {
       height: 620,
       minWidth: 320,
       minHeight: 440,
+      titleBar: 'inset',
     });
     expect(definition.keywords).toContain('2048');
   });
@@ -237,5 +238,16 @@ describe('the file under the home directory', () => {
     await mount();
     expect(occupied()).toBe(2);
     expect(screen.getByText('Best').nextSibling).toHaveTextContent('40');
+  });
+});
+
+describe('the row the window is dragged by', () => {
+  it('keeps the window controls clear and says which window this is', async () => {
+    await mount();
+    const toolbar = screen.getByRole('toolbar');
+    // The title bar is inset, so the controls are drawn over this row.
+    expect(toolbar.className).toContain('ps-(--lumen-window-controls-w)');
+    expect(within(toolbar).getByText('2048')).toBeInTheDocument();
+    expect(within(toolbar).getByRole('button', { name: 'New game' })).toBeInTheDocument();
   });
 });

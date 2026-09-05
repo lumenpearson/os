@@ -15,6 +15,6 @@ export default defineApp({
   category: 'games',
   icon: createAppIcon({ glyph: Crown, tone: 'ink' }),
   component: lazy(() => import('./Chess')),
-  window: { width: 900, height: 700, minWidth: 380, minHeight: 420 },
+  window: { width: 900, height: 700, minWidth: 380, minHeight: 420, titleBar: 'inset' },
   keywords: ['chess', 'game', 'board', 'engine', 'pgn', 'fen'],
 });

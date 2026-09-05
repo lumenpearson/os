@@ -204,86 +204,95 @@ export default function Units(_props: AppProps) {
       : `${formatQuantity(fromValue, fromUnit)} = ${formatQuantity(toValue, toUnit)}`;
 
   return (
-    <div ref={frame} className="flex h-full min-h-0 w-full bg-canvas text-ink">
-      {layout.picker === 'sidebar' && (
-        <CategoryPicker shape="sidebar" value={category} onChange={chooseCategory} />
-      )}
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-        <Toolbar dense>
-          {/* The tab strip takes the free width and scrolls inside itself; the
-              other two shapes are their own size, with the spacer after. */}
-          {layout.picker === 'tabs' ? (
-            <CategoryPicker shape="tabs" value={category} onChange={chooseCategory} />
-          ) : (
-            <>
-              {layout.picker === 'sidebar' ? (
-                <span className="px-1 text-base font-medium text-ink">{categoryName}</span>
-              ) : (
-                <CategoryPicker shape="select" value={category} onChange={chooseCategory} />
-              )}
-              <ToolbarSpacer />
-            </>
-          )}
-          <Button
-            size="sm"
-            icon={<Copy className="size-3.5" />}
-            disabled={derived === ''}
-            onClick={copyResult}
-          >
-            Copy
-          </Button>
-        </Toolbar>
+    // The toolbar runs the full width of the window: it is the title bar now,
+    // so the sidebar starts under it rather than beside it.
+    <div ref={frame} className="flex h-full min-h-0 w-full flex-col bg-canvas text-ink">
+      <Toolbar dense windowControls>
+        {/* The window has no title bar of its own, so the category named here
+            is what says which window this is — as tabs when they fit, and as
+            a label or a select when they do not. The tab strip takes the free
+            width and scrolls inside itself; the other two shapes are their own
+            size, with the spacer after. */}
+        {layout.picker === 'tabs' ? (
+          <CategoryPicker shape="tabs" value={category} onChange={chooseCategory} />
+        ) : (
+          <>
+            {layout.picker === 'sidebar' ? (
+              <span className="truncate-1 min-w-0 px-1 text-base font-medium text-ink">
+                {categoryName}
+              </span>
+            ) : (
+              <CategoryPicker shape="select" value={category} onChange={chooseCategory} />
+            )}
+            <ToolbarSpacer />
+          </>
+        )}
+        <Button
+          size="sm"
+          icon={<Copy className="size-3.5" />}
+          disabled={derived === ''}
+          onClick={copyResult}
+        >
+          Copy
+        </Button>
+      </Toolbar>
 
-        <div className="lumen-scroll flex min-h-0 flex-1 flex-col">
-          <div className="shrink-0 px-4 py-3">
-            <div className="mx-auto flex w-full max-w-2xl flex-col gap-2.5">
-              <ValueField
-                label="From"
-                value={fromText}
-                onChange={(text) => setEntry({ side: 'from', text })}
-                onCommit={keep}
-                units={units}
-                unit={fromUnit.id}
-                onUnitChange={(id: UnitId) => chooseUnits({ from: id, to: toUnit.id })}
-                invalid={entry.side === 'from' && invalid}
-                pairRow={layout.pairRow}
-                direction="down"
-              />
-              <div className="flex justify-center">
-                <IconButton label="Swap units" size="sm" variant="outline" onClick={swap}>
-                  <ArrowUpDown />
-                </IconButton>
+      <div className="flex min-h-0 min-w-0 flex-1">
+        {layout.picker === 'sidebar' && (
+          <CategoryPicker shape="sidebar" value={category} onChange={chooseCategory} />
+        )}
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+          <div className="lumen-scroll flex min-h-0 flex-1 flex-col">
+            <div className="shrink-0 px-4 py-3">
+              <div className="mx-auto flex w-full max-w-2xl flex-col gap-2.5">
+                <ValueField
+                  label="From"
+                  value={fromText}
+                  onChange={(text) => setEntry({ side: 'from', text })}
+                  onCommit={keep}
+                  units={units}
+                  unit={fromUnit.id}
+                  onUnitChange={(id: UnitId) => chooseUnits({ from: id, to: toUnit.id })}
+                  invalid={entry.side === 'from' && invalid}
+                  pairRow={layout.pairRow}
+                  direction="down"
+                />
+                <div className="flex justify-center">
+                  <IconButton label="Swap units" size="sm" variant="outline" onClick={swap}>
+                    <ArrowUpDown />
+                  </IconButton>
+                </div>
+                <ValueField
+                  label="To"
+                  value={toText}
+                  onChange={(text) => setEntry({ side: 'to', text })}
+                  onCommit={keep}
+                  units={units}
+                  unit={toUnit.id}
+                  onUnitChange={(id: UnitId) => chooseUnits({ from: fromUnit.id, to: id })}
+                  invalid={entry.side === 'to' && invalid}
+                  pairRow={layout.pairRow}
+                  direction="up"
+                />
               </div>
-              <ValueField
-                label="To"
-                value={toText}
-                onChange={(text) => setEntry({ side: 'to', text })}
-                onCommit={keep}
-                units={units}
-                unit={toUnit.id}
-                onUnitChange={(id: UnitId) => chooseUnits({ from: fromUnit.id, to: id })}
-                invalid={entry.side === 'to' && invalid}
-                pairRow={layout.pairRow}
-                direction="up"
-              />
             </div>
+            {layout.recents && (
+              <RecentsList
+                entries={data.recents}
+                onPick={restore}
+                onClear={() => update(clearRecents)}
+              />
+            )}
           </div>
-          {layout.recents && (
-            <RecentsList
-              entries={data.recents}
-              onPick={restore}
-              onClear={() => update(clearRecents)}
-            />
-          )}
-        </div>
 
-        <div className="flex h-6 shrink-0 items-center gap-3 border-t border-rule bg-canvas px-3">
-          <span role="status" aria-live="polite" className="mono truncate-1 text-xs text-ink-2">
-            {equation}
-          </span>
-          {copied && (
-            <span className="ml-auto shrink-0 text-xs text-ink-3">Copied to the clipboard</span>
-          )}
+          <div className="flex h-6 shrink-0 items-center gap-3 border-t border-rule bg-canvas px-3">
+            <span role="status" aria-live="polite" className="mono truncate-1 text-xs text-ink-2">
+              {equation}
+            </span>
+            {copied && (
+              <span className="ml-auto shrink-0 text-xs text-ink-3">Copied to the clipboard</span>
+            )}
+          </div>
         </div>
       </div>
     </div>

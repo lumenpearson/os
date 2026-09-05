@@ -15,7 +15,7 @@ export default defineApp({
   category: 'games',
   icon: createAppIcon({ glyph: Grid2x2, tone: 'amber' }),
   component: lazy(() => import('./Twenty48')),
-  window: { width: 460, height: 620, minWidth: 320, minHeight: 440 },
+  window: { width: 460, height: 620, minWidth: 320, minHeight: 440, titleBar: 'inset' },
   singleton: true,
   keywords: ['2048', 'game', 'puzzle', 'tiles', 'slide', 'merge'],
 });

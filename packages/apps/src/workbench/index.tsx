@@ -14,7 +14,7 @@ export default defineApp({
   category: 'developer',
   icon: createAppIcon({ glyph: Wrench, tone: 'ink' }),
   component: lazy(() => import('./Workbench')),
-  window: { width: 960, height: 680, minWidth: 400, minHeight: 320 },
+  window: { width: 960, height: 680, minWidth: 400, minHeight: 320, titleBar: 'inset' },
   singleton: true,
   keywords: [
     'json',

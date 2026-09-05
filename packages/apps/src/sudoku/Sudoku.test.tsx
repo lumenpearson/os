@@ -3,7 +3,7 @@ import { KernelProvider } from '@lumen/kernel/react';
 import { createWebPlatform } from '@lumen/platform';
 import { DialogProvider } from '@lumen/ui';
 import { join, MemoryAdapter } from '@lumen/vfs';
-import { act, render, screen } from '@testing-library/react';
+import { act, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { AppProvider, FileDialogProvider } from '../_sdk';
@@ -115,6 +115,7 @@ describe('the app definition', () => {
       height: 720,
       minWidth: 340,
       minHeight: 460,
+      titleBar: 'inset',
     });
     expect(definition.keywords).toContain('sudoku');
   });
@@ -355,5 +356,75 @@ describe('finishing', () => {
     await user.keyboard(answer === 1 ? '2' : '1');
     expect(cell.getAttribute('aria-label')).toMatch(new RegExp(`, ${answer}$`));
     expect(screen.getByRole('button', { name: 'Write 5' })).toBeDisabled();
+  });
+});
+
+/**
+ * happy-dom gives every element a zero size and its ResizeObserver never
+ * fires, so a window has to be handed a width before anything that folds at
+ * one can be tested. Reports the box once, on the first observation, the way
+ * a browser does; the returned function puts the original back.
+ */
+function observeWidth(width: number, height: number): () => void {
+  const original = globalThis.ResizeObserver;
+  class SizedResizeObserver {
+    private readonly callback: ResizeObserverCallback;
+    constructor(callback: ResizeObserverCallback) {
+      this.callback = callback;
+    }
+    observe(target: Element) {
+      const contentRect = {
+        width,
+        height,
+        x: 0,
+        y: 0,
+        top: 0,
+        left: 0,
+        right: width,
+        bottom: height,
+      };
+      this.callback(
+        [{ target, contentRect } as unknown as ResizeObserverEntry],
+        this as unknown as ResizeObserver,
+      );
+    }
+    unobserve() {}
+    disconnect() {}
+  }
+  globalThis.ResizeObserver = SizedResizeObserver as unknown as typeof ResizeObserver;
+  return () => {
+    globalThis.ResizeObserver = original;
+  };
+}
+
+describe('the row the window is dragged by', () => {
+  it('keeps the window controls clear and says which window this is', async () => {
+    await mount();
+    const toolbar = screen.getByRole('toolbar');
+    // The title bar is inset, so the controls are drawn over this row.
+    expect(toolbar.className).toContain('ps-(--lumen-window-controls-w)');
+    expect(within(toolbar).getByText('Sudoku')).toBeInTheDocument();
+    // And the row still carries the game's own commands.
+    expect(within(toolbar).getByRole('button', { name: 'New puzzle' })).toBeInTheDocument();
+    expect(within(toolbar).getByRole('button', { name: 'Check' })).toBeInTheDocument();
+  });
+});
+
+describe('the toolbar at the smallest window', () => {
+  it('gives up Undo and Redo rather than the name and the commands', async () => {
+    // 340 is the declared minimum width, less the 68 the controls hold.
+    const restore = observeWidth(340, 720);
+    try {
+      await mount();
+      const toolbar = screen.getByRole('toolbar');
+      expect(within(toolbar).getByText('Sudoku')).toBeInTheDocument();
+      expect(within(toolbar).getByRole('button', { name: 'New puzzle' })).toBeInTheDocument();
+      expect(within(toolbar).getByRole('button', { name: 'Check' })).toBeInTheDocument();
+      // Undo and Redo stay on the Edit menu, under Mod+Z and Mod+Shift+Z.
+      expect(within(toolbar).queryByRole('button', { name: 'Undo' })).toBeNull();
+      expect(command('edit', 'undo')).toBeDefined();
+    } finally {
+      restore();
+    }
   });
 });

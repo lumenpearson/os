@@ -3,7 +3,7 @@ import { KernelProvider } from '@lumen/kernel/react';
 import { createWebPlatform } from '@lumen/platform';
 import { DialogProvider } from '@lumen/ui';
 import { MemoryAdapter } from '@lumen/vfs';
-import { act, render, screen } from '@testing-library/react';
+import { act, render, screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { AppProvider, FileDialogProvider } from '../_sdk';
 import Chess from './Chess';
@@ -154,5 +154,72 @@ describe('the commands the game offers', () => {
       expect(command('game', id).enabled).toBe(false);
     }
     expect(command('game', 'resign').enabled).toBe(true);
+  });
+});
+
+/**
+ * happy-dom gives every element a zero size and its ResizeObserver never
+ * fires, so a window has to be handed a width before anything that folds at
+ * one can be tested. Reports the box once, on the first observation, the way
+ * a browser does; the returned function puts the original back.
+ */
+function observeWidth(width: number, height: number): () => void {
+  const original = globalThis.ResizeObserver;
+  class SizedResizeObserver {
+    private readonly callback: ResizeObserverCallback;
+    constructor(callback: ResizeObserverCallback) {
+      this.callback = callback;
+    }
+    observe(target: Element) {
+      const contentRect = {
+        width,
+        height,
+        x: 0,
+        y: 0,
+        top: 0,
+        left: 0,
+        right: width,
+        bottom: height,
+      };
+      this.callback(
+        [{ target, contentRect } as unknown as ResizeObserverEntry],
+        this as unknown as ResizeObserver,
+      );
+    }
+    unobserve() {}
+    disconnect() {}
+  }
+  globalThis.ResizeObserver = SizedResizeObserver as unknown as typeof ResizeObserver;
+  return () => {
+    globalThis.ResizeObserver = original;
+  };
+}
+
+describe('the row the window is dragged by', () => {
+  it('keeps the window controls clear and says which window this is', async () => {
+    await mount();
+    const toolbar = screen.getByRole('toolbar');
+    // The title bar is inset, so the controls are drawn over this row.
+    expect(toolbar.className).toContain('ps-(--lumen-window-controls-w)');
+    expect(within(toolbar).getByText('Chess')).toBeInTheDocument();
+    expect(within(toolbar).getByRole('button', { name: 'New game' })).toBeInTheDocument();
+  });
+});
+
+describe('the toolbar at the smallest window', () => {
+  it('gives up the side and level rather than the name and the commands', async () => {
+    // 380 is the declared minimum width, less the 68 the controls hold.
+    const restore = observeWidth(380, 700);
+    try {
+      await mount();
+      const toolbar = screen.getByRole('toolbar');
+      expect(within(toolbar).getByText('Chess')).toBeInTheDocument();
+      expect(within(toolbar).getByRole('button', { name: 'New game' })).toBeInTheDocument();
+      // The side and the level are on the Game menu, and the status bar says
+      // what has happened.
+      expect(within(toolbar).queryByText(/·/)).toBeNull();
+    } finally {
+      restore();
+    }
   });
 });

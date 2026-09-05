@@ -201,7 +201,13 @@ export function Chessboard({
       ref={host}
       role="grid"
       aria-label="Chessboard"
-      className="grid aspect-square w-full max-w-[min(100%,72vh)] grid-cols-8 overflow-hidden rounded-sm border border-rule-strong"
+      // The board is square and fits its pane in both axes. The width cap is
+      // the pane's own height in container units, not 72vh: on a tall screen
+      // a short chess window would otherwise be allowed a board taller than
+      // the room it has. `cqh` reads the container marked `container-type:
+      // size` just above; a viewport unit reads the screen, which is not what
+      // decides how much room this board has.
+      className="grid aspect-square w-full max-w-[min(100%,100cqh)] grid-cols-8 overflow-hidden rounded-sm border border-rule-strong"
     >
       {squares.map((square) => {
         const occupant: Piece | null = pieceAt(position, square);

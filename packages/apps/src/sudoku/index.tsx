@@ -15,7 +15,7 @@ export default defineApp({
   category: 'games',
   icon: createAppIcon({ glyph: Grid3x3, tone: 'blue' }),
   component: lazy(() => import('./Sudoku')),
-  window: { width: 620, height: 720, minWidth: 340, minHeight: 460 },
+  window: { width: 620, height: 720, minWidth: 340, minHeight: 460, titleBar: 'inset' },
   singleton: true,
   keywords: ['sudoku', 'game', 'puzzle', 'numbers', 'grid', 'logic'],
 });

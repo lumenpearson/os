@@ -15,7 +15,7 @@ export default defineApp({
   category: 'utilities',
   icon: createAppIcon({ glyph: Ruler, tone: 'graphite' }),
   component: lazy(() => import('./Units')),
-  window: { width: 620, height: 560, minWidth: 320, minHeight: 300 },
+  window: { width: 620, height: 560, minWidth: 320, minHeight: 300, titleBar: 'inset' },
   singleton: true,
   keywords: ['convert', 'converter', 'measure', 'metric', 'imperial', 'temperature'],
 });

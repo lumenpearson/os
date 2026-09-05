@@ -134,6 +134,7 @@ describe('the app definition', () => {
       height: 680,
       minWidth: 400,
       minHeight: 320,
+      titleBar: 'inset',
     });
     expect(definition.keywords).toContain('base64');
   });
@@ -338,5 +339,24 @@ describe('Workbench', () => {
     expect(command('file', 'close').shortcut).toBe('Mod+W');
     expect(command('edit', 'copy-output').shortcut).toBe('Shift+Mod+C');
     expect(command('view', 'tool-json').shortcut).toBe('Mod+1');
+  });
+});
+
+describe('the row the window is dragged by', () => {
+  it('keeps the window controls clear and names the tool in view', async () => {
+    await mount();
+    const toolbar = screen.getByRole('toolbar');
+    // The title bar is inset, so the controls are drawn over this row.
+    expect(toolbar.className).toContain('ps-(--lumen-window-controls-w)');
+    // What the title used to say is now the tool the window is on.
+    expect(within(toolbar).getByText('JSON')).toBeInTheDocument();
+  });
+
+  it('names the tool through the select when the sidebar has folded away', async () => {
+    observedWidth = 420;
+    await mount();
+    const toolbar = screen.getByRole('toolbar');
+    expect(toolbar.className).toContain('ps-(--lumen-window-controls-w)');
+    expect(within(toolbar).getByRole('combobox', { name: 'Tool' })).toHaveValue('json');
   });
 });

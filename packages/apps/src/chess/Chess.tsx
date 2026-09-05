@@ -108,6 +108,13 @@ function normalize(value: Prefs): Prefs {
 /** Below this the move list sits under the board instead of beside it. */
 const SIDE_BY_SIDE = 720;
 
+/**
+ * Below this the side and level leave the toolbar. The window controls sit in
+ * that row now, and the three buttons come first; the Game menu marks the
+ * level and the status bar says whose move it is.
+ */
+const SIDE_AND_LEVEL_FROM = 480;
+
 const HOW_TO_PLAY: ReadonlyArray<readonly [string, string]> = [
   ['Click or drag', 'Move a piece. The legal squares are marked as you pick it up.'],
   ['Arrow keys', 'Walk the board. Enter picks a piece up and puts it down.'],
@@ -413,7 +420,9 @@ export default function Chess(_props: AppProps) {
     <div ref={frameRef} className="flex h-full min-h-0 w-full">
       <AppFrame
         toolbar={
-          <Toolbar dense>
+          <Toolbar dense windowControls>
+            {/* The window has no title bar of its own, so this row names it. */}
+            <span className="truncate-1 mr-1 min-w-0 text-base font-medium text-ink">Chess</span>
             <Button size="sm" variant="secondary" onClick={() => void latest.current.newGame()}>
               New game
             </Button>
@@ -435,9 +444,11 @@ export default function Chess(_props: AppProps) {
               Flip
             </Button>
             <ToolbarSpacer />
-            <span className="mono text-xs text-ink-2">
-              {colorName(game.side)} · {levelById(prefs.level).label}
-            </span>
+            {(width === 0 || width >= SIDE_AND_LEVEL_FROM) && (
+              <span className="mono text-xs text-ink-2">
+                {colorName(game.side)} · {levelById(prefs.level).label}
+              </span>
+            )}
           </Toolbar>
         }
         statusBar={
@@ -468,7 +479,7 @@ export default function Chess(_props: AppProps) {
             beside ? 'flex min-h-0 flex-1 gap-3 p-3' : 'flex min-h-0 flex-1 flex-col gap-2 p-2'
           }
         >
-          <div className="flex min-h-0 min-w-0 flex-1 items-start justify-center">
+          <div className="flex min-h-0 min-w-0 flex-1 items-start justify-center [container-type:size]">
             <Chessboard
               position={position}
               flipped={prefs.flipped}

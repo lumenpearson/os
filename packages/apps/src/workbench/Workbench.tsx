@@ -189,9 +189,14 @@ export default function Workbench(_props: AppProps) {
 
   return (
     <div ref={frameRef} className="flex h-full min-h-0 w-full flex-col bg-surface text-ink">
-      <Toolbar dense>
+      <Toolbar dense windowControls>
+        {/* The window has no title bar of its own, so the tool named here is
+            what says which window this is — as a label beside the sidebar, and
+            as the select that replaces the sidebar when it folds away. */}
         {layout.sidebar ? (
-          <span className="pl-1 text-base font-medium text-ink">{TOOL_LABEL[tool]}</span>
+          <span className="truncate-1 min-w-0 pl-1 text-base font-medium text-ink">
+            {TOOL_LABEL[tool]}
+          </span>
         ) : (
           <Select
             size="sm"

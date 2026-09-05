@@ -103,6 +103,7 @@ describe('the app definition', () => {
       height: 560,
       minWidth: 320,
       minHeight: 300,
+      titleBar: 'inset',
     });
     expect(definition.keywords).toContain('convert');
   });
@@ -407,5 +408,17 @@ describe('a settings file left by an earlier session', () => {
     await mount();
     expect(fromUnit()).toHaveValue('Metre');
     expect(to()).toHaveValue('3.28083989501');
+  });
+});
+
+describe('the row the window is dragged by', () => {
+  it('keeps the window controls clear and names the category in view', async () => {
+    await mount();
+    const toolbar = screen.getByRole('toolbar');
+    // The title bar is inset, so the controls are drawn over this row.
+    expect(toolbar.className).toContain('ps-(--lumen-window-controls-w)');
+    // What the title used to say is now the category the window is on.
+    expect(within(toolbar).getByRole('radio', { checked: true })).toHaveAccessibleName('Length');
+    expect(within(toolbar).getByRole('button', { name: /Copy/ })).toBeInTheDocument();
   });
 });

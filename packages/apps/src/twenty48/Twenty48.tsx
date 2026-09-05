@@ -128,7 +128,9 @@ export default function Twenty48(_props: AppProps) {
     <div ref={frame} className="flex h-full min-h-0 w-full">
       <AppFrame
         toolbar={
-          <Toolbar dense>
+          <Toolbar dense windowControls>
+            {/* The window has no title bar of its own, so this row names it. */}
+            <span className="truncate-1 mr-1 min-w-0 text-base font-medium text-ink">2048</span>
             <Button size="sm" icon={<Plus className="size-3.5" />} onClick={start}>
               New game
             </Button>
