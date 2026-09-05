@@ -1,8 +1,15 @@
 //! Host configuration: where the home directory lives and how the window
-//! starts. Stored as JSON at `<config dir>/LumenOS/config.json`
-//! (`%APPDATA%\LumenOS\config.json` on Windows). Missing files and missing
-//! fields fall back to defaults; a corrupt file is an error the host reports
-//! and then ignores so the desktop still boots.
+//! starts. Stored as JSON at `<config dir>/LumenOS/config.json`, which
+//! `dirs` places per platform:
+//!
+//! | Host    | Configuration file                                         |
+//! | ------- | ---------------------------------------------------------- |
+//! | Windows | `%APPDATA%\LumenOS\config.json`                             |
+//! | macOS   | `~/Library/Application Support/LumenOS/config.json`         |
+//! | Linux   | `$XDG_CONFIG_HOME/LumenOS/config.json`, else `~/.config/…`  |
+//!
+//! Missing files and missing fields fall back to defaults; a corrupt file is
+//! an error the host reports and then ignores so the desktop still boots.
 
 use std::fs;
 use std::io;
@@ -46,7 +53,9 @@ impl Default for HostConfig {
 }
 
 /// `<local data dir>/LumenOS/home`: `%LOCALAPPDATA%\LumenOS\home` on
-/// Windows, `~/.local/share/LumenOS/home` on Linux.
+/// Windows, `~/Library/Application Support/LumenOS/home` on macOS,
+/// `$XDG_DATA_HOME/LumenOS/home` (usually `~/.local/share/…`) on Linux.
+/// Settings → Storage moves it anywhere the user can write.
 pub fn default_home_dir() -> PathBuf {
     dirs::data_local_dir()
         .or_else(dirs::home_dir)

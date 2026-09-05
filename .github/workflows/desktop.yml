@@ -1,4 +1,4 @@
-name: Desktop (Windows)
+name: Desktop
 
 on:
   push:
@@ -18,36 +18,89 @@ concurrency:
   group: desktop-${{ github.ref }}
   cancel-in-progress: true
 
+# Building needs nothing but the checkout; only the release job writes, and it
+# asks for that itself.
+permissions:
+  contents: read
+
 env:
   TURBO_TELEMETRY_DISABLED: 1
 
 jobs:
   build:
-    name: Build installer
-    runs-on: windows-latest
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.runner }}
     timeout-minutes: 60
+    strategy:
+      # One platform failing must not cancel the others: when a build breaks it
+      # is usually platform-specific, and hiding the other two turns one
+      # failure into three unknowns.
+      fail-fast: false
+      matrix:
+        include:
+          - name: Windows (x64)
+            runner: windows-latest
+            target: x86_64-pc-windows-msvc
+            artifact: lumen-os-windows-x64
+            paths: |
+              target/x86_64-pc-windows-msvc/release/bundle/nsis/*.exe
+              target/x86_64-pc-windows-msvc/release/bundle/msi/*.msi
+          # Apple silicon runner. An Intel build would need its own matrix
+          # entry with x86_64-apple-darwin; a universal binary is possible but
+          # doubles the build and is not worth it until someone asks.
+          - name: macOS (Apple silicon)
+            runner: macos-latest
+            target: aarch64-apple-darwin
+            artifact: lumen-os-macos-arm64
+            paths: |
+              target/aarch64-apple-darwin/release/bundle/dmg/*.dmg
+          # Ubuntu 22.04 rather than latest, deliberately: the AppImage is only
+          # as portable as the glibc it was linked against, so building on the
+          # oldest runner still supported by the actions widens the range of
+          # distributions that can run it. 22.04 ships glibc 2.35, and it is
+          # also the last image carrying webkit2gtk-4.1 without extra work.
+          - name: Linux (x64)
+            runner: ubuntu-22.04
+            target: x86_64-unknown-linux-gnu
+            artifact: lumen-os-linux-x64
+            paths: |
+              target/x86_64-unknown-linux-gnu/release/bundle/deb/*.deb
+              target/x86_64-unknown-linux-gnu/release/bundle/rpm/*.rpm
+              target/x86_64-unknown-linux-gnu/release/bundle/appimage/*.AppImage
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+
+      - name: Linux prerequisites
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file \
+            libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev
+
+      - uses: ./.github/actions/setup
         with:
-          node-version-file: .nvmrc
-          cache: pnpm
+          install: 'false'
+
       - uses: dtolnay/rust-toolchain@stable
         with:
-          targets: x86_64-pc-windows-msvc
+          targets: ${{ matrix.target }}
+
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: ". -> target"
+          # Without this the three platforms share one key and evict each
+          # other's artefacts on every run.
+          key: ${{ matrix.target }}
+
       - run: pnpm install --frozen-lockfile
-      - name: Build Tauri app (NSIS + MSI)
-        run: pnpm --filter @lumen/desktop tauri build --target x86_64-pc-windows-msvc
+
+      - name: Build Tauri bundles
+        run: pnpm --filter @lumen/desktop tauri build --target ${{ matrix.target }}
+
       - uses: actions/upload-artifact@v4
         with:
-          name: lumen-os-windows-x64
-          path: |
-            target/x86_64-pc-windows-msvc/release/bundle/nsis/*.exe
-            target/x86_64-pc-windows-msvc/release/bundle/msi/*.msi
+          name: ${{ matrix.artifact }}
+          path: ${{ matrix.paths }}
           if-no-files-found: error
           retention-days: 14
 
@@ -61,11 +114,14 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with:
-          name: lumen-os-windows-x64
           path: dist
       - uses: softprops/action-gh-release@v2
         with:
           files: |
             dist/**/*.exe
             dist/**/*.msi
+            dist/**/*.dmg
+            dist/**/*.deb
+            dist/**/*.rpm
+            dist/**/*.AppImage
           generate_release_notes: true

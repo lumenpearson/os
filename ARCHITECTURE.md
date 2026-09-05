@@ -1,7 +1,8 @@
 # Architecture
 
 Lumen OS is a desktop environment written in TypeScript and React 19. The same
-code runs in a browser tab and inside a Tauri 2 window on Windows. This
+code runs in a browser tab and inside a Tauri 2 window on Windows, macOS and
+Linux. This
 document explains the layers, the data flow, and the reasons behind the main
 decisions.
 

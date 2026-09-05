@@ -10,6 +10,14 @@
 //! host. The physical one canonicalises the deepest existing ancestor of the
 //! result and checks that it still sits under the canonical root, which
 //! closes the symlink and junction escapes the lexical check cannot see.
+//!
+//! Both sides of that comparison are canonical, which is what makes it safe
+//! on macOS, where `/tmp` and `/var` are symlinks into `/private`. Comparing
+//! a canonicalised path against the root as the user typed it would deny
+//! every path under a home in `/var/...`; comparing raw paths would let a
+//! link out of the home through unseen. Comparison is by path component, so
+//! a sibling directory whose name merely starts with the root's name is not
+//! a match either.
 
 use std::path::{Component, Path, PathBuf};
 
@@ -111,7 +119,10 @@ impl Sandbox {
     }
 
     /// Canonicalise the deepest existing ancestor and make sure it did not
-    /// leave the root through a link.
+    /// leave the root through a link. `canonical_root` is canonical too, so
+    /// a home that is reached through a symlink — `/var/...` on macOS, a
+    /// junction on Windows — compares against the same real directory the
+    /// probe resolves to.
     fn verify_inside(&self, host: &Path, vfs_path: &str) -> Result<()> {
         let mut probe = host;
         while probe.symlink_metadata().is_err() {
@@ -331,6 +342,65 @@ mod tests {
         std::os::unix::fs::symlink(dir.path().join("real"), dir.path().join("alias")).unwrap();
         assert!(sb.resolve("/alias").is_ok());
         assert!(sb.resolve("/alias/new.txt").is_ok());
+    }
+
+    /// The shape macOS gives every temporary and `/var` home: the root is
+    /// configured through a symlink, so `root` and `canonical_root` name the
+    /// same directory by different paths. Legitimate paths must resolve and
+    /// escapes must still be refused.
+    #[cfg(unix)]
+    #[test]
+    fn root_reached_through_a_symlink_still_resolves() {
+        let base = tempfile::tempdir().unwrap();
+        let real = base.path().join("private").join("home");
+        std::fs::create_dir_all(&real).unwrap();
+        std::os::unix::fs::symlink(base.path().join("private"), base.path().join("var")).unwrap();
+
+        let linked = base.path().join("var").join("home");
+        let sb = Sandbox::new(&linked).unwrap();
+        assert_eq!(sb.root(), linked);
+        assert_eq!(sb.canonical_root(), real.canonicalize().unwrap());
+
+        let host = sb.resolve("/Documents/notes.txt").unwrap();
+        assert_eq!(host, linked.join("Documents").join("notes.txt"));
+        std::fs::create_dir(linked.join("Documents")).unwrap();
+        std::fs::write(&host, b"hi").unwrap();
+        assert!(sb.resolve("/Documents/notes.txt").is_ok());
+
+        // Both spellings of the root map back to the same VFS path.
+        assert_eq!(sb.to_vfs(&host), "/Documents/notes.txt");
+        assert_eq!(
+            sb.to_vfs(&real.join("Documents").join("notes.txt")),
+            "/Documents/notes.txt"
+        );
+
+        // And the link check still bites through the symlinked root.
+        std::fs::write(base.path().join("secret"), b"x").unwrap();
+        std::os::unix::fs::symlink(base.path().join("secret"), linked.join("out")).unwrap();
+        assert_eq!(sb.resolve("/out").unwrap_err().code, ErrorCode::Eacces);
+    }
+
+    /// A sibling whose name starts with the root's name is outside it. This
+    /// fails if containment is ever tested on strings instead of components.
+    #[cfg(unix)]
+    #[test]
+    fn a_neighbour_with_the_root_as_a_name_prefix_is_outside() {
+        let base = tempfile::tempdir().unwrap();
+        let root = base.path().join("home");
+        let neighbour = base.path().join("home-backup");
+        std::fs::create_dir_all(&neighbour).unwrap();
+        std::fs::write(neighbour.join("secret"), b"x").unwrap();
+        let sb = Sandbox::new(&root).unwrap();
+        std::os::unix::fs::symlink(&neighbour, root.join("link")).unwrap();
+
+        for bad in ["/link", "/link/secret"] {
+            assert_eq!(
+                sb.resolve(bad).unwrap_err().code,
+                ErrorCode::Eacces,
+                "{bad}"
+            );
+        }
+        assert_eq!(sb.to_vfs(&neighbour.join("secret")), "/");
     }
 
     #[cfg(unix)]

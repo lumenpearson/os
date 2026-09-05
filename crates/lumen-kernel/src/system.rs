@@ -3,12 +3,20 @@
 //! come from the delta between two readings, so the first reading is taken
 //! when the monitor is created and every later one waits out
 //! `MINIMUM_CPU_UPDATE_INTERVAL` if it is called sooner than that.
+//!
+//! Not every field exists on every host: Linux on ARM has no processor model
+//! in `/proc/cpuinfo`, a rolling distribution has no OS version, a container
+//! may have no host name, and a disk's kind is unknown wherever the OS will
+//! not say. Those are reported as an empty string, which is the shape the
+//! System Information app already treats as "unavailable" and prints the
+//! reason for. Filling them with a plausible substitute would put an
+//! invented value on a spec sheet.
 
 use std::time::{Instant, SystemTime, UNIX_EPOCH};
 
 use serde::Serialize;
 use sysinfo::{
-    Disks, Networks, Pid, ProcessRefreshKind, ProcessesToUpdate, System,
+    DiskKind, Disks, Networks, Pid, ProcessRefreshKind, ProcessesToUpdate, System,
     MINIMUM_CPU_UPDATE_INTERVAL,
 };
 
@@ -124,17 +132,12 @@ impl SystemMonitor {
     pub fn info(&mut self) -> SystemInfo {
         self.system.refresh_memory();
         let cpus = self.system.cpus();
-        let model = cpus
-            .first()
-            .map(|c| c.brand().trim())
-            .filter(|b| !b.is_empty())
-            .unwrap_or("Unknown CPU")
-            .to_owned();
+        let model = reported(cpus.first().map(|c| c.brand().to_owned()));
         SystemInfo {
-            hostname: System::host_name().unwrap_or_else(|| "localhost".to_owned()),
+            hostname: reported(System::host_name()),
             os: OsInfo {
-                name: System::name().unwrap_or_else(|| std::env::consts::OS.to_owned()),
-                version: System::os_version().unwrap_or_default(),
+                name: os_name(),
+                version: reported(System::os_version()),
                 arch: System::cpu_arch(),
             },
             kernel: crate::KERNEL_VERSION.to_owned(),
@@ -177,7 +180,7 @@ impl SystemMonitor {
                 mount: d.mount_point().display().to_string(),
                 total: d.total_space(),
                 available: d.available_space(),
-                kind: d.kind().to_string(),
+                kind: disk_kind(d.kind()),
             })
             .collect();
 
@@ -251,6 +254,42 @@ impl Default for SystemMonitor {
     }
 }
 
+/// A value the host may not have: trimmed, or empty when there is none.
+fn reported(value: Option<String>) -> String {
+    value.map(|v| v.trim().to_owned()).unwrap_or_default()
+}
+
+/// The product name of the running OS.
+///
+/// `System::name()` answers the kernel's name, which on macOS is `Darwin`,
+/// while `os_version()` there is the macOS product version — 15.4, not
+/// Darwin's 24.4.0. Printing the two together would name a version that
+/// belongs to neither, so Darwin is reported as the product built on it.
+/// Windows and Linux already answer with a product or distribution name. If
+/// the host answers nothing, the build target is still a fact.
+fn os_name() -> String {
+    match reported(System::name()).as_str() {
+        "Darwin" => "macOS".to_owned(),
+        "" => match std::env::consts::OS {
+            "macos" => "macOS".to_owned(),
+            "windows" => "Windows".to_owned(),
+            "linux" => "Linux".to_owned(),
+            other => other.to_owned(),
+        },
+        name => name.to_owned(),
+    }
+}
+
+/// `SSD` or `HDD` where the OS says so. macOS reports neither for a disk
+/// image, and no host reports it for a network mount, so the rest is empty
+/// rather than the word "Unknown".
+fn disk_kind(kind: DiskKind) -> String {
+    match kind {
+        DiskKind::SSD | DiskKind::HDD => kind.to_string(),
+        _ => String::new(),
+    }
+}
+
 fn clamp_pct(value: f32) -> f32 {
     if value.is_finite() {
         value.clamp(0.0, 100.0)
@@ -274,11 +313,38 @@ mod tests {
     fn info_has_the_fixed_fields() {
         let mut monitor = SystemMonitor::new();
         let info = monitor.info();
-        assert!(!info.hostname.is_empty());
         assert_eq!(info.kernel, crate::KERNEL_VERSION);
         assert!(info.cpu.cores >= 1);
         assert!(info.memory.total > 0);
         assert!(!info.os.arch.is_empty());
+        // Every host names itself, even if only from the build target.
+        assert!(!info.os.name.is_empty());
+        // The rest may be missing; what they must not be is padded.
+        for field in [&info.hostname, &info.os.version, &info.cpu.model] {
+            assert_eq!(field, field.trim());
+        }
+    }
+
+    #[test]
+    fn missing_values_are_empty_rather_than_invented() {
+        assert_eq!(reported(None), "");
+        assert_eq!(reported(Some("  ".to_owned())), "");
+        assert_eq!(reported(Some("  Intel  ".to_owned())), "Intel");
+        assert_eq!(disk_kind(DiskKind::Unknown(-1)), "");
+        assert_eq!(disk_kind(DiskKind::SSD), "SSD");
+        assert_eq!(disk_kind(DiskKind::HDD), "HDD");
+    }
+
+    #[test]
+    fn the_os_is_named_after_the_product_not_the_kernel() {
+        let name = os_name();
+        assert!(!name.is_empty());
+        // `System::name()` is "Darwin" on macOS, where the version reported
+        // beside it is macOS's, so the two have to agree on the product.
+        assert_ne!(name, "Darwin");
+        if cfg!(target_os = "macos") {
+            assert_eq!(name, "macOS");
+        }
     }
 
     #[test]

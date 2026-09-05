@@ -7,7 +7,8 @@ system design and `CONTRIBUTING.md` for the workflow.
 ## What this is
 
 A desktop operating environment in TypeScript + React 19. Same code runs in a
-browser (`apps/web`) and inside Tauri 2 on Windows (`apps/desktop`). The Rust
+browser (`apps/web`) and inside Tauri 2 on Windows, macOS and Linux
+(`apps/desktop`). The Rust
 crate `crates/lumen-kernel` provides sandboxed file access and system
 information for the desktop build. A landing site lives in `apps/landing`.
 

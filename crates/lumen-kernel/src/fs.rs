@@ -239,20 +239,35 @@ pub fn usage(sb: &Sandbox, path: &str) -> Result<Usage> {
             }
         }
     }
-    let quota = available_space(sb.root()).map(|free| free.saturating_add(used));
+    let quota = available_space(sb).map(|free| free.saturating_add(used));
     Ok(Usage { used, quota })
 }
 
-/// Free space on the volume that holds `path`: the mounted disk with the
-/// longest mount point that is a prefix of the path.
-fn available_space(path: &Path) -> Option<u64> {
+/// Free space on the volume that holds the home directory.
+///
+/// Both spellings of the root are tried because neither matches the mount
+/// table everywhere. macOS mounts `/private`, so only the canonical form of
+/// a home under `/var` or `/tmp` has a mount point as a prefix. Windows
+/// canonicalises to a `\\?\C:\…` path, which shares no component with the
+/// `C:\` the mount table lists, so only the configured form matches there.
+fn available_space(sb: &Sandbox) -> Option<u64> {
     let disks = sysinfo::Disks::new_with_refreshed_list();
-    disks
+    let mounts: Vec<(&Path, u64)> = disks
         .list()
         .iter()
-        .filter(|d| path.starts_with(d.mount_point()))
-        .max_by_key(|d| d.mount_point().as_os_str().len())
-        .map(|d| d.available_space())
+        .map(|d| (d.mount_point(), d.available_space()))
+        .collect();
+    free_on_volume(&mounts, sb.canonical_root()).or_else(|| free_on_volume(&mounts, sb.root()))
+}
+
+/// The mounted disk with the longest mount point that is a prefix of `path`,
+/// so a home on a volume mounted inside another one reports that volume.
+fn free_on_volume(mounts: &[(&Path, u64)], path: &Path) -> Option<u64> {
+    mounts
+        .iter()
+        .filter(|(mount, _)| path.starts_with(mount))
+        .max_by_key(|(mount, _)| mount.as_os_str().len())
+        .map(|(_, free)| *free)
 }
 
 fn stat_from(vfs: &str, meta: &fs::Metadata) -> Result<FileStat> {
@@ -579,6 +594,24 @@ mod tests {
             assert!(quota >= u.used);
         }
         assert_eq!(usage(&sb, "/d").unwrap().used, 50);
+    }
+
+    #[test]
+    fn free_space_comes_from_the_innermost_mount_point() {
+        let disk = |mount: &'static str, free: u64| (Path::new(mount), free);
+        // Unix: `/home/me` is a volume of its own inside `/`.
+        let unix = [disk("/", 1), disk("/home/me", 2)];
+        assert_eq!(free_on_volume(&unix, Path::new("/home/me/x")), Some(2));
+        assert_eq!(free_on_volume(&unix, Path::new("/etc/x")), Some(1));
+        // A mount point that is only a name prefix is not a match.
+        assert_eq!(free_on_volume(&unix, Path::new("/home/meta")), Some(1));
+        // Nothing to match against: the caller falls back to the other form
+        // of the root, and reports no quota if that misses too.
+        assert_eq!(free_on_volume(&[], Path::new("/home/me")), None);
+        assert_eq!(
+            free_on_volume(&[disk("/private", 3)], Path::new("/var/x")),
+            None
+        );
     }
 
     #[test]

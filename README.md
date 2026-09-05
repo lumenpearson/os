@@ -1,8 +1,10 @@
 # Lumen OS
 
 A desktop operating environment written in TypeScript and React 19. The same
-code runs in a browser tab and natively on Windows through Tauri 2, where a
-Rust kernel provides sandboxed file access and system information.
+code runs in a browser tab and natively on Windows, macOS and Linux through
+Tauri 2, where a Rust kernel provides sandboxed file access and system
+information. See `docs/BUILDING.md` for what each platform produces and how
+far the Linux build actually travels.
 
 ```bash
 pnpm install
