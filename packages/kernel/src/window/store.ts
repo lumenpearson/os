@@ -73,6 +73,7 @@ export const useWindowStore = create<WindowStore>((set, get) => ({
       title: options.title ?? '',
       bounds,
       restoreBounds: null,
+      preferredBounds: bounds,
       minimized: false,
       maximized: false,
       fullscreen: false,
@@ -153,14 +154,19 @@ export const useWindowStore = create<WindowStore>((set, get) => ({
     set((s) => {
       const w = s.windows[id];
       if (!w || rectsEqual(w.bounds, bounds)) return s;
-      return { windows: { ...s.windows, [id]: { ...w, bounds } } };
+      // A window the user has just placed or sized: that is the size to
+      // remember and to restore to when the screen grows again.
+      const preferredBounds = w.maximized || w.snap ? w.preferredBounds : bounds;
+      return { windows: { ...s.windows, [id]: { ...w, bounds, preferredBounds } } };
     }),
 
   move: (id, x, y) =>
     set((s) => {
       const w = s.windows[id];
       if (!w) return s;
-      return { windows: { ...s.windows, [id]: { ...w, bounds: { ...w.bounds, x, y } } } };
+      const bounds = { ...w.bounds, x, y };
+      const preferredBounds = w.maximized || w.snap ? w.preferredBounds : bounds;
+      return { windows: { ...s.windows, [id]: { ...w, bounds, preferredBounds } } };
     }),
 
   setTitle: (id, title) =>
@@ -273,12 +279,19 @@ export const useWindowStore = create<WindowStore>((set, get) => ({
       return { windows, focusedId: null };
     }),
 
-  restoreAll: () =>
+  restoreAll: () => {
     set((s) => {
       const windows: Record<WindowId, WindowState> = {};
       for (const [id, w] of Object.entries(s.windows)) windows[id] = { ...w, minimized: false };
       return { windows };
-    }),
+    });
+    // minimizeAll clears the focus deliberately. Its inverse has to give it
+    // back: with focusedId null the menubar carries no app menus and every
+    // window shortcut short-circuits, so a keyboard-only user has no way into
+    // a window at all.
+    const top = [...get().order].reverse().find((id) => get().windows[id]);
+    if (top) get().focus(top);
+  },
 
   closeAllForPid: (pid) => {
     for (const w of Object.values(get().windows)) if (w.pid === pid) get().close(w.id);
@@ -292,7 +305,12 @@ export const useWindowStore = create<WindowStore>((set, get) => ({
         else if (w.snap) windows[id] = { ...w, bounds: snapRect(w.snap, s.area) };
         else {
           const min = { width: w.options.minWidth ?? 320, height: w.options.minHeight ?? 200 };
-          windows[id] = { ...w, bounds: clampToArea(w.bounds, s.area, min) };
+          // Clamp the size the user actually chose, not the one a previous
+          // clamp left behind. Clamping `bounds` is one-way: shrink the work
+          // area and every window shrinks, grow it again and they all stay
+          // small, because the size they had was overwritten on the way down.
+          const wanted = w.preferredBounds ?? w.bounds;
+          windows[id] = { ...w, bounds: clampToArea(wanted, s.area, min) };
         }
       }
       return { windows };

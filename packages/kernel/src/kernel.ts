@@ -424,9 +424,13 @@ export class Kernel {
   notify(appId: AppId, title: string, body?: string, extra: { timeout?: number } = {}): void {
     const settings = getSettings().notifications;
     if (settings.muted.includes(appId)) return;
-    useNotificationStore
-      .getState()
-      .post({ appId, title, body, timeout: extra.timeout ?? settings.duration });
+    useNotificationStore.getState().post({
+      appId,
+      title,
+      body,
+      timeout: extra.timeout ?? settings.duration,
+      silent: settings.doNotDisturb,
+    });
   }
 
   get state(): PersistedState {

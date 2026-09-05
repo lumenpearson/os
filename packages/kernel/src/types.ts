@@ -126,6 +126,13 @@ export interface WindowState {
   bounds: Rect;
   /** Bounds to restore after maximize/snap. */
   restoreBounds: Rect | null;
+  /**
+   * The size and place the user last chose, before any clamping into a work
+   * area. Clamping `bounds` alone is one-way: a window squeezed into a small
+   * screen has forgotten how big it was, so it stays small when the screen
+   * grows again. This remembers.
+   */
+  preferredBounds: Rect | null;
   minimized: boolean;
   maximized: boolean;
   fullscreen: boolean;

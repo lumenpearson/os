@@ -9,6 +9,14 @@ export interface PostNotificationInput {
   actions?: Notification['actions'];
   timeout?: number;
   onAction?: Notification['onAction'];
+  /**
+   * Keep it out of the banner queue. Do Not Disturb sets this: the shell
+   * renders no banners while it is on, so a queued id would never be shown,
+   * never time out and never be dismissed — and every notification from the
+   * whole quiet period would burst onto the screen the moment it was
+   * switched off. The notification still belongs in the list.
+   */
+  silent?: boolean;
 }
 
 interface NotificationStore {
@@ -41,7 +49,10 @@ export const useNotificationStore = create<NotificationStore>((set) => ({
       timeout: input.timeout,
       onAction: input.onAction,
     };
-    set((s) => ({ items: [n, ...s.items].slice(0, 200), banners: [...s.banners, n.id] }));
+    set((s) => ({
+      items: [n, ...s.items].slice(0, 200),
+      banners: input.silent ? s.banners : [...s.banners, n.id],
+    }));
     events.emit('notification:post', n);
     return n;
   },

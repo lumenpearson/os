@@ -59,3 +59,41 @@ describe('window store', () => {
     expect(useWindowStore.getState().focusedId).toBe(b.id);
   });
 });
+
+describe('showing the desktop and coming back', () => {
+  it('gives focus back, so window shortcuts still work', () => {
+    const s = useWindowStore.getState();
+    s.open(1, 'lumen.files', { width: 600, height: 400 });
+    s.open(1, 'lumen.editor', { width: 600, height: 400 });
+
+    useWindowStore.getState().minimizeAll();
+    expect(useWindowStore.getState().focusedId).toBeNull();
+
+    useWindowStore.getState().restoreAll();
+
+    const after = useWindowStore.getState();
+    expect(Object.values(after.windows).every((w) => !w.minimized)).toBe(true);
+    // Without this the menubar carries no menus and every window.* shortcut
+    // short-circuits on the focused window being absent.
+    expect(after.focusedId).toBe(after.order[after.order.length - 1]);
+  });
+});
+
+describe('a work area that shrinks and grows again', () => {
+  it('gives the window its size back rather than leaving it small', () => {
+    const store = useWindowStore.getState();
+    store.setArea({ x: 0, y: 0, width: 1280, height: 700 });
+    const win = store.open(1, 'lumen.files', { width: 900, height: 600 });
+    const id = win.id;
+    useWindowStore.getState().setBounds(id, { x: 40, y: 40, width: 900, height: 600 });
+
+    useWindowStore.getState().setArea({ x: 0, y: 0, width: 600, height: 400 });
+    expect(useWindowStore.getState().windows[id]?.bounds.width).toBe(600);
+
+    useWindowStore.getState().setArea({ x: 0, y: 0, width: 1280, height: 700 });
+
+    const back = useWindowStore.getState().windows[id]?.bounds;
+    expect(back?.width).toBe(900);
+    expect(back?.height).toBe(600);
+  });
+});

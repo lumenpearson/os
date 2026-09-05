@@ -37,6 +37,7 @@ function win(id: WindowId, pid: Pid, over: Partial<WindowState> = {}): WindowSta
     title: 'Untitled',
     bounds: RECT,
     restoreBounds: null,
+    preferredBounds: null,
     minimized: false,
     maximized: false,
     fullscreen: false,

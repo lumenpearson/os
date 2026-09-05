@@ -73,6 +73,12 @@ export interface KeyLike {
   metaKey: boolean;
   altKey: boolean;
   shiftKey: boolean;
+  /**
+   * The physical key, where the caller has one. Needed because `key` carries
+   * the shifted glyph — Shift+8 arrives as '*' — so a Shift chord naming a
+   * digit or a punctuation mark can only be recognised by position.
+   */
+  code?: string;
 }
 
 export function matchesShortcut(
@@ -89,7 +95,42 @@ export function matchesShortcut(
   if (event.altKey !== s.alt) return false;
   if (event.shiftKey !== s.shift) return false;
   const key = event.key.toLowerCase();
-  return key === s.key || (s.key.length === 1 && key === s.key.toLowerCase());
+  if (key === s.key || (s.key.length === 1 && key === s.key.toLowerCase())) return true;
+  // With Shift held, `event.key` carries the shifted glyph: '8' arrives as '*'
+  // and '.' as '>'. Letters survive because case folds away, but every
+  // Shift+digit and Shift+punctuation chord would otherwise be unmatchable.
+  // The physical key is what the chord names, so fall back to `event.code`.
+  return s.shift && codeMatches(event.code, s.key);
+}
+
+/** Digit and punctuation `KeyboardEvent.code` values, by the glyph they print unshifted. */
+const CODE_FOR_KEY: Record<string, string> = {
+  '0': 'Digit0',
+  '1': 'Digit1',
+  '2': 'Digit2',
+  '3': 'Digit3',
+  '4': 'Digit4',
+  '5': 'Digit5',
+  '6': 'Digit6',
+  '7': 'Digit7',
+  '8': 'Digit8',
+  '9': 'Digit9',
+  '-': 'Minus',
+  '=': 'Equal',
+  '[': 'BracketLeft',
+  ']': 'BracketRight',
+  '\\': 'Backslash',
+  ';': 'Semicolon',
+  "'": 'Quote',
+  ',': 'Comma',
+  '.': 'Period',
+  '/': 'Slash',
+  '`': 'Backquote',
+};
+
+function codeMatches(code: string | undefined, key: string): boolean {
+  if (!code || key.length !== 1) return false;
+  return CODE_FOR_KEY[key] === code;
 }
 
 /** Human-readable label: "Mod+Shift+S" → "⌘⇧S" on macOS, "Ctrl+Shift+S" elsewhere. */
@@ -109,7 +150,11 @@ export function formatShortcut(keys: string, pref: ModifierPreference = 'auto'):
   if (s.meta) parts.push('Win');
   if (s.alt) parts.push('Alt');
   if (s.shift) parts.push('Shift');
-  parts.push(prettyKey(s.key, false));
+  // A chord can be a modifier on its own — the Start menu is bound to Meta —
+  // and then there is no key to print. Pushing an empty string would render
+  // "Win+" with nothing after the separator.
+  const label = prettyKey(s.key, false);
+  if (label) parts.push(label);
   return parts.join('+');
 }
 

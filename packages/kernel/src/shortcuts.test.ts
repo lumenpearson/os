@@ -38,3 +38,45 @@ describe('shortcuts', () => {
     expect(formatShortcut('Alt+ArrowUp', 'ctrl')).toBe('Alt+↑');
   });
 });
+
+describe('Shift chords over digits and punctuation', () => {
+  const chord = (key: string, code: string) => ({
+    key,
+    code,
+    ctrlKey: true,
+    metaKey: false,
+    altKey: false,
+    shiftKey: true,
+  });
+
+  it('matches Shift+Mod+Period, which arrives as ">"', () => {
+    // Files binds Show Hidden Files to this. Without the physical-key fallback
+    // the definition's "." is compared against the shifted glyph and never hits.
+    expect(matchesShortcut(chord('>', 'Period'), 'Shift+Mod+Period', 'ctrl')).toBe(true);
+  });
+
+  it('matches Shift+Mod+8, which arrives as "*"', () => {
+    expect(matchesShortcut(chord('*', 'Digit8'), 'Shift+Mod+8', 'ctrl')).toBe(true);
+  });
+
+  it('does not match a different physical key that prints the same glyph', () => {
+    expect(matchesShortcut(chord('>', 'Comma'), 'Shift+Mod+Period', 'ctrl')).toBe(false);
+  });
+
+  it('still needs Shift when the chord asks for it', () => {
+    expect(
+      matchesShortcut(
+        { key: '.', code: 'Period', ctrlKey: true, metaKey: false, altKey: false, shiftKey: false },
+        'Shift+Mod+Period',
+        'ctrl',
+      ),
+    ).toBe(false);
+  });
+});
+
+describe('formatShortcut with no key', () => {
+  it('renders a modifier-only chord without a dangling separator', () => {
+    // The Start menu is bound to Meta on its own.
+    expect(formatShortcut('Meta', 'ctrl')).toBe('Win');
+  });
+});
