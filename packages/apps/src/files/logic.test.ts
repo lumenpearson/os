@@ -1,5 +1,6 @@
 import type { DirEntry } from '@lumen/vfs';
 import { describe, expect, it } from 'vitest';
+import { sortPlanFor, sortWithPlan } from './filters';
 import {
   canDrop,
   canGoBack,
@@ -10,21 +11,24 @@ import {
   currentPath,
   dropUnder,
   EMPTY_SELECTION,
+  firstWithLetter,
   goBack,
   goForward,
   gridStep,
-  kindLabel,
+  indexLetter,
+  isViewMode,
+  laneWheelDelta,
   moveSelection,
   nameTaken,
   parseDragPaths,
   previewKind,
   pruneSelection,
   pushHistory,
+  railLetters,
   rankMap,
   selectAll,
   selectClick,
   selectOnly,
-  sortEntries,
   statusText,
   validateName,
 } from './logic';
@@ -44,7 +48,7 @@ function entry(name: string, extra: Partial<DirEntry> = {}): DirEntry {
 const dir = (name: string, extra: Partial<DirEntry> = {}) =>
   entry(name, { kind: 'directory', ...extra });
 
-describe('sortEntries', () => {
+describe('rankMap', () => {
   const items = [
     entry('b.txt', { size: 30, modifiedAt: 3 }),
     dir('zeta', { modifiedAt: 1 }),
@@ -53,49 +57,8 @@ describe('sortEntries', () => {
     dir('alpha', { modifiedAt: 4 }),
   ];
 
-  it('puts folders first in natural name order', () => {
-    const names = sortEntries(items, { column: 'name', direction: 'asc' }).map((e) => e.name);
-    expect(names).toEqual(['alpha', 'zeta', 'b.txt', 'file2.png', 'file10.png']);
-  });
-
-  it('keeps folders first when descending', () => {
-    const names = sortEntries(items, { column: 'name', direction: 'desc' }).map((e) => e.name);
-    expect(names).toEqual(['zeta', 'alpha', 'file10.png', 'file2.png', 'b.txt']);
-  });
-
-  it('sorts by size, date and kind with name as tie-break', () => {
-    expect(sortEntries(items, { column: 'size', direction: 'desc' }).map((e) => e.name)).toEqual([
-      'alpha',
-      'zeta',
-      'b.txt',
-      'file2.png',
-      'file10.png',
-    ]);
-    expect(sortEntries(items, { column: 'date', direction: 'asc' }).map((e) => e.name)).toEqual([
-      'zeta',
-      'alpha',
-      'file10.png',
-      'b.txt',
-      'file2.png',
-    ]);
-    const byKind = sortEntries(items, { column: 'kind', direction: 'asc' }).map((e) => e.name);
-    expect(byKind).toEqual(['alpha', 'zeta', 'b.txt', 'file2.png', 'file10.png']);
-  });
-
-  it('does not mutate the input', () => {
-    const copy = [...items];
-    sortEntries(items, { column: 'name', direction: 'asc' });
-    expect(items).toEqual(copy);
-  });
-
-  it('labels kinds', () => {
-    expect(kindLabel(dir('x'))).toBe('Folder');
-    expect(kindLabel(entry('a.md'))).toBe('Markdown');
-    expect(kindLabel(entry('a.xyz'))).toBe('XYZ File');
-  });
-
   it('ranks rows so DataTable reproduces the order in both directions', () => {
-    const sorted = sortEntries(items, { column: 'name', direction: 'desc' });
+    const sorted = sortWithPlan(items, sortPlanFor({ column: 'name', direction: 'desc' }));
     const rank = rankMap(sorted, 'desc');
     const viaTable = [...sorted].sort(
       (a, b) => ((rank.get(a.path) ?? 0) - (rank.get(b.path) ?? 0)) * -1,
@@ -314,5 +277,59 @@ describe('misc', () => {
       '3 items · 2 selected · 2.0 KB free',
     );
     expect(statusText(0, 0, { used: 2048, quota: null })).toBe('0 items · 2.0 KB used');
+  });
+
+  it('counts what a filter left out', () => {
+    expect(statusText(3, 0, null, 12)).toBe('3 of 12 items');
+    expect(statusText(3, 1, null, 3)).toBe('3 items · 1 selected');
+  });
+});
+
+describe('isViewMode', () => {
+  it('accepts the four views and nothing else', () => {
+    expect(isViewMode('cards')).toBe(true);
+    expect(isViewMode('list')).toBe(true);
+    expect(isViewMode('gallery')).toBe(false);
+    expect(isViewMode(null)).toBe(false);
+  });
+});
+
+describe('laneWheelDelta', () => {
+  it('drives a horizontal lane from a plain vertical wheel', () => {
+    expect(laneWheelDelta({ deltaX: 0, deltaY: 40 }, 'horizontal')).toBe(40);
+  });
+
+  it('prefers the stronger axis on a horizontal lane', () => {
+    expect(laneWheelDelta({ deltaX: -60, deltaY: 8 }, 'horizontal')).toBe(-60);
+  });
+
+  it('reads only the vertical axis for a vertical lane', () => {
+    expect(laneWheelDelta({ deltaX: 90, deltaY: 12 }, 'vertical')).toBe(12);
+  });
+});
+
+describe('the A–Z rail', () => {
+  const items = [
+    dir('Archive'),
+    entry('_scratch.txt'),
+    entry('beta.md'),
+    entry('Alpha.png'),
+    entry('9-lives.txt'),
+  ];
+
+  it('buckets a name by its initial, with everything else under #', () => {
+    expect(indexLetter('beta.md')).toBe('B');
+    expect(indexLetter('9-lives.txt')).toBe('#');
+    expect(indexLetter('')).toBe('#');
+  });
+
+  it('lists the letters present, A–Z first and # last', () => {
+    expect(railLetters(items)).toEqual(['A', 'B', '#']);
+  });
+
+  it('jumps to the first item in a bucket, in view order', () => {
+    expect(firstWithLetter(items, 'A')).toBe('/d/Archive');
+    expect(firstWithLetter(items, 'B')).toBe('/d/beta.md');
+    expect(firstWithLetter(items, 'Z')).toBeNull();
   });
 });

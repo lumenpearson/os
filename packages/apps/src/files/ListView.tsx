@@ -3,7 +3,8 @@ import { type DirEntry, formatBytes } from '@lumen/vfs';
 import type { ReactNode } from 'react';
 import { useMemo } from 'react';
 import { FileTypeIcon, formatRelative } from '../_sdk';
-import { kindLabel, rankMap, type SortState } from './logic';
+import { kindLabel } from './filters';
+import { rankMap, type SortState } from './logic';
 import { RenameInput } from './RenameInput';
 import type { EntryHandlers, EntryViewState } from './types';
 

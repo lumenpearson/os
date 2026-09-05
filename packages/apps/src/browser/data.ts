@@ -4,11 +4,11 @@
  */
 
 import { MAX_VISITS, searchVisits, uniqueByUrl, type Visit } from './history';
+import { type BrowserSettings, DEFAULT_SETTINGS, normalizeSettings } from './settings';
 import {
-  DEFAULT_ENGINE_ID,
   displayUrl,
   resolveInput,
-  SEARCH_ENGINES,
+  SETTINGS_URL,
   type SearchEngine,
   START_URL,
   titleFor,
@@ -24,18 +24,32 @@ export interface Bookmark {
 export interface BrowserData {
   bookmarks: Bookmark[];
   history: Visit[];
-  /** Where Home goes and what a fresh window opens. */
-  homepage: string;
-  searchEngine: string;
-  showBookmarksBar: boolean;
+  settings: BrowserSettings;
 }
 
+/**
+ * The favourites a fresh profile starts with, so the browser opens something
+ * on its first run instead of a wall of blocked pages.
+ *
+ * Every web address here answers 200 with neither an `X-Frame-Options` header
+ * nor a `frame-ancestors` directive — the two things that decide whether a
+ * page may be embedded — checked with `curl -sI -L` on 2026-09-05. Sites that
+ * refuse framing are deliberately absent: no code in a browser build can
+ * override that header, so listing one would only promise a blank panel.
+ */
+export const DEFAULT_BOOKMARKS: readonly Bookmark[] = [
+  { id: 'default-start', title: 'New Tab', url: START_URL, addedAt: 0 },
+  { id: 'default-settings', title: 'Browser Settings', url: SETTINGS_URL, addedAt: 0 },
+  { id: 'default-example', title: 'Example Domain', url: 'https://example.com/', addedAt: 0 },
+  { id: 'default-wikipedia', title: 'Wikipedia', url: 'https://www.wikipedia.org/', addedAt: 0 },
+  { id: 'default-rfc', title: 'RFC Editor', url: 'https://www.rfc-editor.org/', addedAt: 0 },
+  { id: 'default-cern', title: 'The first web page', url: 'https://info.cern.ch/', addedAt: 0 },
+];
+
 export const DEFAULT_DATA: BrowserData = {
-  bookmarks: [],
+  bookmarks: [...DEFAULT_BOOKMARKS],
   history: [],
-  homepage: START_URL,
-  searchEngine: DEFAULT_ENGINE_ID,
-  showBookmarksBar: true,
+  settings: DEFAULT_SETTINGS,
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -54,7 +68,10 @@ function str(value: unknown, fallback: string): string {
 export function normalizeData(raw: unknown): BrowserData {
   if (!isRecord(raw)) return DEFAULT_DATA;
 
-  const bookmarks: Bookmark[] = [];
+  // A file with no bookmark list at all has never been written by this
+  // browser, so it gets the starting favourites. An empty list is a choice
+  // the user made, and is left empty.
+  const bookmarks: Bookmark[] = Array.isArray(raw.bookmarks) ? [] : [...DEFAULT_BOOKMARKS];
   if (Array.isArray(raw.bookmarks)) {
     for (const [i, item] of raw.bookmarks.entries()) {
       if (!isRecord(item) || typeof item.url !== 'string' || item.url === '') continue;
@@ -80,16 +97,12 @@ export function normalizeData(raw: unknown): BrowserData {
     }
   }
 
-  const engine = typeof raw.searchEngine === 'string' ? raw.searchEngine : '';
   return {
     bookmarks,
     history: history.slice(0, MAX_VISITS),
-    homepage: str(raw.homepage, DEFAULT_DATA.homepage),
-    searchEngine: SEARCH_ENGINES.some((e) => e.id === engine) ? engine : DEFAULT_ENGINE_ID,
-    showBookmarksBar:
-      typeof raw.showBookmarksBar === 'boolean'
-        ? raw.showBookmarksBar
-        : DEFAULT_DATA.showBookmarksBar,
+    // Before settings had a section of their own they sat at the top level of
+    // this file, under the same names, so an older file reads straight across.
+    settings: normalizeSettings(isRecord(raw.settings) ? raw.settings : raw),
   };
 }
 

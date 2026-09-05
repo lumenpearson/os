@@ -8,7 +8,7 @@
 
 export const INTERNAL_SCHEME = 'lumen://';
 
-export const INTERNAL_PAGES = ['start', 'history', 'bookmarks', 'settings'] as const;
+export const INTERNAL_PAGES = ['start', 'history', 'bookmarks', 'settings', 'blank'] as const;
 export type InternalPage = (typeof INTERNAL_PAGES)[number];
 
 /** The new-tab page. */
@@ -16,12 +16,15 @@ export const START_URL = 'lumen://start';
 export const HISTORY_URL = 'lumen://history';
 export const BOOKMARKS_URL = 'lumen://bookmarks';
 export const SETTINGS_URL = 'lumen://settings';
+/** Nothing at all, for people who want a new tab to get out of the way. */
+export const BLANK_URL = 'lumen://blank';
 
 const INTERNAL_TITLES: Record<InternalPage, string> = {
   start: 'New Tab',
   history: 'History',
   bookmarks: 'Bookmarks',
   settings: 'Browser Settings',
+  blank: 'Blank Page',
 };
 
 export interface SearchEngine {
@@ -171,6 +174,35 @@ export function resolveInput(input: string, engine: SearchEngine): Resolution | 
     if (url) return { kind: 'url', url };
   }
   return { kind: 'search', url: searchUrl(value, engine), query: value };
+}
+
+// ── hosts that open outside Lumen ─────────────────────────────────────────
+
+/**
+ * What the user typed, as a host we can compare against: `https://WWW.Ex.com/a`
+ * and `ex.com` both become `ex.com`. Null when there is no host in it.
+ */
+export function hostPattern(input: string): string | null {
+  const value = input.trim().toLowerCase().replace(/^\*\./, '');
+  if (!value || /\s/.test(value)) return null;
+  const url = normalizeUrl(value);
+  return (url ? hostOf(url) : '') || null;
+}
+
+/** A host matches a pattern exactly, or as one of its subdomains. */
+export function matchesHost(host: string, pattern: string): boolean {
+  const h = host.trim().toLowerCase();
+  const p = pattern.trim().toLowerCase().replace(/^\*\./, '');
+  if (!h || !p) return false;
+  return h === p || h.endsWith(`.${p}`);
+}
+
+/** Whether this address is on the list of sites that open outside Lumen. */
+export function opensExternally(url: string, hosts: readonly string[]): boolean {
+  const scheme = schemeOf(url);
+  if (scheme !== 'https' && scheme !== 'http') return false;
+  const host = hostOf(url);
+  return host !== '' && hosts.some((pattern) => matchesHost(host, pattern));
 }
 
 // ── display ───────────────────────────────────────────────────────────────

@@ -1,5 +1,14 @@
 import { AnchoredMenu, cx, IconButton, type MenuEntry, Toolbar, ToolbarGroup } from '@lumen/ui';
-import { ArrowLeft, ArrowRight, House, MoreHorizontal, RotateCw, Star, X } from 'lucide-react';
+import {
+  ArrowLeft,
+  ArrowRight,
+  House,
+  MoreHorizontal,
+  RotateCw,
+  SlidersHorizontal,
+  Star,
+  X,
+} from 'lucide-react';
 import { type RefObject, useState } from 'react';
 import { AddressBar } from './AddressBar';
 import type { Bookmark } from './data';
@@ -16,8 +25,6 @@ export interface NavigationBarProps {
   canBack: boolean;
   canForward: boolean;
   bookmarked: boolean;
-  /** Internal pages are furniture, not places worth keeping. */
-  canBookmark: boolean;
   /** The commands that have no room in the toolbar. */
   menuItems: MenuEntry[];
   addressRef: RefObject<HTMLInputElement | null>;
@@ -28,6 +35,9 @@ export interface NavigationBarProps {
   onStop: () => void;
   onHome: () => void;
   onToggleBookmark: () => void;
+  onSettings: () => void;
+  /** True while the settings page is the one on screen. */
+  onSettingsPage: boolean;
 }
 
 /** Back, forward, reload, home; the address bar; the star; the rest behind a menu. */
@@ -40,7 +50,6 @@ export function NavigationBar({
   canBack,
   canForward,
   bookmarked,
-  canBookmark,
   menuItems,
   addressRef,
   onNavigate,
@@ -50,6 +59,8 @@ export function NavigationBar({
   onStop,
   onHome,
   onToggleBookmark,
+  onSettings,
+  onSettingsPage,
 }: NavigationBarProps) {
   const [menuAnchor, setMenuAnchor] = useState<HTMLButtonElement | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -90,11 +101,13 @@ export function NavigationBar({
         <IconButton
           label={bookmarked ? 'Remove bookmark' : 'Bookmark this page'}
           size="sm"
-          disabled={!canBookmark}
           active={bookmarked}
           onClick={onToggleBookmark}
         >
           <Star className={cx(bookmarked && 'fill-current text-accent')} />
+        </IconButton>
+        <IconButton label="Browser settings" size="sm" active={onSettingsPage} onClick={onSettings}>
+          <SlidersHorizontal />
         </IconButton>
         <IconButton
           ref={setMenuAnchor}

@@ -7,7 +7,9 @@ import {
   type AppProps,
   useAppMenus,
   useArgs,
+  useFilePicker,
   useJsonFile,
+  useNotify,
   useShortcut,
   useShortcutLabel,
   useTitle,
@@ -26,57 +28,80 @@ import {
 import { FavoritesBar } from './FavoritesBar';
 import { Frame } from './Frame';
 import { canGoBack, canGoForward, recordVisit, removeVisit } from './history';
-import { type BrowserActions, menubarFor, SHORTCUTS } from './menus';
+import { type BrowserActions, menubarFor, SHORTCUTS, zoomResetLabel } from './menus';
 import { NavigationBar } from './NavigationBar';
 import { HistoryPage } from './pages/History';
 import { Library } from './pages/Library';
-import { BrowserSettings } from './pages/Settings';
+import { BrowserSettingsPage } from './pages/Settings';
 import { Start } from './pages/Start';
+import {
+  type BrowserSettings,
+  displayPath,
+  downloadsPath,
+  engineFor,
+  newTabUrl,
+  sandboxFor,
+  withHost,
+  withoutHost,
+} from './settings';
 import { TabStrip } from './TabStrip';
 import {
   activeTab,
   createTabsState,
-  formatZoom,
   nextTabId,
+  type TabDefaults,
   tabIndexFor,
   tabShortcut,
   tabsReducer,
 } from './tabs';
 import {
   BOOKMARKS_URL,
-  engineById,
   HISTORY_URL,
   internalPage,
   isInternalUrl,
+  opensExternally,
   SETTINGS_URL,
   START_URL,
   titleFor,
 } from './url';
 
 const DATA_FILE = '.config/browser.json';
+const EXPORT_NAME = 'bookmarks.json';
 
 /**
  * A browser over sandboxed frames. Nothing inside a frame can be read from
- * here — no title, no links, no text — so a tab is named after its host, and
- * a page that never reports a load says so rather than pretending.
+ * here — no title, no links, no text, no response headers — so a tab is named
+ * after its host, and a page that never reports a load says what is known
+ * about why rather than pretending.
  */
 export default function Browser({ args }: AppProps) {
   const kernel = useKernel();
   const [keyboard] = useSetting('keyboard');
   const shortcutLabel = useShortcutLabel();
   const { focused, close } = useWindowControls();
+  const notify = useNotify();
+  const pickFile = useFilePicker();
   const addressRef = useRef<HTMLInputElement>(null);
 
   const dataPath = useMemo(() => join(kernel.home, DATA_FILE), [kernel.home]);
   const [stored, setStored] = useJsonFile<BrowserData>(dataPath, DEFAULT_DATA);
   const data = useMemo(() => normalizeData(stored), [stored]);
-  const engine = useMemo(() => engineById(data.searchEngine), [data.searchEngine]);
+  const settings = data.settings;
+  const engine = useMemo(() => engineFor(settings), [settings]);
+  const sandbox = useMemo(() => sandboxFor(settings), [settings]);
 
   const update = useCallback(
     (fn: (previous: BrowserData) => BrowserData) => {
       setStored((previous) => fn(normalizeData(previous)));
     },
     [setStored],
+  );
+
+  const updateSettings = useCallback(
+    (patch: Partial<BrowserSettings>) => {
+      update((d) => ({ ...d, settings: { ...d.settings, ...patch } }));
+    },
+    [update],
   );
 
   const [state, dispatch] = useReducer(tabsReducer, args, (launch) =>
@@ -102,6 +127,16 @@ export default function Browser({ args }: AppProps) {
     dispatch({ type: 'open', id: nextTabId(), url: next });
   }, [launch.url]);
 
+  // ── settings the tabs need ──────────────────────────────────────────────
+
+  // The file arrives after the first render, so the tab list is told about the
+  // zoom and the open-outside list once they are known, and again on a change.
+  const defaults = useMemo<TabDefaults>(
+    () => ({ zoom: settings.defaultZoom, externalHosts: settings.externalHosts }),
+    [settings.defaultZoom, settings.externalHosts],
+  );
+  useEffect(() => dispatch({ type: 'defaults', defaults }), [defaults]);
+
   // ── the visit log ───────────────────────────────────────────────────────
 
   // One entry per load, keyed by the generation the tab was on when it was
@@ -110,17 +145,33 @@ export default function Browser({ args }: AppProps) {
   useEffect(() => {
     const live = new Set(state.tabs.map((t) => t.id));
     for (const id of logged.current.keys()) if (!live.has(id)) logged.current.delete(id);
+    if (!settings.keepHistory) return;
     for (const t of state.tabs) {
       if (isInternalUrl(t.url) || logged.current.get(t.id) === t.generation) continue;
       logged.current.set(t.id, t.generation);
       const visit = { id: nextId('visit'), url: t.url, title: t.title, visitedAt: Date.now() };
       update((d) => ({ ...d, history: recordVisit(d.history, visit) }));
     }
-  }, [state.tabs, update]);
+  }, [state.tabs, settings.keepHistory, update]);
 
   // ── commands ────────────────────────────────────────────────────────────
 
-  const go = useCallback((target: string) => dispatch({ type: 'navigate', url: target }), []);
+  /** Hand an address to the browser Lumen itself is running in. */
+  const openOutside = useCallback((target: string) => {
+    if (typeof window === 'undefined' || typeof window.open !== 'function') return;
+    window.open(target, '_blank', 'noopener,noreferrer');
+  }, []);
+
+  const go = useCallback(
+    (target: string) => {
+      // Done here rather than in an effect so the window opens inside the
+      // click or keystroke that asked for it, which is what keeps a pop-up
+      // blocker out of the way.
+      if (opensExternally(target, stateRef.current.defaults.externalHosts)) openOutside(target);
+      dispatch({ type: 'navigate', url: target });
+    },
+    [openOutside, stateRef],
+  );
   const openTab = useCallback(
     (target?: string) => dispatch({ type: 'open', id: nextTabId(), url: target }),
     [],
@@ -128,6 +179,19 @@ export default function Browser({ args }: AppProps) {
   const onLoaded = useCallback((id: string) => dispatch({ type: 'loaded', id }), []);
   const onBlocked = useCallback((id: string) => dispatch({ type: 'blocked', id }), []);
   const onReloadTab = useCallback((id: string) => dispatch({ type: 'reload', id }), []);
+
+  const alwaysOutside = useCallback(
+    (target: string) =>
+      updateSettings({ externalHosts: withHost(stateRef.current.defaults.externalHosts, target) }),
+    [stateRef, updateSettings],
+  );
+  const stopOutside = useCallback(
+    (target: string) =>
+      updateSettings({
+        externalHosts: withoutHost(stateRef.current.defaults.externalHosts, target),
+      }),
+    [stateRef, updateSettings],
+  );
 
   const closeTab = useCallback(
     (id?: string) => {
@@ -143,7 +207,7 @@ export default function Browser({ args }: AppProps) {
 
   const toggleBookmark = useCallback(() => {
     const current = activeTab(stateRef.current);
-    if (!current || isInternalUrl(current.url)) return;
+    if (!current) return;
     update((d) => {
       const existing = findBookmark(d.bookmarks, current.url);
       if (existing) return { ...d, bookmarks: removeBookmark(d.bookmarks, existing.id) };
@@ -159,28 +223,56 @@ export default function Browser({ args }: AppProps) {
     });
   }, [stateRef, update]);
 
+  // ── the downloads folder ────────────────────────────────────────────────
+
+  const chooseDownloads = useCallback(async () => {
+    const chosen = await pickFile({
+      mode: 'folder',
+      title: 'Choose a downloads folder',
+      startDir: kernel.home,
+      confirmLabel: 'Use Folder',
+    });
+    if (typeof chosen === 'string') updateSettings({ downloadsDir: chosen });
+  }, [pickFile, kernel.home, updateSettings]);
+
+  const exportBookmarks = useCallback(async () => {
+    const dir = downloadsPath(settings, kernel.home);
+    try {
+      await kernel.vfs.ensureDir(dir);
+      const name = await kernel.vfs.freeName(dir, EXPORT_NAME);
+      const path = join(dir, name);
+      await kernel.vfs.writeJson(
+        path,
+        data.bookmarks.map((b) => ({ title: b.title, url: b.url, addedAt: b.addedAt })),
+      );
+      notify('Bookmarks exported', displayPath(path, kernel.home));
+    } catch (error) {
+      notify('Could not export bookmarks', error instanceof Error ? error.message : String(error));
+    }
+  }, [settings, kernel.home, kernel.vfs, data.bookmarks, notify]);
+
   // The menubar keeps its item list between renders, so every command reaches
   // the current state through this ref rather than through a closure.
   const commands = useLatest({
-    newTab: () => openTab(data.homepage === START_URL ? undefined : data.homepage),
+    newTab: () => openTab(newTabUrl(settings)),
     closeTab: () => closeTab(),
     back: () => dispatch({ type: 'back' }),
     forward: () => dispatch({ type: 'forward' }),
     reload: () => dispatch({ type: 'reload' }),
     stop: () => dispatch({ type: 'stop' }),
-    home: () => go(data.homepage),
+    home: () => go(settings.homepage),
     showHistory: () => go(HISTORY_URL),
     toggleBookmark,
     showBookmarks: () => go(BOOKMARKS_URL),
     showSettings: () => go(SETTINGS_URL),
-    toggleBookmarksBar: () => update((d) => ({ ...d, showBookmarksBar: !d.showBookmarksBar })),
+    toggleBookmarksBar: () => updateSettings({ showBookmarksBar: !settings.showBookmarksBar }),
     zoomIn: () => dispatch({ type: 'zoom', direction: 'in' }),
     zoomOut: () => dispatch({ type: 'zoom', direction: 'out' }),
     zoomReset: () => dispatch({ type: 'zoom', direction: 'reset' }),
     focusAddress: () => addressRef.current?.focus(),
   });
 
-  const actions = useMemo<BrowserActions & { showSettings: () => void }>(
+  const actions = useMemo<BrowserActions>(
     () => ({
       newTab: () => commands.current.newTab(),
       closeTab: () => commands.current.closeTab(),
@@ -205,7 +297,7 @@ export default function Browser({ args }: AppProps) {
 
   const back = canGoBack(tab?.stack ?? { entries: [], index: 0 });
   const forward = canGoForward(tab?.stack ?? { entries: [], index: 0 });
-  const zoom = tab?.zoom ?? 1;
+  const zoom = tab?.zoom ?? settings.defaultZoom;
   const loading = tab?.status === 'loading';
 
   useAppMenus(
@@ -215,15 +307,26 @@ export default function Browser({ args }: AppProps) {
         canForward: forward,
         loading,
         bookmarked: bookmark !== null,
-        showBookmarksBar: data.showBookmarksBar,
+        showBookmarksBar: settings.showBookmarksBar,
         zoom,
+        defaultZoom: settings.defaultZoom,
       },
       actions,
     ),
-    [actions, back, forward, loading, bookmark !== null, data.showBookmarksBar, zoom],
+    [
+      actions,
+      back,
+      forward,
+      loading,
+      bookmark !== null,
+      settings.showBookmarksBar,
+      zoom,
+      settings.defaultZoom,
+    ],
   );
 
   useShortcut(SHORTCUTS.focusAddress, () => commands.current.focusAddress());
+  useShortcut(SHORTCUTS.settings, () => commands.current.showSettings());
   // The `+` key carries Shift on most layouts, so Mod+= alone does not catch it.
   useShortcut('Mod+Shift+plus', () => commands.current.zoomIn());
 
@@ -271,9 +374,9 @@ export default function Browser({ args }: AppProps) {
       },
       {
         id: 'zoom-reset',
-        label: zoom === 1 ? 'Actual Size' : `Actual Size (${formatZoom(zoom)})`,
+        label: zoomResetLabel(zoom, settings.defaultZoom),
         shortcut: shortcutLabel(SHORTCUTS.zoomReset),
-        enabled: zoom !== 1,
+        enabled: zoom !== settings.defaultZoom,
         onSelect: actions.zoomReset,
       },
       { type: 'separator' },
@@ -294,13 +397,18 @@ export default function Browser({ args }: AppProps) {
         type: 'checkbox',
         label: 'Show Bookmarks Bar',
         shortcut: shortcutLabel(SHORTCUTS.bookmarksBar),
-        checked: data.showBookmarksBar,
+        checked: settings.showBookmarksBar,
         onSelect: actions.toggleBookmarksBar,
       },
       { type: 'separator' },
-      { id: 'settings', label: 'Browser Settings', onSelect: actions.showSettings },
+      {
+        id: 'settings',
+        label: 'Browser Settings',
+        shortcut: shortcutLabel(SHORTCUTS.settings),
+        onSelect: actions.showSettings,
+      },
     ],
-    [actions, shortcutLabel, zoom, data.showBookmarksBar],
+    [actions, shortcutLabel, zoom, settings.defaultZoom, settings.showBookmarksBar],
   );
 
   // ── the page ────────────────────────────────────────────────────────────
@@ -316,6 +424,8 @@ export default function Browser({ args }: AppProps) {
             onNavigate={go}
           />
         );
+      case 'blank':
+        return <div className="h-full w-full bg-surface" />;
       case 'history':
         return (
           <HistoryPage
@@ -350,9 +460,14 @@ export default function Browser({ args }: AppProps) {
         );
       case 'settings':
         return (
-          <BrowserSettings
-            data={data}
-            onChange={(patch) => update((d) => ({ ...d, ...patch }))}
+          <BrowserSettingsPage
+            settings={settings}
+            home={kernel.home}
+            bookmarkCount={data.bookmarks.length}
+            historyCount={data.history.length}
+            onChange={updateSettings}
+            onChooseDownloads={() => void chooseDownloads()}
+            onExportBookmarks={() => void exportBookmarks()}
             onClearHistory={() => update((d) => ({ ...d, history: [] }))}
             onClearBookmarks={() => update((d) => ({ ...d, bookmarks: [] }))}
           />
@@ -386,7 +501,6 @@ export default function Browser({ args }: AppProps) {
         canBack={back}
         canForward={forward}
         bookmarked={bookmark !== null}
-        canBookmark={!internal}
         menuItems={menuItems}
         addressRef={addressRef}
         onNavigate={go}
@@ -396,8 +510,10 @@ export default function Browser({ args }: AppProps) {
         onStop={actions.stop}
         onHome={actions.home}
         onToggleBookmark={actions.toggleBookmark}
+        onSettings={actions.showSettings}
+        onSettingsPage={page === 'settings'}
       />
-      {data.showBookmarksBar && (
+      {settings.showBookmarksBar && (
         <FavoritesBar bookmarks={data.bookmarks} onOpen={go} onShowAll={actions.showBookmarks} />
       )}
       <div className="relative min-h-0 flex-1 overflow-hidden bg-surface">
@@ -407,9 +523,14 @@ export default function Browser({ args }: AppProps) {
               key={t.id}
               tab={t}
               active={t.id === state.activeId}
+              sandbox={sandbox}
+              timeoutMs={settings.frameTimeoutMs}
               onLoaded={onLoaded}
               onBlocked={onBlocked}
               onReload={onReloadTab}
+              onOpenOutside={openOutside}
+              onAlwaysOutside={alwaysOutside}
+              onStopOutside={stopOutside}
             />
           ),
         )}

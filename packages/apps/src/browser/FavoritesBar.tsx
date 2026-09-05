@@ -10,7 +10,10 @@ export interface FavoritesBarProps {
 /** One quiet row of starred pages, shown or hidden by the user's own choice. */
 export function FavoritesBar({ bookmarks, onOpen, onShowAll }: FavoritesBarProps) {
   return (
-    <div className="lumen-scroll flex h-8 shrink-0 items-center gap-1 overflow-y-hidden border-b border-rule bg-canvas px-2">
+    <nav
+      aria-label="Bookmarks bar"
+      className="lumen-scroll flex h-8 shrink-0 items-center gap-1 overflow-y-hidden border-b border-rule bg-canvas px-2"
+    >
       {bookmarks.length === 0 ? (
         <button
           type="button"
@@ -33,6 +36,6 @@ export function FavoritesBar({ bookmarks, onOpen, onShowAll }: FavoritesBarProps
           </button>
         ))
       )}
-    </div>
+    </nav>
   );
 }

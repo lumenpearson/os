@@ -1,6 +1,12 @@
 import type { MenuItemTemplate, MenuTemplate } from '@lumen/kernel';
 import { describe, expect, it, vi } from 'vitest';
-import { type BrowserActions, type BrowserMenuState, menubarFor, SHORTCUTS } from './menus';
+import {
+  type BrowserActions,
+  type BrowserMenuState,
+  menubarFor,
+  SHORTCUTS,
+  zoomResetLabel,
+} from './menus';
 
 const actions = (): BrowserActions => ({
   newTab: vi.fn(),
@@ -13,6 +19,7 @@ const actions = (): BrowserActions => ({
   showHistory: vi.fn(),
   toggleBookmark: vi.fn(),
   showBookmarks: vi.fn(),
+  showSettings: vi.fn(),
   toggleBookmarksBar: vi.fn(),
   zoomIn: vi.fn(),
   zoomOut: vi.fn(),
@@ -26,6 +33,7 @@ const state = (patch: Partial<BrowserMenuState> = {}): BrowserMenuState => ({
   bookmarked: false,
   showBookmarksBar: true,
   zoom: 1,
+  defaultZoom: 1,
   ...patch,
 });
 
@@ -99,6 +107,26 @@ describe('menubarFor', () => {
     const zoomed = item(menubarFor(state({ zoom: 1.25 }), actions()), 'view', 'zoom-reset');
     expect(zoomed.label).toBe('Actual Size (125%)');
     expect(zoomed.enabled).toBe(true);
+  });
+
+  it('says which zoom the reset returns to once that is not 100%', () => {
+    expect(zoomResetLabel(1, 1)).toBe('Actual Size');
+    expect(zoomResetLabel(1.5, 1)).toBe('Actual Size (150%)');
+    expect(zoomResetLabel(1.25, 1.25)).toBe('Default Zoom (125%)');
+
+    const item0 = item(
+      menubarFor(state({ zoom: 1.25, defaultZoom: 1.25 }), actions()),
+      'view',
+      'zoom-reset',
+    );
+    expect(item0.enabled).toBe(false);
+  });
+
+  it('opens the settings page from the File menu', () => {
+    const acts = actions();
+    item(menubarFor(state(), acts), 'file', 'settings').onSelect?.();
+    expect(acts.showSettings).toHaveBeenCalledOnce();
+    expect(item(menubarFor(state(), acts), 'file', 'settings').shortcut).toBe(SHORTCUTS.settings);
   });
 
   it('carries the shortcut for every command that has one', () => {

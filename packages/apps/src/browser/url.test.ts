@@ -3,11 +3,14 @@ import {
   displayUrl,
   engineById,
   hostOf,
+  hostPattern,
   internalPage,
   isInternalUrl,
   looksLikeUrl,
+  matchesHost,
   normalizeInternalUrl,
   normalizeUrl,
+  opensExternally,
   originOf,
   resolveInput,
   SEARCH_ENGINES,
@@ -55,6 +58,7 @@ describe('internal pages', () => {
     expect(internalPage('lumen://history')).toBe('history');
     expect(internalPage('lumen://History/')).toBe('history');
     expect(internalPage('lumen://bookmarks')).toBe('bookmarks');
+    expect(internalPage('lumen://blank')).toBe('blank');
   });
 
   it('returns null for a page that does not exist', () => {
@@ -189,6 +193,37 @@ describe('resolveInput', () => {
   });
 });
 
+describe('hosts that open outside Lumen', () => {
+  it('takes a host out of anything with one in it', () => {
+    expect(hostPattern('https://WWW.Example.com/a?b=1')).toBe('example.com');
+    expect(hostPattern('  Example.COM  ')).toBe('example.com');
+    expect(hostPattern('*.example.com')).toBe('example.com');
+  });
+
+  it('has no host for words, blanks or internal pages', () => {
+    expect(hostPattern('not a host')).toBeNull();
+    expect(hostPattern('   ')).toBeNull();
+    expect(hostPattern('lumen://start')).toBeNull();
+  });
+
+  it('matches a host exactly or as a subdomain, and never as a suffix', () => {
+    expect(matchesHost('example.com', 'example.com')).toBe(true);
+    expect(matchesHost('docs.example.com', 'example.com')).toBe(true);
+    expect(matchesHost('notexample.com', 'example.com')).toBe(false);
+    expect(matchesHost('example.com.evil.test', 'example.com')).toBe(false);
+    expect(matchesHost('', 'example.com')).toBe(false);
+  });
+
+  it('sends only web addresses on the list outside', () => {
+    const hosts = ['example.com'];
+    expect(opensExternally('https://docs.example.com/x', hosts)).toBe(true);
+    expect(opensExternally('http://example.com/', hosts)).toBe(true);
+    expect(opensExternally('https://other.test/', hosts)).toBe(false);
+    expect(opensExternally('lumen://start', hosts)).toBe(false);
+    expect(opensExternally('https://example.com/', [])).toBe(false);
+  });
+});
+
 describe('displayUrl', () => {
   it('hides https and a bare trailing slash', () => {
     expect(displayUrl('https://example.com/')).toBe('example.com');
@@ -216,6 +251,7 @@ describe('titleFor', () => {
   it('names internal pages', () => {
     expect(titleFor('lumen://start')).toBe('New Tab');
     expect(titleFor('lumen://history')).toBe('History');
+    expect(titleFor('lumen://blank')).toBe('Blank Page');
   });
 
   it('falls back to the host for a page we cannot read', () => {

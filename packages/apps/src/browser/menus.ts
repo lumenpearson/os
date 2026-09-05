@@ -17,6 +17,7 @@ export interface BrowserActions {
   showHistory: () => void;
   toggleBookmark: () => void;
   showBookmarks: () => void;
+  showSettings: () => void;
   toggleBookmarksBar: () => void;
   zoomIn: () => void;
   zoomOut: () => void;
@@ -30,6 +31,18 @@ export interface BrowserMenuState {
   bookmarked: boolean;
   showBookmarksBar: boolean;
   zoom: number;
+  /** The zoom a tab starts at, which is what the reset command returns to. */
+  defaultZoom: number;
+}
+
+/**
+ * What the reset command is called. With the default left at 100% it is the
+ * familiar Actual Size; once a person has chosen a different default, saying
+ * "actual size" for it would be a lie.
+ */
+export function zoomResetLabel(zoom: number, defaultZoom: number): string {
+  if (defaultZoom !== DEFAULT_ZOOM) return `Default Zoom (${formatZoom(defaultZoom)})`;
+  return zoom === defaultZoom ? 'Actual Size' : `Actual Size (${formatZoom(zoom)})`;
 }
 
 export const SHORTCUTS = {
@@ -46,6 +59,7 @@ export const SHORTCUTS = {
   zoomIn: 'Mod+=',
   zoomOut: 'Mod+-',
   zoomReset: 'Mod+0',
+  settings: 'Mod+,',
   focusAddress: 'Mod+L',
   nextTab: 'Ctrl+Tab',
   previousTab: 'Ctrl+Shift+Tab',
@@ -54,6 +68,13 @@ export const SHORTCUTS = {
 export function menubarFor(state: BrowserMenuState, actions: BrowserActions): MenuTemplate[] {
   const file: MenuItemTemplate[] = [
     { id: 'new-tab', label: 'New Tab', shortcut: SHORTCUTS.newTab, onSelect: actions.newTab },
+    { type: 'separator' },
+    {
+      id: 'settings',
+      label: 'Browser Settings',
+      shortcut: SHORTCUTS.settings,
+      onSelect: actions.showSettings,
+    },
     { type: 'separator' },
     {
       id: 'close-tab',
@@ -126,10 +147,9 @@ export function menubarFor(state: BrowserMenuState, actions: BrowserActions): Me
     { id: 'zoom-out', label: 'Zoom Out', shortcut: SHORTCUTS.zoomOut, onSelect: actions.zoomOut },
     {
       id: 'zoom-reset',
-      label:
-        state.zoom === DEFAULT_ZOOM ? 'Actual Size' : `Actual Size (${formatZoom(state.zoom)})`,
+      label: zoomResetLabel(state.zoom, state.defaultZoom),
       shortcut: SHORTCUTS.zoomReset,
-      enabled: state.zoom !== DEFAULT_ZOOM,
+      enabled: state.zoom !== state.defaultZoom,
       onSelect: actions.zoomReset,
     },
   ];

@@ -1,6 +1,9 @@
+import type { MenuEntry } from '@lumen/ui';
 import type { DirEntry } from '@lumen/vfs';
 import { describe, expect, it, vi } from 'vitest';
+import { NO_FILTER } from './filters';
 import { contextMenuFor, type FilesActions, type MenuState, menubarFor } from './menus';
+import { DEFAULT_TOOLBAR } from './settings';
 
 function actions(): FilesActions {
   const a = {} as Record<keyof FilesActions, ReturnType<typeof vi.fn>>;
@@ -22,9 +25,17 @@ function actions(): FilesActions {
     'paste',
     'selectAll',
     'setView',
+    'setCardAxis',
+    'setIconSize',
     'toggleHidden',
     'toggleSidebar',
+    'toggleIndexRail',
+    'toggleToolbarPart',
     'setSort',
+    'toggleFoldersFirst',
+    'setFilter',
+    'clearFilter',
+    'editPattern',
     'quickLook',
     'back',
     'forward',
@@ -57,8 +68,14 @@ function state(patch: Partial<MenuState> = {}): MenuState {
     canPaste: false,
     showHidden: false,
     sidebarVisible: true,
+    indexRail: false,
+    toolbar: DEFAULT_TOOLBAR,
     view: 'list',
+    cardAxis: 'horizontal',
+    iconSize: 'medium',
     sort: { column: 'name', direction: 'asc' },
+    foldersFirst: true,
+    filter: NO_FILTER,
     canBack: false,
     canForward: false,
     canUp: true,
@@ -83,6 +100,7 @@ describe('contextMenuFor', () => {
       'Get Info',
       'Show Hidden Files',
       'Sort By',
+      'Filter',
       'View',
     ]);
     expect(items.find((i) => i.id === 'paste')?.enabled).toBe(false);
@@ -130,6 +148,77 @@ describe('contextMenuFor', () => {
     const items = contextMenuFor(state({ selection: ['/a', '/b'], target: file }), actions(), id);
     expect(items[0]?.label).toBe('Open 2 Items');
     expect(items.find((i) => i.id === 'rename')?.enabled).toBe(false);
+  });
+});
+
+describe('view, sort and filter submenus', () => {
+  const sub = (items: MenuEntry[], id: string): MenuEntry[] =>
+    items.find((i) => i.id === id)?.submenu ?? [];
+
+  it('offers the card lane as a fourth view with its own shortcut', () => {
+    const a = actions();
+    const view = menubarFor(state(), a)[2]?.items ?? [];
+    const cards = view.find((i) => i.id === 'view-cards');
+    expect(cards?.label).toBe('as Cards');
+    expect(cards?.shortcut).toBe('Mod+4');
+    cards?.onSelect?.();
+    expect(a.setView).toHaveBeenCalledWith('cards');
+  });
+
+  it('keeps the lane axis for the card view only', () => {
+    const inList = menubarFor(state(), actions())[2]?.items ?? [];
+    expect(inList.find((i) => i.id === 'card-axis')?.enabled).toBe(false);
+    const inCards = menubarFor(state({ view: 'cards' }), actions())[2]?.items ?? [];
+    expect(inCards.find((i) => i.id === 'card-axis')?.enabled).toBe(true);
+  });
+
+  it('shows icon size, the rail and the toolbar parts in View', () => {
+    const a = actions();
+    const view = menubarFor(state({ iconSize: 'large' }), a)[2]?.items ?? [];
+    expect(sub(view, 'icon-size').find((i) => i.id === 'icon-size-large')?.checked).toBe(true);
+    view.find((i) => i.id === 'index-rail')?.onSelect?.();
+    expect(a.toggleIndexRail).toHaveBeenCalled();
+    sub(view, 'toolbar')
+      .find((i) => i.id === 'toolbar-search')
+      ?.onSelect?.();
+    expect(a.toggleToolbarPart).toHaveBeenCalledWith('search');
+  });
+
+  it('sorts on three levels: folders first, the column, then the name', () => {
+    const a = actions();
+    const view = menubarFor(state({ foldersFirst: false }), a)[2]?.items ?? [];
+    const sort = sub(view, 'sort-by');
+    const foldersFirst = sort.find((i) => i.id === 'sort-folders-first');
+    expect(foldersFirst?.checked).toBe(false);
+    foldersFirst?.onSelect?.();
+    expect(a.toggleFoldersFirst).toHaveBeenCalled();
+  });
+
+  it('sets one filter field at a time and clears them together', () => {
+    const a = actions();
+    const view = menubarFor(state({ filter: { ...NO_FILTER, kind: 'images' } }), a)[2]?.items ?? [];
+    const filter = sub(view, 'filter');
+    expect(sub(filter, 'filter-kind').find((i) => i.id === 'filter-kind-images')?.checked).toBe(
+      true,
+    );
+    sub(filter, 'filter-size')
+      .find((i) => i.id === 'filter-size-small')
+      ?.onSelect?.();
+    expect(a.setFilter).toHaveBeenCalledWith({ size: 'small' });
+    filter.find((i) => i.id === 'filter-pattern')?.onSelect?.();
+    expect(a.editPattern).toHaveBeenCalled();
+    expect(filter.find((i) => i.id === 'filter-clear')?.enabled).toBe(true);
+    const clean = sub(menubarFor(state(), a)[2]?.items ?? [], 'filter');
+    expect(clean.find((i) => i.id === 'filter-clear')?.enabled).toBe(false);
+  });
+
+  it('repeats the view options in the right-click menu', () => {
+    const items = contextMenuFor(state({ view: 'cards' }), actions(), id);
+    const view = sub(items, 'view');
+    expect(view.map((i) => i.id)).toContain('view-cards');
+    expect(view.map((i) => i.id)).toContain('icon-size');
+    expect(view.map((i) => i.id)).toContain('toolbar');
+    expect(sub(items, 'filter').map((i) => i.id)).toContain('filter-kind');
   });
 });
 

@@ -1,13 +1,15 @@
+import type { FilesView } from '@lumen/kernel';
 import { useKernel, useSetting } from '@lumen/kernel/react';
 import { Button, Select, type SelectOption, SettingsGroup, SettingsPage, Switch } from '@lumen/ui';
 import { FolderOpen } from 'lucide-react';
 import { useFilePicker } from '../../_sdk';
 import { Row, Value } from '../Row';
 
-const VIEWS: SelectOption<'list' | 'grid' | 'columns'>[] = [
+const VIEWS: SelectOption<FilesView>[] = [
   { value: 'list', label: 'List' },
   { value: 'grid', label: 'Grid' },
   { value: 'columns', label: 'Columns' },
+  { value: 'cards', label: 'Cards' },
 ];
 
 export function FilesPage() {
@@ -35,6 +37,16 @@ export function FilesPage() {
           <Switch
             checked={files.showExtensions}
             onChange={(e) => patch({ showExtensions: e.target.checked })}
+          />
+        </Row>
+        <Row
+          id="files.foldersFirst"
+          label="Folders first"
+          description="Otherwise folders and files sort together."
+        >
+          <Switch
+            checked={files.foldersFirst}
+            onChange={(e) => patch({ foldersFirst: e.target.checked })}
           />
         </Row>
         <Row id="files.view" label="Default view">

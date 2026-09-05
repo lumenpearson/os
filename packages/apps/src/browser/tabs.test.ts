@@ -4,9 +4,12 @@ import {
   activeTab,
   createTab,
   createTabsState,
+  DEFAULT_TAB_DEFAULTS,
   DEFAULT_ZOOM,
   EMPTY_TABS,
   nextTabId,
+  statusFor,
+  type TabDefaults,
   type TabsState,
   tabById,
   tabIndexFor,
@@ -20,6 +23,8 @@ import { START_URL } from './url';
 
 const A = 'https://a.example/';
 const B = 'https://b.example/';
+
+const outside: TabDefaults = { zoom: DEFAULT_ZOOM, externalHosts: ['a.example'] };
 
 /** Apply a list of actions in order, so a scenario reads as one block. */
 function run(state: TabsState, ...actions: Parameters<typeof tabsReducer>[1][]): TabsState {
@@ -40,6 +45,84 @@ describe('createTab', () => {
     const tab = createTab('t1', 'https://www.example.com/x');
     expect(tab.status).toBe('loading');
     expect(tab.title).toBe('example.com');
+  });
+});
+
+describe('statusFor', () => {
+  it('draws internal pages, loads the web and keeps the list out of the frame', () => {
+    expect(statusFor(START_URL, DEFAULT_TAB_DEFAULTS)).toBe('idle');
+    expect(statusFor(A, DEFAULT_TAB_DEFAULTS)).toBe('loading');
+    expect(statusFor(A, outside)).toBe('external');
+    expect(statusFor(B, outside)).toBe('loading');
+  });
+});
+
+describe('tab defaults', () => {
+  it('gives a new tab the default zoom and the open-outside rule', () => {
+    const state = createTabsState('t1', A, { zoom: 1.25, externalHosts: ['a.example'] });
+    expect(activeTab(state)?.zoom).toBe(1.25);
+    expect(activeTab(state)?.status).toBe('external');
+  });
+
+  it('carries the defaults to every tab opened after them', () => {
+    const state = run(
+      createTabsState('t1'),
+      { type: 'defaults', defaults: outside },
+      {
+        type: 'open',
+        id: 't2',
+        url: A,
+      },
+    );
+    expect(tabById(state, 't2')?.status).toBe('external');
+  });
+
+  it('sends a tab that is waiting or blocked outside as soon as the list changes', () => {
+    const loading = createTabsState('t1', A);
+    expect(activeTab(loading)?.status).toBe('loading');
+    const now = tabsReducer(loading, { type: 'defaults', defaults: outside });
+    expect(activeTab(now)?.status).toBe('external');
+
+    const blocked = run(createTabsState('t1', A), { type: 'blocked', id: 't1' });
+    expect(activeTab(tabsReducer(blocked, { type: 'defaults', defaults: outside }))?.status).toBe(
+      'external',
+    );
+  });
+
+  it('leaves a tab that is already showing a page where it is', () => {
+    const idle = run(createTabsState('t1', A), { type: 'loaded', id: 't1' });
+    expect(activeTab(tabsReducer(idle, { type: 'defaults', defaults: outside }))?.status).toBe(
+      'idle',
+    );
+  });
+
+  it('loads a tab again once its host comes off the list', () => {
+    const external = createTabsState('t1', A, outside);
+    const back = tabsReducer(external, { type: 'defaults', defaults: DEFAULT_TAB_DEFAULTS });
+    expect(activeTab(back)?.status).toBe('loading');
+    expect(activeTab(back)?.generation).toBe(1);
+  });
+
+  it('ignores a load event for a tab that has no frame', () => {
+    const external = createTabsState('t1', A, outside);
+    expect(tabsReducer(external, { type: 'loaded', id: 't1' })).toBe(external);
+  });
+
+  it('returns the same state when nothing about the defaults changed', () => {
+    const state = createTabsState('t1', A, outside);
+    expect(
+      tabsReducer(state, { type: 'defaults', defaults: { zoom: 1, externalHosts: ['a.example'] } }),
+    ).toBe(state);
+  });
+
+  it('resets the zoom to the default rather than to 100%', () => {
+    const state = run(
+      createTabsState('t1'),
+      { type: 'defaults', defaults: { zoom: 1.25, externalHosts: [] } },
+      { type: 'zoom', direction: 'in' },
+      { type: 'zoom', direction: 'reset' },
+    );
+    expect(activeTab(state)?.zoom).toBe(1.25);
   });
 });
 

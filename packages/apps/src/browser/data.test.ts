@@ -3,6 +3,7 @@ import {
   addBookmark,
   type Bookmark,
   buildSuggestions,
+  DEFAULT_BOOKMARKS,
   DEFAULT_DATA,
   findBookmark,
   nextId,
@@ -11,7 +12,8 @@ import {
   renameBookmark,
 } from './data';
 import type { Visit } from './history';
-import { DEFAULT_ENGINE_ID, engineById, START_URL } from './url';
+import { DEFAULT_SETTINGS } from './settings';
+import { DEFAULT_ENGINE_ID, engineById, isInternalUrl, START_URL, schemeOf } from './url';
 
 const ddg = engineById('duckduckgo');
 
@@ -24,10 +26,30 @@ function visit(id: string, url: string, title: string, visitedAt: number): Visit
 }
 
 describe('DEFAULT_DATA', () => {
-  it('opens on the new-tab page with nothing stored', () => {
-    expect(DEFAULT_DATA.homepage).toBe(START_URL);
-    expect(DEFAULT_DATA.bookmarks).toEqual([]);
+  it('opens on the new-tab page with the default settings and no history', () => {
+    expect(DEFAULT_DATA.settings).toEqual(DEFAULT_SETTINGS);
+    expect(DEFAULT_DATA.settings.homepage).toBe(START_URL);
     expect(DEFAULT_DATA.history).toEqual([]);
+  });
+
+  it('starts with favourites, so the first run opens something', () => {
+    expect(DEFAULT_DATA.bookmarks).toEqual([...DEFAULT_BOOKMARKS]);
+    expect(DEFAULT_BOOKMARKS.length).toBeGreaterThan(1);
+  });
+
+  it('lists example.com and the built-in pages among them', () => {
+    const urls = DEFAULT_BOOKMARKS.map((b) => b.url);
+    expect(urls).toContain('https://example.com/');
+    expect(urls.filter(isInternalUrl).length).toBeGreaterThan(0);
+  });
+
+  it('has nothing but https and lumen addresses, each named and unique', () => {
+    for (const bookmark of DEFAULT_BOOKMARKS) {
+      expect(['https', 'lumen']).toContain(schemeOf(bookmark.url));
+      expect(bookmark.title).not.toBe('');
+    }
+    expect(new Set(DEFAULT_BOOKMARKS.map((b) => b.id)).size).toBe(DEFAULT_BOOKMARKS.length);
+    expect(new Set(DEFAULT_BOOKMARKS.map((b) => b.url)).size).toBe(DEFAULT_BOOKMARKS.length);
   });
 });
 
@@ -168,9 +190,7 @@ describe('normalizeData', () => {
     const stored = {
       bookmarks: [{ id: 'b1', title: 'Example', url: 'https://example.com/', addedAt: 5 }],
       history: [{ id: 'v1', title: 'Example', url: 'https://example.com/', visitedAt: 7 }],
-      homepage: 'https://example.com/',
-      searchEngine: 'google',
-      showBookmarksBar: false,
+      settings: { ...DEFAULT_SETTINGS, homepage: 'https://example.com/', searchEngine: 'google' },
     };
     expect(normalizeData(stored)).toEqual(stored);
   });
@@ -188,9 +208,33 @@ describe('normalizeData', () => {
     ]);
   });
 
+  it('gives the starting favourites to a file that has never held any', () => {
+    expect(normalizeData({ history: [] }).bookmarks).toEqual([...DEFAULT_BOOKMARKS]);
+  });
+
+  it('leaves an empty bookmark list empty, because that was a choice', () => {
+    expect(normalizeData({ bookmarks: [] }).bookmarks).toEqual([]);
+  });
+
+  it('reads settings from where an older file kept them', () => {
+    const data = normalizeData({ homepage: 'https://old.example/', searchEngine: 'bing' });
+    expect(data.settings.homepage).toBe('https://old.example/');
+    expect(data.settings.searchEngine).toBe('bing');
+  });
+
+  it('prefers the settings section when the file has one', () => {
+    const data = normalizeData({
+      homepage: 'https://old.example/',
+      settings: { homepage: 'https://new.example/' },
+    });
+    expect(data.settings.homepage).toBe('https://new.example/');
+  });
+
   it('refuses a search engine it does not know', () => {
-    expect(normalizeData({ searchEngine: 'askjeeves' }).searchEngine).toBe(DEFAULT_ENGINE_ID);
-    expect(normalizeData({ searchEngine: 'bing' }).searchEngine).toBe('bing');
+    expect(normalizeData({ searchEngine: 'askjeeves' }).settings.searchEngine).toBe(
+      DEFAULT_ENGINE_ID,
+    );
+    expect(normalizeData({ searchEngine: 'bing' }).settings.searchEngine).toBe('bing');
   });
 
   it('keeps the visit log inside its limit', () => {

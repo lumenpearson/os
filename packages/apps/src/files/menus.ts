@@ -7,8 +7,17 @@ import type { AppDefinition, MenuTemplate } from '@lumen/kernel';
 import type { MenuEntry } from '@lumen/ui';
 import type { DirEntry } from '@lumen/vfs';
 import { createElement } from 'react';
-import { SORT_COLUMNS, type SortState, type ViewMode } from './logic';
+import { DATE_FILTERS, type FilterState, isFiltering, KIND_FILTERS, SIZE_FILTERS } from './filters';
+import { type LaneAxis, SORT_COLUMNS, type SortState, type ViewMode } from './logic';
 import { DOCUMENT_TEMPLATES, type DocumentKind } from './operations';
+import {
+  ICON_SIZES,
+  type IconSize,
+  LANE_AXES,
+  TOOLBAR_PARTS,
+  type ToolbarPart,
+  type ToolbarParts,
+} from './settings';
 
 export interface FilesActions {
   newWindow: () => void;
@@ -28,9 +37,19 @@ export interface FilesActions {
   paste: () => void;
   selectAll: () => void;
   setView: (view: ViewMode) => void;
+  setCardAxis: (axis: LaneAxis) => void;
+  setIconSize: (size: IconSize) => void;
   toggleHidden: () => void;
   toggleSidebar: () => void;
+  toggleIndexRail: () => void;
+  toggleToolbarPart: (part: ToolbarPart) => void;
   setSort: (sort: SortState) => void;
+  toggleFoldersFirst: () => void;
+  /** Merge one field into the filter; the rest stays as it is. */
+  setFilter: (patch: Partial<FilterState>) => void;
+  clearFilter: () => void;
+  /** Asks for the name pattern in a prompt. */
+  editPattern: () => void;
   quickLook: () => void;
   back: () => void;
   forward: () => void;
@@ -52,8 +71,14 @@ export interface MenuState {
   canPaste: boolean;
   showHidden: boolean;
   sidebarVisible: boolean;
+  indexRail: boolean;
+  toolbar: ToolbarParts;
   view: ViewMode;
+  cardAxis: LaneAxis;
+  iconSize: IconSize;
   sort: SortState;
+  foldersFirst: boolean;
+  filter: FilterState;
   canBack: boolean;
   canForward: boolean;
   canUp: boolean;
@@ -64,7 +89,15 @@ export interface MenuState {
 
 const separator: MenuEntry = { type: 'separator' };
 
-export function sortSubmenu(sort: SortState, actions: FilesActions): MenuEntry[] {
+/**
+ * Sort levels, read downwards: folders first when it is ticked, then the
+ * chosen column, then the name.
+ */
+export function sortSubmenu(
+  sort: SortState,
+  foldersFirst: boolean,
+  actions: FilesActions,
+): MenuEntry[] {
   return [
     ...SORT_COLUMNS.map<MenuEntry>((c) => ({
       id: `sort-${c.id}`,
@@ -88,6 +121,14 @@ export function sortSubmenu(sort: SortState, actions: FilesActions): MenuEntry[]
       checked: sort.direction === 'desc',
       onSelect: () => actions.setSort({ column: sort.column, direction: 'desc' }),
     },
+    separator,
+    {
+      id: 'sort-folders-first',
+      type: 'checkbox',
+      label: 'Folders First',
+      checked: foldersFirst,
+      onSelect: actions.toggleFoldersFirst,
+    },
   ];
 }
 
@@ -100,6 +141,7 @@ export function viewSubmenu(
     { id: 'list', label: 'as List', shortcut: 'Mod+1' },
     { id: 'grid', label: 'as Grid', shortcut: 'Mod+2' },
     { id: 'columns', label: 'as Columns', shortcut: 'Mod+3' },
+    { id: 'cards', label: 'as Cards', shortcut: 'Mod+4' },
   ];
   return modes.map((m) => ({
     id: `view-${m.id}`,
@@ -109,6 +151,113 @@ export function viewSubmenu(
     checked: view === m.id,
     onSelect: () => actions.setView(m.id),
   }));
+}
+
+/** Kind, size, date and name pattern; they narrow the list together. */
+export function filterSubmenu(state: MenuState, actions: FilesActions): MenuEntry[] {
+  const { filter } = state;
+  return [
+    {
+      id: 'filter-kind',
+      label: 'Kind',
+      submenu: KIND_FILTERS.map((o) => ({
+        id: `filter-kind-${o.id}`,
+        type: 'radio',
+        label: o.label,
+        checked: filter.kind === o.id,
+        onSelect: () => actions.setFilter({ kind: o.id }),
+      })),
+    },
+    {
+      id: 'filter-size',
+      label: 'Size',
+      submenu: SIZE_FILTERS.map((o) => ({
+        id: `filter-size-${o.id}`,
+        type: 'radio',
+        label: o.label,
+        checked: filter.size === o.id,
+        onSelect: () => actions.setFilter({ size: o.id }),
+      })),
+    },
+    {
+      id: 'filter-date',
+      label: 'Date Modified',
+      submenu: DATE_FILTERS.map((o) => ({
+        id: `filter-date-${o.id}`,
+        type: 'radio',
+        label: o.label,
+        checked: filter.modified === o.id,
+        onSelect: () => actions.setFilter({ modified: o.id }),
+      })),
+    },
+    {
+      id: 'filter-pattern',
+      label: 'Name Pattern…',
+      onSelect: actions.editPattern,
+    },
+    separator,
+    {
+      id: 'filter-clear',
+      label: 'Clear Filters',
+      enabled: isFiltering(filter),
+      onSelect: actions.clearFilter,
+    },
+  ];
+}
+
+/** Everything about the window's chrome: lane, icon size, sidebar, rail, toolbar. */
+export function viewOptionsSubmenu(state: MenuState, actions: FilesActions): MenuEntry[] {
+  return [
+    {
+      id: 'card-axis',
+      label: 'Card Lane',
+      enabled: state.view === 'cards',
+      submenu: LANE_AXES.map((o) => ({
+        id: `card-axis-${o.id}`,
+        type: 'radio',
+        label: o.label,
+        checked: state.cardAxis === o.id,
+        onSelect: () => actions.setCardAxis(o.id),
+      })),
+    },
+    {
+      id: 'icon-size',
+      label: 'Icon Size',
+      submenu: ICON_SIZES.map((o) => ({
+        id: `icon-size-${o.id}`,
+        type: 'radio',
+        label: o.label,
+        checked: state.iconSize === o.id,
+        onSelect: () => actions.setIconSize(o.id),
+      })),
+    },
+    separator,
+    {
+      id: 'sidebar',
+      type: 'checkbox',
+      label: 'Show Sidebar',
+      checked: state.sidebarVisible,
+      onSelect: actions.toggleSidebar,
+    },
+    {
+      id: 'index-rail',
+      type: 'checkbox',
+      label: 'Show A–Z Rail',
+      checked: state.indexRail,
+      onSelect: actions.toggleIndexRail,
+    },
+    {
+      id: 'toolbar',
+      label: 'Toolbar',
+      submenu: TOOLBAR_PARTS.map((part) => ({
+        id: `toolbar-${part.id}`,
+        type: 'checkbox',
+        label: part.label,
+        checked: state.toolbar[part.id],
+        onSelect: () => actions.toggleToolbarPart(part.id),
+      })),
+    },
+  ];
 }
 
 export function newDocumentSubmenu(actions: FilesActions): MenuEntry[] {
@@ -240,8 +389,21 @@ export function contextMenuFor(
       checked: state.showHidden,
       onSelect: actions.toggleHidden,
     },
-    { id: 'sort-by', label: 'Sort By', submenu: sortSubmenu(state.sort, actions) },
-    { id: 'view', label: 'View', submenu: viewSubmenu(state.view, actions) },
+    {
+      id: 'sort-by',
+      label: 'Sort By',
+      submenu: sortSubmenu(state.sort, state.foldersFirst, actions),
+    },
+    { id: 'filter', label: 'Filter', submenu: filterSubmenu(state, actions) },
+    {
+      id: 'view',
+      label: 'View',
+      submenu: [
+        ...viewSubmenu(state.view, actions),
+        separator,
+        ...viewOptionsSubmenu(state, actions),
+      ],
+    },
   ];
   if (state.inTrash) {
     items.push(separator, {
@@ -348,15 +510,14 @@ export function menubarFor(state: MenuState, actions: FilesActions): MenuTemplat
       checked: state.showHidden,
       onSelect: actions.toggleHidden,
     },
-    {
-      id: 'sidebar',
-      type: 'checkbox',
-      label: 'Show Sidebar',
-      checked: state.sidebarVisible,
-      onSelect: actions.toggleSidebar,
-    },
+    ...viewOptionsSubmenu(state, actions),
     separator,
-    { id: 'sort-by', label: 'Sort By', submenu: sortSubmenu(state.sort, actions) },
+    {
+      id: 'sort-by',
+      label: 'Sort By',
+      submenu: sortSubmenu(state.sort, state.foldersFirst, actions),
+    },
+    { id: 'filter', label: 'Filter', submenu: filterSubmenu(state, actions) },
   ];
 
   const go: MenuEntry[] = [

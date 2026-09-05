@@ -4,19 +4,21 @@ import {
   type Kernel,
   useClipboardStore,
   useMenuStore,
+  useProcessStore,
   useSettingsStore,
   useWindowStore,
 } from '@lumen/kernel';
 import { KernelProvider } from '@lumen/kernel/react';
 import { createWebPlatform } from '@lumen/platform';
-import { DialogProvider } from '@lumen/ui';
+import { DialogProvider, type MenuEntry } from '@lumen/ui';
 import { join, MemoryAdapter } from '@lumen/vfs';
-import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { AppProvider } from '../_sdk';
 import Files from './Files';
 import definition from './index';
+import type { FilesPrefs } from './settings';
 
 const Dummy = () => null;
 const editor: AppDefinition = {
@@ -38,7 +40,9 @@ let cases: string;
 function mount(path: string) {
   const process = kernel.launch('lumen.files', { path });
   if (!process) throw new Error('failed to launch');
-  const windowId = process.windowIds[0] as string;
+  // The file manager runs for the whole session, so a launch adds a window to
+  // the process it already has: the newest one is this render's window.
+  const windowId = process.windowIds[process.windowIds.length - 1] as string;
   const view = render(
     <KernelProvider kernel={kernel}>
       <AppProvider value={{ pid: process.pid, windowId, appId: 'lumen.files', container: null }}>
@@ -61,6 +65,29 @@ const names = () =>
     .getAllByRole('row')
     .slice(1)
     .map((r) => r.querySelector('[role="gridcell"]')?.textContent?.trim() ?? '');
+
+/** The preferences this window writes under the home directory. */
+const storedPrefs = () => kernel.vfs.readJson<FilesPrefs>(join(home, '.config', 'files.json'));
+
+/**
+ * Runs a command from the window's own menubar, by id: `['view', 'toolbar',
+ * 'toolbar-search']` is View → Toolbar → Search.
+ */
+async function runMenu(windowId: string, path: readonly string[]) {
+  const menus = useMenuStore.getState().byWindow[windowId] ?? [];
+  const [head, ...rest] = path;
+  let items: MenuEntry[] = menus.find((m) => m.id === head)?.items ?? [];
+  let item: MenuEntry | undefined;
+  for (const id of rest) {
+    item = items.find((i) => i.id === id);
+    items = item?.submenu ?? [];
+  }
+  if (!item?.onSelect) throw new Error(`no menu command at ${path.join(' > ')}`);
+  const select = item.onSelect;
+  await act(async () => {
+    select();
+  });
+}
 
 beforeEach(async () => {
   const platform = createWebPlatform();
@@ -86,6 +113,9 @@ afterEach(() => {
   cleanup();
   kernel.dispose();
   useWindowStore.setState({ windows: {}, order: [], focusedId: null });
+  // The stores are module state; the session-long file manager process would
+  // otherwise survive into the next test and hand it a dead window id.
+  useProcessStore.setState({ processes: {}, nextPid: 100 });
 });
 
 describe('Files', () => {
@@ -328,6 +358,156 @@ describe('Files', () => {
     await user.type(input, '~/Cases/Work{Enter}');
     await waitFor(() => expect(missing('notes.md')).not.toBeInTheDocument());
     expect(screen.getByRole('button', { name: 'Work' })).toBeInTheDocument();
+  });
+
+  it('shows a card lane, walks it with the arrow keys and turns it upright', async () => {
+    const user = userEvent.setup();
+    const { windowId } = mount(cases);
+    await findItem('notes.md');
+
+    await user.click(screen.getByRole('radio', { name: 'Cards' }));
+    const lane = await screen.findByRole('listbox', { name: 'Files' });
+    expect(lane).toHaveAttribute('aria-orientation', 'horizontal');
+    expect(within(lane).getByText('todo.txt')).toBeInTheDocument();
+
+    await user.click(within(lane).getByText('Work'));
+    await user.keyboard('{ArrowRight}');
+    await waitFor(() => {
+      const on = within(lane)
+        .getAllByRole('option')
+        .filter((o) => o.getAttribute('aria-selected') === 'true');
+      expect(on.map((o) => o.dataset.path)).toEqual([join(cases, 'notes.md')]);
+    });
+
+    await runMenu(windowId, ['view', 'card-axis', 'card-axis-vertical']);
+    expect(await screen.findByRole('listbox', { name: 'Files' })).toHaveAttribute(
+      'aria-orientation',
+      'vertical',
+    );
+    await waitFor(async () => expect((await storedPrefs()).cardAxis).toBe('vertical'));
+  });
+
+  it('scrolls the card lane with the wheel instead of the page', async () => {
+    const user = userEvent.setup();
+    mount(cases);
+    await findItem('notes.md');
+    await user.click(screen.getByRole('radio', { name: 'Cards' }));
+    const lane = await screen.findByRole('listbox', { name: 'Files' });
+
+    const wheel = new WheelEvent('wheel', { deltaY: 120, bubbles: true, cancelable: true });
+    lane.dispatchEvent(wheel);
+    expect(wheel.defaultPrevented).toBe(true);
+    await waitFor(() => expect(lane.scrollLeft).toBe(120));
+  });
+
+  it('remembers the view and the icon size for the next window', async () => {
+    const user = userEvent.setup();
+    const first = mount(cases);
+    await findItem('notes.md');
+    await user.click(screen.getByRole('radio', { name: 'Cards' }));
+    await runMenu(first.windowId, ['view', 'icon-size', 'icon-size-large']);
+    await waitFor(async () => {
+      const saved = await storedPrefs();
+      expect(saved.view).toBe('cards');
+      expect(saved.iconSize).toBe('large');
+    });
+
+    cleanup();
+    mount(cases);
+    const lane = await screen.findByRole('listbox', { name: 'Files' });
+    expect(within(lane).getByText('notes.md')).toBeInTheDocument();
+  });
+
+  it('filters by kind, counts what it hid, and clears it from the toolbar', async () => {
+    const user = userEvent.setup();
+    const { windowId } = mount(cases);
+    await findItem('notes.md');
+
+    await runMenu(windowId, ['view', 'filter', 'filter-kind', 'filter-kind-folders']);
+    await waitFor(() => expect(names()).toEqual(['Work']));
+    expect(screen.getByText(/^1 of 3 items/)).toBeInTheDocument();
+    expect(screen.getByText('Filter: Folders')).toBeInTheDocument();
+    await waitFor(async () => expect((await storedPrefs()).filter.kind).toBe('folders'));
+
+    await user.click(screen.getByRole('button', { name: 'Filter: Folders' }));
+    await user.click(within(await screen.findByRole('menu')).getByText('Clear Filters'));
+    await waitFor(() => expect(names()).toEqual(['Work', 'notes.md', 'todo.txt']));
+  });
+
+  it('says so when a filter leaves the folder empty, and offers a way out', async () => {
+    const user = userEvent.setup();
+    const { windowId } = mount(cases);
+    await findItem('notes.md');
+
+    await runMenu(windowId, ['view', 'filter', 'filter-kind', 'filter-kind-audio']);
+    expect(await screen.findByText('Nothing here matches the filter')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Clear Filters' }));
+    expect(await findItem('notes.md')).toBeInTheDocument();
+  });
+
+  it('narrows a search with a name pattern', async () => {
+    const user = userEvent.setup();
+    await kernel.vfs.writeText(join(cases, 'Work', 'deep-notes.md'), 'x');
+    const { windowId } = mount(cases);
+    await findItem('notes.md');
+    await user.type(screen.getByRole('searchbox'), 'notes');
+    const results = await screen.findByRole('listbox', { name: /results for notes/i });
+    await waitFor(() => expect(within(results).getByText('deep-notes.md')).toBeInTheDocument());
+
+    await runMenu(windowId, ['view', 'filter', 'filter-pattern']);
+    const input = await screen.findByRole('textbox');
+    await user.clear(input);
+    await user.type(input, 'deep*{Enter}');
+
+    await waitFor(() => expect(within(results).queryByText('notes.md')).not.toBeInTheDocument());
+    expect(within(results).getByText('deep-notes.md')).toBeInTheDocument();
+  });
+
+  it('sorts folders in with the files when Folders First is off', async () => {
+    const { windowId } = mount(cases);
+    await findItem('notes.md');
+    expect(names()).toEqual(['Work', 'notes.md', 'todo.txt']);
+
+    await runMenu(windowId, ['view', 'sort-by', 'sort-folders-first']);
+    await waitFor(() => expect(names()).toEqual(['notes.md', 'todo.txt', 'Work']));
+    expect(useSettingsStore.getState().settings.files.foldersFirst).toBe(false);
+  });
+
+  it('takes a control out of the toolbar and remembers it', async () => {
+    const { windowId } = mount(cases);
+    await findItem('notes.md');
+    expect(screen.getByRole('searchbox')).toBeInTheDocument();
+
+    await runMenu(windowId, ['view', 'toolbar', 'toolbar-search']);
+    await waitFor(() => expect(screen.queryByRole('searchbox')).not.toBeInTheDocument());
+    await waitFor(async () => expect((await storedPrefs()).toolbar.search).toBe(false));
+  });
+
+  it('shows the A–Z rail and jumps to a letter', async () => {
+    const user = userEvent.setup();
+    const { windowId } = mount(cases);
+    await findItem('notes.md');
+    expect(screen.queryByRole('navigation', { name: 'Jump to letter' })).not.toBeInTheDocument();
+
+    await runMenu(windowId, ['view', 'index-rail']);
+    const rail = await screen.findByRole('navigation', { name: 'Jump to letter' });
+    expect(
+      within(rail)
+        .getAllByRole('button')
+        .map((b) => b.textContent),
+    ).toEqual(['N', 'T', 'W']);
+
+    await user.click(within(rail).getByRole('button', { name: 'W' }));
+    expect(await screen.findByText(/1 selected/)).toBeInTheDocument();
+  });
+
+  it('hides the sidebar from the View menu and keeps it hidden', async () => {
+    const { windowId } = mount(cases);
+    await findItem('notes.md');
+    expect(screen.getByRole('navigation', { name: 'Sidebar' })).toBeInTheDocument();
+
+    await runMenu(windowId, ['view', 'sidebar']);
+    await waitFor(async () => expect((await storedPrefs()).sidebar).toBe(false));
   });
 
   it('contributes its menubar menus while focused', async () => {

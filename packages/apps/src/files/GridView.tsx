@@ -4,16 +4,26 @@ import type { ReactNode } from 'react';
 import { FileTypeIcon } from '../_sdk';
 import { EntryListBox } from './EntryListBox';
 import { RenameInput } from './RenameInput';
+import { ICON_PIXELS, type IconSize } from './settings';
 import type { EntryHandlers, EntryViewState } from './types';
 
 export interface GridViewProps extends EntryHandlers, EntryViewState {
   entries: readonly DirEntry[];
+  iconSize: IconSize;
   emptyState?: ReactNode;
 }
+
+/** Cell width per icon size, so names have room without crowding the glyph. */
+const CELL: Record<IconSize, string> = {
+  small: 'grid-cols-[repeat(auto-fill,minmax(76px,1fr))]',
+  medium: 'grid-cols-[repeat(auto-fill,minmax(92px,1fr))]',
+  large: 'grid-cols-[repeat(auto-fill,minmax(124px,1fr))]',
+};
 
 /** Icons in a responsive grid with names under them. */
 export function GridView({
   entries,
+  iconSize,
   emptyState,
   selection,
   renaming,
@@ -37,9 +47,7 @@ export function GridView({
       label="Files"
       className={cx(
         'lumen-scroll h-full content-start gap-1 p-3',
-        entries.length > 0
-          ? 'grid grid-cols-[repeat(auto-fill,minmax(92px,1fr))]'
-          : 'flex flex-col',
+        entries.length > 0 ? cx('grid', CELL[iconSize]) : 'flex flex-col',
       )}
       onSelectionChange={onSelectionChange}
       onOpen={onOpen}
@@ -59,7 +67,7 @@ export function GridView({
       }
       renderItem={(entry) => (
         <>
-          <FileTypeIcon entry={entry} size={48} />
+          <FileTypeIcon entry={entry} size={ICON_PIXELS[iconSize]} />
           {renaming === entry.path ? (
             <RenameInput
               path={entry.path}

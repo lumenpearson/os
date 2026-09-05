@@ -1,5 +1,5 @@
 import { cx, IconButton, Spinner } from '@lumen/ui';
-import { Bookmark, Clock, Cog, Plus, Sparkle, X } from 'lucide-react';
+import { Bookmark, Clock, Cog, File, Plus, Sparkle, X } from 'lucide-react';
 import type { KeyboardEvent, MouseEvent } from 'react';
 import { useEffect, useRef } from 'react';
 import type { Tab } from './tabs';
@@ -18,6 +18,7 @@ const PAGE_GLYPHS = {
   history: Clock,
   bookmarks: Bookmark,
   settings: Cog,
+  blank: File,
 } as const;
 
 /**

@@ -13,10 +13,10 @@ import { DialogProvider } from '@lumen/ui';
 import { join, MemoryAdapter } from '@lumen/vfs';
 import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppProvider, FileDialogProvider } from '../_sdk';
 import Browser from './Browser';
-import type { BrowserData } from './data';
+import { type BrowserData, DEFAULT_BOOKMARKS } from './data';
 import definition from './index';
 
 const Dummy = () => null;
@@ -169,26 +169,42 @@ describe('bookmarks', () => {
   it('stars the current page, shows it on the bar and writes it to the home folder', async () => {
     const user = userEvent.setup();
     mount();
-    await goTo(user, 'example.com');
+    await goTo(user, 'ada.example');
 
     await user.click(screen.getByRole('button', { name: 'Bookmark this page' }));
     expect(screen.getByRole('button', { name: 'Remove bookmark' })).toBeInTheDocument();
 
     await waitFor(async () => {
       const stored = await kernel.vfs.readJson<BrowserData>(dataFile());
-      expect(stored.bookmarks.map((b) => b.url)).toEqual(['https://example.com/']);
+      expect(stored.bookmarks.map((b) => b.url)).toContain('https://ada.example/');
     });
   });
 
-  it('cannot bookmark an internal page', () => {
+  it('starts with favourites that can be opened from the bar', async () => {
+    const user = userEvent.setup();
     mount();
-    expect(screen.getByRole('button', { name: 'Bookmark this page' })).toBeDisabled();
+    const bar = within(screen.getByRole('navigation', { name: 'Bookmarks bar' }));
+    for (const bookmark of DEFAULT_BOOKMARKS) {
+      expect(bar.getByRole('button', { name: bookmark.title })).toBeInTheDocument();
+    }
+
+    await user.click(bar.getByRole('button', { name: 'Example Domain' }));
+    expect(screen.getByRole('tab', { name: named('example.com') })).toBeInTheDocument();
+  });
+
+  it('shows a built-in page that ships starred as starred', async () => {
+    const user = userEvent.setup();
+    mount();
+    const star = screen.getByRole('button', { name: 'Remove bookmark' });
+
+    await user.click(star);
+    expect(screen.getByRole('button', { name: 'Bookmark this page' })).toBeInTheDocument();
   });
 
   it('lists bookmarks on lumen://bookmarks', async () => {
     const user = userEvent.setup();
     const { windowId } = mount();
-    await goTo(user, 'example.com');
+    await goTo(user, 'ada.example');
     await user.click(screen.getByRole('button', { name: 'Bookmark this page' }));
 
     command(windowId, 'bookmarks', 'show-bookmarks').onSelect?.();
@@ -225,5 +241,181 @@ describe('internal pages', () => {
     await goTo(user, 'lumen://settings');
     expect(await screen.findByLabelText('Homepage')).toBeInTheDocument();
     expect(screen.getByLabelText('Search engine')).toHaveValue('duckduckgo');
+  });
+
+  it('shows nothing at all on lumen://blank', async () => {
+    const user = userEvent.setup();
+    mount();
+    await goTo(user, 'lumen://blank');
+    expect(screen.getByRole('tab', { name: named('Blank Page') })).toBeInTheDocument();
+    expect(screen.queryByText('No page at this address')).not.toBeInTheDocument();
+  });
+});
+
+describe('settings', () => {
+  const openSettings = async (user: ReturnType<typeof userEvent.setup>) => {
+    await user.click(screen.getByRole('button', { name: 'Browser settings' }));
+    await screen.findByRole('heading', { name: 'Browser Settings', level: 1 });
+  };
+
+  it('opens from the toolbar button and from the File menu', async () => {
+    const user = userEvent.setup();
+    const { windowId } = mount();
+    await openSettings(user);
+
+    await goTo(user, 'lumen://start');
+    command(windowId, 'file', 'settings').onSelect?.();
+    expect(
+      await screen.findByRole('heading', { name: 'Browser Settings', level: 1 }),
+    ).toBeInTheDocument();
+  });
+
+  it('sends a search to the engine that was chosen', async () => {
+    const user = userEvent.setup();
+    mount();
+    await openSettings(user);
+    await user.selectOptions(screen.getByLabelText('Search engine'), 'google');
+
+    await goTo(user, 'red pandas');
+    expect(screen.getByRole('tab', { name: named('google.com') })).toBeInTheDocument();
+  });
+
+  it('shows the query template of the engine, and keeps a custom one', async () => {
+    const user = userEvent.setup();
+    mount();
+    await openSettings(user);
+    expect(screen.getByLabelText('Query template')).toHaveValue('https://duckduckgo.com/?q=%s');
+
+    await user.selectOptions(screen.getByLabelText('Search engine'), 'custom');
+    const template = screen.getByLabelText('Query template');
+    await user.clear(template);
+    await user.type(template, 'https://search.ada.example/?q=%s');
+    await user.tab();
+
+    await waitFor(async () => {
+      const stored = await kernel.vfs.readJson<BrowserData>(dataFile());
+      expect(stored.settings.searchTemplate).toBe('https://search.ada.example/?q=%s');
+    });
+    await goTo(user, 'red pandas');
+    expect(screen.getByRole('tab', { name: named('search.ada.example') })).toBeInTheDocument();
+  });
+
+  it('writes the JavaScript switch straight into the frame’s sandbox', async () => {
+    const user = userEvent.setup();
+    const { windowId } = mount();
+    await goTo(user, 'ada.example');
+    const frame = () => document.querySelector('iframe');
+    expect(frame()).toHaveAttribute('sandbox', 'allow-scripts allow-forms');
+
+    command(windowId, 'file', 'new-tab').onSelect?.();
+    await openSettings(user);
+    await user.click(screen.getByRole('switch', { name: 'JavaScript' }));
+
+    await waitFor(() => expect(frame()).toHaveAttribute('sandbox', 'allow-forms'));
+  });
+
+  it('stops writing history when history is switched off', async () => {
+    const user = userEvent.setup();
+    mount();
+    await openSettings(user);
+    await user.click(screen.getByRole('switch', { name: 'Keep history' }));
+
+    await goTo(user, 'ada.example');
+    await waitFor(async () => {
+      const stored = await kernel.vfs.readJson<BrowserData>(dataFile());
+      expect(stored.settings.keepHistory).toBe(false);
+    });
+    const stored = await kernel.vfs.readJson<BrowserData>(dataFile());
+    expect(stored.history).toEqual([]);
+  });
+
+  it('writes the bookmarks into the downloads folder', async () => {
+    const user = userEvent.setup();
+    mount();
+    await openSettings(user);
+    await user.click(screen.getByRole('button', { name: 'Export' }));
+
+    const path = join(home, 'Downloads', 'bookmarks.json');
+    await waitFor(async () => expect(await kernel.vfs.exists(path)).toBe(true));
+    const exported = await kernel.vfs.readJson<Array<{ url: string }>>(path);
+    expect(exported.map((b) => b.url)).toEqual(DEFAULT_BOOKMARKS.map((b) => b.url));
+  });
+
+  it('opens a new tab where the new-tab setting says', async () => {
+    const user = userEvent.setup();
+    const { windowId } = mount();
+    await openSettings(user);
+    await user.selectOptions(screen.getByLabelText('New tab opens'), 'blank');
+
+    command(windowId, 'file', 'new-tab').onSelect?.();
+    await waitFor(() =>
+      expect(screen.getByRole('tab', { name: named('Blank Page') })).toBeInTheDocument(),
+    );
+  });
+});
+
+describe('a site that will not be embedded', () => {
+  it('says which header turned it away, without waiting for a timeout', async () => {
+    const user = userEvent.setup();
+    mount();
+    await goTo(user, 'https://www.google.com/');
+
+    expect(await screen.findByText('This site refused to be embedded')).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        'google.com sends X-Frame-Options: SAMEORIGIN, so only google.com may embed its pages.',
+      ),
+    ).toBeInTheDocument();
+    // Nothing was asked of the network: there is no frame to ask with.
+    expect(document.querySelector('iframe')).toBeNull();
+  });
+
+  it('offers a way out, and a way to make it the default', async () => {
+    const user = userEvent.setup();
+    const opened = vi.spyOn(window, 'open').mockReturnValue(null);
+    mount();
+    await goTo(user, 'https://www.google.com/');
+
+    await user.click(await screen.findByRole('button', { name: 'Open Outside Lumen' }));
+    expect(opened).toHaveBeenCalledWith('https://www.google.com/', '_blank', 'noopener,noreferrer');
+
+    await user.click(screen.getByRole('button', { name: 'Always Open Outside' }));
+    expect(await screen.findByText('This site opens outside Lumen')).toBeInTheDocument();
+
+    await waitFor(async () => {
+      const stored = await kernel.vfs.readJson<BrowserData>(dataFile());
+      expect(stored.settings.externalHosts).toEqual(['google.com']);
+    });
+    opened.mockRestore();
+  });
+
+  it('takes a site off the list again from the panel', async () => {
+    const user = userEvent.setup();
+    const opened = vi.spyOn(window, 'open').mockReturnValue(null);
+    mount();
+    await goTo(user, 'https://www.google.com/');
+    await user.click(await screen.findByRole('button', { name: 'Always Open Outside' }));
+
+    await user.click(await screen.findByRole('button', { name: 'Stop Opening Outside' }));
+    expect(await screen.findByText('This site refused to be embedded')).toBeInTheDocument();
+    opened.mockRestore();
+  });
+
+  it('hands an address on the list straight to the browser outside', async () => {
+    const user = userEvent.setup();
+    const opened = vi.spyOn(window, 'open').mockReturnValue(null);
+    mount();
+    await goTo(user, 'lumen://settings');
+    await user.type(await screen.findByLabelText('Add a site'), 'ada.example');
+    await user.click(screen.getByRole('button', { name: 'Add' }));
+
+    await goTo(user, 'https://ada.example/docs');
+    expect(opened).toHaveBeenCalledWith(
+      'https://ada.example/docs',
+      '_blank',
+      'noopener,noreferrer',
+    );
+    expect(await screen.findByText('This site opens outside Lumen')).toBeInTheDocument();
+    opened.mockRestore();
   });
 });

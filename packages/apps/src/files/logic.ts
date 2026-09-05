@@ -1,6 +1,8 @@
 /**
- * Pure logic for the Files app: sorting, navigation history, selection,
- * drag-and-drop validity, name validation and breadcrumbs. No React, no VFS.
+ * Pure logic for the Files app: views, navigation history, selection, the
+ * card lane, the A–Z rail, drag-and-drop validity, name validation and
+ * breadcrumbs. Filtering and sorting live next door in `filters.ts`.
+ * No React, no VFS.
  */
 import {
   type DirEntry,
@@ -14,7 +16,7 @@ import {
   typeInfo,
 } from '@lumen/vfs';
 
-// ── sorting ───────────────────────────────────────────────────────────────
+// ── views and sort keys ───────────────────────────────────────────────────
 
 export type SortColumn = 'name' | 'date' | 'size' | 'kind';
 export type SortDirection = 'asc' | 'desc';
@@ -22,7 +24,14 @@ export interface SortState {
   column: SortColumn;
   direction: SortDirection;
 }
-export type ViewMode = 'list' | 'grid' | 'columns';
+/** `cards` is the card lane; the other three are the classic Finder views. */
+export type ViewMode = 'list' | 'grid' | 'columns' | 'cards';
+
+export const VIEW_MODES: ReadonlyArray<ViewMode> = ['list', 'grid', 'columns', 'cards'];
+
+export function isViewMode(value: unknown): value is ViewMode {
+  return typeof value === 'string' && (VIEW_MODES as readonly string[]).includes(value);
+}
 
 export const SORT_COLUMNS: ReadonlyArray<{ id: SortColumn; label: string }> = [
   { id: 'name', label: 'Name' },
@@ -30,43 +39,6 @@ export const SORT_COLUMNS: ReadonlyArray<{ id: SortColumn; label: string }> = [
   { id: 'size', label: 'Size' },
   { id: 'kind', label: 'Kind' },
 ];
-
-const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' });
-
-/** "Folder" for directories, otherwise the type label ("PNG Image", "Markdown"). */
-export function kindLabel(entry: Pick<DirEntry, 'kind' | 'path'>): string {
-  return entry.kind === 'directory' ? 'Folder' : typeInfo(entry.path).label;
-}
-
-/**
- * Folders always come first. Within each group the chosen column decides,
- * in the chosen direction; equal values fall back to ascending name order.
- */
-export function compareBy(sort: SortState): (a: DirEntry, b: DirEntry) => number {
-  const dir = sort.direction === 'asc' ? 1 : -1;
-  return (a, b) => {
-    if (a.kind !== b.kind) return a.kind === 'directory' ? -1 : 1;
-    let cmp: number;
-    switch (sort.column) {
-      case 'date':
-        cmp = a.modifiedAt - b.modifiedAt;
-        break;
-      case 'size':
-        cmp = a.size - b.size;
-        break;
-      case 'kind':
-        cmp = collator.compare(kindLabel(a), kindLabel(b));
-        break;
-      default:
-        cmp = collator.compare(a.name, b.name);
-    }
-    return cmp !== 0 ? cmp * dir : collator.compare(a.name, b.name);
-  };
-}
-
-export function sortEntries(entries: readonly DirEntry[], sort: SortState): DirEntry[] {
-  return [...entries].sort(compareBy(sort));
-}
 
 /**
  * DataTable sorts rows by a numeric accessor and applies the direction itself.
@@ -353,8 +325,11 @@ export function statusText(
   count: number,
   selected: number,
   usage: { used: number; quota: number | null } | null,
+  /** Items before filtering; when it is larger, the count reads "3 of 12". */
+  total = count,
 ): string {
-  const parts = [`${count} ${count === 1 ? 'item' : 'items'}`];
+  const noun = total === 1 ? 'item' : 'items';
+  const parts = [total > count ? `${count} of ${total} ${noun}` : `${count} ${noun}`];
   if (selected > 0) parts.push(`${selected} selected`);
   if (usage) {
     parts.push(
@@ -371,4 +346,47 @@ export function isEditableTarget(el: Element | null): boolean {
   if (!el || !(el instanceof HTMLElement)) return false;
   const tag = el.tagName;
   return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || el.isContentEditable;
+}
+
+// ── card lane ─────────────────────────────────────────────────────────────
+
+export type LaneAxis = 'horizontal' | 'vertical';
+
+export interface WheelInput {
+  deltaX: number;
+  deltaY: number;
+}
+
+/**
+ * How far a wheel notch moves the lane. A horizontal lane answers to a
+ * vertical wheel too, which is the only way a plain mouse can drive it;
+ * whichever axis the gesture is stronger on wins.
+ */
+export function laneWheelDelta(wheel: WheelInput, axis: LaneAxis): number {
+  if (axis === 'vertical') return wheel.deltaY;
+  return Math.abs(wheel.deltaX) > Math.abs(wheel.deltaY) ? wheel.deltaX : wheel.deltaY;
+}
+
+// ── A–Z rail ──────────────────────────────────────────────────────────────
+
+/** The rail bucket a name falls in: its first letter, or "#" for the rest. */
+export function indexLetter(name: string): string {
+  const first = name.trim().charAt(0).toUpperCase();
+  return first >= 'A' && first <= 'Z' ? first : '#';
+}
+
+/** The buckets present in this folder, A–Z first and "#" last. */
+export function railLetters(entries: readonly Pick<DirEntry, 'name'>[]): string[] {
+  const present = new Set(entries.map((e) => indexLetter(e.name)));
+  const letters = [...present].filter((l) => l !== '#').sort();
+  if (present.has('#')) letters.push('#');
+  return letters;
+}
+
+/** The path of the first entry in a bucket, in the order the view shows them. */
+export function firstWithLetter(
+  entries: readonly Pick<DirEntry, 'name' | 'path'>[],
+  letter: string,
+): string | null {
+  return entries.find((e) => indexLetter(e.name) === letter)?.path ?? null;
 }

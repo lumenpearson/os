@@ -1,10 +1,12 @@
 import { cx } from '@lumen/ui';
 import type { DirEntry } from '@lumen/vfs';
 import {
+  type CSSProperties,
   type DragEvent,
   type KeyboardEvent,
   type MouseEvent,
   type ReactNode,
+  type RefObject,
   useEffect,
   useId,
   useMemo,
@@ -41,8 +43,16 @@ export interface EntryListBoxProps {
   onDrop: (entry: DirEntry, e: DragEvent) => void;
   renderItem: (entry: DirEntry, state: ItemState) => ReactNode;
   itemClassName: (entry: DirEntry, state: ItemState) => string | undefined;
+  /** Per-item inline style, for sizes that animate (the card lane). */
+  itemStyle?: (entry: DirEntry, state: ItemState) => CSSProperties | undefined;
+  /** Announced on the listbox; a card lane running left to right is horizontal. */
+  orientation?: 'horizontal' | 'vertical';
   /** Runs before the built-in keys; call preventDefault to claim a key. */
   onKeyDown?: (e: KeyboardEvent<HTMLDivElement>) => void;
+  /** How the cursor is brought into view when it moves. */
+  reveal?: ScrollIntoViewOptions;
+  /** The scrolling element, for views that drive it themselves (the card lane). */
+  containerRef?: RefObject<HTMLDivElement | null>;
   onFocusChange?: (focused: boolean) => void;
   className?: string;
   children?: ReactNode;
@@ -69,7 +79,11 @@ export function EntryListBox({
   onDrop,
   renderItem,
   itemClassName,
+  itemStyle,
+  orientation,
   onKeyDown,
+  reveal = { block: 'nearest', inline: 'nearest' },
+  containerRef,
   onFocusChange,
   className,
   children,
@@ -81,11 +95,14 @@ export function EntryListBox({
   const cursorIndex = selection.cursor !== null ? order.indexOf(selection.cursor) : -1;
   const idFor = (i: number) => `${base}-${i}`;
 
+  // `reveal` is a fresh object every render; only a cursor move should scroll.
+  const revealRef = useRef(reveal);
+  revealRef.current = reveal;
   useEffect(() => {
     if (cursorIndex < 0) return;
     ref.current
       ?.querySelector<HTMLElement>(`[data-index="${cursorIndex}"]`)
-      ?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+      ?.scrollIntoView(revealRef.current);
   }, [cursorIndex]);
 
   const columnCount = () => {
@@ -122,10 +139,14 @@ export function EntryListBox({
 
   return (
     <div
-      ref={ref}
+      ref={(el) => {
+        ref.current = el;
+        if (containerRef) containerRef.current = el;
+      }}
       id={id}
       role="listbox"
       aria-label={label}
+      aria-orientation={orientation}
       aria-multiselectable
       aria-activedescendant={cursorIndex >= 0 ? idFor(cursorIndex) : undefined}
       tabIndex={0}
@@ -176,6 +197,7 @@ export function EntryListBox({
             }}
             onContextMenu={(e) => onContextMenu(entry, e)}
             className={cx('select-none', itemClassName(entry, state))}
+            style={itemStyle?.(entry, state)}
           >
             {renderItem(entry, state)}
           </div>

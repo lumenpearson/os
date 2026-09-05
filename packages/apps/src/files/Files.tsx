@@ -13,7 +13,7 @@ import {
   useElementSize,
 } from '@lumen/ui';
 import { basename, type DirEntry, dirname, isInside, join, VfsError } from '@lumen/vfs';
-import { FolderOpen, House, Trash2 } from 'lucide-react';
+import { FolderOpen, House, ListFilter, Trash2 } from 'lucide-react';
 import {
   type DragEvent,
   type KeyboardEvent,
@@ -30,18 +30,30 @@ import {
   useAppMenus,
   useArgs,
   useDirectory,
+  useJsonFile,
   useLauncher,
   useNotify,
   useShortcutLabel,
   useTitle,
   useWindowControls,
 } from '../_sdk';
+import { CardView } from './CardView';
 import { ColumnView } from './ColumnView';
 import { beginDrag, draggedPaths, endDrag, hasHostFiles, hasPayload, operationFor } from './dnd';
 import { FilePreview } from './FilePreview';
 import { FilesSidebar, standardPlaces } from './FilesSidebar';
 import { FilesToolbar } from './FilesToolbar';
+import {
+  applyFilter,
+  type FilterState,
+  filterSummary,
+  isFiltering,
+  NO_FILTER,
+  sortPlanFor,
+  sortWithPlan,
+} from './filters';
 import { GridView } from './GridView';
+import { IndexRail } from './IndexRail';
 import { InfoDialog } from './InfoDialog';
 import { ListView } from './ListView';
 import {
@@ -54,13 +66,13 @@ import {
   goBack,
   goForward,
   isEditableTarget,
+  type LaneAxis,
   pruneSelection,
   pushHistory,
   type Selection,
   type SortState,
   selectAll,
   selectOnly,
-  sortEntries,
   statusText,
   type ViewMode,
 } from './logic';
@@ -76,6 +88,14 @@ import {
   trashAll,
 } from './operations';
 import { SearchResults } from './SearchResults';
+import {
+  DEFAULT_PREFS,
+  type FilesPrefs,
+  type IconSize,
+  normalizePrefs,
+  prefsPath,
+  type ToolbarPart,
+} from './settings';
 import type { EntryViewState } from './types';
 
 /** Below this width the sidebar folds away so the file list keeps its columns. */
@@ -105,9 +125,25 @@ export default function Files({ args }: AppProps) {
   const path = currentPath(history);
   const inTrash = isInside(TRASH_DIR, path, true);
 
+  /**
+   * The window's own preferences — view, card lane, icon size, toolbar,
+   * sidebar, A–Z rail, sort and filters — in `~/.config/files.json`, next to
+   * every other app's. Settings → Files keeps the system-wide switches
+   * (hidden files, folders first, single click); this file keeps the rest.
+   */
+  const [storedPrefs, storePrefs] = useJsonFile<FilesPrefs>(prefsPath(kernel.home), DEFAULT_PREFS);
+  const own = useMemo(
+    () => normalizePrefs(storedPrefs, prefs.defaultView),
+    [storedPrefs, prefs.defaultView],
+  );
+  const patchOwn = useCallback(
+    (patch: Partial<FilesPrefs>) =>
+      storePrefs((previous) => ({ ...normalizePrefs(previous, prefs.defaultView), ...patch })),
+    [storePrefs, prefs.defaultView],
+  );
+  const { view, sort, filter } = own;
+
   const [selection, setSelection] = useState<Selection>(EMPTY_SELECTION);
-  const [view, setView] = useState<ViewMode>(prefs.defaultView);
-  const [sort, setSort] = useState<SortState>({ column: 'name', direction: 'asc' });
   const [rawQuery, setRawQuery] = useState('');
   const [results, setResults] = useState<DirEntry[]>([]);
   const [searching, setSearching] = useState(false);
@@ -116,7 +152,6 @@ export default function Files({ args }: AppProps) {
   const [quickLook, setQuickLook] = useState<string | null>(null);
   const [trail, setTrail] = useState<string[]>([]);
   const [dropTarget, setDropTarget] = useState<string | null>(null);
-  const [sidebarVisible, setSidebarVisible] = useState(true);
   const [favorites, setFavorites] = useState<string[]>(() => [...kernel.state.favorites]);
   const [places, setPlaces] = useState<ReadonlySet<string>>(new Set());
   const [usage, setUsage] = useState<{ used: number; quota: number | null } | null>(null);
@@ -131,8 +166,14 @@ export default function Files({ args }: AppProps) {
   const query = useDebounced(rawQuery.trim(), 220);
   const isSearch = query.length > 0;
   const dir = useDirectory(path, { showHidden: prefs.showHidden });
-  const sorted = useMemo(() => sortEntries(dir.entries, sort), [dir.entries, sort]);
-  const entries = isSearch ? results : sorted;
+  /** Filter first, then sort: folders first when asked, then the column, then name. */
+  const sorted = useMemo(
+    () => sortWithPlan(applyFilter(dir.entries, filter), sortPlanFor(sort, prefs.foldersFirst)),
+    [dir.entries, filter, sort, prefs.foldersFirst],
+  );
+  const found = useMemo(() => applyFilter(results, filter), [results, filter]);
+  const entries = isSearch ? found : sorted;
+  const total = isSearch ? results.length : dir.entries.length;
 
   const clipboard = useClipboardStore((s) => s.item);
   const copyFiles = useClipboardStore((s) => s.copyFiles);
@@ -478,13 +519,35 @@ export default function Files({ args }: AppProps) {
         setSelection(selectAll(entries.map((e) => e.path)));
       },
       setView: (next: ViewMode) => {
-        setView(next);
+        patchOwn({ view: next });
+        // Settings → Files holds the view new windows open in; keep it in step.
         patchPrefs({ defaultView: next });
         setTrail([]);
       },
+      setCardAxis: (axis: LaneAxis) => patchOwn({ cardAxis: axis }),
+      setIconSize: (size: IconSize) => patchOwn({ iconSize: size }),
       toggleHidden: () => patchPrefs({ showHidden: !prefs.showHidden }),
-      toggleSidebar: () => setSidebarVisible((v) => !v),
-      setSort: (next: SortState) => setSort(next),
+      toggleSidebar: () => patchOwn({ sidebar: !own.sidebar }),
+      toggleIndexRail: () => patchOwn({ indexRail: !own.indexRail }),
+      toggleToolbarPart: (part: ToolbarPart) =>
+        patchOwn({ toolbar: { ...own.toolbar, [part]: !own.toolbar[part] } }),
+      setSort: (next: SortState) => patchOwn({ sort: next }),
+      toggleFoldersFirst: () => patchPrefs({ foldersFirst: !prefs.foldersFirst }),
+      setFilter: (patch: Partial<FilterState>) => patchOwn({ filter: { ...filter, ...patch } }),
+      clearFilter: () => patchOwn({ filter: NO_FILTER }),
+      editPattern: () => {
+        void (async () => {
+          const answer = await dialogs.prompt({
+            title: 'Filter by Name',
+            message: 'Type part of a name, or a pattern with * and ?.',
+            defaultValue: filter.pattern,
+            mono: true,
+            confirmLabel: 'Filter',
+          });
+          if (answer === null) return;
+          patchOwn({ filter: { ...filter, pattern: answer.trim() } });
+        })();
+      },
       quickLook: () => {
         const first = targets()[0];
         setQuickLook((current) => (current ? null : (first ?? null)));
@@ -521,6 +584,12 @@ export default function Files({ args }: AppProps) {
     entryFor,
     prefs.confirmDelete,
     prefs.showHidden,
+    prefs.foldersFirst,
+    own.sidebar,
+    own.indexRail,
+    own.toolbar,
+    filter,
+    patchOwn,
     dialogs,
     kernel,
     vfs,
@@ -550,9 +619,15 @@ export default function Files({ args }: AppProps) {
       canPutBack: inTrash && selected.length > 0,
       canPaste: clipboardCount > 0,
       showHidden: prefs.showHidden,
-      sidebarVisible,
+      sidebarVisible: own.sidebar,
+      indexRail: own.indexRail,
+      toolbar: own.toolbar,
       view,
+      cardAxis: own.cardAxis,
+      iconSize: own.iconSize,
       sort,
+      foldersFirst: prefs.foldersFirst,
+      filter,
       canBack: canGoBack(history),
       canForward: canGoForward(history),
       canUp: path !== '/',
@@ -573,9 +648,15 @@ export default function Files({ args }: AppProps) {
     inTrash,
     clipboardCount,
     prefs.showHidden,
-    sidebarVisible,
+    prefs.foldersFirst,
+    own.sidebar,
+    own.indexRail,
+    own.toolbar,
+    own.cardAxis,
+    own.iconSize,
     view,
     sort,
+    filter,
     history,
     path,
     favorites,
@@ -617,7 +698,9 @@ export default function Files({ args }: AppProps) {
   // ── views ───────────────────────────────────────────────────────────────
 
   const narrow = rootSize.width > 0 && rootSize.width < NARROW;
-  const showSidebar = sidebarVisible && !narrow;
+  const showSidebar = own.sidebar && !narrow;
+  const filtering = isFiltering(filter);
+  const showRail = own.indexRail && view !== 'columns' && entries.length > 0;
 
   const viewState: EntryViewState = {
     selection,
@@ -663,6 +746,13 @@ export default function Files({ args }: AppProps) {
         </Button>
       }
     />
+  ) : filtering && total > 0 ? (
+    <EmptyState
+      icon={<ListFilter />}
+      title="Nothing here matches the filter"
+      description={filterSummary(filter)}
+      action={<Button onClick={actions.clearFilter}>Clear Filters</Button>}
+    />
   ) : (
     <EmptyState
       icon={inTrash ? <Trash2 /> : <FolderOpen />}
@@ -675,7 +765,7 @@ export default function Files({ args }: AppProps) {
     emptyState
   ) : isSearch ? (
     <SearchResults
-      entries={results}
+      entries={found}
       query={query}
       searching={searching}
       {...viewState}
@@ -685,14 +775,29 @@ export default function Files({ args }: AppProps) {
     <ListView
       entries={sorted}
       sort={sort}
-      onSortChange={setSort}
+      onSortChange={actions.setSort}
       width={contentSize.width}
       emptyState={emptyState}
       {...viewState}
       {...handlers}
     />
   ) : view === 'grid' ? (
-    <GridView entries={sorted} emptyState={emptyState} {...viewState} {...handlers} />
+    <GridView
+      entries={sorted}
+      iconSize={own.iconSize}
+      emptyState={emptyState}
+      {...viewState}
+      {...handlers}
+    />
+  ) : view === 'cards' ? (
+    <CardView
+      entries={sorted}
+      axis={own.cardAxis}
+      iconSize={own.iconSize}
+      emptyState={emptyState}
+      {...viewState}
+      {...handlers}
+    />
   ) : (
     <ColumnView
       path={path}
@@ -700,6 +805,7 @@ export default function Files({ args }: AppProps) {
       onTrailChange={setTrail}
       showHidden={prefs.showHidden}
       sort={sort}
+      foldersFirst={prefs.foldersFirst}
       {...viewState}
       {...handlers}
     />
@@ -738,8 +844,17 @@ export default function Files({ args }: AppProps) {
         dropOnFolder(path, e);
       }}
     >
-      <div ref={contentRef} className="min-h-0 flex-1">
-        {body}
+      <div className="flex min-h-0 flex-1">
+        <div ref={contentRef} className="min-w-0 flex-1">
+          {body}
+        </div>
+        {showRail && (
+          <IndexRail
+            entries={entries}
+            cursor={selection.cursor}
+            onJump={(target) => setSelection(selectOnly(target))}
+          />
+        )}
       </div>
     </div>
   );
@@ -758,7 +873,11 @@ export default function Files({ args }: AppProps) {
             query={rawQuery}
             onQueryChange={setRawQuery}
             inTrash={inTrash}
-            sidebarVisible={sidebarVisible}
+            sidebarVisible={own.sidebar}
+            foldersFirst={prefs.foldersFirst}
+            filter={filter}
+            parts={own.toolbar}
+            menuState={menuState}
             narrow={narrow}
             actions={actions}
             onDragOverFolder={dragOverFolder}
@@ -768,9 +887,10 @@ export default function Files({ args }: AppProps) {
         statusBar={
           <>
             <span className="tabular-nums">
-              {statusText(entries.length, selection.keys.size, usage)}
+              {statusText(entries.length, selection.keys.size, usage, total)}
             </span>
             {isSearch && <span className="text-ink-3">Results in {kernel.labelFor(path)}</span>}
+            {filtering && <span className="text-ink-3">Filter: {filterSummary(filter)}</span>}
           </>
         }
       >

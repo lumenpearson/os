@@ -16,13 +16,15 @@ import {
   type NavStack,
   pushEntry,
 } from './history';
-import { isInternalUrl, START_URL, titleFor } from './url';
+import { isInternalUrl, opensExternally, START_URL, titleFor } from './url';
 
 /**
  * `loading` covers a frame that has been handed an address; `blocked` is what
- * we show when it never reported back (most sites refuse to be framed).
+ * we show when it never reported back (most sites refuse to be framed);
+ * `external` is a site the user asked to open outside Lumen, which is never
+ * given to a frame at all.
  */
-export type TabStatus = 'idle' | 'loading' | 'blocked';
+export type TabStatus = 'idle' | 'loading' | 'blocked' | 'external';
 
 export interface Tab {
   id: string;
@@ -36,9 +38,21 @@ export interface Tab {
   generation: number;
 }
 
+/**
+ * The parts of the settings a tab has to know about. They live in the state
+ * rather than in every dispatch, so a tab opened from a menu, a shortcut or a
+ * middle click all start the same way.
+ */
+export interface TabDefaults {
+  zoom: number;
+  /** Hosts the user asked to open outside Lumen. */
+  externalHosts: readonly string[];
+}
+
 export interface TabsState {
   tabs: Tab[];
   activeId: string | null;
+  defaults: TabDefaults;
 }
 
 export const ZOOM_LEVELS = [0.5, 0.67, 0.8, 0.9, 1, 1.1, 1.25, 1.5, 1.75, 2] as const;
@@ -66,22 +80,42 @@ export function nextTabId(): string {
   return `tab-${sequence}`;
 }
 
-export function createTab(id: string, url: string = START_URL): Tab {
+export const DEFAULT_TAB_DEFAULTS: TabDefaults = { zoom: DEFAULT_ZOOM, externalHosts: [] };
+
+/** Where a tab starts: idle for a page we draw, external for the list, else loading. */
+export function statusFor(url: string, defaults: TabDefaults): TabStatus {
+  if (isInternalUrl(url)) return 'idle';
+  return opensExternally(url, defaults.externalHosts) ? 'external' : 'loading';
+}
+
+export function createTab(
+  id: string,
+  url: string = START_URL,
+  defaults: TabDefaults = DEFAULT_TAB_DEFAULTS,
+): Tab {
   return {
     id,
     url,
     title: titleFor(url),
     stack: createStack(url),
-    status: isInternalUrl(url) ? 'idle' : 'loading',
-    zoom: DEFAULT_ZOOM,
+    status: statusFor(url, defaults),
+    zoom: defaults.zoom,
     generation: 0,
   };
 }
 
-export const EMPTY_TABS: TabsState = { tabs: [], activeId: null };
+export const EMPTY_TABS: TabsState = {
+  tabs: [],
+  activeId: null,
+  defaults: DEFAULT_TAB_DEFAULTS,
+};
 
-export function createTabsState(id: string, url?: string): TabsState {
-  return { tabs: [createTab(id, url)], activeId: id };
+export function createTabsState(
+  id: string,
+  url?: string,
+  defaults: TabDefaults = DEFAULT_TAB_DEFAULTS,
+): TabsState {
+  return { tabs: [createTab(id, url, defaults)], activeId: id, defaults };
 }
 
 export function activeTab(state: TabsState): Tab | null {
@@ -106,23 +140,25 @@ export type TabsAction =
   | { type: 'loaded'; id: string }
   | { type: 'blocked'; id: string }
   | { type: 'title'; id: string; title: string }
-  | { type: 'zoom'; direction: 'in' | 'out' | 'reset'; id?: string };
-
-function statusFor(url: string): TabStatus {
-  return isInternalUrl(url) ? 'idle' : 'loading';
-}
+  | { type: 'zoom'; direction: 'in' | 'out' | 'reset'; id?: string }
+  /** The settings changed: new tabs, and every tab still waiting, follow. */
+  | { type: 'defaults'; defaults: TabDefaults };
 
 /** Move to `url` without touching the back/forward list (used by back/forward). */
-function at(tab: Tab, stack: NavStack): Tab {
+function at(tab: Tab, stack: NavStack, defaults: TabDefaults): Tab {
   const url = currentEntry(stack);
   return {
     ...tab,
     stack,
     url,
     title: titleFor(url),
-    status: statusFor(url),
+    status: statusFor(url, defaults),
     generation: tab.generation + 1,
   };
+}
+
+function sameHosts(a: readonly string[], b: readonly string[]): boolean {
+  return a === b || (a.length === b.length && a.every((host, i) => host === b[i]));
 }
 
 function mapTab(state: TabsState, id: string | undefined, fn: (tab: Tab) => Tab): TabsState {
@@ -142,8 +178,9 @@ export function tabsReducer(state: TabsState, action: TabsAction): TabsState {
   switch (action.type) {
     case 'open': {
       if (state.tabs.some((t) => t.id === action.id)) return state;
-      const tab = createTab(action.id, action.url);
+      const tab = createTab(action.id, action.url, state.defaults);
       return {
+        ...state,
         tabs: [...state.tabs, tab],
         activeId: action.activate === false && state.activeId ? state.activeId : tab.id,
       };
@@ -152,11 +189,11 @@ export function tabsReducer(state: TabsState, action: TabsAction): TabsState {
       const index = state.tabs.findIndex((t) => t.id === action.id);
       if (index < 0) return state;
       const tabs = state.tabs.filter((t) => t.id !== action.id);
-      if (tabs.length === 0) return EMPTY_TABS;
+      if (tabs.length === 0) return { ...state, tabs: [], activeId: null };
       if (state.activeId !== action.id) return { ...state, tabs };
       // The neighbour on the right takes over, or the new last tab.
       const next = tabs[index] ?? tabs[tabs.length - 1];
-      return { tabs, activeId: next?.id ?? null };
+      return { ...state, tabs, activeId: next?.id ?? null };
     }
     case 'activate':
       if (!state.tabs.some((t) => t.id === action.id)) return state;
@@ -177,22 +214,22 @@ export function tabsReducer(state: TabsState, action: TabsAction): TabsState {
           stack,
           url: action.url,
           title: titleFor(action.url),
-          status: statusFor(action.url),
+          status: statusFor(action.url, state.defaults),
           generation: tab.generation + 1,
         };
       });
     case 'back':
       return mapTab(state, action.id, (tab) =>
-        canGoBack(tab.stack) ? at(tab, goBack(tab.stack)) : tab,
+        canGoBack(tab.stack) ? at(tab, goBack(tab.stack), state.defaults) : tab,
       );
     case 'forward':
       return mapTab(state, action.id, (tab) =>
-        canGoForward(tab.stack) ? at(tab, goForward(tab.stack)) : tab,
+        canGoForward(tab.stack) ? at(tab, goForward(tab.stack), state.defaults) : tab,
       );
     case 'reload':
       return mapTab(state, action.id, (tab) => ({
         ...tab,
-        status: statusFor(tab.url),
+        status: statusFor(tab.url, state.defaults),
         generation: tab.generation + 1,
       }));
     case 'stop':
@@ -200,8 +237,10 @@ export function tabsReducer(state: TabsState, action: TabsAction): TabsState {
         tab.status === 'loading' ? { ...tab, status: 'idle' } : tab,
       );
     case 'loaded':
+      // A tab on the open-outside list has no frame, so a load event that
+      // arrives for the frame it used to have is not about this address.
       return mapTab(state, action.id, (tab) =>
-        tab.status === 'idle' ? tab : { ...tab, status: 'idle' },
+        tab.status === 'idle' || tab.status === 'external' ? tab : { ...tab, status: 'idle' },
       );
     case 'blocked':
       return mapTab(state, action.id, (tab) =>
@@ -218,9 +257,34 @@ export function tabsReducer(state: TabsState, action: TabsAction): TabsState {
             ? zoomIn(tab.zoom)
             : action.direction === 'out'
               ? zoomOut(tab.zoom)
-              : DEFAULT_ZOOM;
+              : state.defaults.zoom;
         return zoom === tab.zoom ? tab : { ...tab, zoom };
       });
+    case 'defaults': {
+      const next = action.defaults;
+      if (
+        next.zoom === state.defaults.zoom &&
+        sameHosts(next.externalHosts, state.defaults.externalHosts)
+      )
+        return state;
+      // A tab already showing a page is left where it is; one that is waiting
+      // or stuck takes the new rule straight away, which is what makes the
+      // "always open outside" button on a blocked page do something visible.
+      let changed = false;
+      const tabs = state.tabs.map((tab) => {
+        if (tab.status === 'idle') return tab;
+        const status = statusFor(tab.url, next);
+        if (status === tab.status) return tab;
+        if (status !== 'external' && tab.status !== 'external') return tab;
+        changed = true;
+        return {
+          ...tab,
+          status,
+          generation: status === 'external' ? tab.generation : tab.generation + 1,
+        };
+      });
+      return { ...state, defaults: next, tabs: changed ? tabs : state.tabs };
+    }
     default:
       return state;
   }

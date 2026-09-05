@@ -4,7 +4,7 @@ import { Dialog } from '@lumen/ui';
 import { basename, dirname, extname, type FileStat, formatBytes, VfsError } from '@lumen/vfs';
 import { useEffect, useState } from 'react';
 import { FileTypeIcon, formatDateTime, useApp } from '../_sdk';
-import { kindLabel } from './logic';
+import { kindLabel } from './filters';
 
 export interface InfoDialogProps {
   path: string;

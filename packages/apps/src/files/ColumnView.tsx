@@ -5,7 +5,8 @@ import { type KeyboardEvent, useEffect, useId, useMemo, useRef, useState } from 
 import { FileTypeIcon, useDirectory } from '../_sdk';
 import { EntryListBox, rowClasses } from './EntryListBox';
 import { FilePreview } from './FilePreview';
-import { type Selection, type SortState, selectOnly, sortEntries } from './logic';
+import { sortPlanFor, sortWithPlan } from './filters';
+import { type Selection, type SortState, selectOnly } from './logic';
 import { RenameInput } from './RenameInput';
 import type { EntryHandlers, EntryViewState } from './types';
 
@@ -16,6 +17,7 @@ export interface ColumnViewProps extends EntryHandlers, EntryViewState {
   onTrailChange: (trail: string[]) => void;
   showHidden: boolean;
   sort: SortState;
+  foldersFirst: boolean;
 }
 
 /**
@@ -106,6 +108,7 @@ interface ColumnListProps extends EntryHandlers, EntryViewState {
   openChild: string | null;
   showHidden: boolean;
   sort: SortState;
+  foldersFirst: boolean;
   onEntries: (entries: readonly DirEntry[]) => void;
   onPick: (sel: Selection, entries: readonly DirEntry[]) => void;
   onStepRight: () => void;
@@ -118,6 +121,7 @@ function ColumnList({
   openChild,
   showHidden,
   sort,
+  foldersFirst,
   selection,
   renaming,
   cutPaths,
@@ -136,7 +140,10 @@ function ColumnList({
   onRenameCancel,
 }: ColumnListProps) {
   const dir = useDirectory(path, { showHidden });
-  const entries = useMemo(() => sortEntries(dir.entries, sort), [dir.entries, sort]);
+  const entries = useMemo(
+    () => sortWithPlan(dir.entries, sortPlanFor(sort, foldersFirst)),
+    [dir.entries, sort, foldersFirst],
+  );
   const [hasFocus, setHasFocus] = useState(false);
   onEntries(entries);
 

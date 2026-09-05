@@ -3,7 +3,8 @@ import { cx } from '@lumen/ui';
 import { basename, type FileStat, formatBytes, VfsError } from '@lumen/vfs';
 import { useEffect, useState } from 'react';
 import { FileTypeIcon, formatDateTime, useObjectUrl } from '../_sdk';
-import { kindLabel, previewKind } from './logic';
+import { kindLabel } from './filters';
+import { previewKind } from './logic';
 import { readTextPreview } from './operations';
 
 export interface FilePreviewProps {

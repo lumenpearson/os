@@ -15,17 +15,21 @@ import {
   ChevronRight,
   Columns3,
   FolderPlus,
+  GalleryHorizontalEnd,
   HardDrive,
   House,
   LayoutGrid,
   List,
+  ListFilter,
   PanelLeft,
   Trash2,
 } from 'lucide-react';
 import { type DragEvent, useMemo, useRef, useState } from 'react';
+import { type FilterState, filterSummary, isFiltering } from './filters';
 import { type Crumb, collapseCrumbs, crumbsFor, type SortState, type ViewMode } from './logic';
-import type { FilesActions } from './menus';
-import { sortSubmenu } from './menus';
+import type { FilesActions, MenuState } from './menus';
+import { filterSubmenu, sortSubmenu } from './menus';
+import type { ToolbarParts } from './settings';
 
 export interface FilesToolbarProps {
   path: string;
@@ -38,6 +42,12 @@ export interface FilesToolbarProps {
   onQueryChange: (q: string) => void;
   inTrash: boolean;
   sidebarVisible: boolean;
+  foldersFirst: boolean;
+  filter: FilterState;
+  /** Which controls the user keeps in the toolbar (View → Toolbar). */
+  parts: ToolbarParts;
+  /** Read by the Filter menu, which shows the same items as View → Filter. */
+  menuState: MenuState;
   /**
    * Below this the toolbar drops the view switcher and the sidebar toggle,
    * shortens the search field and collapses the breadcrumb harder.
@@ -52,6 +62,7 @@ const VIEW_OPTIONS = [
   { value: 'list', icon: <List />, title: 'List' },
   { value: 'grid', icon: <LayoutGrid />, title: 'Grid' },
   { value: 'columns', icon: <Columns3 />, title: 'Columns' },
+  { value: 'cards', icon: <GalleryHorizontalEnd />, title: 'Cards' },
 ] as const;
 
 const HIGHLIGHT = ['bg-selection', 'text-ink'];
@@ -71,6 +82,10 @@ export function FilesToolbar({
   onQueryChange,
   inTrash,
   sidebarVisible,
+  foldersFirst,
+  filter,
+  parts,
+  menuState,
   narrow,
   actions,
   onDragOverFolder,
@@ -78,6 +93,9 @@ export function FilesToolbar({
 }: FilesToolbarProps) {
   const [sortAnchor, setSortAnchor] = useState<HTMLButtonElement | null>(null);
   const [sortOpen, setSortOpen] = useState(false);
+  const [filterAnchor, setFilterAnchor] = useState<HTMLButtonElement | null>(null);
+  const [filterOpen, setFilterOpen] = useState(false);
+  const filtering = isFiltering(filter);
   const highlighted = useRef<HTMLButtonElement | null>(null);
 
   const crumbs = useMemo(
@@ -115,17 +133,19 @@ export function FilesToolbar({
   return (
     <Toolbar className="pl-0">
       <div className="w-18 shrink-0" aria-hidden />
-      <ToolbarGroup>
-        <IconButton label="Back" disabled={!canBack} onClick={actions.back}>
-          <ChevronLeft />
-        </IconButton>
-        <IconButton label="Forward" disabled={!canForward} onClick={actions.forward}>
-          <ChevronRight />
-        </IconButton>
-        <IconButton label="Enclosing folder" disabled={path === '/'} onClick={actions.up}>
-          <ArrowUp />
-        </IconButton>
-      </ToolbarGroup>
+      {parts.navigation && (
+        <ToolbarGroup>
+          <IconButton label="Back" disabled={!canBack} onClick={actions.back}>
+            <ChevronLeft />
+          </IconButton>
+          <IconButton label="Forward" disabled={!canForward} onClick={actions.forward}>
+            <ChevronRight />
+          </IconButton>
+          <IconButton label="Enclosing folder" disabled={path === '/'} onClick={actions.up}>
+            <ArrowUp />
+          </IconButton>
+        </ToolbarGroup>
+      )}
       <div
         className="mx-1 min-w-24 flex-1"
         onDragOver={(e) => {
@@ -152,8 +172,8 @@ export function FilesToolbar({
         </Button>
       )}
       <ToolbarGroup className="gap-1">
-        {/* The three views stay on View > as List/Grid/Columns and Mod+1/2/3. */}
-        {!narrow && (
+        {/* The four views stay on View > as List/Grid/Columns/Cards and Mod+1…4. */}
+        {parts.view && !narrow && (
           <SegmentedControl
             aria-label="View"
             size="sm"
@@ -162,27 +182,54 @@ export function FilesToolbar({
             onChange={actions.setView}
           />
         )}
-        <IconButton
-          ref={setSortAnchor}
-          label="Sort"
-          aria-haspopup="menu"
-          aria-expanded={sortOpen}
-          active={sortOpen}
-          onClick={() => setSortOpen((o) => !o)}
-        >
-          <ArrowUpDown />
-        </IconButton>
-        <AnchoredMenu
-          open={sortOpen}
-          anchor={sortAnchor}
-          align="end"
-          onClose={() => setSortOpen(false)}
-          items={sortSubmenu(sort, actions)}
-        />
-        <IconButton label="New folder" disabled={inTrash} onClick={actions.newFolder}>
-          <FolderPlus />
-        </IconButton>
-        {!narrow && (
+        {parts.sort && (
+          <>
+            <IconButton
+              ref={setSortAnchor}
+              label="Sort"
+              aria-haspopup="menu"
+              aria-expanded={sortOpen}
+              active={sortOpen}
+              onClick={() => setSortOpen((o) => !o)}
+            >
+              <ArrowUpDown />
+            </IconButton>
+            <AnchoredMenu
+              open={sortOpen}
+              anchor={sortAnchor}
+              align="end"
+              onClose={() => setSortOpen(false)}
+              items={sortSubmenu(sort, foldersFirst, actions)}
+            />
+          </>
+        )}
+        {parts.filter && (
+          <>
+            <IconButton
+              ref={setFilterAnchor}
+              label={filtering ? `Filter: ${filterSummary(filter)}` : 'Filter'}
+              aria-haspopup="menu"
+              aria-expanded={filterOpen}
+              active={filterOpen || filtering}
+              onClick={() => setFilterOpen((o) => !o)}
+            >
+              <ListFilter />
+            </IconButton>
+            <AnchoredMenu
+              open={filterOpen}
+              anchor={filterAnchor}
+              align="end"
+              onClose={() => setFilterOpen(false)}
+              items={filterSubmenu(menuState, actions)}
+            />
+          </>
+        )}
+        {parts.newFolder && (
+          <IconButton label="New folder" disabled={inTrash} onClick={actions.newFolder}>
+            <FolderPlus />
+          </IconButton>
+        )}
+        {parts.sidebar && !narrow && (
           <IconButton
             label={sidebarVisible ? 'Hide sidebar' : 'Show sidebar'}
             active={!sidebarVisible}
@@ -192,21 +239,23 @@ export function FilesToolbar({
           </IconButton>
         )}
       </ToolbarGroup>
-      <SearchField
-        value={query}
-        onChange={onQueryChange}
-        placeholder="Search"
-        aria-label="Search this folder"
-        className={narrow ? 'w-28' : 'w-44'}
-        onKeyDown={(e) => {
-          // Keep typing keys (including Mod+A/C/V) native inside the field.
-          e.stopPropagation();
-          if (e.key === 'Escape') {
-            onQueryChange('');
-            e.currentTarget.blur();
-          }
-        }}
-      />
+      {parts.search && (
+        <SearchField
+          value={query}
+          onChange={onQueryChange}
+          placeholder="Search"
+          aria-label="Search this folder"
+          className={narrow ? 'w-28' : 'w-44'}
+          onKeyDown={(e) => {
+            // Keep typing keys (including Mod+A/C/V) native inside the field.
+            e.stopPropagation();
+            if (e.key === 'Escape') {
+              onQueryChange('');
+              e.currentTarget.blur();
+            }
+          }}
+        />
+      )}
     </Toolbar>
   );
 }
