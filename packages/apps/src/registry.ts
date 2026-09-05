@@ -9,6 +9,7 @@ import files from './files';
 import media from './media';
 import minesweeper from './minesweeper';
 import notes from './notes';
+import paint from './paint';
 import preview from './preview';
 import settings from './settings';
 import sheets from './sheets';
@@ -38,6 +39,7 @@ export const builtinApps: AppDefinition[] = [
   slides,
   preview,
   media,
+  paint,
   calculator,
   calendar,
   clock,
