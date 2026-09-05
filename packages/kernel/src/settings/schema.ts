@@ -1,10 +1,12 @@
 import type { AccentId } from '@lumen/tokens';
+import type { ScreensaverId } from '../desktop/screensavers';
+
+export type { ScreensaverId };
 
 export type ThemeMode = 'light' | 'dark' | 'auto';
 export type DockPosition = 'bottom' | 'left' | 'right';
 export type FilesView = 'list' | 'grid' | 'columns';
 export type WallpaperFit = 'cover' | 'contain' | 'tile' | 'center';
-export type ScreensaverId = 'clock' | 'drift' | 'starfield' | 'none';
 export type CursorStyle = 'lumen' | 'classic' | 'native';
 export type DateFormat = 'auto' | 'iso' | 'us' | 'eu';
 
@@ -159,7 +161,7 @@ export function defaultSettings(): Settings {
       theme: 'auto',
       accent: 'blue',
       contrast: 'normal',
-      reduceMotion: false,
+      reduceMotion: prefersReducedMotion(),
       reduceTransparency: false,
       fontScale: 1,
     },
@@ -234,6 +236,20 @@ export function defaultSettings(): Settings {
     updates: { channel: 'stable', automatic: true, lastChecked: null },
     setup: { completed: false, version: '0.1.0', completedAt: null },
   };
+}
+
+/**
+ * The system's motion preference, read once for the first-run defaults. After
+ * that the stored value wins, so someone who turns the switch off keeps full
+ * motion even on a machine that asks for less.
+ */
+function prefersReducedMotion(): boolean {
+  if (typeof matchMedia !== 'function') return false;
+  try {
+    return matchMedia('(prefers-reduced-motion: reduce)').matches;
+  } catch {
+    return false;
+  }
 }
 
 function safeTimeZone(): string {

@@ -1,4 +1,9 @@
-import { passwordStrength } from '@lumen/kernel';
+import {
+  passwordStrength,
+  SCREENSAVERS as SCREENSAVER_PRESETS,
+  type ScreensaverId,
+  screensaverById,
+} from '@lumen/kernel';
 import { useClipboard, useCurrentUser, useKernel, useSetting } from '@lumen/kernel/react';
 import {
   Button,
@@ -18,12 +23,10 @@ import { useApp } from '../../_sdk';
 import { MINUTE_OPTIONS, parseMinutes, rotateCredentials } from '../logic';
 import { Row } from '../Row';
 
-const SCREENSAVERS: SelectOption<'clock' | 'drift' | 'starfield' | 'none'>[] = [
-  { value: 'clock', label: 'Clock' },
-  { value: 'drift', label: 'Drift' },
-  { value: 'starfield', label: 'Starfield' },
-  { value: 'none', label: 'None' },
-];
+const SCREENSAVERS: SelectOption<ScreensaverId>[] = SCREENSAVER_PRESETS.map((preset) => ({
+  value: preset.id,
+  label: preset.name,
+}));
 
 function StrengthMeter({ password }: { password: string }) {
   const s = passwordStrength(password);
@@ -266,7 +269,11 @@ export function SecurityPage() {
             onChange={(v) => patch({ autoLockMinutes: parseMinutes(v) })}
           />
         </Row>
-        <Row id="security.screensaver" label="Screensaver">
+        <Row
+          id="security.screensaver"
+          label="Screensaver"
+          description={screensaverById(lock.screensaver)?.description}
+        >
           <Select
             options={SCREENSAVERS}
             value={lock.screensaver}

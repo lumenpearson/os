@@ -9,6 +9,8 @@ export {
   useRegistryStore,
 } from './apps/registry';
 export { useClipboardStore } from './clipboard/store';
+export type { ScreensaverPreset } from './desktop/screensavers';
+export { SCREENSAVERS, screensaverById } from './desktop/screensavers';
 export type { WallpaperPreset } from './desktop/wallpapers';
 export { WALLPAPERS, wallpaperById, wallpaperUrl } from './desktop/wallpapers';
 export type { KernelEvents } from './events';

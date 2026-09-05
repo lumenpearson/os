@@ -113,6 +113,37 @@ export const WALLPAPERS: WallpaperPreset[] = [
       `<rect width="1600" height="1000" fill="#c9ccd2"/><rect x="0" y="0" width="800" height="1000" fill="#bfc3ca"/><rect x="798" y="0" width="2" height="1000" fill="#a9aeb6"/>`,
     ),
   },
+  {
+    id: 'preset:chalk',
+    name: 'Chalk',
+    tone: 'light',
+    svg: svg(
+      `<rect width="1600" height="1000" fill="#eeece7"/>
+       <defs><pattern id="c" width="80" height="80" patternUnits="userSpaceOnUse"><path d="M 80 0 L 0 0 0 80" fill="none" stroke="#dedbd3" stroke-width="1"/></pattern></defs>
+       <rect width="1600" height="1000" fill="url(#c)"/>
+       <rect x="640" y="400" width="320" height="200" fill="none" stroke="#b8b4aa" stroke-width="2"/>`,
+    ),
+  },
+  {
+    id: 'preset:dune',
+    name: 'Dune',
+    tone: 'light',
+    svg: svg(
+      `<rect width="1600" height="1000" fill="#e3d9c8"/>
+       <polygon points="0,1000 0,760 420,640 900,800 1600,660 1600,1000" fill="#d9cdb8"/>
+       <polygon points="0,1000 0,880 520,800 1050,900 1600,830 1600,1000" fill="#cec0a8"/>`,
+    ),
+  },
+  {
+    id: 'preset:carbon',
+    name: 'Carbon',
+    tone: 'dark',
+    svg: svg(
+      `<rect width="1600" height="1000" fill="#141519"/>
+       <defs><pattern id="h" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="8" height="8" fill="#141519"/><rect width="1" height="8" fill="#1c1e23"/></pattern></defs>
+       <rect width="1600" height="1000" fill="url(#h)"/>`,
+    ),
+  },
 ];
 
 export function wallpaperById(id: string): WallpaperPreset | undefined {

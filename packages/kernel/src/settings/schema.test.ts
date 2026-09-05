@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { defaultSettings, mergeSettings } from './schema';
 import { getSettings, useSettingsStore } from './store';
 
@@ -87,5 +87,41 @@ describe('leaves whose default is null', () => {
   it('refuses null where a real default belongs', () => {
     const merged = mergeSettings({ updates: { automatic: null } });
     expect(merged.updates.automatic).toBe(true);
+  });
+});
+
+describe('defaultSettings', () => {
+  const original = globalThis.matchMedia;
+
+  function stubMatchMedia(value: unknown) {
+    Object.defineProperty(globalThis, 'matchMedia', {
+      configurable: true,
+      writable: true,
+      value,
+    });
+  }
+
+  afterEach(() => stubMatchMedia(original));
+
+  const reduce = (matches: boolean) => (query: string) => ({
+    matches: matches && query.includes('prefers-reduced-motion'),
+    media: query,
+    addEventListener() {},
+    removeEventListener() {},
+  });
+
+  it('starts with less motion on a machine that asks for less', () => {
+    stubMatchMedia(reduce(true));
+    expect(defaultSettings().appearance.reduceMotion).toBe(true);
+  });
+
+  it('starts with full motion where nothing asks for less', () => {
+    stubMatchMedia(reduce(false));
+    expect(defaultSettings().appearance.reduceMotion).toBe(false);
+  });
+
+  it('assumes full motion where there is no matchMedia to ask', () => {
+    stubMatchMedia(undefined);
+    expect(defaultSettings().appearance.reduceMotion).toBe(false);
   });
 });
