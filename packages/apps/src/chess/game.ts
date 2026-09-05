@@ -28,6 +28,12 @@ export interface Game {
   /** The position the game started from, so a game set up from a FEN works. */
   readonly start: Position;
   readonly played: readonly PlayedMove[];
+  /**
+   * Moves undone and not yet replayed, oldest first, so Redo puts them back in
+   * the order they were played. Playing anything new throws them away, which is
+   * what makes the pair a stack rather than a second history.
+   */
+  readonly undone: readonly PlayedMove[];
   /** The colour the person plays; the engine takes the other. */
   readonly side: Color;
   readonly level: LevelId;
@@ -40,14 +46,35 @@ export interface Game {
 export function newGame(side: Color = 'w', level: LevelId = DEFAULT_LEVEL): Game {
   const parsed = parseFen(INITIAL_FEN);
   if (!parsed.ok) throw new Error(`the initial position does not parse: ${parsed.error}`);
-  return { start: parsed.position, played: [], side, level, resigned: null, viewing: null };
+  return {
+    start: parsed.position,
+    played: [],
+    undone: [],
+    side,
+    level,
+    resigned: null,
+    viewing: null,
+  };
 }
 
 /** A game from a FEN, or the reason it is not one. */
 export function gameFromFen(fen: string, side: Color, level: LevelId): Game | string {
   const parsed = parseFen(fen);
   if (!parsed.ok) return parsed.error;
-  return { start: parsed.position, played: [], side, level, resigned: null, viewing: null };
+  return {
+    start: parsed.position,
+    played: [],
+    undone: [],
+    side,
+    level,
+    resigned: null,
+    viewing: null,
+  };
+}
+
+/** The same game again: same starting position, same side, same level. */
+export function restart(game: Game): Game {
+  return { ...game, played: [], undone: [], resigned: null, viewing: null };
 }
 
 /** The position as it stands now, whatever the person happens to be looking at. */
@@ -80,8 +107,16 @@ export function canMove(game: Game): boolean {
   return current(game).turn === game.side;
 }
 
-/** True when it is the engine's move and there is a game left to play. */
+/**
+ * True when it is the engine's move and there is a game left to play.
+ *
+ * A move waiting to be replayed holds the engine back: without that, undoing
+ * one ply would hand the position straight back to the engine, which would
+ * play again and leave Undo looking broken. The next move by either person or
+ * Redo clears the stack and the engine carries on.
+ */
 export function engineToMove(game: Game): boolean {
+  if (game.undone.length > 0) return false;
   return !isOver(status(game)) && current(game).turn === opposite(game.side);
 }
 
@@ -101,6 +136,36 @@ export function play(game: Game, move: Move): Game {
   return {
     ...game,
     played: [...game.played, { move: legal, san, position: next, key: positionKey(next) }],
+    undone: [],
+    viewing: null,
+  };
+}
+
+/**
+ * Undo one ply, whoever played it. The move is kept so Redo can put it back:
+ * the position after it is already stored and the moves before it have not
+ * changed, so replaying is appending, not re-deriving.
+ */
+export function undo(game: Game): Game {
+  const last = game.played[game.played.length - 1];
+  if (!last) return game;
+  return {
+    ...game,
+    played: game.played.slice(0, -1),
+    undone: [last, ...game.undone],
+    resigned: null,
+    viewing: null,
+  };
+}
+
+/** Put back the move undone most recently. */
+export function redo(game: Game): Game {
+  const next = game.undone[0];
+  if (!next) return game;
+  return {
+    ...game,
+    played: [...game.played, next],
+    undone: game.undone.slice(1),
     viewing: null,
   };
 }
@@ -113,8 +178,14 @@ export function play(game: Game, move: Move): Game {
 export function takeBack(game: Game): Game {
   if (game.played.length === 0) return game;
   const drop = current(game).turn === game.side ? 2 : 1;
-  const played = game.played.slice(0, Math.max(0, game.played.length - drop));
-  return { ...game, played, resigned: null, viewing: null };
+  const keep = Math.max(0, game.played.length - drop);
+  return {
+    ...game,
+    played: game.played.slice(0, keep),
+    undone: [...game.played.slice(keep), ...game.undone],
+    resigned: null,
+    viewing: null,
+  };
 }
 
 export function resign(game: Game): Game {

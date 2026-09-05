@@ -7,6 +7,10 @@
  * middlegame is comfortably long enough to notice. Each slice is scheduled on
  * a timeout, and an abort flag makes a search that is no longer wanted (a new
  * game, a take back) drop its result instead of playing it.
+ *
+ * The person may play either colour. Choosing Black flips the board and leaves
+ * White to the engine, which then has the first move — the same effect that
+ * plays every other engine move, with nothing special about the opening.
  */
 
 import { useClipboardStore } from '@lumen/kernel';
@@ -23,8 +27,16 @@ import {
 import { join } from '@lumen/vfs';
 import { RotateCcw, Undo2 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { type AppProps, useAppMenus, useJsonFile, useTitle, useWindowControls } from '../_sdk';
-import { type Color, kingSquare, type PromotionPiece } from './board';
+import {
+  type AppProps,
+  useAppMenus,
+  useJsonFile,
+  useShortcutLabel,
+  useTitle,
+  useWindowControls,
+} from '../_sdk';
+import { type Color, kingSquare, opposite, type PromotionPiece } from './board';
+import { CapturedPieces } from './CapturedPieces';
 import { Chessboard } from './Chessboard';
 import { chooseMove, deepen, type LevelId, levelById, type RootMove } from './engine';
 import { INITIAL_FEN, toFen } from './fen';
@@ -38,25 +50,34 @@ import {
   newGame,
   play,
   keys as positionKeys,
+  redo,
   resign,
+  restart,
   shown,
   status,
   stepView,
   takeBack,
   toPgn,
+  undo,
   view,
 } from './game';
 import { MoveList } from './MoveList';
+import { material } from './material';
 import { buildChessMenus } from './menus';
 import { type Move, movesFrom } from './moves';
-import { inCheck } from './rules';
+import { inCheck, type Outcome, resultToken } from './rules';
+import { colorName, SIDE_CHOICES, sideChoiceLabel, sideFromAnswer } from './side';
 
 interface Prefs {
   side: Color;
   level: LevelId;
   flipped: boolean;
   coordinates: boolean;
+  /** Dots on the squares the selected piece may go to. */
   targets: boolean;
+  lastMove: boolean;
+  captured: boolean;
+  moveList: boolean;
 }
 
 const DEFAULT_PREFS: Prefs = {
@@ -65,6 +86,9 @@ const DEFAULT_PREFS: Prefs = {
   flipped: false,
   coordinates: true,
   targets: true,
+  lastMove: true,
+  captured: true,
+  moveList: true,
 };
 
 function normalize(value: Prefs): Prefs {
@@ -72,22 +96,34 @@ function normalize(value: Prefs): Prefs {
   return {
     side,
     level: levelById(String(value?.level ?? '')).id,
-    flipped: Boolean(value?.flipped),
+    flipped: value?.flipped === undefined ? side === 'b' : Boolean(value.flipped),
     coordinates: value?.coordinates !== false,
     targets: value?.targets !== false,
+    lastMove: value?.lastMove !== false,
+    captured: value?.captured !== false,
+    moveList: value?.moveList !== false,
   };
 }
 
 /** Below this the move list sits under the board instead of beside it. */
 const SIDE_BY_SIDE = 720;
 
+const HOW_TO_PLAY: ReadonlyArray<readonly [string, string]> = [
+  ['Click or drag', 'Move a piece. The legal squares are marked as you pick it up.'],
+  ['Arrow keys', 'Walk the board. Enter picks a piece up and puts it down.'],
+  ['Mod+Backspace', 'Take back your last move and the reply to it.'],
+  ['Mod+Left / Mod+Right', 'Step through the game. Any move in the list can be clicked.'],
+  ['Mod+F', 'Turn the board round.'],
+];
+
 export default function Chess(_props: AppProps) {
   const kernel = useKernel();
   const dialogs = useDialogs();
   const { close } = useWindowControls();
+  const shortcutLabel = useShortcutLabel();
   const [frameRef, { width }] = useElementSize<HTMLDivElement>();
 
-  const [stored, setStored] = useJsonFile(
+  const [stored, setStored, file] = useJsonFile(
     join(kernel.home, '.config', 'chess.json'),
     DEFAULT_PREFS,
   );
@@ -98,6 +134,7 @@ export default function Chess(_props: AppProps) {
   const [thinking, setThinking] = useState(false);
   /** Bumped whenever a search must be abandoned. */
   const generation = useRef(0);
+  const adopted = useRef(false);
 
   const position = shown(game);
   const live = current(game);
@@ -105,6 +142,7 @@ export default function Chess(_props: AppProps) {
   const over = result.kind !== 'playing';
   const lastMove = game.played[game.played.length - 1]?.move ?? null;
   const viewingPly = game.viewing ?? game.played.length;
+  const balance = useMemo(() => material(game.start, position), [game.start, position]);
 
   const targets = useMemo(
     () => (selected === null || !canMove(game) ? [] : movesFrom(live, selected)),
@@ -128,6 +166,22 @@ export default function Chess(_props: AppProps) {
     },
     [setPrefs],
   );
+
+  /**
+   * The settings file arrives a tick after the window does, so the first game
+   * is dealt on the defaults. Once the file has been read, a game nobody has
+   * moved in is dealt again on the side it remembers — which is how a person
+   * who plays Black gets Black back when they reopen the window.
+   */
+  useEffect(() => {
+    if (adopted.current || !file.loaded) return;
+    adopted.current = true;
+    setGame((g) =>
+      g.played.length === 0 && (g.side !== prefs.side || g.level !== prefs.level)
+        ? newGame(prefs.side, prefs.level)
+        : g,
+    );
+  }, [file.loaded, prefs.side, prefs.level]);
 
   // ── the engine ─────────────────────────────────────────────────────────
 
@@ -197,16 +251,53 @@ export default function Chess(_props: AppProps) {
     [dialogs, live],
   );
 
+  /** Abandon whatever the engine is doing and put the board back in hand. */
+  const interrupt = useCallback(() => {
+    generation.current += 1;
+    setThinking(false);
+    setSelected(null);
+  }, []);
+
   const latest = useLatest({
-    newGame: () => start(prefs.side, prefs.level),
-    newGameAs: (white: boolean) => start(white ? 'w' : 'b', prefs.level),
+    newGame: async () => {
+      // The buttons run backwards so that White, the usual answer, is the
+      // last one: a dialog's default sits at the right and takes the Return.
+      const answer = await dialogs.choose({
+        title: 'New game',
+        message: 'Which side do you play? The engine takes the other.',
+        buttons: [...SIDE_CHOICES]
+          .reverse()
+          .map((choice) => ({ id: choice, label: sideChoiceLabel(choice) })),
+      });
+      const side = sideFromAnswer(answer);
+      if (side) start(side, prefs.level);
+    },
+    newGameAs: (side: Color) => start(side, prefs.level),
+    restart: () => {
+      interrupt();
+      setGame(restart);
+    },
+    undo: () => {
+      interrupt();
+      setGame(undo);
+    },
+    redo: () => {
+      interrupt();
+      setGame(redo);
+    },
     takeBack: () => {
-      generation.current += 1;
-      setThinking(false);
-      setSelected(null);
+      interrupt();
       setGame(takeBack);
     },
-    resign: () => setGame(resign),
+    resign: async () => {
+      const sure = await dialogs.confirm({
+        title: 'Resign this game?',
+        message: `The game goes to ${colorName(opposite(game.side))}. The moves stay on the list.`,
+        confirmLabel: 'Resign',
+        danger: true,
+      });
+      if (sure) setGame(resign);
+    },
     flip: () => setPrefs({ flipped: !prefs.flipped }),
     close,
     copyFen: () => useClipboardStore.getState().copyText(toFen(position)),
@@ -224,9 +315,7 @@ export default function Chess(_props: AppProps) {
         await dialogs.alert({ title: 'That is not a position', message: made });
         return;
       }
-      generation.current += 1;
-      setThinking(false);
-      setSelected(null);
+      interrupt();
       setGame(made);
     },
     setLevel: (level: LevelId) => {
@@ -235,40 +324,79 @@ export default function Chess(_props: AppProps) {
     },
     toggleCoordinates: () => setPrefs({ coordinates: !prefs.coordinates }),
     toggleTargets: () => setPrefs({ targets: !prefs.targets }),
+    toggleLastMove: () => setPrefs({ lastMove: !prefs.lastMove }),
+    toggleCaptured: () => setPrefs({ captured: !prefs.captured }),
+    toggleMoveList: () => setPrefs({ moveList: !prefs.moveList }),
     first: () => setGame((g) => view(g, 0)),
     previous: () => setGame((g) => stepView(g, -1)),
     next: () => setGame((g) => stepView(g, 1)),
     last: () => setGame((g) => view(g, null)),
+    howToPlay: () =>
+      void dialogs.alert({
+        title: 'How to play',
+        message: (
+          <dl className="grid grid-cols-[auto_1fr] gap-x-5 gap-y-1 text-base">
+            {HOW_TO_PLAY.map(([keys, what]) => (
+              <div key={keys} className="contents">
+                <dt className="mono text-sm text-ink-2">
+                  {keys.includes('Mod') ? shortcutLabel(keys) : keys}
+                </dt>
+                <dd className="text-ink">{what}</dd>
+              </div>
+            ))}
+          </dl>
+        ),
+      }),
+    about: () =>
+      void dialogs.alert({
+        title: 'Chess',
+        message:
+          'The complete rules — castling, en passant, promotion, the three draws — checked against the published perft counts. The opponent searches with alpha-beta over a material and piece-square evaluation, at four strengths.',
+      }),
   });
 
   useAppMenus(
     buildChessMenus(
       {
         canTakeBack: game.played.length > 0,
+        canUndo: game.played.length > 0,
+        canRedo: game.undone.length > 0,
+        canRestart: game.played.length > 0 || game.undone.length > 0,
         canResign: !over,
         flipped: prefs.flipped,
         coordinates: prefs.coordinates,
-        targets: prefs.targets,
+        lastMove: prefs.lastMove,
+        hints: prefs.targets,
+        captured: prefs.captured,
+        moveList: prefs.moveList,
         level: prefs.level,
-        asWhite: game.side === 'w',
+        side: game.side,
       },
       {
-        newGame: () => latest.current.newGame(),
-        newGameAs: (white) => latest.current.newGameAs(white),
+        newGame: () => void latest.current.newGame(),
+        newGameAs: (side) => latest.current.newGameAs(side),
+        restart: () => latest.current.restart(),
+        undo: () => latest.current.undo(),
+        redo: () => latest.current.redo(),
         takeBack: () => latest.current.takeBack(),
-        resign: () => latest.current.resign(),
-        flip: () => latest.current.flip(),
+        resign: () => void latest.current.resign(),
         close: () => latest.current.close(),
         copyFen: () => latest.current.copyFen(),
         copyPgn: () => latest.current.copyPgn(),
         pasteFen: () => void latest.current.pasteFen(),
-        setLevel: (level) => latest.current.setLevel(level),
+        flip: () => latest.current.flip(),
         toggleCoordinates: () => latest.current.toggleCoordinates(),
-        toggleTargets: () => latest.current.toggleTargets(),
+        toggleLastMove: () => latest.current.toggleLastMove(),
+        toggleHints: () => latest.current.toggleTargets(),
+        toggleCaptured: () => latest.current.toggleCaptured(),
+        toggleMoveList: () => latest.current.toggleMoveList(),
         first: () => latest.current.first(),
         previous: () => latest.current.previous(),
         next: () => latest.current.next(),
         last: () => latest.current.last(),
+        setLevel: (level) => latest.current.setLevel(level),
+        howToPlay: () => latest.current.howToPlay(),
+        about: () => latest.current.about(),
       },
     ),
     [game, prefs, over, close],
@@ -276,13 +404,17 @@ export default function Chess(_props: AppProps) {
 
   const beside = width === 0 || width >= SIDE_BY_SIDE;
   const checked = inCheck(position) ? kingSquare(position.board, position.turn) : null;
+  const panel = prefs.captured || prefs.moveList;
+  // The side at the top of the board owns the top row of captures, so the
+  // pieces sit on the side of the panel the player they belong to is on.
+  const above = prefs.flipped ? 'w' : 'b';
 
   return (
     <div ref={frameRef} className="flex h-full min-h-0 w-full">
       <AppFrame
         toolbar={
           <Toolbar dense>
-            <Button size="sm" variant="secondary" onClick={() => latest.current.newGame()}>
+            <Button size="sm" variant="secondary" onClick={() => void latest.current.newGame()}>
               New game
             </Button>
             <Button
@@ -303,13 +435,22 @@ export default function Chess(_props: AppProps) {
               Flip
             </Button>
             <ToolbarSpacer />
-            <span className="mono text-xs text-ink-2">{levelById(prefs.level).label}</span>
+            <span className="mono text-xs text-ink-2">
+              {colorName(game.side)} · {levelById(prefs.level).label}
+            </span>
           </Toolbar>
         }
         statusBar={
           <>
             <span>{describe(result, game.side)}</span>
             {thinking && <span className="text-ink-3">Thinking…</span>}
+            {game.undone.length > 0 && (
+              <span className="text-ink-3">
+                {game.undone.length === 1
+                  ? '1 move taken back'
+                  : `${game.undone.length} moves taken back`}
+              </span>
+            )}
             {game.viewing !== null && (
               <button
                 type="button"
@@ -338,23 +479,50 @@ export default function Chess(_props: AppProps) {
               interactive={canMove(game) && !thinking}
               showCoordinates={prefs.coordinates}
               showTargets={prefs.targets}
+              showLastMove={prefs.lastMove}
               onSelect={setSelected}
               onMove={(from, to) => void onMove(from, to)}
             />
           </div>
-          <div
-            className={
-              beside
-                ? 'flex w-52 shrink-0 flex-col rounded-sm border border-rule bg-canvas'
-                : 'flex h-32 shrink-0 flex-col rounded-sm border border-rule bg-canvas'
-            }
-          >
-            <MoveList
-              rows={moveRows(game)}
-              at={viewingPly}
-              onSelect={(ply) => setGame((g) => view(g, ply))}
-            />
-          </div>
+          {panel && (
+            <aside
+              aria-label="Score sheet"
+              className={
+                beside
+                  ? 'flex w-56 shrink-0 flex-col rounded-sm border border-rule bg-canvas'
+                  : 'flex h-36 shrink-0 flex-col rounded-sm border border-rule bg-canvas'
+              }
+            >
+              {prefs.captured && (
+                <div className="shrink-0 border-b border-rule">
+                  <CapturedPieces
+                    color={above}
+                    taken={balance.lost[opposite(above)]}
+                    balance={balance.balance}
+                  />
+                </div>
+              )}
+              <div className="flex min-h-0 flex-1 flex-col">
+                {prefs.moveList && (
+                  <MoveList
+                    rows={moveRows(game)}
+                    at={viewingPly}
+                    result={over ? resultToken(result) : undefined}
+                    onSelect={(ply) => setGame((g) => view(g, ply))}
+                  />
+                )}
+              </div>
+              {prefs.captured && (
+                <div className="shrink-0 border-t border-rule">
+                  <CapturedPieces
+                    color={opposite(above)}
+                    taken={balance.lost[above]}
+                    balance={balance.balance}
+                  />
+                </div>
+              )}
+            </aside>
+          )}
         </div>
       </AppFrame>
     </div>
@@ -362,7 +530,7 @@ export default function Chess(_props: AppProps) {
 }
 
 /** What has happened, in a line the status bar can show. */
-function describe(result: ReturnType<typeof status>, side: Color): string {
+function describe(result: Outcome, side: Color): string {
   switch (result.kind) {
     case 'checkmate':
       return `Checkmate — ${result.winner === side ? 'you win' : 'Lumen wins'}`;

@@ -9,12 +9,15 @@ import {
   moveRows,
   newGame,
   play,
+  redo,
   resign,
+  restart,
   shown,
   status,
   stepView,
   takeBack,
   toPgn,
+  undo,
   view,
 } from './game';
 import { movesFrom } from './moves';
@@ -99,6 +102,79 @@ describe('taking back', () => {
   it('does nothing on a game with no moves', () => {
     const game = newGame();
     expect(takeBack(game).played).toHaveLength(0);
+  });
+});
+
+describe('undo and redo', () => {
+  it('takes back one ply at a time and puts it back in the order it was played', () => {
+    const game = move(move(newGame('w'), E2, E4), E7, E5);
+    const once = undo(game);
+    expect(once.played.map((p) => p.san)).toEqual(['e4']);
+    expect(once.undone.map((p) => p.san)).toEqual(['e5']);
+
+    const twice = undo(once);
+    expect(twice.played).toHaveLength(0);
+    expect(twice.undone.map((p) => p.san)).toEqual(['e4', 'e5']);
+
+    expect(redo(twice).played.map((p) => p.san)).toEqual(['e4']);
+    expect(redo(redo(twice)).played.map((p) => p.san)).toEqual(['e4', 'e5']);
+    expect(current(redo(redo(twice)))).toEqual(current(game));
+  });
+
+  it('holds the engine back while a move is waiting to be replayed', () => {
+    // The person plays White. After 1. e4 e5 it is White to move; undoing the
+    // reply makes it Black's — the engine's — turn, and if the engine moved on
+    // that the undone move could never be redone.
+    const game = move(move(newGame('w'), E2, E4), E7, E5);
+    const back = undo(game);
+    expect(current(back).turn).toBe('b');
+    expect(engineToMove(back)).toBe(false);
+    expect(engineToMove(redo(back))).toBe(false);
+    expect(engineToMove(undo(redo(back)))).toBe(false);
+  });
+
+  it('lets the engine play again once the person has moved', () => {
+    const game = move(move(newGame('w'), E2, E4), E7, E5);
+    const replayed = move(undo(undo(game)), E2, E4);
+    expect(replayed.undone).toHaveLength(0);
+    expect(engineToMove(replayed)).toBe(true);
+  });
+
+  it('does nothing at either end of the game', () => {
+    const game = newGame();
+    expect(undo(game)).toBe(game);
+    expect(redo(game)).toBe(game);
+    const played = move(game, E2, E4);
+    expect(redo(played)).toBe(played);
+  });
+
+  it('keeps the moves a take back dropped, so Redo can restore them', () => {
+    const game = move(move(newGame('w'), E2, E4), E7, E5);
+    const back = takeBack(game);
+    expect(back.played).toHaveLength(0);
+    expect(back.undone.map((p) => p.san)).toEqual(['e4', 'e5']);
+    expect(redo(redo(back)).played.map((p) => p.san)).toEqual(['e4', 'e5']);
+  });
+
+  it('un-resigns a game that is taken back into', () => {
+    const game = resign(move(newGame('w'), E2, E4));
+    expect(status(game).kind).toBe('resignation');
+    expect(status(undo(game)).kind).toBe('playing');
+  });
+});
+
+describe('restarting', () => {
+  it('plays the same game again from its own starting position', () => {
+    const setup = gameFromFen('4k3/8/8/8/8/8/8/4K2R w K - 0 1', 'b', 'club');
+    if (typeof setup === 'string') throw new Error(setup);
+    const played = undo(move(setup, 60, 61));
+    const again = restart(played);
+    expect(again.played).toHaveLength(0);
+    expect(again.undone).toHaveLength(0);
+    expect(again.start).toBe(setup.start);
+    expect(again.side).toBe('b');
+    expect(again.level).toBe('club');
+    expect(status(again).kind).toBe('playing');
   });
 });
 

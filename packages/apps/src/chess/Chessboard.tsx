@@ -6,12 +6,17 @@
  * Dragging is a convenience on top of that. It writes the dragged piece's
  * transform straight to the DOM inside requestAnimationFrame and tells React
  * once, when the pointer lifts.
+ *
+ * Where a square is drawn — and which square a drop landed on — comes from
+ * layout.ts, so the grid, the arrow keys and the pointer cannot disagree.
  */
 
 import { cx } from '@lumen/ui';
 import {
+  type CSSProperties,
   type KeyboardEvent,
   type PointerEvent as ReactPointerEvent,
+  useEffect,
   useRef,
   useState,
 } from 'react';
@@ -25,11 +30,49 @@ import {
   type Position,
   pieceAt,
   rankOf,
-  squareAt,
   squareName,
 } from './board';
+import {
+  boardOrder,
+  cellCentre,
+  homeSquare,
+  showsFile,
+  showsRank,
+  squareFromPoint,
+  stepSquare,
+} from './layout';
 import type { Move } from './moves';
 import { PieceGlyph, pieceName } from './PieceGlyph';
+
+/**
+ * The two squares, written per colour scheme.
+ *
+ * Both are steps of the neutral ramp — so much ink over the surface — but the
+ * ramp's own steps run the other way in the dark theme, where more ink means a
+ * lighter square. Naming the pair per scheme keeps the light squares light on a
+ * board that is otherwise the same object in both. The Tailwind class on each
+ * square is the fallback: a browser that cannot read `light-dark` drops the
+ * declaration and gets a flatter board rather than no board at all.
+ */
+const ink = (light: number, dark: number): string =>
+  `light-dark(color-mix(in oklab, var(--color-ink) ${light}%, var(--color-surface)),` +
+  ` color-mix(in oklab, var(--color-ink) ${dark}%, var(--color-surface)))`;
+
+const LIGHT_SQUARE: CSSProperties = { backgroundColor: ink(8, 34) };
+const DARK_SQUARE: CSSProperties = { backgroundColor: ink(32, 15) };
+
+/**
+ * One wash over a square, never two. A square can be the last move and the
+ * selected one and the one the king is checked on at once; stacking three
+ * translucent layers would make a fourth colour nobody chose, so the strongest
+ * thing true of the square is the one that shows.
+ */
+function wash(checked: boolean, selected: boolean, recent: boolean): string | false {
+  if (checked) return 'after:absolute after:inset-0 after:bg-danger/30';
+  if (selected) return 'after:absolute after:inset-0 after:bg-accent/35';
+  if (recent) return 'after:absolute after:inset-0 after:bg-accent/20';
+  return false;
+}
 
 export interface ChessboardProps {
   position: Position;
@@ -39,7 +82,7 @@ export interface ChessboardProps {
   selected: number | null;
   /** Legal destinations from the selected square. */
   targets: readonly Move[];
-  /** The move just played, highlighted so it is easy to see what changed. */
+  /** The move just played, marked so it is easy to see what changed. */
   lastMove: Move | null;
   /** The king in check, drawn as such. */
   checkedKing: number | null;
@@ -47,6 +90,7 @@ export interface ChessboardProps {
   interactive: boolean;
   showCoordinates: boolean;
   showTargets: boolean;
+  showLastMove: boolean;
   onSelect: (square: number | null) => void;
   onMove: (from: number, to: number) => void;
 }
@@ -61,20 +105,20 @@ export function Chessboard({
   interactive,
   showCoordinates,
   showTargets,
+  showLastMove,
   onSelect,
   onMove,
 }: ChessboardProps) {
   const host = useRef<HTMLDivElement>(null);
   const dragged = useRef<HTMLDivElement | null>(null);
-  const [cursor, setCursor] = useState(() => (flipped ? 8 : 48));
+  const [cursor, setCursor] = useState(() => homeSquare(flipped));
   const [dragging, setDragging] = useState<number | null>(null);
 
-  /** Squares in the order they are drawn, which the flip reverses. */
-  const order: number[] = [];
-  for (let rank = BOARD_SIZE - 1; rank >= 0; rank -= 1) {
-    for (let file = 0; file < BOARD_SIZE; file += 1) order.push(squareAt(file, rank));
-  }
-  const squares = flipped ? [...order].reverse() : order;
+  // Turning the board round moves the cursor with it, so Tab lands near the
+  // pieces the person is playing rather than behind the opponent's.
+  useEffect(() => setCursor(homeSquare(flipped)), [flipped]);
+
+  const squares = boardOrder(flipped);
 
   const targetOf = (square: number) => targets.find((m) => m.to === square) ?? null;
 
@@ -96,19 +140,9 @@ export function Chessboard({
   };
 
   const onKeyDown = (event: KeyboardEvent<HTMLButtonElement>, square: number) => {
-    const step = flipped ? -1 : 1;
-    const moves: Record<string, [number, number]> = {
-      ArrowLeft: [-step, 0],
-      ArrowRight: [step, 0],
-      ArrowUp: [0, step],
-      ArrowDown: [0, -step],
-    };
-    const delta = moves[event.key];
-    if (delta) {
+    const next = stepSquare(square, event.key, flipped);
+    if (next !== square) {
       event.preventDefault();
-      const file = Math.min(BOARD_SIZE - 1, Math.max(0, fileOf(square) + delta[0]));
-      const rank = Math.min(BOARD_SIZE - 1, Math.max(0, rankOf(square) + delta[1]));
-      const next = squareAt(file, rank);
       setCursor(next);
       host.current?.querySelector<HTMLElement>(`[data-square="${next}"]`)?.focus();
       return;
@@ -134,6 +168,8 @@ export function Chessboard({
     setDragging(square);
     const rect = board.getBoundingClientRect();
     const size = rect.width / BOARD_SIZE;
+    const centre = cellCentre(square, flipped, size);
+    const home = { x: rect.left + centre.x, y: rect.top + centre.y };
     let frame = 0;
     let latest = { x: 0, y: 0 };
 
@@ -143,11 +179,6 @@ export function Chessboard({
       if (node) node.style.transform = `translate3d(${latest.x}px, ${latest.y}px, 0)`;
     };
     const move = (e: PointerEvent) => {
-      const index = squares.indexOf(square);
-      const home = {
-        x: rect.left + (index % BOARD_SIZE) * size + size / 2,
-        y: rect.top + Math.floor(index / BOARD_SIZE) * size + size / 2,
-      };
       latest = { x: e.clientX - home.x, y: e.clientY - home.y };
       if (!frame) frame = requestAnimationFrame(paint);
     };
@@ -157,13 +188,8 @@ export function Chessboard({
       window.removeEventListener('pointercancel', up);
       if (frame) cancelAnimationFrame(frame);
       setDragging(null);
-      const file = Math.floor((e.clientX - rect.left) / size);
-      const row = Math.floor((e.clientY - rect.top) / size);
-      if (file < 0 || file > 7 || row < 0 || row > 7) return;
-      const dropped = squares[row * BOARD_SIZE + file];
-      if (dropped !== undefined && dropped !== square && targetOf(dropped)) {
-        onMove(square, dropped);
-      }
+      const dropped = squareFromPoint(e.clientX - rect.left, e.clientY - rect.top, size, flipped);
+      if (dropped >= 0 && dropped !== square && targetOf(dropped)) onMove(square, dropped);
     };
     window.addEventListener('pointermove', move);
     window.addEventListener('pointerup', up);
@@ -179,9 +205,7 @@ export function Chessboard({
     >
       {squares.map((square) => {
         const occupant: Piece | null = pieceAt(position, square);
-        const target = targetOf(square);
-        const isFrom = lastMove?.from === square;
-        const isTo = lastMove?.to === square;
+        const recent = showLastMove && (lastMove?.from === square || lastMove?.to === square);
         return (
           <Square
             key={square}
@@ -189,13 +213,13 @@ export function Chessboard({
             piece={occupant}
             light={isLightSquare(square)}
             selected={selected === square}
-            target={showTargets ? target : null}
-            recent={isFrom || isTo}
+            target={showTargets ? targetOf(square) : null}
+            recent={recent}
             checked={checkedKing === square}
             dragging={dragging === square}
             cursor={cursor === square}
-            coordinates={showCoordinates}
-            flipped={flipped}
+            file={showCoordinates && showsFile(square, flipped)}
+            rank={showCoordinates && showsRank(square, flipped)}
             turn={position.turn}
             interactive={interactive}
             dragRef={dragging === square ? dragged : null}
@@ -220,8 +244,10 @@ interface SquareProps {
   checked: boolean;
   dragging: boolean;
   cursor: boolean;
-  coordinates: boolean;
-  flipped: boolean;
+  /** Carries the file letter along the bottom edge. */
+  file: boolean;
+  /** Carries the rank number up the left edge. */
+  rank: boolean;
   turn: Color;
   interactive: boolean;
   dragRef: React.RefObject<HTMLDivElement | null> | null;
@@ -241,8 +267,8 @@ function Square({
   checked,
   dragging,
   cursor,
-  coordinates,
-  flipped,
+  file,
+  rank,
   turn,
   interactive,
   dragRef,
@@ -251,10 +277,6 @@ function Square({
   onClick,
   onFocus,
 }: SquareProps) {
-  const file = fileOf(square);
-  const rank = rankOf(square);
-  const showFile = coordinates && (flipped ? rank === 7 : rank === 0);
-  const showRank = coordinates && (flipped ? file === 7 : file === 0);
   const name = squareName(square);
   const label = piece
     ? `${name}, ${pieceName(piece.color, piece.type)}${target ? ', can be taken' : ''}`
@@ -273,22 +295,21 @@ function Square({
       onPointerDown={onPointerDown}
       onClick={onClick}
       onFocus={onFocus}
+      style={light ? LIGHT_SQUARE : DARK_SQUARE}
       className={cx(
         'relative flex items-center justify-center lumen-focus',
         light ? 'bg-surface-2' : 'bg-surface-3',
-        recent && 'after:absolute after:inset-0 after:bg-accent/15',
-        selected && 'after:absolute after:inset-0 after:bg-accent/25',
-        checked && 'after:absolute after:inset-0 after:bg-danger/30',
+        wash(checked, selected, recent),
       )}
     >
-      {showFile && (
-        <span className="mono absolute bottom-0.5 right-1 text-2xs text-ink-3">
-          {FILE_NAMES[file]}
+      {file && (
+        <span className="mono absolute bottom-0.5 right-1 text-2xs text-ink-2">
+          {FILE_NAMES[fileOf(square)]}
         </span>
       )}
-      {showRank && (
-        <span className="mono absolute left-1 top-0.5 text-2xs tabular-nums text-ink-3">
-          {rank + 1}
+      {rank && (
+        <span className="mono absolute left-1 top-0.5 text-2xs tabular-nums text-ink-2">
+          {rankOf(square) + 1}
         </span>
       )}
       {piece && (

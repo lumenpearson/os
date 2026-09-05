@@ -6,6 +6,12 @@
  * on a chessboard is not a cosmetic problem — it is a piece you cannot
  * identify. These are silhouettes, so a white piece is the same shape as a
  * black one with a different fill and the outline carries the contrast.
+ *
+ * The two fills are named per colour scheme rather than taken straight from
+ * the ramp: `--color-ink` is near-black in the light theme and near-white in
+ * the dark one, so using it for the black pieces would turn both sides white
+ * as soon as the lights went out. `light-dark` pins each piece to the end of
+ * the ramp it belongs to, in both themes.
  */
 
 import { cx } from '@lumen/ui';
@@ -26,6 +32,15 @@ const PATHS: Record<PieceType, string> = {
   k: 'M46 14h8v8h8v8h-8v8h-8v-8h-8v-8h8v-8Zm4 26c11 0 20 8 20 18 0 6-3 11-8 15l4 6H34l4-6c-5-4-8-9-8-15 0-10 9-18 20-18Zm-20 50h40l6 12H24l6-12Z',
 };
 
+const PIECE_LIGHT = 'light-dark(var(--color-ink-inverse), var(--color-ink))';
+const PIECE_DARK = 'light-dark(var(--color-ink), var(--color-ink-inverse))';
+
+/** What the pieces fall back to where `light-dark` is not read: the ramp itself. */
+const FALLBACK: Record<Color, string> = {
+  w: 'fill-white stroke-ink',
+  b: 'fill-ink stroke-white/70',
+};
+
 export interface PieceGlyphProps {
   color: Color;
   type: PieceType;
@@ -33,6 +48,7 @@ export interface PieceGlyphProps {
 }
 
 export function PieceGlyph({ color, type, className }: PieceGlyphProps) {
+  const white = color === 'w';
   return (
     <svg
       viewBox="0 0 100 100"
@@ -40,10 +56,14 @@ export function PieceGlyph({ color, type, className }: PieceGlyphProps) {
       focusable="false"
       className={cx('pointer-events-none size-full', className)}
     >
-      <title>{`${color === 'w' ? 'White' : 'Black'} ${type}`}</title>
+      <title>{pieceName(color, type)}</title>
       <path
         d={PATHS[type]}
-        className={color === 'w' ? 'fill-white stroke-ink' : 'fill-ink stroke-white/70'}
+        className={FALLBACK[color]}
+        style={{
+          fill: white ? PIECE_LIGHT : PIECE_DARK,
+          stroke: white ? PIECE_DARK : PIECE_LIGHT,
+        }}
         strokeWidth={3}
         strokeLinejoin="round"
       />
