@@ -21,6 +21,17 @@ import definition from './index';
 
 const Dummy = () => null;
 
+/**
+ * Match an accessible name that contains this text.
+ *
+ * Written as a predicate rather than as a bare regular expression on purpose.
+ * `/example\.com/` is indistinguishable, to a reader and to a static analyser
+ * alike, from a hostname check that forgot its anchors and would therefore
+ * accept `evil-example.com`. Nothing here checks a host — these assert what a
+ * tab or a row is called — and saying so plainly costs one function.
+ */
+const named = (text: string) => (name: string) => name.includes(text);
+
 let kernel: Kernel;
 let home: string;
 
@@ -96,7 +107,7 @@ describe('the window', () => {
 
   it('opens the address it was launched with', async () => {
     mount({ url: 'https://example.com/docs' });
-    expect(screen.getByRole('tab', { name: /example\.com/ })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: named('example.com') })).toBeInTheDocument();
   });
 });
 
@@ -123,7 +134,7 @@ describe('the address bar', () => {
     const { windowId } = mount();
     await goTo(user, 'example.com/docs');
 
-    expect(screen.getByRole('tab', { name: /example\.com/ })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: named('example.com') })).toBeInTheDocument();
     await waitFor(() =>
       expect(useWindowStore.getState().windows[windowId]?.title).toBe('example.com'),
     );
@@ -133,7 +144,7 @@ describe('the address bar', () => {
     const user = userEvent.setup();
     mount();
     await goTo(user, 'red pandas');
-    expect(screen.getByRole('tab', { name: /duckduckgo\.com/ })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: named('duckduckgo.com') })).toBeInTheDocument();
   });
 });
 
@@ -198,7 +209,7 @@ describe('internal pages', () => {
     await waitFor(() =>
       expect(screen.getByRole('heading', { name: 'History', level: 1 })).toBeInTheDocument(),
     );
-    expect(screen.getByRole('button', { name: /example\.com\/docs/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: named('example.com/docs') })).toBeInTheDocument();
   });
 
   it('says so when there is no page at a lumen:// address', async () => {

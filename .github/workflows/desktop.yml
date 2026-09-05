@@ -81,11 +81,13 @@ jobs:
         with:
           install: 'false'
 
-      - uses: dtolnay/rust-toolchain@stable
+      # See ci.yml: pinning loses @stable's default, so it is named here.
+      - uses: dtolnay/rust-toolchain@6c977a6ca4077a0ceb28ffbe03f59d46e9ac8772 # v1
         with:
+          toolchain: stable
           targets: ${{ matrix.target }}
 
-      - uses: Swatinem/rust-cache@v2
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
           workspaces: ". -> target"
           # Without this the three platforms share one key and evict each
@@ -115,7 +117,7 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           path: dist
-      - uses: softprops/action-gh-release@v2
+      - uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2.6.2
         with:
           files: |
             dist/**/*.exe

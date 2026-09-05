@@ -15,7 +15,11 @@ inputs:
 runs:
   using: composite
   steps:
-    - uses: pnpm/action-setup@v4
+    # Third-party actions are pinned to a commit, not a tag: a tag can be
+    # moved to point at different code, and a workflow with write access
+    # would run it without anything changing here. Dependabot updates these
+    # monthly and keeps the version comment beside them current.
+    - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
     - uses: actions/setup-node@v4
       with:
         node-version-file: .nvmrc
