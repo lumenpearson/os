@@ -172,6 +172,7 @@ export class Kernel {
     useUsersStore.getState().upsert({ ...user, lastLoginAt: Date.now() });
     void this.saveUsers();
     session.transition('desktop');
+    this.ensureFileManager();
     log.info('session', 'unlocked');
     return { ok: true };
   }
@@ -266,7 +267,13 @@ export class Kernel {
 
   // ── processes & windows ────────────────────────────────────────────────
 
-  launch(appId: AppId, args: LaunchArgs = {}): Process | null {
+  /**
+   * The file manager. It owns the desktop, so it runs for the whole session
+   * whether or not it has a window, and ending it restarts it.
+   */
+  static readonly FILE_MANAGER: AppId = 'lumen.files';
+
+  launch(appId: AppId, args: LaunchArgs = {}, how: { window?: boolean } = {}): Process | null {
     const app = getApp(appId);
     if (!app) {
       const installed = useRegistryStore.getState().installed[appId];
@@ -283,7 +290,20 @@ export class Kernel {
         return running;
       }
     }
-    const process = useProcessStore.getState().spawn(appId, app.name, args);
+    const windowless = how.window === false;
+    // The file manager is one process with as many windows as are open: a
+    // window asked for while it is already running joins it rather than
+    // starting a second copy of the thing that owns the desktop.
+    const running =
+      appId === Kernel.FILE_MANAGER
+        ? (useProcessStore.getState().findByApp(appId)[0] ?? null)
+        : null;
+    if (running && windowless) return running;
+    const process = running ?? useProcessStore.getState().spawn(appId, app.name, args, windowless);
+    if (windowless) {
+      log.info('kernel', `launch ${appId} pid=${process.pid} (no window)`);
+      return process;
+    }
     const remembered = this.stateFile.windowBounds[appId];
     const options =
       remembered && !app.window.centered
@@ -347,6 +367,12 @@ export class Kernel {
   kill(pid: Pid): void {
     const p = useProcessStore.getState().processes[pid];
     if (!p) return;
+    // The desktop is a window of the file manager, so the session has nothing
+    // to stand on without it. Ending it restarts it, the way a shell does.
+    if (p.appId === Kernel.FILE_MANAGER) {
+      this.restartFileManager();
+      return;
+    }
     for (const id of p.windowIds) {
       this.closeGuards.delete(id);
       useMenuStore.getState().clearMenus(id);
@@ -354,6 +380,46 @@ export class Kernel {
     }
     useProcessStore.getState().exit(pid);
     log.info('kernel', `exit ${p.appId} pid=${pid}`);
+  }
+
+  /** Start the file manager if it is not running. Called when a session opens. */
+  ensureFileManager(): Process | null {
+    const running = useProcessStore.getState().findByApp(Kernel.FILE_MANAGER)[0];
+    if (running) return running;
+    return this.launch(Kernel.FILE_MANAGER, {}, { window: false });
+  }
+
+  /** Close its windows, end it, and bring it back under a new pid. */
+  restartFileManager(): Process | null {
+    for (const p of useProcessStore.getState().findByApp(Kernel.FILE_MANAGER)) {
+      for (const id of p.windowIds) {
+        this.closeGuards.delete(id);
+        useMenuStore.getState().clearMenus(id);
+        useWindowStore.getState().close(id);
+      }
+      useProcessStore.getState().exit(p.pid);
+    }
+    log.info('kernel', 'file manager restarting');
+    return this.ensureFileManager();
+  }
+
+  /**
+   * End the session: every process and window goes, the screen locks, and the
+   * files stay exactly as they are. This is what force-killing the file
+   * manager under sudo does, and it is meant to feel like a reboot.
+   */
+  async endSession(reason: string): Promise<void> {
+    log.warn('session', `session ended: ${reason}`);
+    for (const p of Object.values(useProcessStore.getState().processes)) {
+      for (const id of p.windowIds) {
+        this.closeGuards.delete(id);
+        useMenuStore.getState().clearMenus(id);
+        useWindowStore.getState().close(id);
+      }
+      useProcessStore.getState().exit(p.pid);
+    }
+    await this.flush();
+    useSessionStore.getState().transition('locked');
   }
 
   /** Apps register a guard that may veto closing (e.g. unsaved document). */

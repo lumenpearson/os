@@ -105,7 +105,10 @@ describe('kernel', () => {
     expect(editor?.appId).toBe('lumen.editor');
     const folder = await kernel.open('/Users/adalovelace/Documents');
     expect(folder?.appId).toBe('lumen.files');
-    expect(Object.keys(useProcessStore.getState().processes)).toHaveLength(3);
+    // Two processes, not three: the file manager is one process for the whole
+    // session, and both of its windows belong to it.
+    expect(Object.keys(useProcessStore.getState().processes)).toHaveLength(2);
+    expect(folder?.pid).toBe(p?.pid);
 
     await kernel.installApp({
       id: 'user.term',
@@ -187,5 +190,53 @@ describe('disposing a kernel', () => {
     await new Promise((r) => setTimeout(r, 600));
 
     expect(writes).toBe(0);
+  });
+});
+
+describe('the file manager', () => {
+  it('runs from the moment the session opens, without a window', async () => {
+    const kernel = makeKernel();
+    await kernel.boot();
+    await kernel.unlock('');
+    const [files] = useProcessStore.getState().findByApp('lumen.files');
+    expect(files).toBeDefined();
+    expect(files?.windowIds).toHaveLength(0);
+    expect(files?.background).toBe(true);
+  });
+
+  it('stays when its last window closes', async () => {
+    const kernel = makeKernel();
+    await kernel.boot();
+    await kernel.unlock('');
+    const files = kernel.launch('lumen.files');
+    const windowId = files?.windowIds[0];
+    expect(windowId).toBeDefined();
+    await kernel.closeWindow(windowId as string);
+    const after = useProcessStore.getState().findByApp('lumen.files')[0];
+    expect(after?.pid).toBe(files?.pid);
+    expect(after?.windowIds).toHaveLength(0);
+  });
+
+  it('restarts instead of ending when it is killed', async () => {
+    const kernel = makeKernel();
+    await kernel.boot();
+    await kernel.unlock('');
+    const before = useProcessStore.getState().findByApp('lumen.files')[0];
+    kernel.kill(before?.pid as number);
+    const after = useProcessStore.getState().findByApp('lumen.files')[0];
+    expect(after).toBeDefined();
+    expect(after?.pid).not.toBe(before?.pid);
+  });
+
+  it('takes the session with it when it is ended for good', async () => {
+    const kernel = makeKernel();
+    await kernel.boot();
+    await kernel.unlock('');
+    kernel.launch('lumen.editor');
+    await kernel.endSession('kill -9 from the terminal');
+    expect(Object.keys(useProcessStore.getState().processes)).toHaveLength(0);
+    expect(useSessionStore.getState().state).toBe('locked');
+    // The files are untouched: this is a reboot, not a reset.
+    expect(await kernel.vfs.exists('/Users/adalovelace/Desktop/Welcome.md')).toBe(true);
   });
 });
