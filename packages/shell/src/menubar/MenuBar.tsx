@@ -155,7 +155,13 @@ export function MenuBar() {
           setOpen(menus[(idx - 1 + menus.length) % menus.length]?.id ?? null);
       }}
     >
-      <div className="flex items-stretch pl-2">
+      {/*
+        The menus are what gives when the bar runs out of room: they clip,
+        while the status items keep their width. A clipped menu title is still
+        reachable by keyboard and from the app's own interface; a clock folded
+        onto three lines in the corner is just broken.
+      */}
+      <div className="flex min-w-0 items-stretch overflow-hidden pl-2">
         {menus.map((m) => (
           <MenuBarItem
             key={m.id}
@@ -272,9 +278,11 @@ function StatusItems() {
   const VolumeIcon = volume;
 
   return (
-    <div className="flex items-stretch pr-2" data-testid="status-items">
+    <div className="flex shrink-0 items-stretch pr-2" data-testid="status-items">
       {settings.menubar.showUser && user && (
-        <span className="mono flex items-center px-2 text-xs text-ink-2">{user.username}</span>
+        <span className="mono flex items-center whitespace-nowrap px-2 text-xs text-ink-2">
+          {user.username}
+        </span>
       )}
       {settings.menubar.showNetwork && (
         <button
@@ -344,7 +352,7 @@ function StatusItems() {
           aria-haspopup="dialog"
           aria-expanded={clockOpen}
           onClick={() => setClockOpen((v) => !v)}
-          className={cx(item, 'mono gap-2 px-2 text-sm tabular-nums text-ink')}
+          className={cx(item, 'mono gap-2 px-2 text-sm whitespace-nowrap tabular-nums text-ink')}
           data-testid="menubar-clock"
         >
           {date && <span className="text-ink-2">{date}</span>}
