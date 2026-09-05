@@ -23,7 +23,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select
   ref,
 ) {
   return (
-    <span className={cx('relative inline-flex', className)}>
+    <span className={cx('relative inline-flex shrink-0', className)}>
       <select
         ref={ref}
         value={value}

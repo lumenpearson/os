@@ -17,7 +17,7 @@ export default defineApp({
   category: 'system',
   icon: createAppIcon({ glyph: Package, tone: 'blue' }),
   component: lazy(() => import('./Software')),
-  window: { width: 900, height: 640, minWidth: 400, minHeight: 320 },
+  window: { width: 900, height: 640, minWidth: 420, minHeight: 320 },
   singleton: true,
   keywords: ['install', 'apps', 'packages', 'store', 'manifest', 'uninstall'],
 });

@@ -153,3 +153,109 @@ test.describe('the newest apps at both ends of the range', () => {
     await expectNoHorizontalOverflow(page);
   });
 });
+
+/**
+ * Every app, shrunk to the smallest window it says it can work in.
+ *
+ * Each app declares `minWidth`/`minHeight` in its definition, and the window
+ * manager refuses to resize below them — so dragging the edges as far as they
+ * go lands on exactly the size the app promises to work at. What this asserts
+ * there is that nothing in the window sticks out past its own parent: a
+ * toolbar squeezing a button to 16 px, or a breadcrumb collapsing to nothing,
+ * is a promise the app has broken.
+ */
+const APPS = [
+  'Files',
+  'Browser',
+  'Terminal',
+  'Text Editor',
+  'Notes',
+  'Writer',
+  'Sheets',
+  'Slides',
+  'Preview',
+  'Media Player',
+  'Paint',
+  'Calculator',
+  'Calendar',
+  'Clock',
+  'Settings',
+  'Task Manager',
+  'System Information',
+  'Storage',
+  'Console',
+  'Software Center',
+  'Minesweeper',
+  'Chess',
+];
+
+/**
+ * Widest spill of an in-flow child past the right edge of its parent, in px.
+ * Absolutely positioned children are skipped: a few are meant to sit outside
+ * their box, like the strip that straddles a spreadsheet column's edge.
+ */
+async function worstSpill(page: Page): Promise<{ px: number; where: string }> {
+  return page.evaluate(() => {
+    const frame = document.querySelector('[data-testid="window"]');
+    if (!(frame instanceof HTMLElement)) return { px: 0, where: 'no window' };
+    let px = 0;
+    let where = '';
+    for (const parent of frame.querySelectorAll<HTMLElement>('*')) {
+      if (parent.clientWidth === 0) continue;
+      if (getComputedStyle(parent).overflowX !== 'visible') continue;
+      const edge = parent.getBoundingClientRect().left + parent.clientWidth;
+      for (const child of parent.children) {
+        if (!(child instanceof HTMLElement)) continue;
+        const position = getComputedStyle(child).position;
+        if (position === 'absolute' || position === 'fixed') continue;
+        const spill = Math.round(child.getBoundingClientRect().right - edge);
+        if (spill > px) {
+          px = spill;
+          where = `${child.tagName}.${child.className.slice(0, 40)} out of ${parent.tagName}.${parent.className.slice(0, 40)}`;
+        }
+      }
+    }
+    return { px, where };
+  });
+}
+
+/** Drag the east then the south edge inward; the window stops at its minimum. */
+async function shrinkToMinimum(page: Page) {
+  const frame = page.getByTestId('window').first();
+  const first = await frame.boundingBox();
+  if (!first) throw new Error('the window has no box');
+  await page.mouse.move(first.x + first.width - 2, first.y + first.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(first.x + 40, first.y + first.height / 2, { steps: 12 });
+  await page.mouse.up();
+  const second = await frame.boundingBox();
+  if (!second) throw new Error('the window has no box');
+  await page.mouse.move(second.x + second.width / 2, second.y + second.height - 2);
+  await page.mouse.down();
+  await page.mouse.move(second.x + second.width / 2, second.y + 40, { steps: 12 });
+  await page.mouse.up();
+}
+
+test.describe('every app at its declared minimum size', () => {
+  test('nothing is squeezed out of its own box', async ({ page }) => {
+    test.setTimeout(300_000);
+    await page.setViewportSize(LARGE);
+    await setupAndUnlock(page);
+
+    const spills: string[] = [];
+    for (const name of APPS) {
+      await launch(page, name);
+      await expect(page.getByTestId('window').first()).toBeVisible();
+      await shrinkToMinimum(page);
+      // One hairline of slack: borders round in and out of the client box.
+      await expect
+        .poll(async () => (await worstSpill(page)).px, { timeout: 5_000 })
+        .toBeLessThanOrEqual(2);
+      const spill = await worstSpill(page);
+      if (spill.px > 2) spills.push(`${name}: ${spill.px}px — ${spill.where}`);
+      await page.keyboard.press('Control+w');
+      await expect(page.getByTestId('window')).toHaveCount(0);
+    }
+    expect(spills).toEqual([]);
+  });
+});

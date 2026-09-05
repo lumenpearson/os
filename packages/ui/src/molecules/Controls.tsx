@@ -109,7 +109,7 @@ export function SegmentedControl<T extends string>({
       role="radiogroup"
       aria-label={rest['aria-label']}
       className={cx(
-        'inline-flex rounded-sm border border-rule-strong bg-surface-2 p-0.5',
+        'inline-flex shrink-0 rounded-sm border border-rule-strong bg-surface-2 p-0.5',
         className,
       )}
     >
@@ -204,7 +204,7 @@ export function Toolbar({ dense, className, children, ...rest }: ToolbarProps) {
 }
 
 export function ToolbarGroup({ className, children }: { className?: string; children: ReactNode }) {
-  return <div className={cx('flex items-center gap-0.5', className)}>{children}</div>;
+  return <div className={cx('flex shrink-0 items-center gap-0.5', className)}>{children}</div>;
 }
 
 export function ToolbarSpacer() {

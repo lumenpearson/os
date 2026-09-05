@@ -66,7 +66,9 @@ export function ToolOptions({ tool, prefs, onPrefs }: ToolOptionsProps) {
 
       {usesOption(tool, 'size') && (
         <span className="flex shrink-0 items-center gap-1.5 text-sm text-ink-2">
-          <label htmlFor={`${id}-size`}>Size</label>
+          <label className="shrink-0" htmlFor={`${id}-size`}>
+            Size
+          </label>
           <Slider
             id={`${id}-size`}
             className="w-28"
@@ -81,7 +83,9 @@ export function ToolOptions({ tool, prefs, onPrefs }: ToolOptionsProps) {
 
       {usesOption(tool, 'hardness') && (
         <span className="flex shrink-0 items-center gap-1.5 text-sm text-ink-2">
-          <label htmlFor={`${id}-hardness`}>Hardness</label>
+          <label className="shrink-0" htmlFor={`${id}-hardness`}>
+            Hardness
+          </label>
           <Slider
             id={`${id}-hardness`}
             className="w-24"
@@ -96,7 +100,9 @@ export function ToolOptions({ tool, prefs, onPrefs }: ToolOptionsProps) {
 
       {usesOption(tool, 'tolerance') && (
         <span className="flex shrink-0 items-center gap-1.5 text-sm text-ink-2">
-          <label htmlFor={`${id}-tolerance`}>Tolerance</label>
+          <label className="shrink-0" htmlFor={`${id}-tolerance`}>
+            Tolerance
+          </label>
           <Slider
             id={`${id}-tolerance`}
             className="w-24"
@@ -121,7 +127,9 @@ export function ToolOptions({ tool, prefs, onPrefs }: ToolOptionsProps) {
 
       {usesOption(tool, 'text') && (
         <span className="flex shrink-0 items-center gap-1.5 text-sm text-ink-2">
-          <label htmlFor={`${id}-text-size`}>Text size</label>
+          <label className="shrink-0" htmlFor={`${id}-text-size`}>
+            Text size
+          </label>
           <Slider
             id={`${id}-text-size`}
             className="w-28"

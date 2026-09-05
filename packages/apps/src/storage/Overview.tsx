@@ -7,11 +7,14 @@
  * of its own — the app never resolves it by choosing.
  */
 
-import { Button, cx, Progress } from '@lumen/ui';
+import { Button, cx, IconButton, Progress, useElementSize } from '@lumen/ui';
 import { formatBytes } from '@lumen/vfs';
 import { Trash2 } from 'lucide-react';
 import { formatDateTime } from '../_sdk';
 import { formatShare, NO_VALUE, type Reading, type Segment, type UsageReport } from './usage';
+
+/** The narrowest list that still holds a label, three figures and a button. */
+const NARROW_LIST = 440;
 
 export interface OverviewProps {
   report: UsageReport | null;
@@ -129,12 +132,17 @@ function Stored({
   emptyTrashEnabled,
 }: Omit<OverviewProps, 'report'>) {
   const total = segmented.bytes;
+  const [listRef, list] = useElementSize<HTMLDivElement>();
+  // Below this the three figures, the label and the Trash button cannot share
+  // a row: the share goes first (the bar above already shows it), then the
+  // button keeps its icon and gives up its words.
+  const narrow = list.width > 0 && list.width < NARROW_LIST;
   return (
     <section aria-labelledby="storage-stored" className="flex flex-col gap-2">
       <h2 id="storage-stored" className="px-1 text-md font-medium text-ink">
         What is stored
       </h2>
-      <div className="rounded-md border border-rule bg-surface">
+      <div ref={listRef} className="rounded-md border border-rule bg-surface">
         <div className="flex flex-col gap-2 border-b border-rule px-4 py-3">
           <div
             aria-hidden
@@ -166,25 +174,37 @@ function Stored({
                 style={{ background: segment.color }}
               />
               <span className="min-w-0 flex-1 truncate-1 text-base text-ink">{segment.label}</span>
-              {segment.id === 'trash' && (
-                <Button
-                  size="sm"
-                  icon={<Trash2 className="size-3.5" />}
-                  onClick={onEmptyTrash}
-                  disabled={!emptyTrashEnabled}
-                >
-                  Empty Trash
-                </Button>
-              )}
+              {segment.id === 'trash' &&
+                (narrow ? (
+                  <IconButton
+                    size="sm"
+                    label="Empty Trash"
+                    onClick={onEmptyTrash}
+                    disabled={!emptyTrashEnabled}
+                  >
+                    <Trash2 className="size-3.5" />
+                  </IconButton>
+                ) : (
+                  <Button
+                    size="sm"
+                    icon={<Trash2 className="size-3.5" />}
+                    onClick={onEmptyTrash}
+                    disabled={!emptyTrashEnabled}
+                  >
+                    Empty Trash
+                  </Button>
+                ))}
               <span className="mono w-24 shrink-0 text-right text-sm tabular-nums text-ink-3">
                 {segment.files.toLocaleString()} {segment.files === 1 ? 'file' : 'files'}
               </span>
               <span className="mono w-20 shrink-0 text-right text-sm tabular-nums text-ink">
                 {formatBytes(segment.bytes)}
               </span>
-              <span className="mono w-14 shrink-0 text-right text-sm tabular-nums text-ink-3">
-                {formatShare(segment.share)}
-              </span>
+              {!narrow && (
+                <span className="mono w-14 shrink-0 text-right text-sm tabular-nums text-ink-3">
+                  {formatShare(segment.share)}
+                </span>
+              )}
             </li>
           ))}
         </ul>

@@ -38,7 +38,10 @@ export interface FilesToolbarProps {
   onQueryChange: (q: string) => void;
   inTrash: boolean;
   sidebarVisible: boolean;
-  /** Below this the toolbar drops the sidebar toggle and shortens the search field. */
+  /**
+   * Below this the toolbar drops the view switcher and the sidebar toggle,
+   * shortens the search field and collapses the breadcrumb harder.
+   */
   narrow: boolean;
   actions: FilesActions;
   onDragOverFolder: (path: string, e: DragEvent) => void;
@@ -124,7 +127,7 @@ export function FilesToolbar({
         </IconButton>
       </ToolbarGroup>
       <div
-        className="mx-1 min-w-0 flex-1"
+        className="mx-1 min-w-24 flex-1"
         onDragOver={(e) => {
           const crumb = crumbAt(e);
           highlight(
@@ -149,13 +152,16 @@ export function FilesToolbar({
         </Button>
       )}
       <ToolbarGroup className="gap-1">
-        <SegmentedControl
-          aria-label="View"
-          size="sm"
-          options={VIEW_OPTIONS}
-          value={view}
-          onChange={actions.setView}
-        />
+        {/* The three views stay on View > as List/Grid/Columns and Mod+1/2/3. */}
+        {!narrow && (
+          <SegmentedControl
+            aria-label="View"
+            size="sm"
+            options={VIEW_OPTIONS}
+            value={view}
+            onChange={actions.setView}
+          />
+        )}
         <IconButton
           ref={setSortAnchor}
           label="Sort"

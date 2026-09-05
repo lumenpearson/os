@@ -40,6 +40,10 @@ import { Visualiser } from './VisualiserCanvas';
 
 /** Below this width the playlist moves under the stage and the sliders go. */
 const NARROW_WIDTH = 560;
+/** The transport row needs this much to hold the volume slider as well. */
+const VOLUME_SLIDER_WIDTH = 760;
+/** And this much to hold the rate select next to it. */
+const RATE_SELECT_WIDTH = 640;
 
 /** Paths the window was launched with, in the order they should queue. */
 function launchPaths(args: LaunchArgs): string[] {
@@ -94,6 +98,9 @@ export default function MediaPlayer({ args: initialArgs }: AppProps) {
 
   const [root, size] = useElementSize<HTMLDivElement>();
   const narrow = size.width > 0 && size.width < NARROW_WIDTH;
+  // Before the first measurement the width is 0; show the full row rather than
+  // stripping it for a frame.
+  const width = size.width > 0 ? size.width : VOLUME_SLIDER_WIDTH;
 
   const source = useObjectUrl(trackPath);
   const { analyser, supported, connect } = useAudioGraph(media);
@@ -528,7 +535,8 @@ export default function MediaPlayer({ args: initialArgs }: AppProps) {
         shuffle={queue.shuffle}
         fullscreen={fullscreen}
         showPlaylist={config.showPlaylist}
-        narrow={narrow}
+        showVolumeSlider={width >= VOLUME_SLIDER_WIDTH}
+        showRate={width >= RATE_SELECT_WIDTH}
         onToggle={toggle}
         onNext={actions.next}
         onPrevious={actions.previous}

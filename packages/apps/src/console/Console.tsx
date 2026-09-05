@@ -185,7 +185,7 @@ export default function Console(_props: AppProps) {
       toolbar={
         <Toolbar dense>
           <div ref={toolbarRef} className="flex min-w-0 flex-1 items-center gap-1.5">
-            <div className="flex items-center gap-0.5" role="group" aria-label="Levels">
+            <div className="flex shrink-0 items-center gap-0.5" role="group" aria-label="Levels">
               {LEVELS.map((level) => (
                 <Button
                   key={level}
@@ -221,7 +221,9 @@ export default function Console(_props: AppProps) {
             <SearchField
               ref={searchRef}
               size="sm"
-              className="max-w-56"
+              // The four level buttons and the icons keep their size; the
+              // search field is the one control here that can give up width.
+              className="min-w-16 max-w-56"
               placeholder="Search, or /regex/"
               aria-label="Search log"
               value={search}

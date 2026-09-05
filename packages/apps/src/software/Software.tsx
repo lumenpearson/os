@@ -218,7 +218,7 @@ export default function Software(props: AppProps) {
             <SearchField
               ref={searchRef}
               size="sm"
-              className="max-w-52"
+              className="min-w-16 max-w-52"
               placeholder="Search apps"
               aria-label="Search apps"
               value={query}

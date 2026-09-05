@@ -15,7 +15,7 @@ export default defineApp({
   category: 'developer',
   icon: createAppIcon({ glyph: ScrollText, tone: 'graphite' }),
   component: lazy(() => import('./Console')),
-  window: { width: 900, height: 600, minWidth: 400, minHeight: 280 },
+  window: { width: 900, height: 600, minWidth: 420, minHeight: 280 },
   singleton: true,
   keywords: ['log', 'logs', 'debug', 'events', 'diagnostics', 'errors'],
 });

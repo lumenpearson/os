@@ -215,7 +215,7 @@ export function LogList({
       role="grid"
       aria-label="Captured events"
       aria-rowcount={rows.length}
-      // biome-ignore lint/a11y/noNoninteractiveTabindex: the grid owns the keyboard: it scrolls and it moves the selection
+      // The grid owns the keyboard: it scrolls and it moves the selection.
       tabIndex={0}
       className="lumen-scroll min-h-0 flex-1 lumen-focus focus-visible:-outline-offset-2"
     >

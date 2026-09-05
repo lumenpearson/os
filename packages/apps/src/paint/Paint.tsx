@@ -88,6 +88,13 @@ const LIMITS = { depth: 32, maxBytes: 192 * 1024 * 1024, sizeOf: sizeOfSnapshot 
 type Snapshot = ImageData | null;
 
 /**
+ * The narrowest window that still fits the colour well, the tool options and
+ * the zoom controls on one row. Below it the options take a row of their own
+ * rather than being squeezed out of reach.
+ */
+const OPTIONS_INLINE_WIDTH = 640;
+
+/**
  * The face the text tool draws with. The document is a bitmap, so this is
  * baked into pixels the moment it is placed — it is the interface font by
  * name rather than by token, because a canvas cannot read a CSS variable.
@@ -134,6 +141,7 @@ export default function Paint(_props: AppProps) {
   const clipboard = useRef<HTMLCanvasElement | null>(null);
   const [hasClipboard, setHasClipboard] = useState(false);
   const [viewportRef, viewport] = useElementSize<HTMLDivElement>();
+  const [frameRef, frame] = useElementSize<HTMLDivElement>();
 
   useTitle(`Paint — ${documentTitle(path, dirty)}`);
   useDirty(dirty);
@@ -583,41 +591,62 @@ export default function Paint(_props: AppProps) {
   }, [focused, setPrefs]);
 
   const tool = isToolId(prefs.tool) ? prefs.tool : DEFAULT_PREFS.tool;
+  // Below this the colour well, the tool options and the zoom controls cannot
+  // share one row, so the options take a row of their own. Width 0 is the
+  // frame before its first measurement: assume there is room.
+  const stackOptions = frame.width > 0 && frame.width < OPTIONS_INLINE_WIDTH;
 
   return (
-    <div className="flex h-full min-h-0 w-full flex-col">
+    <div ref={frameRef} className="flex h-full min-h-0 w-full flex-col">
       <AppFrame
         toolbar={
-          <Toolbar dense>
-            <ColourWell
-              foreground={prefs.foreground}
-              background={prefs.background}
-              recent={prefs.recent}
-              onForeground={useColour}
-              onBackground={(background) => setPrefs({ background })}
-              onSwap={() =>
-                setPrefs({ foreground: prefs.background, background: prefs.foreground })
-              }
-            />
-            <span aria-hidden className="h-4 w-px shrink-0 bg-rule" />
-            <ToolOptions tool={tool} prefs={prefs} onPrefs={setPrefs} />
-            <ToolbarSpacer />
-            <IconButton size="sm" label="Undo" disabled={!canUndo(history)} onClick={() => undo()}>
-              <Undo2 className="size-3.5" />
-            </IconButton>
-            <IconButton size="sm" label="Redo" disabled={!canRedo(history)} onClick={() => redo()}>
-              <Redo2 className="size-3.5" />
-            </IconButton>
-            <IconButton size="sm" label="Zoom out" onClick={() => zoom(zoomStepOut(view.scale))}>
-              <ZoomOut className="size-3.5" />
-            </IconButton>
-            <Button size="sm" variant="ghost" className="mono tabular-nums" onClick={fit}>
-              {zoomPercent(view.scale)}%
-            </Button>
-            <IconButton size="sm" label="Zoom in" onClick={() => zoom(zoomStepIn(view.scale))}>
-              <ZoomIn className="size-3.5" />
-            </IconButton>
-          </Toolbar>
+          <>
+            <Toolbar dense>
+              <ColourWell
+                foreground={prefs.foreground}
+                background={prefs.background}
+                recent={prefs.recent}
+                onForeground={useColour}
+                onBackground={(background) => setPrefs({ background })}
+                onSwap={() =>
+                  setPrefs({ foreground: prefs.background, background: prefs.foreground })
+                }
+              />
+              <span aria-hidden className="h-4 w-px shrink-0 bg-rule" />
+              {!stackOptions && <ToolOptions tool={tool} prefs={prefs} onPrefs={setPrefs} />}
+              <ToolbarSpacer />
+              <IconButton
+                size="sm"
+                label="Undo"
+                disabled={!canUndo(history)}
+                onClick={() => undo()}
+              >
+                <Undo2 className="size-3.5" />
+              </IconButton>
+              <IconButton
+                size="sm"
+                label="Redo"
+                disabled={!canRedo(history)}
+                onClick={() => redo()}
+              >
+                <Redo2 className="size-3.5" />
+              </IconButton>
+              <IconButton size="sm" label="Zoom out" onClick={() => zoom(zoomStepOut(view.scale))}>
+                <ZoomOut className="size-3.5" />
+              </IconButton>
+              <Button size="sm" variant="ghost" className="mono tabular-nums" onClick={fit}>
+                {zoomPercent(view.scale)}%
+              </Button>
+              <IconButton size="sm" label="Zoom in" onClick={() => zoom(zoomStepIn(view.scale))}>
+                <ZoomIn className="size-3.5" />
+              </IconButton>
+            </Toolbar>
+            {stackOptions && (
+              <Toolbar dense>
+                <ToolOptions tool={tool} prefs={prefs} onPrefs={setPrefs} />
+              </Toolbar>
+            )}
+          </>
         }
         sidebar={<ToolPalette tool={tool} onTool={(next) => setPrefs({ tool: next })} />}
         statusBar={

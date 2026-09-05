@@ -232,7 +232,9 @@ export function SettingsRow({ label, description, children, stacked, htmlFor }: 
         {description && <span className="text-sm text-ink-2">{description}</span>}
       </div>
       {children && (
-        <div className={cx('flex shrink-0 items-center gap-2', stacked && 'w-full')}>
+        // flex-wrap: controls keep their own size, so in a narrow window they
+        // take a second line rather than being squeezed out of the row.
+        <div className={cx('flex shrink-0 flex-wrap items-center gap-2', stacked && 'w-full')}>
           {children}
         </div>
       )}

@@ -37,8 +37,13 @@ export interface TransportProps {
   shuffle: boolean;
   fullscreen: boolean;
   showPlaylist: boolean;
-  /** Drop the volume slider and the rate control when the window is small. */
-  narrow?: boolean;
+  /**
+   * The row gives up its widest controls as the window narrows: the volume
+   * slider first, the rate select next. Both stay reachable — volume from the
+   * mute button and the arrow keys, rate from the Playback menu.
+   */
+  showVolumeSlider?: boolean;
+  showRate?: boolean;
   onToggle: () => void;
   onNext: () => void;
   onPrevious: () => void;
@@ -64,7 +69,8 @@ export function Transport({
   shuffle,
   fullscreen,
   showPlaylist,
-  narrow,
+  showVolumeSlider,
+  showRate,
   onToggle,
   onNext,
   onPrevious,
@@ -79,7 +85,7 @@ export function Transport({
 }: TransportProps) {
   const VolumeGlyph = muted || volume === 0 ? VolumeX : volume < 0.5 ? Volume1 : Volume2;
   return (
-    <div className={cx('flex items-center gap-1', className)}>
+    <div className={cx('flex min-w-0 items-center gap-1', className)}>
       <IconButton label="Previous track" onClick={onPrevious} disabled={!hasTracks}>
         <SkipBack />
       </IconButton>
@@ -107,7 +113,7 @@ export function Transport({
 
       <span className="flex-1" />
 
-      {!narrow && (
+      {showRate && (
         <Select
           size="sm"
           mono
@@ -121,7 +127,7 @@ export function Transport({
       <IconButton label={muted ? 'Unmute' : 'Mute'} active={muted} onClick={onToggleMute}>
         <VolumeGlyph />
       </IconButton>
-      {!narrow && (
+      {showVolumeSlider && (
         <Slider
           className="w-32 shrink-0"
           aria-label="Volume"
