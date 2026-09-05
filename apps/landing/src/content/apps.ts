@@ -15,6 +15,10 @@ export interface AppEntry {
 export const apps: readonly AppEntry[] = [
   { name: 'Files', summary: 'Browse, organise and open your files.' },
   {
+    name: 'Mail',
+    summary: 'A local mailbox: threads, folders and a search you can write queries in.',
+  },
+  {
     name: 'Browser',
     summary: 'Tabbed web browsing with bookmarks, history and a sandboxed page frame.',
   },
@@ -24,6 +28,11 @@ export const apps: readonly AppEntry[] = [
     summary: 'Plain text and code with line numbers, find and replace, Markdown preview.',
   },
   { name: 'Notes', summary: 'Markdown notes with tags, search, preview and task lists.' },
+  { name: 'Contacts', summary: 'An address book, with vCard import and export.' },
+  {
+    name: 'Reminders',
+    summary: 'Lists with due dates typed in plain words, priorities and subtasks.',
+  },
   {
     name: 'Writer',
     summary: 'Rich text documents: headings, lists, links, export to HTML and Markdown.',
@@ -40,6 +49,7 @@ export const apps: readonly AppEntry[] = [
     name: 'Calculator',
     summary: 'Basic, scientific and programmer arithmetic with a running tape.',
   },
+  { name: 'Units', summary: 'Convert between fourteen kinds of unit, including the awkward ones.' },
   {
     name: 'Calendar',
     summary: 'Keep a calendar: month, week, day and agenda, with repeating events.',
@@ -56,6 +66,11 @@ export const apps: readonly AppEntry[] = [
   },
   { name: 'Storage', summary: 'See what is using disk space and clear it out.' },
   { name: 'Console', summary: 'Read the system log: kernel events, notifications and errors.' },
+  {
+    name: 'Workbench',
+    summary: 'JSON, regex, diff, encoders, hashes, IDs and epoch times in one window.',
+  },
+  { name: 'Archive Utility', summary: 'Open and create ZIP archives.' },
   { name: 'Software Center', summary: 'Install, inspect and remove apps and pseudo-programs.' },
   { name: 'Minesweeper', summary: 'Clear the field without uncovering a mine.' },
 ];

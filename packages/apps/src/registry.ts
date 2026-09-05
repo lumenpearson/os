@@ -1,16 +1,20 @@
 import type { AppDefinition } from '@lumen/kernel';
+import archive from './archive';
 import browser from './browser';
 import calculator from './calculator';
 import calendar from './calendar';
 import clock from './clock';
 import consoleApp from './console';
+import contacts from './contacts';
 import editor from './editor';
 import files from './files';
+import mail from './mail';
 import media from './media';
 import minesweeper from './minesweeper';
 import notes from './notes';
 import paint from './paint';
 import preview from './preview';
+import reminders from './reminders';
 import settings from './settings';
 import sheets from './sheets';
 import slides from './slides';
@@ -19,7 +23,9 @@ import storage from './storage';
 import sysinfo from './sysinfo';
 import taskmanager from './taskmanager';
 import terminal from './terminal';
+import units from './units';
 import webapp from './webapp';
+import workbench from './workbench';
 import writer from './writer';
 
 /**
@@ -30,10 +36,13 @@ import writer from './writer';
  */
 export const builtinApps: AppDefinition[] = [
   files,
+  mail,
   browser,
   terminal,
   editor,
   notes,
+  contacts,
+  reminders,
   writer,
   sheets,
   slides,
@@ -41,6 +50,7 @@ export const builtinApps: AppDefinition[] = [
   media,
   paint,
   calculator,
+  units,
   calendar,
   clock,
   settings,
@@ -48,6 +58,8 @@ export const builtinApps: AppDefinition[] = [
   sysinfo,
   storage,
   consoleApp,
+  workbench,
+  archive,
   software,
   minesweeper,
   webapp,
