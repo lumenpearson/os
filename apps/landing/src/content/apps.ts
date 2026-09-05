@@ -73,4 +73,8 @@ export const apps: readonly AppEntry[] = [
   { name: 'Archive Utility', summary: 'Open and create ZIP archives.' },
   { name: 'Software Center', summary: 'Install, inspect and remove apps and pseudo-programs.' },
   { name: 'Minesweeper', summary: 'Clear the field without uncovering a mine.' },
+  {
+    name: 'Chess',
+    summary: 'The complete rules, checked against published move counts, and an opponent.',
+  },
 ];

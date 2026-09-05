@@ -3,6 +3,7 @@ import archive from './archive';
 import browser from './browser';
 import calculator from './calculator';
 import calendar from './calendar';
+import chess from './chess';
 import clock from './clock';
 import consoleApp from './console';
 import contacts from './contacts';
@@ -62,5 +63,6 @@ export const builtinApps: AppDefinition[] = [
   archive,
   software,
   minesweeper,
+  chess,
   webapp,
 ];
