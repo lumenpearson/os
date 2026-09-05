@@ -486,7 +486,7 @@ export default function Reminders(_props: AppProps) {
     <div ref={frameRef} className="flex h-full min-h-0 w-full">
       <AppFrame
         toolbar={
-          <Toolbar dense>
+          <Toolbar dense windowControls>
             {layout.sidebarFits ? (
               <IconButton
                 size="sm"
@@ -508,7 +508,9 @@ export default function Reminders(_props: AppProps) {
                 <PanelLeft className="size-3.5" />
               </IconButton>
             )}
-            <span className="truncate-1 pl-1 text-md font-medium text-ink">{title}</span>
+            {/* The window has no title bar of its own now, so this row names it:
+                the list on screen, which is what the title said after the app. */}
+            <span className="truncate-1 min-w-0 pl-1 text-base font-medium text-ink">{title}</span>
             <ToolbarSpacer />
             {/* The field's own wrapper stretches, so the width is set here. */}
             <div className={layout.compact ? 'w-28' : 'w-44'}>

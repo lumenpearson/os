@@ -760,7 +760,14 @@ export default function Sheets({ args: initialArgs }: AppProps) {
     <AppFrame
       toolbar={
         <>
-          <Toolbar dense>
+          <Toolbar dense windowControls>
+            {/*
+              The window has no title bar of its own now, so this row names it.
+              It is also the strip the window drags from, which a plain span is.
+            */}
+            <span className="truncate-1 min-w-0 pr-1 text-base font-medium text-ink">
+              {fileName}
+            </span>
             <ToolbarGroup>
               <IconButton label="Bold" active={activeStyle?.bold} onClick={toggleBold}>
                 <Bold />

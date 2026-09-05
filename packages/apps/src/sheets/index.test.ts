@@ -10,7 +10,13 @@ describe('the Sheets app definition', () => {
   });
 
   it('opens at a workable size', () => {
-    expect(definition.window).toEqual({ width: 960, height: 620, minWidth: 480, minHeight: 300 });
+    expect(definition.window).toEqual({
+      width: 960,
+      height: 620,
+      minWidth: 480,
+      minHeight: 300,
+      titleBar: 'inset',
+    });
   });
 
   it('claims the spreadsheet file types', () => {

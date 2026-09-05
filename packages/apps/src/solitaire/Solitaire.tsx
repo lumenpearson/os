@@ -129,7 +129,13 @@ export default function Solitaire(_props: AppProps) {
   return (
     <AppFrame
       toolbar={
-        <Toolbar dense>
+        <Toolbar dense windowControls>
+          {/*
+            The window has no title bar of its own now, so this row names it.
+            The deal's own state stays on the status bar, where it already was.
+            A plain span is also somewhere the window can be dragged from.
+          */}
+          <span className="truncate-1 min-w-0 pr-1 text-base font-medium text-ink">Solitaire</span>
           <Button size="sm" icon={<Shuffle className="size-3.5" />} onClick={() => deal()}>
             New Deal
           </Button>

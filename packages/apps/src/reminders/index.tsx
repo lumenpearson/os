@@ -14,7 +14,7 @@ export default defineApp({
   category: 'office',
   icon: createAppIcon({ glyph: ListChecks, tone: 'amber' }),
   component: lazy(() => import('./Reminders')),
-  window: { width: 880, height: 640, minWidth: 360, minHeight: 320 },
+  window: { width: 880, height: 640, minWidth: 360, minHeight: 320, titleBar: 'inset' },
   singleton: true,
   keywords: ['reminders', 'todo', 'tasks', 'checklist', 'due', 'lists'],
 });

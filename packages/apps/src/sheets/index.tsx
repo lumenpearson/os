@@ -14,7 +14,7 @@ export default defineApp({
   category: 'office',
   icon: createAppIcon({ glyph: Table2, tone: 'green' }),
   component: lazy(() => import('./Sheets')),
-  window: { width: 960, height: 620, minWidth: 480, minHeight: 300 },
+  window: { width: 960, height: 620, minWidth: 480, minHeight: 300, titleBar: 'inset' },
   fileAssociations: [
     { extensions: ['.lsd'], role: 'editor', priority: 2 },
     { extensions: ['.csv', '.tsv'], role: 'editor', priority: 1 },

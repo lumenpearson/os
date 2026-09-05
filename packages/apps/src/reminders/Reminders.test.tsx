@@ -436,3 +436,31 @@ describe('the details dialog', () => {
     expect(file.items[0]).toMatchObject({ title: 'Renew the passport', notes: 'Photos first' });
   });
 });
+
+describe('the inset title bar', () => {
+  /** The row the close, minimize and zoom controls are drawn over. */
+  const firstRow = () => screen.getAllByRole('toolbar')[0] as HTMLElement;
+
+  it('keeps the width of the window controls clear at the start of the row', async () => {
+    expect(definition.window.titleBar).toBe('inset');
+    await mount();
+    expect(firstRow().className).toContain('ps-(--lumen-window-controls-w)');
+  });
+
+  it('names the list on screen in the row, as the title bar used to', async () => {
+    await mount();
+    expect(within(firstRow()).getByText('Today')).toBeInTheDocument();
+    await choose('view', 'smart-flagged');
+    expect(within(firstRow()).getByText('Flagged')).toBeInTheDocument();
+  });
+
+  it('still names the list at the narrowest window the app allows', async () => {
+    // 360px, the narrowest the app allows, is 68px shorter than it was.
+    windowWidth = 360;
+    await mount();
+    const row = within(firstRow());
+    expect(row.getByText('Today')).toBeInTheDocument();
+    expect(row.getByRole('button', { name: 'New Reminder' })).toBeInTheDocument();
+    expect(row.getByLabelText('Search reminders')).toBeInTheDocument();
+  });
+});

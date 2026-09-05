@@ -3,11 +3,12 @@ import { KernelProvider } from '@lumen/kernel/react';
 import { createWebPlatform } from '@lumen/platform';
 import { DialogProvider } from '@lumen/ui';
 import { MemoryAdapter } from '@lumen/vfs';
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { AppProvider, FileDialogProvider } from '../_sdk';
 import { FunctionsDialog } from './FunctionsDialog';
+import definition from './index';
 import Sheets from './Sheets';
 
 let kernel: Kernel;
@@ -322,5 +323,35 @@ describe('Sheets', () => {
     await waitFor(async () => {
       expect(await kernel.vfs.readText('/Documents/data.csv')).toBe('a,b\n1,2\n3,\n');
     });
+  });
+});
+
+describe('the inset title bar', () => {
+  /** The row the close, minimize and zoom controls are drawn over. */
+  const firstRow = () => screen.getAllByRole('toolbar')[0] as HTMLElement;
+
+  it('keeps the width of the window controls clear at the start of the row', () => {
+    expect(definition.window.titleBar).toBe('inset');
+    mount();
+    expect(firstRow().className).toContain('ps-(--lumen-window-controls-w)');
+  });
+
+  it('names an unsaved workbook in the row, as the title bar used to', () => {
+    mount();
+    expect(within(firstRow()).getByText('Untitled')).toBeInTheDocument();
+  });
+
+  it('names the open workbook in the row', async () => {
+    await kernel.vfs.writeJson('/Documents/Budget.lsd', BUDGET, { recursive: true });
+    mount({ path: '/Documents/Budget.lsd' });
+    expect(await within(firstRow()).findByText('Budget.lsd')).toBeInTheDocument();
+  });
+
+  it('keeps the formatting controls beside the name', () => {
+    mount();
+    const row = within(firstRow());
+    expect(row.getByRole('button', { name: 'Bold' })).toBeInTheDocument();
+    expect(row.getByRole('button', { name: 'Align left' })).toBeInTheDocument();
+    expect(row.getByLabelText('Number format')).toBeInTheDocument();
   });
 });

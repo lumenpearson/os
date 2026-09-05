@@ -14,7 +14,7 @@ export default defineApp({
   category: 'games',
   icon: createAppIcon({ glyph: Spade, tone: 'green' }),
   component: lazy(() => import('./Solitaire')),
-  window: { width: 900, height: 680, minWidth: 460, minHeight: 420 },
+  window: { width: 900, height: 680, minWidth: 460, minHeight: 420, titleBar: 'inset' },
   singleton: true,
   keywords: ['solitaire', 'klondike', 'cards', 'patience', 'game'],
 });

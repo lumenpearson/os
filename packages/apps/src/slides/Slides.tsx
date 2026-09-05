@@ -168,7 +168,8 @@ export default function Slides(props: AppProps) {
     if (typeof args.path === 'string') void openPath(args.path);
   }, [args.path, openPath]);
 
-  useTitle(path ? basename(path) : 'Untitled');
+  const deckName = path ? basename(path) : 'Untitled';
+  useTitle(deckName);
   useDirty(dirty);
   useEffect(() => {
     controls.current.setDocument(path);
@@ -437,7 +438,13 @@ export default function Slides(props: AppProps) {
   // ── render ──────────────────────────────────────────────────────────────
 
   const toolbar = (
-    <Toolbar dense>
+    <Toolbar dense windowControls>
+      {/*
+        The window has no title bar of its own now, so this row names it: the
+        deck on screen, which is what the title carried. A plain span is also
+        somewhere the window can be dragged from.
+      */}
+      <span className="truncate-1 min-w-0 pr-1 text-base font-medium text-ink">{deckName}</span>
       <ToolbarGroup>
         <Button size="sm" icon={<Plus className="size-3.5" />} onClick={() => addSlide()}>
           New Slide

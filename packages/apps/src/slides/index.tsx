@@ -13,7 +13,7 @@ export default defineApp({
   category: 'office',
   icon: createAppIcon({ glyph: Presentation, tone: 'amber' }),
   component: lazy(() => import('./Slides')),
-  window: { width: 1000, height: 660, minWidth: 520, minHeight: 360 },
+  window: { width: 1000, height: 660, minWidth: 520, minHeight: 360, titleBar: 'inset' },
   fileAssociations: [{ extensions: ['.lsl'], role: 'editor', priority: 2 }],
   keywords: ['presentation', 'powerpoint', 'keynote', 'deck'],
 });
