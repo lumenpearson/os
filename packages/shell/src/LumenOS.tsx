@@ -6,6 +6,7 @@ import { DialogProvider } from '@lumen/ui';
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { BootScreen } from './boot/BootScreen';
 import { CursorLayer } from './cursor/CursorLayer';
+import { useHostFocus } from './hooks/useHostFocus';
 import { useIdleWatch } from './hooks/useIdleWatch';
 import { PowerScreen } from './power/PowerScreen';
 import { ScreensaverLayer } from './screensaver/ScreensaverLayer';
@@ -68,6 +69,7 @@ export function LumenOS({ appVersion = '0.1.0', autoSetup = null }: LumenOSProps
 function Session() {
   const state = useSessionStore((s) => s.state);
   useIdleWatch();
+  useHostFocus();
   return (
     <Suspense fallback={<BootScreen />}>
       <SessionView state={state} />

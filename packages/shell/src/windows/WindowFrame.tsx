@@ -50,7 +50,10 @@ const HANDLE_CLASS: Record<ResizeHandle, string> = {
 export const WindowFrame = memo(function WindowFrame({ id }: { id: WindowId }) {
   const kernel = useKernel();
   const win = useWindowStore((s) => s.windows[id]);
-  const focused = useWindowStore((s) => s.focusedId === id);
+  // The window in front only looks like it while the keyboard can reach it.
+  const inFront = useWindowStore((s) => s.focusedId === id);
+  const hostFocused = useShellStore((s) => s.hostFocused);
+  const focused = inFront && hostFocused;
   const app = useRegistryStore((s) => (win ? s.apps[win.appId] : undefined));
   const process = useProcessStore((s) => (win ? s.processes[win.pid] : undefined));
   const shadows = getSettings().display.shadows;
@@ -270,7 +273,9 @@ export const WindowFrame = memo(function WindowFrame({ id }: { id: WindowId }) {
       data-testid="window"
       tabIndex={-1}
       onPointerDownCapture={() => {
-        if (!focused) useWindowStore.getState().focus(id);
+        // inFront, not focused: a click that arrives while the host had lost
+        // focus must not re-raise a window that was already in front.
+        if (!inFront) useWindowStore.getState().focus(id);
       }}
       // The title bar of an inset window belongs to the app, which draws its
       // own toolbar there, so the frame decides what starts a drag.

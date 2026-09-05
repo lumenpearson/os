@@ -161,7 +161,9 @@ export function DataTable<T>({
     >
       <div
         role="row"
-        className="grid shrink-0 border-b border-rule bg-canvas text-sm text-ink-2 select-none"
+        // A rule between the columns: a wide table of numbers is read across as
+        // well as down, and the eye needs the lane.
+        className="grid shrink-0 border-b border-rule bg-canvas text-sm text-ink-2 select-none [&>*+*]:border-l [&>*+*]:border-rule/60"
         style={{ gridTemplateColumns: template }}
       >
         {columns.map((c) => {
@@ -221,7 +223,9 @@ export function DataTable<T>({
               onContextMenu={(e) => onContextMenu?.(row, e)}
               className={cx(
                 'lumen-list-row',
+                // Alternating rows, and the same lanes as the header above.
                 i % 2 === 1 && !isSelected && 'bg-surface-2/40',
+                '[&>*+*]:border-l [&>*+*]:border-rule/40',
                 rowClassName?.(row),
               )}
               style={{ gridTemplateColumns: template, height: rowHeight }}
