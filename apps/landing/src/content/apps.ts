@@ -3,40 +3,59 @@ export interface AppEntry {
   summary: string;
 }
 
-/** The built-in apps, in the order the Start menu lists them. */
+/**
+ * The built-in apps, in the order the Start menu lists them.
+ *
+ * This list mirrors `packages/apps/src/registry.ts` — the same names and the
+ * same descriptions — because a landing page that claims an app the OS does
+ * not ship is a lie about the product. The one entry it leaves out is Web App,
+ * which is hidden from the launcher: it is the host that runs installed HTML
+ * programs rather than something anybody opens.
+ */
 export const apps: readonly AppEntry[] = [
+  { name: 'Files', summary: 'Browse, organise and open your files.' },
   {
-    name: 'Files',
-    summary: 'Browse the virtual file system: home folders, Applications, System, Trash.',
+    name: 'Browser',
+    summary: 'Tabbed web browsing with bookmarks, history and a sandboxed page frame.',
   },
-  { name: 'Terminal', summary: 'A shell over the same file system, with a parsed command line.' },
+  { name: 'Terminal', summary: 'A shell over the file system with the usual commands.' },
   {
     name: 'Text Editor',
-    summary: 'Plain text with line numbers; .txt, .md, .json and source files.',
+    summary: 'Plain text and code with line numbers, find and replace, Markdown preview.',
   },
-  { name: 'Writer', summary: 'Rich-text documents.' },
-  { name: 'Sheets', summary: 'A spreadsheet with a formula evaluator.' },
-  { name: 'Slides', summary: 'Slide decks you can edit and present full-screen.' },
-  { name: 'Browser', summary: 'Loads the URL you type into a sandboxed iframe.' },
+  { name: 'Notes', summary: 'Markdown notes with tags, search, preview and task lists.' },
+  {
+    name: 'Writer',
+    summary: 'Rich text documents: headings, lists, links, export to HTML and Markdown.',
+  },
+  { name: 'Sheets', summary: 'Spreadsheets with formulas, ranges and CSV import.' },
+  { name: 'Slides', summary: 'Presentations with layouts, notes and a full-screen player.' },
+  { name: 'Preview', summary: 'View images, PDFs, media and data files.' },
+  {
+    name: 'Media Player',
+    summary: 'Play audio and video files with a playlist, loop and shuffle.',
+  },
+  { name: 'Paint', summary: 'Draw and edit pictures pixel by pixel.' },
+  {
+    name: 'Calculator',
+    summary: 'Basic, scientific and programmer arithmetic with a running tape.',
+  },
+  {
+    name: 'Calendar',
+    summary: 'Keep a calendar: month, week, day and agenda, with repeating events.',
+  },
+  { name: 'Clock', summary: 'Local and world time, a stopwatch with laps, and a countdown timer.' },
+  { name: 'Settings', summary: 'System preferences: appearance, desktop, security, devices.' },
   {
     name: 'Task Manager',
-    summary: 'Reads the process table; killing a process closes its windows.',
+    summary: 'Running processes, measured performance, and every registered app.',
   },
   {
-    name: 'Settings',
-    summary: 'Appearance, desktop, lock screen, display scale, accessibility, region.',
+    name: 'System Information',
+    summary: 'Hardware, software and storage readings for this computer.',
   },
-  { name: 'Calculator', summary: 'Arithmetic, driven from the keyboard.' },
-  { name: 'Notes', summary: 'Short notes, stored as files in your home directory.' },
-  { name: 'Preview', summary: 'Opens images.' },
-  { name: 'Media Player', summary: 'Plays audio and video files from the file system.' },
-  { name: 'PDF Viewer', summary: 'Opens PDFs in a window.' },
-  { name: 'Calendar', summary: 'A month view.' },
-  { name: 'Clock', summary: 'The time, large enough to read from across the room.' },
-  { name: 'System Info', summary: 'Host details; on desktop, from the Rust kernel.' },
-  { name: 'Storage', summary: 'Where the home directory lives and how much it holds.' },
-  { name: 'Paint', summary: 'Bitmap drawing, saved to Pictures.' },
-  { name: 'Minesweeper', summary: 'The game.' },
-  { name: 'Software Center', summary: 'Installs .app manifests into /Applications.' },
-  { name: 'Console', summary: 'Tails the session log.' },
+  { name: 'Storage', summary: 'See what is using disk space and clear it out.' },
+  { name: 'Console', summary: 'Read the system log: kernel events, notifications and errors.' },
+  { name: 'Software Center', summary: 'Install, inspect and remove apps and pseudo-programs.' },
+  { name: 'Minesweeper', summary: 'Clear the field without uncovering a mine.' },
 ];

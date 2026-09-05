@@ -30,6 +30,9 @@ jobs:
       # Catches module names that differ only by case before the macOS and
       # Windows builds do, since those are the only jobs that would notice.
       - run: pnpm check:portability
+      # The landing page names every built-in app. Nothing else would notice
+      # if it named one the OS does not ship, or missed one it does.
+      - run: pnpm check:apps
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm test -- --run

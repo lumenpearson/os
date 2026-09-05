@@ -5,3 +5,6 @@ pnpm lint-staged
 # ambiguously on macOS and Windows. It has already cost two red builds, both
 # times because it was only checked in CI.
 pnpm check:portability
+
+# The landing page's app list has to be the one the OS ships.
+pnpm check:apps
