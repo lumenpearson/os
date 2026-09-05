@@ -5,7 +5,7 @@ export type { ScreensaverId };
 
 export type ThemeMode = 'light' | 'dark' | 'auto';
 export type DockPosition = 'bottom' | 'left' | 'right';
-export type FilesView = 'list' | 'grid' | 'columns' | 'cards';
+export type FilesView = 'list' | 'grid' | 'columns';
 export type MinimizeAnimation = 'scale' | 'slide' | 'fade' | 'none';
 export type WallpaperFit = 'cover' | 'contain' | 'tile' | 'center';
 export type CursorStyle = 'lumen' | 'classic' | 'native';

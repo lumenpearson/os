@@ -12,6 +12,12 @@ interface ProcessStore {
   detachWindow: (pid: Pid, windowId: WindowId) => void;
   /** When the load figures were last stepped, so the model can use real time. */
   tickedAt: number | null;
+  /**
+   * Empty the table. A kernel that is booting owns no processes yet, and the
+   * store outlives any one kernel — in a page that is exactly once, and in a
+   * test file it is once per kernel, which is the point.
+   */
+  reset: () => void;
   /** Step the load model. `now` is injectable so tests do not need a clock. */
   tick: (now?: number) => void;
   findByApp: (appId: AppId) => Process[];
@@ -99,5 +105,6 @@ export const useProcessStore = create<ProcessStore>((set, get) => ({
       if (!changed) return { tickedAt: now };
       return { processes: next, tickedAt: now };
     }),
+  reset: () => set({ processes: {}, nextPid: 100, tickedAt: null }),
   findByApp: (appId) => Object.values(get().processes).filter((p) => p.appId === appId),
 }));

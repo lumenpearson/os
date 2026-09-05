@@ -94,6 +94,10 @@ export class Kernel {
 
   async boot(): Promise<SessionState> {
     log.info('kernel', 'boot');
+    // Nothing is running yet, whatever a previous kernel in this process left
+    // behind. Without this the file manager of an earlier kernel would be
+    // found and reused, and its windows would answer for this one.
+    useProcessStore.getState().reset();
     await seedSystem(this.vfs);
     await this.loadSettings();
     await this.loadUsers();

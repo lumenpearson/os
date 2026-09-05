@@ -33,3 +33,15 @@ describe('the load tick', () => {
     expect(Math.abs(afterwards - settled)).toBeLessThan(2);
   });
 });
+
+describe('reset', () => {
+  it('empties the table and starts numbering again', () => {
+    const store = useProcessStore.getState();
+    store.spawn('lumen.files', 'Files', {});
+    store.spawn('lumen.editor', 'Text Editor', {});
+    useProcessStore.getState().reset();
+    expect(Object.keys(useProcessStore.getState().processes)).toHaveLength(0);
+    // A new kernel starts from the same pid a fresh one would.
+    expect(useProcessStore.getState().spawn('lumen.files', 'Files', {}).pid).toBe(100);
+  });
+});
