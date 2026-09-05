@@ -1,14 +1,19 @@
 import type { AppDefinition } from '@lumen/kernel';
 import browser from './browser';
 import calculator from './calculator';
+import clock from './clock';
+import consoleApp from './console';
 import editor from './editor';
 import files from './files';
 import media from './media';
+import minesweeper from './minesweeper';
 import notes from './notes';
 import preview from './preview';
 import settings from './settings';
 import sheets from './sheets';
 import slides from './slides';
+import software from './software';
+import storage from './storage';
 import sysinfo from './sysinfo';
 import taskmanager from './taskmanager';
 import terminal from './terminal';
@@ -33,8 +38,13 @@ export const builtinApps: AppDefinition[] = [
   preview,
   media,
   calculator,
+  clock,
   settings,
   taskmanager,
   sysinfo,
+  storage,
+  consoleApp,
+  software,
+  minesweeper,
   webapp,
 ];
