@@ -217,10 +217,18 @@ export interface Settings {
 }
 
 /**
- * The catalogue that ships with Lumen, served beside it. A store deployed on
- * its own host is an absolute URL here instead; nothing else changes.
+ * The published catalogue: its own repository, deployed on its own, fetched
+ * live. Changing this one setting points Lumen at a different store.
  */
-export const DEFAULT_STORE_ORIGIN = '/store/';
+export const DEFAULT_STORE_ORIGIN =
+  'https://raw.githubusercontent.com/lumenpearson/os-appstore/main/';
+
+/**
+ * The copy that ships beside the OS, used when the published one cannot be
+ * reached. It is the same catalogue as of the build, so an aeroplane still has
+ * a storefront — just not a current one.
+ */
+export const BUNDLED_STORE_ORIGIN = '/store/';
 
 export const SETTINGS_VERSION = 1;
 
