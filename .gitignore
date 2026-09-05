@@ -42,3 +42,7 @@ Thumbs.db
 *.log
 npm-debug.log*
 pnpm-debug.log*
+
+# Scratch probes that review agents write to inspect real output. They import
+# node:fs and hardcode a scratchpad path, so they are never part of the suite.
+**/__probe.test.*
