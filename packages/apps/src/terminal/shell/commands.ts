@@ -16,6 +16,7 @@ import {
   type Vfs,
   VfsError,
 } from '@lumen/vfs';
+
 import { CalcError, evaluate, formatNumber } from './calc';
 import {
   calendar,
@@ -28,6 +29,7 @@ import {
   table,
 } from './format';
 import { globToRegExp } from './parse';
+import { formatValue, parseValue, readPath, settingsPaths } from './settingsPath';
 
 export type ThemeMode = 'light' | 'dark' | 'auto';
 
@@ -110,6 +112,30 @@ export interface ShellKernel {
   clear: () => void;
   sysinfo: () => Promise<ShellSystemInfo>;
   firstDayOfWeek?: 0 | 1;
+  /** Every setting, as one object, for `lumenctl`. */
+  settings: () => object;
+  /** Write one leaf by its dotted path. Returns false when the path is unknown. */
+  setSetting: (path: string, value: unknown) => boolean;
+  /** Put one section, or everything, back to its default. */
+  resetSettings: (section?: string) => boolean;
+  services: () => ShellService[];
+  /** start, stop or restart a service. Returns why not, or null on success. */
+  serviceControl: (id: string, action: 'start' | 'stop' | 'restart') => string | null;
+  /** True when the account has a password, which is what sudo needs. */
+  hasPassword: () => boolean;
+  /** Check a password. */
+  authenticate: (password: string) => Promise<boolean>;
+  /** End the session: everything closes and the screen locks. */
+  endSession: (reason: string) => void;
+}
+
+export interface ShellService {
+  id: string;
+  name: string;
+  category: string;
+  state: string;
+  implemented: boolean;
+  description: string;
 }
 
 export interface CommandContext {
@@ -124,6 +150,11 @@ export interface CommandContext {
   execute: (source: string) => Promise<number>;
   /** Width of the terminal in characters, for column layouts. */
   columns: number;
+  /**
+   * Ask for a password without echoing it. Absent where there is nobody to
+   * ask — a script, a test — and sudo refuses rather than assuming.
+   */
+  password?: (prompt: string) => Promise<string | null>;
 }
 
 export type CommandGroup = 'files' | 'text' | 'system' | 'apps' | 'shell';
@@ -342,6 +373,11 @@ function needKernel(ctx: CommandContext, name: string): ShellKernel {
 }
 
 const VALID_NAME = /^[A-Za-z_][A-Za-z0-9_]*$/;
+
+/** Wrap an argument so the parser reads it back as the one word it was. */
+function quoteArg(arg: string): string {
+  return `'${arg.replaceAll("'", `'\\''`)}'`;
+}
 
 function timeOfDay(ms: number): string {
   return formatDate(new Date(ms), '%H:%M:%S');
@@ -1653,22 +1689,204 @@ define({
 });
 
 define({
+  name: 'lumenctl',
+  usage: 'lumenctl list [prefix] | get path | set path value | reset [section]',
+  summary: 'read and write any system setting',
+  group: 'system',
+  run(args, ctx) {
+    const kernel = needKernel(ctx, 'lumenctl');
+    const [action, path, ...rest] = args;
+    const settings = kernel.settings();
+
+    if (action === undefined || action === 'list') {
+      const prefix = path ?? '';
+      const paths = settingsPaths(settings).filter((p) => p.startsWith(prefix));
+      if (paths.length === 0) {
+        ctx.stderr(`lumenctl: nothing under "${prefix}"\n`);
+        return 1;
+      }
+      const width = Math.max(...paths.map((p) => p.length));
+      for (const each of paths) {
+        const read = readPath(settings, each);
+        ctx.stdout(`${each.padEnd(width)}  ${read.ok ? formatValue(read.value) : '?'}\n`);
+      }
+      return 0;
+    }
+
+    if (action === 'get') {
+      if (!path) throw new UsageError('missing path');
+      const read = readPath(settings, path);
+      if (!read.ok) {
+        ctx.stderr(`lumenctl: ${read.error}\n`);
+        return 1;
+      }
+      ctx.stdout(`${formatValue(read.value)}\n`);
+      return 0;
+    }
+
+    if (action === 'set') {
+      if (!path) throw new UsageError('missing path');
+      if (rest.length === 0) throw new UsageError('missing value');
+      const read = readPath(settings, path);
+      if (!read.ok) {
+        ctx.stderr(`lumenctl: ${read.error}\n`);
+        return 1;
+      }
+      const parsed = parseValue(read.value, rest.join(' '));
+      if (!parsed.ok) {
+        ctx.stderr(`lumenctl: ${path}: ${parsed.error}\n`);
+        return 1;
+      }
+      if (!kernel.setSetting(path, parsed.value)) {
+        ctx.stderr(`lumenctl: ${path}: refused\n`);
+        return 1;
+      }
+      ctx.stdout(`${path} = ${formatValue(parsed.value)}\n`);
+      return 0;
+    }
+
+    if (action === 'reset') {
+      if (!kernel.resetSettings(path)) {
+        ctx.stderr(`lumenctl: no section named "${path}"\n`);
+        return 1;
+      }
+      ctx.stdout(path ? `${path} reset to defaults\n` : 'settings reset to defaults\n');
+      return 0;
+    }
+
+    throw new UsageError(`unknown action "${action}"`);
+  },
+});
+
+define({
+  name: 'service',
+  usage: 'service list [category] | status id | start id | stop id | restart id',
+  summary: 'list and control system services',
+  group: 'system',
+  run(args, ctx) {
+    const kernel = needKernel(ctx, 'service');
+    const [action = 'list', id] = args;
+    const services = kernel.services();
+
+    if (action === 'list') {
+      const shown = id ? services.filter((s) => s.category === id) : services;
+      if (shown.length === 0) {
+        ctx.stderr(`service: no services in "${id}"\n`);
+        return 1;
+      }
+      const width = Math.max(...shown.map((s) => s.id.length));
+      for (const service of shown) {
+        const kind = service.implemented ? '' : ' (declared)';
+        ctx.stdout(
+          `${service.id.padEnd(width)}  ${service.state.padEnd(10)}${service.name}${kind}\n`,
+        );
+      }
+      return 0;
+    }
+
+    if (!id) throw new UsageError('missing service id');
+    const service = services.find((s) => s.id === id);
+    if (!service) {
+      ctx.stderr(`service: no service named "${id}"\n`);
+      return 1;
+    }
+    if (action === 'status') {
+      ctx.stdout(`${service.name}\n${service.state}\n${service.description}\n`);
+      return 0;
+    }
+    if (action === 'start' || action === 'stop' || action === 'restart') {
+      const refusal = kernel.serviceControl(id, action);
+      if (refusal) {
+        ctx.stderr(`service: ${refusal}\n`);
+        return 1;
+      }
+      ctx.stdout(
+        `${id} ${action === 'stop' ? 'stopped' : action === 'start' ? 'started' : 'restarted'}\n`,
+      );
+      return 0;
+    }
+    throw new UsageError(`unknown action "${action}"`);
+  },
+});
+
+define({
   name: 'kill',
-  usage: 'kill pid…',
-  summary: 'end a process',
+  usage: 'kill [-9] pid…',
+  summary: 'end a process; -9 does not let it come back',
   group: 'apps',
   run(args, ctx) {
     const kernel = needKernel(ctx, 'kill');
-    if (args.length === 0) throw new UsageError('missing pid');
+    const force = args.includes('-9') || args.includes('-KILL');
+    const pids = args.filter((a) => !a.startsWith('-'));
+    if (pids.length === 0) throw new UsageError('missing pid');
     let status = 0;
-    for (const a of args) {
+    for (const a of pids) {
       const pid = Number(a);
-      if (!Number.isInteger(pid) || !kernel.kill(pid)) {
+      if (!Number.isInteger(pid)) {
+        ctx.stderr(`kill: ${a}: no such process\n`);
+        status = 1;
+        continue;
+      }
+      const process = kernel.ps().find((p) => p.pid === pid);
+      // The file manager owns the desktop. Ending it restarts it; ending it
+      // for good ends the session, which is the only way to be rid of it and
+      // takes everything else with it.
+      if (process?.appId === 'lumen.files' && force) {
+        if (!ctx.state.env.LUMEN_SUDO) {
+          ctx.stderr('kill: the file manager can only be forced under sudo\n');
+          status = 1;
+          continue;
+        }
+        ctx.stdout('the session is ending\n');
+        kernel.endSession(`kill -9 ${pid}`);
+        return 0;
+      }
+      if (!kernel.kill(pid)) {
         ctx.stderr(`kill: ${a}: no such process\n`);
         status = 1;
       }
     }
     return status;
+  },
+});
+
+define({
+  name: 'sudo',
+  usage: 'sudo command [args…]',
+  summary: 'run one command with administrator rights',
+  group: 'system',
+  async run(args, ctx) {
+    const kernel = needKernel(ctx, 'sudo');
+    if (args.length === 0) throw new UsageError('missing command');
+    if (!kernel.hasPassword()) {
+      ctx.stderr(
+        'sudo: this account has no password, so there is nothing to check.\n' +
+          'sudo: set one in Settings > Security before using sudo.\n',
+      );
+      return 1;
+    }
+    if (!ctx.password) {
+      ctx.stderr('sudo: no way to ask for a password here\n');
+      return 1;
+    }
+    const password = await ctx.password('Password:');
+    if (password === null) {
+      ctx.stderr('sudo: cancelled\n');
+      return 1;
+    }
+    if (!(await kernel.authenticate(password))) {
+      ctx.stderr('sudo: wrong password\n');
+      return 1;
+    }
+    // The grant lasts for this command and no longer.
+    const before = ctx.state.env.LUMEN_SUDO;
+    ctx.state.env.LUMEN_SUDO = '1';
+    try {
+      return await ctx.execute(args.map(quoteArg).join(' '));
+    } finally {
+      if (before === undefined) delete ctx.state.env.LUMEN_SUDO;
+      else ctx.state.env.LUMEN_SUDO = before;
+    }
   },
 });
 

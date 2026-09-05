@@ -1,6 +1,7 @@
 import { createKernel, useSessionStore } from '@lumen/kernel';
 import { KernelProvider } from '@lumen/kernel/react';
 import { createWebPlatform } from '@lumen/platform';
+import { DialogProvider } from '@lumen/ui';
 import { MemoryAdapter } from '@lumen/vfs';
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -20,7 +21,10 @@ async function mount(args: Record<string, unknown> = {}) {
   const view = render(
     <KernelProvider kernel={kernel}>
       <AppProvider value={{ pid: 1, windowId: 'w1', appId: 'lumen.terminal', container: null }}>
-        <Terminal pid={1} windowId="w1" args={args} />
+        {/* The window host provides this in the running system; sudo asks through it. */}
+        <DialogProvider>
+          <Terminal pid={1} windowId="w1" args={args} />
+        </DialogProvider>
       </AppProvider>
     </KernelProvider>,
   );

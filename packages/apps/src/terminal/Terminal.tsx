@@ -1,15 +1,19 @@
 import {
   currentUser,
+  defaultSettings,
   getSettings,
+  SERVICES,
   type ThemeMode,
   useClipboardStore,
   useProcessStore,
   useRegistryStore,
+  useServiceStore,
   useSettingsStore,
+  verifyPassword,
 } from '@lumen/kernel';
 import { useKernel, usePlatform, useVfs } from '@lumen/kernel/react';
 import { KERNEL_VERSION } from '@lumen/platform';
-import { cx } from '@lumen/ui';
+import { cx, useDialogs } from '@lumen/ui';
 import { join } from '@lumen/vfs';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -49,6 +53,7 @@ interface HistoryFile {
 export default function Terminal({ args: initialArgs }: AppProps) {
   const args = useArgs(initialArgs);
   const kernel = useKernel();
+  const dialogs = useDialogs();
   const vfs = useVfs();
   const platform = usePlatform();
   const { launch } = useLauncher();
@@ -146,6 +151,60 @@ export default function Terminal({ args: initialArgs }: AppProps) {
         return getSettings().appearance.theme;
       },
       lock: () => kernel.lock(),
+      settings: () => getSettings(),
+      setSetting: (path: string, value: unknown) => {
+        try {
+          // The store's path type is the union of every known leaf; lumenctl
+          // has already checked that the path exists and that the value has
+          // the type the setting holds, so the cast is the truth by then.
+          useSettingsStore.getState().set(path as never, value as never);
+          return true;
+        } catch {
+          return false;
+        }
+      },
+      resetSettings: (section?: string) => {
+        const store = useSettingsStore.getState();
+        if (!section) {
+          store.reset();
+          return true;
+        }
+        const defaults = defaultSettings() as unknown as Record<string, unknown>;
+        if (!(section in defaults)) return false;
+        store.patch(section as Parameters<typeof store.patch>[0], defaults[section] as never);
+        return true;
+      },
+      services: () => {
+        const statuses = useServiceStore.getState().statuses;
+        return SERVICES.map((service) => ({
+          id: service.id,
+          name: service.name,
+          category: service.category,
+          state: statuses[service.id]?.state ?? 'stopped',
+          implemented: service.implemented,
+          description: service.description,
+        }));
+      },
+      serviceControl: (id: string, action: 'start' | 'stop' | 'restart') => {
+        const store = useServiceStore.getState();
+        if (action !== 'start' && store.isEssential(id)) {
+          return `${id} is required by the system and cannot be stopped`;
+        }
+        const ok =
+          action === 'start'
+            ? store.start(id, Date.now())
+            : action === 'stop'
+              ? store.stop(id)
+              : store.restart(id, Date.now());
+        return ok ? null : `${id} could not be ${action}ed`;
+      },
+      // sudo needs a password to ask for; an account without one cannot use it.
+      hasPassword: () => currentUser()?.passwordHash !== null,
+      authenticate: async (password: string) => {
+        const user = currentUser();
+        return user ? verifyPassword(user, password) : false;
+      },
+      endSession: (reason: string) => void kernel.endSession(reason),
       exit: () => void close(),
       clear: clearScreen,
       sysinfo: async () => {
@@ -192,6 +251,10 @@ export default function Terminal({ args: initialArgs }: AppProps) {
         state,
         kernel: shellKernel,
         columns: measureColumns(),
+        // sudo asks here. The dialog belongs to this window, so it cannot be
+        // mistaken for a request from somewhere else.
+        password: (title: string) =>
+          dialogs.prompt({ title, password: true, mono: true, confirmLabel: 'Continue' }),
         io: {
           stdout: (text) => write(id, { kind: 'out', text }),
           stderr: (text) => write(id, { kind: 'err', text }),
@@ -208,7 +271,7 @@ export default function Terminal({ args: initialArgs }: AppProps) {
         flush();
       }
     },
-    [user, state, home, vfs, shellKernel, measureColumns, write, flush],
+    [user, state, home, vfs, shellKernel, measureColumns, write, flush, dialogs.prompt],
   );
 
   // Banner, then the launch script, once.

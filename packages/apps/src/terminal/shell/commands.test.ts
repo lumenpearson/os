@@ -71,6 +71,34 @@ function harness(kernelOverrides: Partial<ShellKernel> = {}, vfs?: Vfs): Harness
       memory: { total: 8 * 1024 ** 3, available: 4 * 1024 ** 3 },
       resolution: '1920x1080',
     }),
+    settings: () => ({
+      appearance: { theme: 'auto', blur: 14, reduceMotion: false },
+      taskbar: { size: 44, items: ['start', 'search'] },
+    }),
+    setSetting: vi.fn(() => true),
+    resetSettings: vi.fn(() => true),
+    services: () => [
+      {
+        id: 'com.lumen.dock',
+        name: 'Dock',
+        category: 'shell',
+        state: 'running',
+        implemented: true,
+        description: 'Draws the taskbar.',
+      },
+      {
+        id: 'com.lumen.printd',
+        name: 'Print Spooler',
+        category: 'printing',
+        state: 'on-demand',
+        implemented: false,
+        description: 'Queues documents.',
+      },
+    ],
+    serviceControl: vi.fn(() => null),
+    hasPassword: () => true,
+    authenticate: async (password: string) => password === 'secret',
+    endSession: vi.fn(),
     ...kernelOverrides,
   };
   const filesystem = vfs as Vfs;
@@ -543,5 +571,91 @@ describe('kernel-backed commands', () => {
     });
     expect(await shell.run('ps')).toBe(1);
     expect(err).toContain('needs the OS');
+  });
+});
+
+describe('lumenctl', () => {
+  it('lists every setting with its value', async () => {
+    const h = harness();
+    expect(await h.run('lumenctl list appearance')).toBe(0);
+    expect(h.out()).toContain('appearance.theme');
+    expect(h.out()).toContain('auto');
+    expect(h.out()).not.toContain('taskbar.size');
+  });
+
+  it('reads one setting', async () => {
+    const h = harness();
+    expect(await h.run('lumenctl get taskbar.size')).toBe(0);
+    expect(h.out().trim()).toBe('44');
+  });
+
+  it('refuses a section, and a path that is not there', async () => {
+    const h = harness();
+    expect(await h.run('lumenctl get appearance')).toBe(1);
+    expect(h.err()).toContain('is a section');
+    expect(await h.run('lumenctl get appearance.nonsense')).toBe(1);
+    expect(h.err()).toContain('no setting named');
+  });
+
+  it('writes a setting through the kernel, in the type it already has', async () => {
+    const setSetting = vi.fn(() => true);
+    const h = harness({ setSetting });
+    expect(await h.run('lumenctl set appearance.blur 20')).toBe(0);
+    expect(setSetting).toHaveBeenCalledWith('appearance.blur', 20);
+    expect(await h.run('lumenctl set appearance.reduceMotion on')).toBe(0);
+    expect(setSetting).toHaveBeenCalledWith('appearance.reduceMotion', true);
+  });
+
+  it('refuses a value of the wrong type without calling the kernel', async () => {
+    const setSetting = vi.fn(() => true);
+    const h = harness({ setSetting });
+    expect(await h.run('lumenctl set appearance.blur wide')).toBe(1);
+    expect(h.err()).toContain('expected a number');
+    expect(setSetting).not.toHaveBeenCalled();
+  });
+});
+
+describe('service', () => {
+  it('lists the services and marks the declared ones', async () => {
+    const h = harness();
+    expect(await h.run('service list')).toBe(0);
+    expect(h.out()).toContain('com.lumen.dock');
+    expect(h.out()).toContain('(declared)');
+  });
+
+  it('filters by category and explains an empty one', async () => {
+    const h = harness();
+    expect(await h.run('service list printing')).toBe(0);
+    expect(h.out()).toContain('com.lumen.printd');
+    expect(h.out()).not.toContain('com.lumen.dock');
+    expect(await h.run('service list nonsense')).toBe(1);
+  });
+
+  it('passes start, stop and restart to the kernel', async () => {
+    const serviceControl = vi.fn(() => null);
+    const h = harness({ serviceControl });
+    expect(await h.run('service restart com.lumen.dock')).toBe(0);
+    expect(serviceControl).toHaveBeenCalledWith('com.lumen.dock', 'restart');
+  });
+
+  it("reports a refusal in the kernel's words", async () => {
+    const h = harness({ serviceControl: () => 'com.lumen.dock is required by the system' });
+    expect(await h.run('service stop com.lumen.dock')).toBe(1);
+    expect(h.err()).toContain('required by the system');
+  });
+});
+
+describe('sudo', () => {
+  it('says plainly that an account without a password cannot use it', async () => {
+    const h = harness({ hasPassword: () => false });
+    expect(await h.run('sudo whoami')).toBe(1);
+    expect(h.err()).toContain('no password');
+    expect(h.err()).toContain('Settings > Security');
+  });
+
+  it('refuses where there is nobody to ask', async () => {
+    const h = harness();
+    expect(await h.run('sudo whoami')).toBe(1);
+    expect(h.err()).toContain('no way to ask');
   });
 });

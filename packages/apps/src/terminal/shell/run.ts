@@ -40,6 +40,8 @@ export interface ShellOptions {
   signal?: AbortSignal;
   /** Terminal width in characters, for `ls` columns. */
   columns?: number;
+  /** Ask the person at the keyboard for a password, without echoing it. */
+  password?: (prompt: string) => Promise<string | null>;
 }
 
 /** Guards against `alias ls='ls -l'` recursing forever. */
@@ -51,6 +53,7 @@ export class Shell {
   private readonly io: ShellIo;
   private readonly kernel?: ShellKernel;
   private readonly width: number;
+  private readonly password?: (prompt: string) => Promise<string | null>;
   signal?: AbortSignal;
 
   constructor(options: ShellOptions) {
@@ -59,6 +62,7 @@ export class Shell {
     this.io = options.io;
     this.kernel = options.kernel;
     this.width = options.columns ?? 80;
+    this.password = options.password;
     this.signal = options.signal;
   }
 
@@ -235,6 +239,7 @@ export class Shell {
       signal: this.signal,
       kernel: this.kernel,
       columns: this.width,
+      password: this.password,
       execute: (source) => this.runNested(source, { stdout, stderr: errIo.stderr }),
     };
 
