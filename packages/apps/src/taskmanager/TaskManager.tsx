@@ -43,6 +43,7 @@ import {
   processSortValue,
   windowSignature,
 } from './processes';
+import { ServicesTab } from './ServicesTab';
 import { useDocumentVisible } from './samplers';
 import { sortRows } from './sort';
 import { TickProvider } from './tick';
@@ -50,6 +51,7 @@ import { TickProvider } from './tick';
 const TAB_LABEL: Record<TabId, string> = {
   processes: 'Processes',
   performance: 'Performance',
+  services: 'Services',
   apps: 'Apps',
 };
 
@@ -276,6 +278,7 @@ export default function TaskManager({ pid, windowId }: AppProps) {
         {config.tab === 'performance' && (
           <PerformanceTab active={!paused} refreshMs={config.refreshMs} />
         )}
+        {config.tab === 'services' && <ServicesTab />}
         {config.tab === 'apps' && (
           <AppsTab
             apps={apps}

@@ -2,7 +2,7 @@
 import type { ProcessColumnId } from './processes';
 import type { SortDirection, SortState } from './sort';
 
-export const TAB_IDS = ['processes', 'performance', 'apps'] as const;
+export const TAB_IDS = ['processes', 'performance', 'services', 'apps'] as const;
 export type TabId = (typeof TAB_IDS)[number];
 
 /** Sampling intervals offered in View → Refresh Rate. */
