@@ -1,0 +1,41 @@
+{
+  "id": "com.lumen.csv",
+  "kind": "app",
+  "name": "CSV Table",
+  "tagline": "Read delimited text as a table, quotes and all.",
+  "version": "1.2.0",
+  "publisher": "Lumen",
+  "category": "office",
+  "size": 10415,
+  "price": "free",
+  "keywords": [
+    "csv",
+    "tsv",
+    "table",
+    "data",
+    "spreadsheet"
+  ],
+  "updated": "2026-08-28T09:00:00Z",
+  "description": "Paste comma, tab, semicolon or pipe separated text and read it as a table. The parser follows the quoting rules real exports use: a quoted field may contain the delimiter, a newline, or a doubled quote standing for one quote character. The delimiter is detected from the first line unless you pick one.\n\nClick a column heading to sort, click again to reverse. A column whose every value parses as a number sorts numerically and is set flush right; everything else sorts as text. The filter box narrows to rows containing what you type, and the summary line reports rows shown against rows read.\n\nHeadings are keyboard reachable and report their sort direction, so the table can be driven without a pointer.",
+  "payload": "payload/com.lumen.csv-1.2.0.json",
+  "sha256": "0540026a5fc77eb92c28a97b8ea5a6e5afd617da2b6df4a4fb26b083222af329",
+  "requires": {
+    "os": ">=0.1.0"
+  },
+  "capabilities": [
+    "storage"
+  ],
+  "screenshots": [
+    {
+      "shape": "grid",
+      "seed": 4,
+      "tone": "neutral"
+    },
+    {
+      "shape": "ramp",
+      "seed": 9,
+      "tone": "accent"
+    }
+  ],
+  "releaseNotes": "Columns detect numeric content and sort by value. Added a row filter and pipe as a delimiter."
+}

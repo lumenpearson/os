@@ -1,0 +1,36 @@
+{
+  "id": "com.lumen.font.mono-italic",
+  "kind": "font",
+  "name": "JetBrains Mono Italic",
+  "tagline": "Sloped monospace for comments and captions.",
+  "version": "5.3.0",
+  "publisher": "JetBrains, packaged by Lumen",
+  "category": "fonts",
+  "size": 57451,
+  "price": "free",
+  "keywords": [
+    "font",
+    "italic",
+    "monospace",
+    "code",
+    "jetbrains"
+  ],
+  "updated": "2026-07-30T09:00:00Z",
+  "description": "The italic companion to the monospace face the OS sets values in. The upright is loaded at startup; the italic is not, so an editor asked to slope a comment gets a renderer-made oblique instead of the drawn letters.\n\nThis is the Latin subset of the variable italic, weights 100 to 800 on one axis, from the same release the OS vendors. It is worth having wherever monospace text distinguishes a comment, a caption or a placeholder from the code around it.\n\nThe file is embedded in the payload as a data URL. JetBrains Mono is licensed under the SIL Open Font License 1.1; the licence travels with the package.",
+  "payload": "payload/com.lumen.font.mono-italic-5.3.0.json",
+  "sha256": "6bbbeaa26690a6bf3ec9c1a6215840a419569e3e6134cdbf642720087aebe1a1",
+  "requires": {
+    "os": ">=0.1.0"
+  },
+  "capabilities": [
+    "fonts"
+  ],
+  "screenshots": [
+    {
+      "shape": "type",
+      "seed": 44,
+      "tone": "accent"
+    }
+  ],
+  "releaseNotes": "Packaged from JetBrains Mono 5.3.0, Latin subset."
+}

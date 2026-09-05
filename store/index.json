@@ -1,0 +1,623 @@
+{
+  "format": 1,
+  "name": "Lumen Store",
+  "updated": "2026-09-05T00:00:00Z",
+  "packages": [
+    {
+      "id": "com.lumen.regex",
+      "kind": "app",
+      "name": "Regex Tester",
+      "tagline": "A pattern, its flags, and every match painted in place.",
+      "version": "1.1.0",
+      "publisher": "Lumen",
+      "category": "developer",
+      "size": 8323,
+      "price": "free",
+      "keywords": [
+        "regex",
+        "regexp",
+        "pattern",
+        "match",
+        "search"
+      ],
+      "updated": "2026-08-24T09:00:00Z"
+    },
+    {
+      "id": "com.lumen.diff",
+      "kind": "app",
+      "name": "Diff Viewer",
+      "tagline": "What changed between two texts, line by line.",
+      "version": "1.0.2",
+      "publisher": "Lumen",
+      "category": "developer",
+      "size": 9409,
+      "price": "free",
+      "keywords": [
+        "diff",
+        "compare",
+        "patch",
+        "text",
+        "changes"
+      ],
+      "updated": "2026-08-19T09:00:00Z"
+    },
+    {
+      "id": "com.lumen.csv",
+      "kind": "app",
+      "name": "CSV Table",
+      "tagline": "Read delimited text as a table, quotes and all.",
+      "version": "1.2.0",
+      "publisher": "Lumen",
+      "category": "office",
+      "size": 10415,
+      "price": "free",
+      "keywords": [
+        "csv",
+        "tsv",
+        "table",
+        "data",
+        "spreadsheet"
+      ],
+      "updated": "2026-08-28T09:00:00Z"
+    },
+    {
+      "id": "com.lumen.encoder",
+      "kind": "app",
+      "name": "Base64 and Hex",
+      "tagline": "Text to bytes to Base64, hex, percent or binary.",
+      "version": "1.3.0",
+      "publisher": "Lumen",
+      "category": "developer",
+      "size": 9804,
+      "price": "free",
+      "keywords": [
+        "base64",
+        "hex",
+        "encode",
+        "decode",
+        "utf-8",
+        "binary"
+      ],
+      "updated": "2026-09-01T09:00:00Z"
+    },
+    {
+      "id": "com.lumen.cron",
+      "kind": "app",
+      "name": "Cron Explainer",
+      "tagline": "What a crontab line means, and when it fires next.",
+      "version": "1.0.0",
+      "publisher": "Lumen",
+      "category": "developer",
+      "size": 12390,
+      "price": "free",
+      "keywords": [
+        "cron",
+        "crontab",
+        "schedule",
+        "timer",
+        "jobs"
+      ],
+      "updated": "2026-08-12T09:00:00Z"
+    },
+    {
+      "id": "com.lumen.contrast",
+      "kind": "app",
+      "name": "Contrast Checker",
+      "tagline": "Whether two colours are far enough apart to read.",
+      "version": "1.1.0",
+      "publisher": "Lumen",
+      "category": "developer",
+      "size": 9467,
+      "price": "free",
+      "keywords": [
+        "contrast",
+        "wcag",
+        "accessibility",
+        "colour",
+        "a11y"
+      ],
+      "updated": "2026-08-30T09:00:00Z"
+    },
+    {
+      "id": "com.lumen.words",
+      "kind": "app",
+      "name": "Word Sampler",
+      "tagline": "Placeholder text with your own vocabulary, not dog Latin.",
+      "version": "1.0.1",
+      "publisher": "Lumen",
+      "category": "office",
+      "size": 10219,
+      "price": "free",
+      "keywords": [
+        "placeholder",
+        "filler",
+        "lorem",
+        "text",
+        "frequency"
+      ],
+      "updated": "2026-08-21T09:00:00Z"
+    },
+    {
+      "id": "com.lumen.ids",
+      "kind": "app",
+      "name": "ID Generator",
+      "tagline": "UUIDs, ULIDs and tokens, in the quantity you asked for.",
+      "version": "1.2.1",
+      "publisher": "Lumen",
+      "category": "developer",
+      "size": 10138,
+      "price": "free",
+      "keywords": [
+        "uuid",
+        "ulid",
+        "guid",
+        "token",
+        "random",
+        "id"
+      ],
+      "updated": "2026-09-02T09:00:00Z"
+    },
+    {
+      "id": "com.lumen.bezier",
+      "kind": "app",
+      "name": "Bezier Editor",
+      "tagline": "Shape a CSS timing function and watch it move.",
+      "version": "1.0.0",
+      "publisher": "Lumen",
+      "category": "developer",
+      "size": 12657,
+      "price": "free",
+      "keywords": [
+        "bezier",
+        "easing",
+        "animation",
+        "css",
+        "timing"
+      ],
+      "updated": "2026-08-15T09:00:00Z"
+    },
+    {
+      "id": "com.lumen.metronome",
+      "kind": "app",
+      "name": "Metronome",
+      "tagline": "A steady click that does not drift when the tab is busy.",
+      "version": "1.1.0",
+      "publisher": "Lumen",
+      "category": "media",
+      "size": 9440,
+      "price": "free",
+      "keywords": [
+        "metronome",
+        "tempo",
+        "beat",
+        "music",
+        "practice"
+      ],
+      "updated": "2026-08-26T09:00:00Z"
+    },
+    {
+      "id": "com.lumen.stopwatch",
+      "kind": "app",
+      "name": "Stopwatch",
+      "tagline": "Elapsed time, with laps that can be compared.",
+      "version": "1.0.3",
+      "publisher": "Lumen",
+      "category": "utilities",
+      "size": 8419,
+      "price": "free",
+      "keywords": [
+        "stopwatch",
+        "timer",
+        "laps",
+        "split",
+        "time"
+      ],
+      "updated": "2026-08-08T09:00:00Z"
+    },
+    {
+      "id": "com.lumen.timestamp",
+      "kind": "app",
+      "name": "Timestamp Converter",
+      "tagline": "One instant, written every way a log might write it.",
+      "version": "1.1.0",
+      "publisher": "Lumen",
+      "category": "developer",
+      "size": 9480,
+      "price": "free",
+      "keywords": [
+        "unix",
+        "epoch",
+        "timestamp",
+        "date",
+        "iso"
+      ],
+      "updated": "2026-09-03T09:00:00Z"
+    },
+    {
+      "id": "com.lumen.font.plex-italic",
+      "kind": "font",
+      "name": "IBM Plex Sans Italic",
+      "tagline": "The italic the interface face is missing.",
+      "version": "5.3.0",
+      "publisher": "IBM, packaged by Lumen",
+      "category": "fonts",
+      "size": 67074,
+      "price": "free",
+      "keywords": [
+        "font",
+        "italic",
+        "sans",
+        "plex",
+        "interface"
+      ],
+      "updated": "2026-07-30T09:00:00Z"
+    },
+    {
+      "id": "com.lumen.font.mono-italic",
+      "kind": "font",
+      "name": "JetBrains Mono Italic",
+      "tagline": "Sloped monospace for comments and captions.",
+      "version": "5.3.0",
+      "publisher": "JetBrains, packaged by Lumen",
+      "category": "fonts",
+      "size": 57451,
+      "price": "free",
+      "keywords": [
+        "font",
+        "italic",
+        "monospace",
+        "code",
+        "jetbrains"
+      ],
+      "updated": "2026-07-30T09:00:00Z"
+    },
+    {
+      "id": "com.lumen.font.seven",
+      "kind": "font",
+      "name": "Lumen Seven",
+      "tagline": "A seven-segment face for clocks and counters.",
+      "version": "1.0.0",
+      "publisher": "Lumen",
+      "category": "fonts",
+      "size": 4641,
+      "price": "free",
+      "keywords": [
+        "font",
+        "display",
+        "clock",
+        "digits",
+        "seven-segment"
+      ],
+      "updated": "2026-08-06T09:00:00Z"
+    },
+    {
+      "id": "com.lumen.font.blocks",
+      "kind": "font",
+      "name": "Lumen Blocks",
+      "tagline": "Block and box-drawing glyphs that meet exactly.",
+      "version": "1.0.0",
+      "publisher": "Lumen",
+      "category": "fonts",
+      "size": 6370,
+      "price": "free",
+      "keywords": [
+        "font",
+        "blocks",
+        "box-drawing",
+        "terminal",
+        "sparkline"
+      ],
+      "updated": "2026-08-06T09:00:00Z"
+    },
+    {
+      "id": "com.lumen.icons.weather",
+      "kind": "icons",
+      "name": "Weather Icons",
+      "tagline": "Twelve marks for sky, water and temperature.",
+      "version": "1.1.0",
+      "publisher": "Lumen",
+      "category": "icons",
+      "size": 1176,
+      "price": "free",
+      "keywords": [
+        "icons",
+        "weather",
+        "forecast",
+        "sun",
+        "rain"
+      ],
+      "updated": "2026-08-18T09:00:00Z"
+    },
+    {
+      "id": "com.lumen.icons.transit",
+      "kind": "icons",
+      "name": "Transit Icons",
+      "tagline": "Thirteen ways of getting there.",
+      "version": "1.0.0",
+      "publisher": "Lumen",
+      "category": "icons",
+      "size": 1657,
+      "price": "free",
+      "keywords": [
+        "icons",
+        "transport",
+        "travel",
+        "map",
+        "journey"
+      ],
+      "updated": "2026-08-11T09:00:00Z"
+    },
+    {
+      "id": "com.lumen.icons.studio",
+      "kind": "icons",
+      "name": "Studio Icons",
+      "tagline": "Twelve marks for recording, mixing and playing back.",
+      "version": "1.0.2",
+      "publisher": "Lumen",
+      "category": "icons",
+      "size": 1229,
+      "price": "free",
+      "keywords": [
+        "icons",
+        "audio",
+        "video",
+        "media",
+        "studio"
+      ],
+      "updated": "2026-08-23T09:00:00Z"
+    },
+    {
+      "id": "com.lumen.bundle.developer",
+      "kind": "bundle",
+      "name": "Developer Kit",
+      "tagline": "Six tools and a face for the parts of the day spent in a terminal.",
+      "version": "1.2.0",
+      "publisher": "Lumen",
+      "category": "bundles",
+      "size": 116995,
+      "price": "free",
+      "keywords": [
+        "bundle",
+        "developer",
+        "tools",
+        "terminal"
+      ],
+      "updated": "2026-09-03T09:00:00Z"
+    },
+    {
+      "id": "com.lumen.bundle.design",
+      "kind": "bundle",
+      "name": "Design Kit",
+      "tagline": "Contrast, easing, filler text, an italic and a set of icons.",
+      "version": "1.0.0",
+      "publisher": "Lumen",
+      "category": "bundles",
+      "size": 100646,
+      "price": "free",
+      "keywords": [
+        "bundle",
+        "design",
+        "colour",
+        "typography",
+        "icons"
+      ],
+      "updated": "2026-08-30T09:00:00Z"
+    },
+    {
+      "id": "com.lumen.bundle.desk",
+      "kind": "bundle",
+      "name": "Desk Set",
+      "tagline": "Time, rhythm, a table and two faces to read them in.",
+      "version": "1.1.0",
+      "publisher": "Lumen",
+      "category": "bundles",
+      "size": 39285,
+      "price": "free",
+      "keywords": [
+        "bundle",
+        "time",
+        "metronome",
+        "stopwatch",
+        "desk"
+      ],
+      "updated": "2026-08-28T09:00:00Z"
+    }
+  ],
+  "sections": [
+    {
+      "id": "recently-updated",
+      "title": "Recently updated",
+      "packages": [
+        "com.lumen.timestamp",
+        "com.lumen.ids",
+        "com.lumen.contrast",
+        "com.lumen.csv",
+        "com.lumen.bundle.developer",
+        "com.lumen.metronome"
+      ]
+    },
+    {
+      "id": "developer-tools",
+      "title": "For developers",
+      "packages": [
+        "com.lumen.regex",
+        "com.lumen.diff",
+        "com.lumen.encoder",
+        "com.lumen.cron",
+        "com.lumen.ids",
+        "com.lumen.timestamp"
+      ]
+    },
+    {
+      "id": "text-and-data",
+      "title": "Text and data",
+      "packages": [
+        "com.lumen.csv",
+        "com.lumen.words",
+        "com.lumen.diff",
+        "com.lumen.encoder"
+      ]
+    },
+    {
+      "id": "drawing",
+      "title": "Drawing and colour",
+      "packages": [
+        "com.lumen.contrast",
+        "com.lumen.bezier",
+        "com.lumen.icons.studio"
+      ]
+    },
+    {
+      "id": "time-and-rhythm",
+      "title": "Time and rhythm",
+      "packages": [
+        "com.lumen.stopwatch",
+        "com.lumen.metronome",
+        "com.lumen.timestamp"
+      ]
+    },
+    {
+      "id": "typefaces",
+      "title": "Typefaces",
+      "packages": [
+        "com.lumen.font.plex-italic",
+        "com.lumen.font.mono-italic",
+        "com.lumen.font.seven",
+        "com.lumen.font.blocks"
+      ]
+    },
+    {
+      "id": "icon-sets",
+      "title": "Icon sets",
+      "packages": [
+        "com.lumen.icons.weather",
+        "com.lumen.icons.transit",
+        "com.lumen.icons.studio"
+      ]
+    },
+    {
+      "id": "bundles",
+      "title": "Bundles",
+      "packages": [
+        "com.lumen.bundle.developer",
+        "com.lumen.bundle.design",
+        "com.lumen.bundle.desk"
+      ]
+    }
+  ],
+  "banners": [
+    {
+      "id": "welcome",
+      "title": "Six programs to start with",
+      "text": "A pattern tester, a diff, a table, an encoder, a stopwatch and a clock.",
+      "target": {
+        "kind": "collection",
+        "id": "essentials"
+      },
+      "artwork": {
+        "shape": "rings",
+        "seed": 3,
+        "tone": "accent"
+      }
+    },
+    {
+      "id": "typefaces",
+      "title": "Two italics and two faces drawn from rectangles",
+      "text": "The italics the OS leaves out, a seven-segment display and a set of blocks.",
+      "target": {
+        "kind": "section",
+        "id": "typefaces"
+      },
+      "artwork": {
+        "shape": "type",
+        "seed": 22,
+        "tone": "neutral"
+      }
+    },
+    {
+      "id": "developer-kit",
+      "title": "The Developer Kit, in one install",
+      "text": "Six tools and the monospace italic, downloaded together.",
+      "target": {
+        "kind": "package",
+        "id": "com.lumen.bundle.developer"
+      },
+      "artwork": {
+        "shape": "grid",
+        "seed": 81,
+        "tone": "accent"
+      }
+    }
+  ],
+  "collections": [
+    {
+      "id": "essentials",
+      "title": "Start here",
+      "tagline": "Six programs that earn their place on the first day.",
+      "artwork": {
+        "shape": "rings",
+        "seed": 3,
+        "tone": "accent"
+      },
+      "packages": [
+        "com.lumen.regex",
+        "com.lumen.diff",
+        "com.lumen.csv",
+        "com.lumen.encoder",
+        "com.lumen.stopwatch",
+        "com.lumen.timestamp"
+      ]
+    },
+    {
+      "id": "the-drawing-desk",
+      "title": "The drawing desk",
+      "tagline": "What to reach for while a screen is still being decided.",
+      "artwork": {
+        "shape": "ramp",
+        "seed": 14,
+        "tone": "accent"
+      },
+      "packages": [
+        "com.lumen.contrast",
+        "com.lumen.bezier",
+        "com.lumen.words",
+        "com.lumen.icons.studio",
+        "com.lumen.icons.weather",
+        "com.lumen.font.plex-italic"
+      ]
+    },
+    {
+      "id": "drawn-here",
+      "title": "Drawn here",
+      "tagline": "The faces and icon sets this catalogue made itself.",
+      "artwork": {
+        "shape": "type",
+        "seed": 22,
+        "tone": "neutral"
+      },
+      "packages": [
+        "com.lumen.font.seven",
+        "com.lumen.font.blocks",
+        "com.lumen.icons.weather",
+        "com.lumen.icons.transit",
+        "com.lumen.icons.studio"
+      ]
+    },
+    {
+      "id": "quiet-tools",
+      "title": "Quiet tools",
+      "tagline": "Small programs that do one thing and then get out of the way.",
+      "artwork": {
+        "shape": "grid",
+        "seed": 36,
+        "tone": "neutral"
+      },
+      "packages": [
+        "com.lumen.stopwatch",
+        "com.lumen.metronome",
+        "com.lumen.ids",
+        "com.lumen.cron"
+      ]
+    }
+  ]
+}

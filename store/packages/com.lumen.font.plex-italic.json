@@ -1,0 +1,36 @@
+{
+  "id": "com.lumen.font.plex-italic",
+  "kind": "font",
+  "name": "IBM Plex Sans Italic",
+  "tagline": "The italic the interface face is missing.",
+  "version": "5.3.0",
+  "publisher": "IBM, packaged by Lumen",
+  "category": "fonts",
+  "size": 67074,
+  "price": "free",
+  "keywords": [
+    "font",
+    "italic",
+    "sans",
+    "plex",
+    "interface"
+  ],
+  "updated": "2026-07-30T09:00:00Z",
+  "description": "Lumen sets its interface in IBM Plex Sans and loads only the upright variable face, because an italic that is never used is a download nobody asked for. This package adds the italic.\n\nIt is the Latin subset of the variable italic from the same release the OS vendors, covering weights 100 to 700 on one axis, so emphasis in a document is drawn rather than sloped by the renderer. Synthesised obliques ruin the a and the g of this face in particular; the real italic redraws them.\n\nThe file is embedded in the payload as a data URL, so installing it makes no second request. IBM Plex is licensed under the SIL Open Font License 1.1; the licence travels with the package.",
+  "payload": "payload/com.lumen.font.plex-italic-5.3.0.json",
+  "sha256": "243c70a1555303bd3ec1df578a952805ce291be39e6c1dbb3aa660c8c277a934",
+  "requires": {
+    "os": ">=0.1.0"
+  },
+  "capabilities": [
+    "fonts"
+  ],
+  "screenshots": [
+    {
+      "shape": "type",
+      "seed": 41,
+      "tone": "neutral"
+    }
+  ],
+  "releaseNotes": "Packaged from IBM Plex Sans 5.3.0, Latin subset."
+}

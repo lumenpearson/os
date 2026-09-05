@@ -1,0 +1,36 @@
+{
+  "id": "com.lumen.diff",
+  "kind": "app",
+  "name": "Diff Viewer",
+  "tagline": "What changed between two texts, line by line.",
+  "version": "1.0.2",
+  "publisher": "Lumen",
+  "category": "developer",
+  "size": 9409,
+  "price": "free",
+  "keywords": [
+    "diff",
+    "compare",
+    "patch",
+    "text",
+    "changes"
+  ],
+  "updated": "2026-08-19T09:00:00Z",
+  "description": "Paste two versions of a file and read the edit between them. The diff is a longest common subsequence walked back into a unified list: every line carries its number on both sides, and additions and removals are marked with a rule in the gutter and a sign rather than a wash of colour.\n\nLong unchanged stretches collapse to a count with three lines of context on either side of each change, and the collapse can be switched off for a full reading. Trailing whitespace can be ignored, which is usually what you want when comparing something a formatter has been over.\n\nBoth texts are kept between sessions.",
+  "payload": "payload/com.lumen.diff-1.0.2.json",
+  "sha256": "1b9dfc26992ecb6c58e7a9af3619595d4272202f430526cbd2884a574562e569",
+  "requires": {
+    "os": ">=0.1.0"
+  },
+  "capabilities": [
+    "storage"
+  ],
+  "screenshots": [
+    {
+      "shape": "ramp",
+      "seed": 21,
+      "tone": "neutral"
+    }
+  ],
+  "releaseNotes": "Context collapsing keeps three lines either side instead of one."
+}

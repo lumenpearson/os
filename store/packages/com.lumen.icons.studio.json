@@ -1,0 +1,41 @@
+{
+  "id": "com.lumen.icons.studio",
+  "kind": "icons",
+  "name": "Studio Icons",
+  "tagline": "Twelve marks for recording, mixing and playing back.",
+  "version": "1.0.2",
+  "publisher": "Lumen",
+  "category": "icons",
+  "size": 1229,
+  "price": "free",
+  "keywords": [
+    "icons",
+    "audio",
+    "video",
+    "media",
+    "studio"
+  ],
+  "updated": "2026-08-23T09:00:00Z",
+  "description": "Camera, microphone, film, waveform, faders, headphones, speaker, clapper, aperture, disc, playlist and metronome. A set for the parts of an interface that record and play things back.\n\nThe waveform and the faders stand on the same x positions — 3, 11 and 19 — so a transport bar reads as one control rather than as a row of unrelated glyphs, and the aperture and the disc share a nine unit radius, which keeps them the same optical size beside each other.\n\nStroke at 2 units with round caps and joins on a 24 unit box.",
+  "payload": "payload/com.lumen.icons.studio-1.0.2.json",
+  "sha256": "aeaffbe406b86b694d307a949acc43421b7eeb2a91ed76299bd648f43b001c17",
+  "requires": {
+    "os": ">=0.1.0"
+  },
+  "capabilities": [
+    "icons"
+  ],
+  "screenshots": [
+    {
+      "shape": "ramp",
+      "seed": 67,
+      "tone": "neutral"
+    },
+    {
+      "shape": "rings",
+      "seed": 71,
+      "tone": "accent"
+    }
+  ],
+  "releaseNotes": "The waveform and faders now share their stem positions."
+}

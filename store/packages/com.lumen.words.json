@@ -1,0 +1,41 @@
+{
+  "id": "com.lumen.words",
+  "kind": "app",
+  "name": "Word Sampler",
+  "tagline": "Placeholder text with your own vocabulary, not dog Latin.",
+  "version": "1.0.1",
+  "publisher": "Lumen",
+  "category": "office",
+  "size": 10219,
+  "price": "free",
+  "keywords": [
+    "placeholder",
+    "filler",
+    "lorem",
+    "text",
+    "frequency"
+  ],
+  "updated": "2026-08-21T09:00:00Z",
+  "description": "Filler text is meant to stand in for real copy, and Latin cannot do that: it has the wrong word lengths, the wrong letter frequencies and no vocabulary in common with the thing being designed. This samples from a source you paste instead.\n\nThe source is split into words, counted, and turned into a chain of which word followed which. Sampling walks that chain, so the output keeps the vocabulary and the local rhythm of the original while saying nothing. Turn the chain off to sample words independently by frequency, which reads more scattered and is useful when you want length without meaning.\n\nGeneration is seeded, so the same seed and the same source give the same text — a layout can be re-rendered without the copy moving underneath it. The frequency table underneath shows the twelve commonest words with their share of the source.",
+  "payload": "payload/com.lumen.words-1.0.1.json",
+  "sha256": "e633e53407a8e8a84f835e1f22edb08f9e6451a5b3b68d64a79052f49ca87567",
+  "requires": {
+    "os": ">=0.1.0"
+  },
+  "capabilities": [
+    "storage"
+  ],
+  "screenshots": [
+    {
+      "shape": "type",
+      "seed": 11,
+      "tone": "neutral"
+    },
+    {
+      "shape": "ramp",
+      "seed": 5,
+      "tone": "accent"
+    }
+  ],
+  "releaseNotes": "The seed field is editable, so a layout can be reproduced exactly."
+}

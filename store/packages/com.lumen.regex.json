@@ -1,0 +1,41 @@
+{
+  "id": "com.lumen.regex",
+  "kind": "app",
+  "name": "Regex Tester",
+  "tagline": "A pattern, its flags, and every match painted in place.",
+  "version": "1.1.0",
+  "publisher": "Lumen",
+  "category": "developer",
+  "size": 8323,
+  "price": "free",
+  "keywords": [
+    "regex",
+    "regexp",
+    "pattern",
+    "match",
+    "search"
+  ],
+  "updated": "2026-08-24T09:00:00Z",
+  "description": "A regular expression editor for the browser engine the OS already runs on. Type a pattern and it is compiled on every keystroke; matches are painted into the subject and numbered, and each capture group — positional or named — is listed with the text it caught.\n\nThe five flags that change matching are checkboxes rather than a string to remember. An invalid pattern shows the engine message under the field and leaves the subject alone, so a pattern can be typed one character at a time without the view flickering. Empty matches advance the cursor rather than looping, and scanning stops after two thousand matches.\n\nThe pattern, flags and subject are kept in the app data store and come back when the window reopens.",
+  "payload": "payload/com.lumen.regex-1.1.0.json",
+  "sha256": "b8e6205efed0f788505d73ee3c8fbdd3b9d2cb453c964fc6c26a4a427dad921a",
+  "requires": {
+    "os": ">=0.1.0"
+  },
+  "capabilities": [
+    "storage"
+  ],
+  "screenshots": [
+    {
+      "shape": "grid",
+      "seed": 12,
+      "tone": "accent"
+    },
+    {
+      "shape": "type",
+      "seed": 3,
+      "tone": "neutral"
+    }
+  ],
+  "releaseNotes": "Named capture groups are listed alongside numbered ones. Empty matches no longer spin. The subject is restored when the window reopens."
+}
