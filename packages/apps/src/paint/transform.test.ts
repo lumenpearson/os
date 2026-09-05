@@ -174,6 +174,9 @@ describe('panBy', () => {
   });
 });
 
+// U+2194 names the round trip these tests check, in a test description that
+// no user ever sees. It is not emoji and not product copy.
+// deslop-ignore-next-line 15
 describe('screen ↔ image', () => {
   const views: View[] = [
     { scale: 1, x: 0, y: 0 },
