@@ -88,6 +88,13 @@
   [data-lumen-cursor="custom"] * {
     cursor: none !important;
   }
+  /* Except while a native scrollbar has the pointer: the page hears nothing
+     until it is released, so the platform's cursor is the only one that can
+     follow it. See packages/shell/src/cursor/scrollbar.ts. */
+  [data-lumen-cursor="custom"][data-lumen-cursor-hold="native"],
+  [data-lumen-cursor="custom"][data-lumen-cursor-hold="native"] * {
+    cursor: auto !important;
+  }
 }
 
 /* The utility behind design rule 1: labels, values, shortcuts, paths and the
@@ -104,9 +111,9 @@
    dropped entirely under Reduce Transparency. The default chrome is opaque. */
 @utility surface-blur {
   /* deslop-ignore-next-line 19 */
-  backdrop-filter: blur(24px) saturate(1.4);
+  backdrop-filter: blur(var(--lumen-blur, 14px)) saturate(1.4);
   /* deslop-ignore-next-line 19 */
-  -webkit-backdrop-filter: blur(24px) saturate(1.4);
+  -webkit-backdrop-filter: blur(var(--lumen-blur, 14px)) saturate(1.4);
 }
 @utility truncate-1 {
   overflow: hidden;

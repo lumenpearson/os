@@ -91,3 +91,64 @@ describe('following the OS theme in auto mode', () => {
     expect(listeners).toHaveLength(0);
   });
 });
+
+describe('animation and blur', () => {
+  it('writes each animation category as its own attribute', () => {
+    const settings = defaultSettings();
+    settings.animation.menus = false;
+    settings.animation.minimize = 'fade';
+    applyThemeToDocument(settings);
+    const root = document.documentElement;
+    expect(root.dataset.animMenus).toBe('off');
+    expect(root.dataset.animWindows).toBe('on');
+    expect(root.dataset.animMinimize).toBe('fade');
+  });
+
+  it('leaves the durations to the stylesheet at normal speed', () => {
+    const settings = defaultSettings();
+    applyThemeToDocument(settings);
+    expect(document.documentElement.style.getPropertyValue('--duration-base')).toBe('');
+  });
+
+  it('scales every duration together, and zero stops them', () => {
+    const settings = defaultSettings();
+    settings.animation.speed = 0.5;
+    applyThemeToDocument(settings);
+    const style = document.documentElement.style;
+    expect(style.getPropertyValue('--duration-base')).toBe('90ms');
+    expect(style.getPropertyValue('--duration-window')).toBe('110ms');
+
+    settings.animation.speed = 0;
+    applyThemeToDocument(settings);
+    expect(style.getPropertyValue('--duration-fast')).toBe('0ms');
+  });
+
+  it('hands the durations back when reduced motion takes over', () => {
+    const settings = defaultSettings();
+    settings.animation.speed = 0.5;
+    applyThemeToDocument(settings);
+    expect(document.documentElement.style.getPropertyValue('--duration-base')).toBe('90ms');
+    settings.appearance.reduceMotion = true;
+    applyThemeToDocument(settings);
+    // The stylesheet zeroes them under data-motion="reduced"; an inline value
+    // would win over that and has to be removed.
+    expect(document.documentElement.style.getPropertyValue('--duration-base')).toBe('');
+    expect(document.documentElement.dataset.motion).toBe('reduced');
+  });
+
+  it('is opaque unless there is blur to see through', () => {
+    const settings = defaultSettings();
+    settings.appearance.blur = 0;
+    applyThemeToDocument(settings);
+    expect(document.documentElement.dataset.transparency).toBe('reduced');
+
+    settings.appearance.blur = 18;
+    applyThemeToDocument(settings);
+    expect(document.documentElement.dataset.transparency).toBe('full');
+    expect(document.documentElement.style.getPropertyValue('--lumen-blur')).toBe('18px');
+
+    settings.appearance.reduceTransparency = true;
+    applyThemeToDocument(settings);
+    expect(document.documentElement.dataset.transparency).toBe('reduced');
+  });
+});

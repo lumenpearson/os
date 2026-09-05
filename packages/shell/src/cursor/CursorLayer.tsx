@@ -12,6 +12,7 @@ import {
   hotspotTransform,
   POINTER_HOTSPOT,
 } from './hotspots';
+import { onScrollbar } from './scrollbar';
 
 type Shape =
   | 'arrow'
@@ -138,10 +139,21 @@ export function CursorLayer() {
       pressed = true;
       x = e.clientX;
       y = e.clientY;
+      // A native scrollbar takes the pointer and reports nothing until it is
+      // released, so the drawn cursor would freeze beside the platform's own.
+      // Hand the screen back for the length of the drag.
+      if (onScrollbar(e.target, e.clientX, e.clientY)) {
+        document.documentElement.dataset.lumenCursorHold = 'native';
+        visible = false;
+      }
       schedule();
     };
     const onUp = () => {
       pressed = false;
+      if (document.documentElement.dataset.lumenCursorHold) {
+        delete document.documentElement.dataset.lumenCursorHold;
+        visible = true;
+      }
       schedule();
     };
     const onLeave = (e: PointerEvent) => {
@@ -251,7 +263,7 @@ function CursorGlyphs({
         [data-testid='os-cursor'][data-shape='wait'] svg[data-g='wait'],
         [data-testid='os-cursor'][data-shape='crosshair'] svg[data-g='crosshair'] { display: block; }
         [data-testid='os-cursor'][data-shape='none'] { opacity: 0 !important; }
-        [data-testid='os-cursor'][data-pressed='true'] svg[data-g='arrow'] { transform: ${hotspotTransform(classic ? ARROW_CLASSIC_HOTSPOT : ARROW_HOTSPOT)} scale(0.92); transform-origin: ${hotspotOrigin(classic ? ARROW_CLASSIC_HOTSPOT : ARROW_HOTSPOT)}; }
+        :root[data-anim-press='on'] [data-testid='os-cursor'][data-pressed='true'] svg[data-g='arrow'] { transform: ${hotspotTransform(classic ? ARROW_CLASSIC_HOTSPOT : ARROW_HOTSPOT)} scale(0.92); transform-origin: ${hotspotOrigin(classic ? ARROW_CLASSIC_HOTSPOT : ARROW_HOTSPOT)}; }
         [data-testid='os-cursor'] svg[data-g='text'], [data-testid='os-cursor'] svg[data-g='ew'], [data-testid='os-cursor'] svg[data-g='ns'],
         [data-testid='os-cursor'] svg[data-g='nesw'], [data-testid='os-cursor'] svg[data-g='nwse'], [data-testid='os-cursor'] svg[data-g='move'],
         [data-testid='os-cursor'] svg[data-g='grab'], [data-testid='os-cursor'] svg[data-g='grabbing'], [data-testid='os-cursor'] svg[data-g='not-allowed'],

@@ -28,7 +28,39 @@ export function applyThemeToDocument(settings: Settings): void {
   root.dataset.theme = theme;
   root.dataset.contrast = settings.appearance.contrast;
   root.dataset.motion = settings.appearance.reduceMotion ? 'reduced' : 'full';
-  root.dataset.transparency = settings.appearance.reduceTransparency ? 'reduced' : 'full';
+
+  // Blur and transparency are one decision, not two: a surface is either
+  // translucent and blurred, or opaque. Reduce Transparency forces opaque, and
+  // so does a blur of zero.
+  const blur = clamp(settings.appearance.blur, 0, 40);
+  const opaque = settings.appearance.reduceTransparency || blur === 0;
+  root.dataset.transparency = opaque ? 'reduced' : 'full';
+  root.style.setProperty('--lumen-blur', `${blur}px`);
+
+  // Motion, by category. The shell and the components read these attributes,
+  // so switching one off removes that animation and leaves the rest alone.
+  const animation = settings.animation;
+  root.dataset.animWindows = animation.windows ? 'on' : 'off';
+  root.dataset.animMenus = animation.menus ? 'on' : 'off';
+  root.dataset.animDialogs = animation.dialogs ? 'on' : 'off';
+  root.dataset.animPanels = animation.panels ? 'on' : 'off';
+  root.dataset.animPages = animation.pages ? 'on' : 'off';
+  root.dataset.animPress = animation.press ? 'on' : 'off';
+  root.dataset.animMinimize = animation.minimize;
+
+  // Speed scales what is left. At 1 the stylesheet is left alone, so the
+  // reduced-motion rules there keep their say; anything else is written here.
+  const speed = clamp(animation.speed, 0, 1.5);
+  const durations: Array<[string, number]> = [
+    ['--duration-fast', 120],
+    ['--duration-base', 180],
+    ['--duration-slow', 260],
+    ['--duration-window', 220],
+  ];
+  for (const [name, base] of durations) {
+    if (speed === 1 || settings.appearance.reduceMotion) root.style.removeProperty(name);
+    else root.style.setProperty(name, `${Math.round(base * speed)}ms`);
+  }
   root.dataset.lumenCursor = settings.cursor.style === 'native' ? 'native' : 'custom';
   root.dataset.shadows = settings.display.shadows ? 'on' : 'off';
 

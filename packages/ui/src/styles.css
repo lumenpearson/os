@@ -57,9 +57,9 @@
   :root[data-transparency="full"] .lumen-menu {
     background: color-mix(in srgb, var(--lumen-surface) 86%, transparent);
     /* deslop-ignore-next-line 19 */
-    backdrop-filter: blur(24px) saturate(1.4);
+    backdrop-filter: blur(var(--lumen-blur, 14px)) saturate(1.4);
     /* deslop-ignore-next-line 19 */
-    -webkit-backdrop-filter: blur(24px) saturate(1.4);
+    -webkit-backdrop-filter: blur(var(--lumen-blur, 14px)) saturate(1.4);
   }
   .lumen-menu-item {
     display: flex;
@@ -149,6 +149,18 @@
       opacity: 1;
     }
   }
+  /* Personalisation > Animation switches each of these off by category. The
+     element still appears; it simply appears at once. */
+  :root[data-anim-menus="off"] .lumen-pop-enter,
+  :root[data-anim-dialogs="off"] .lumen-fade-enter:has([role="dialog"]),
+  :root[data-anim-panels="off"] [data-panel],
+  :root[data-anim-pages="off"] [data-page-enter] {
+    animation: none;
+  }
+  :root[data-anim-windows="off"] [data-testid="window"] {
+    transition: none;
+  }
+
   .lumen-spin {
     /* The centre is pinned below and the keyframe carries rotation only,
        so nothing wobbles. */

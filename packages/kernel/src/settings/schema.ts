@@ -6,6 +6,7 @@ export type { ScreensaverId };
 export type ThemeMode = 'light' | 'dark' | 'auto';
 export type DockPosition = 'bottom' | 'left' | 'right';
 export type FilesView = 'list' | 'grid' | 'columns';
+export type MinimizeAnimation = 'scale' | 'slide' | 'fade' | 'none';
 export type WallpaperFit = 'cover' | 'contain' | 'tile' | 'center';
 export type CursorStyle = 'lumen' | 'classic' | 'native';
 export type DateFormat = 'auto' | 'iso' | 'us' | 'eu';
@@ -19,6 +20,44 @@ export interface Settings {
     reduceTransparency: boolean;
     /** 0.9 – 1.3 multiplier on the UI font size. */
     fontScale: number;
+    /** Blur behind menus, sheets and panels, in px. 0 leaves them opaque. */
+    blur: number;
+  };
+  /**
+   * Motion, by the thing that moves. Every switch is independent, so someone
+   * who wants still windows and live menus can have that; `speed` scales what
+   * is left, and 0 turns the lot off.
+   */
+  animation: {
+    /** 0 – 1.5 multiplier on every duration token. */
+    speed: number;
+    /** Windows opening, closing and zooming. */
+    windows: boolean;
+    minimize: MinimizeAnimation;
+    /** Menus, popovers and the start menu. */
+    menus: boolean;
+    dialogs: boolean;
+    /** Taskbar, system bar and the control centre. */
+    panels: boolean;
+    /** Moving between views inside an app. */
+    pages: boolean;
+    /** The cursor's answer to a click. */
+    press: boolean;
+    /** Smoothing on a window being dragged. Off: the window tracks the hand. */
+    windowMove: boolean;
+  };
+  /** How a window behaves at the edges of the screen. */
+  windows: {
+    /** Full screen hides the title bar, the way macOS does. */
+    fullscreenHidesTitleBar: boolean;
+    /** The system bar slides away and comes back on approach. */
+    immersiveSystemBar: boolean;
+    /** The taskbar does the same. */
+    immersiveTaskbar: boolean;
+    /** Full screen covers the panels rather than stopping at them. */
+    fullscreenCoversPanels: boolean;
+    /** Gap between tiled windows, in px. */
+    tilingGap: number;
   };
   desktop: {
     /** Preset id ("preset:dawn") or a VFS path to an image. */
@@ -40,6 +79,13 @@ export interface Settings {
     showRecents: boolean;
     showLabels: boolean;
     centered: boolean;
+    /** Detached from the edge, with a margin around it. */
+    floating: boolean;
+    /**
+     * What the bar carries, in order. Ids the shell knows: 'start', 'search',
+     * 'windows', 'pinned', 'frequent', 'weather', 'news', 'trash', 'clock'.
+     */
+    items: string[];
   };
   menubar: {
     showClock: boolean;
@@ -120,6 +166,8 @@ export interface Settings {
     home: string;
     confirmDelete: boolean;
     singleClickOpen: boolean;
+    /** Folders before files, or sorted together. */
+    foldersFirst: boolean;
   };
   network: {
     wifi: boolean;
@@ -164,6 +212,27 @@ export function defaultSettings(): Settings {
       reduceMotion: prefersReducedMotion(),
       reduceTransparency: false,
       fontScale: 1,
+      blur: 14,
+    },
+    animation: {
+      speed: 1,
+      windows: true,
+      minimize: 'scale',
+      menus: true,
+      dialogs: true,
+      panels: true,
+      pages: true,
+      press: true,
+      // A window being dragged goes where the hand goes: smoothing there reads
+      // as lag, not as polish.
+      windowMove: false,
+    },
+    windows: {
+      fullscreenHidesTitleBar: true,
+      immersiveSystemBar: true,
+      immersiveTaskbar: true,
+      fullscreenCoversPanels: true,
+      tilingGap: 0,
     },
     desktop: {
       wallpaper: 'preset:dawn',
@@ -182,6 +251,8 @@ export function defaultSettings(): Settings {
       showRecents: true,
       showLabels: false,
       centered: true,
+      floating: false,
+      items: ['start', 'search', 'windows', 'pinned', 'frequent', 'trash'],
     },
     menubar: {
       showClock: true,
@@ -229,6 +300,7 @@ export function defaultSettings(): Settings {
       home: '',
       confirmDelete: true,
       singleClickOpen: false,
+      foldersFirst: true,
     },
     network: { wifi: true, bluetooth: false, airplane: false, ssid: 'Lumen Wi-Fi' },
     power: { sleepAfterMinutes: 0, lowPowerMode: false },
