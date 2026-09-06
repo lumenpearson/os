@@ -84,3 +84,61 @@ describe('window geometry', () => {
     expect(r2.y).toBe(690);
   });
 });
+
+describe('snapRect with a tiling gap', () => {
+  const SIDES = [
+    'left',
+    'right',
+    'top',
+    'top-left',
+    'top-right',
+    'bottom-left',
+    'bottom-right',
+  ] as const;
+
+  it('changes nothing at a gap of 0', () => {
+    for (const side of SIDES) expect(snapRect(side, area, 0)).toEqual(snapRect(side, area));
+  });
+
+  it('keeps the gap from the edges and the same gap between neighbours', () => {
+    const g = 12;
+    const left = snapRect('left', area, g);
+    const right = snapRect('right', area, g);
+    expect(left.x).toBe(area.x + g);
+    expect(left.y).toBe(area.y + g);
+    expect(right.x - (left.x + left.width)).toBe(g);
+    expect(right.x + right.width).toBe(area.x + area.width - g);
+    expect(left.height).toBe(area.height - g * 2);
+  });
+
+  it('gives the four quarters the same gap vertically', () => {
+    const g = 10;
+    const tl = snapRect('top-left', area, g);
+    const bl = snapRect('bottom-left', area, g);
+    expect(bl.y - (tl.y + tl.height)).toBe(g);
+    expect(bl.y + bl.height).toBe(area.y + area.height - g);
+    expect(tl.width).toBe(snapRect('bottom-left', area, g).width);
+  });
+
+  it('leaves no space unaccounted for: two halves plus the gaps fill the area', () => {
+    for (const g of [0, 1, 7, 16, 33]) {
+      const left = snapRect('left', area, g);
+      const right = snapRect('right', area, g);
+      expect(left.width + right.width + g * 3).toBe(area.width);
+    }
+  });
+
+  it('never inverts a tile, however large the gap asked for', () => {
+    for (const g of [100, 1000, 10_000]) {
+      for (const side of SIDES) {
+        const r = snapRect(side, area, g);
+        expect(r.width).toBeGreaterThan(0);
+        expect(r.height).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  it('ignores a negative gap rather than growing the tiles', () => {
+    expect(snapRect('left', area, -20)).toEqual(snapRect('left', area, 0));
+  });
+});

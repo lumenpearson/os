@@ -8,6 +8,7 @@ import {
   type Rect,
   type ResizeHandle,
   resizeRect,
+  runtimeSettings,
   snapRect,
   snapZoneAt,
   useProcessStore,
@@ -15,12 +16,13 @@ import {
   useWindowStore,
   type WindowId,
 } from '@lumen/kernel';
-import { useKernel } from '@lumen/kernel/react';
+import { useKernel, useRuntimeSettings } from '@lumen/kernel/react';
 import { AnchoredMenu, cx, isContextMenuKey, useContextMenu } from '@lumen/ui';
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { useShellStore } from '../shellStore';
 import { isDragSurface, titleBarHeight } from './drag';
 import { useSnapPreview } from './SnapPreview';
+import { approach, settled } from './smoothing';
 import { WindowControls } from './WindowControls';
 import { windowMenuItems } from './windowMenu';
 
@@ -60,7 +62,12 @@ export const WindowFrame = memo(function WindowFrame({ id }: { id: WindowId }) {
   const focused = inFront && hostFocused;
   const app = useRegistryStore((s) => (win ? s.apps[win.appId] : undefined));
   const process = useProcessStore((s) => (win ? s.processes[win.pid] : undefined));
-  const settings = getSettings();
+  // Subscribed, not sampled: Settings > Windows changes what a full-screen
+  // window covers and whether it keeps its title bar, and a switch that only
+  // takes effect the next time something else re-rendered the frame is a
+  // switch the person cannot trust.
+  const settings = useRuntimeSettings();
+  const area = useWindowStore((s) => s.area);
   const shadows = settings.display.shadows;
   const frameRef = useRef<HTMLDivElement>(null);
   const headerRef = useRef<HTMLElement>(null);
@@ -148,7 +155,9 @@ export const WindowFrame = memo(function WindowFrame({ id }: { id: WindowId }) {
     const el = frameRef.current;
     if (!el) return;
     const store = useWindowStore.getState();
-    const settings = getSettings();
+    // The drag reads settings imperatively, so it has to apply Low Power
+    // Mode itself; the component's copy went through the hook.
+    const settings = runtimeSettings(getSettings());
     const start = { x: e.clientX, y: e.clientY };
     let bounds: Rect = { ...win.bounds };
     // dragging a maximized/snapped window restores it under the pointer
@@ -167,6 +176,36 @@ export const WindowFrame = memo(function WindowFrame({ id }: { id: WindowId }) {
     let latest = bounds;
     let raf = 0;
     let moved = false;
+    /**
+     * Off, the window is pinned to the pointer and one frame paints wherever
+     * the hand is. On, the frame keeps chasing after the hand stops, so the
+     * loop re-arms itself until it arrives.
+     */
+    const smooth =
+      settings.animation.windowMove &&
+      !settings.appearance.reduceMotion &&
+      !matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const shown = { x: bounds.x, y: bounds.y };
+    let lastFrame = 0;
+    const paint = (x: number, y: number) => {
+      el.style.transform = `translate3d(${x}px, ${y}px, 0)`;
+    };
+    const tick = (now: number) => {
+      raf = 0;
+      if (!smooth) {
+        paint(latest.x, latest.y);
+        return;
+      }
+      const dt = lastFrame ? Math.min(now - lastFrame, 64) : 16;
+      lastFrame = now;
+      shown.x = approach(shown.x, latest.x, dt);
+      shown.y = approach(shown.y, latest.y, dt);
+      paint(shown.x, shown.y);
+      if (!settled(shown, latest)) raf = requestAnimationFrame(tick);
+    };
+    const schedule = () => {
+      if (!raf) raf = requestAnimationFrame(tick);
+    };
     useShellStore.getState().setInteracting(true);
     el.setPointerCapture(e.pointerId);
     const onMove = (ev: PointerEvent) => {
@@ -179,14 +218,15 @@ export const WindowFrame = memo(function WindowFrame({ id }: { id: WindowId }) {
         const zone = snapZoneAt(ev.clientX, ev.clientY, store.area);
         useSnapPreview
           .getState()
-          .set(zone ? (zone === 'top' ? store.area : snapRect(zone, store.area)) : null);
+          .set(
+            zone
+              ? zone === 'top'
+                ? store.area
+                : snapRect(zone, store.area, settings.windows.tilingGap)
+              : null,
+          );
       }
-      if (!raf) {
-        raf = requestAnimationFrame(() => {
-          raf = 0;
-          el.style.transform = `translate3d(${latest.x}px, ${latest.y}px, 0)`;
-        });
-      }
+      schedule();
     };
     const onUp = (ev: PointerEvent) => {
       el.removeEventListener('pointermove', onMove);
@@ -196,6 +236,9 @@ export const WindowFrame = memo(function WindowFrame({ id }: { id: WindowId }) {
       useShellStore.getState().setInteracting(false);
       useSnapPreview.getState().set(null);
       if (!moved) return;
+      // The chase is over the moment the hand lets go: the window belongs at
+      // the position the pointer chose, not part of the way there.
+      paint(latest.x, latest.y);
       const zone = settings.display.snapping
         ? snapZoneAt(ev.clientX, ev.clientY, store.area)
         : null;
@@ -281,8 +324,21 @@ export const WindowFrame = memo(function WindowFrame({ id }: { id: WindowId }) {
   const { bounds } = win;
   const titleBar = win.options.titleBar ?? 'default';
   const fullscreen = win.fullscreen;
+  /**
+   * Full screen covers the whole display, or stops at the work area and
+   * leaves the menubar and the taskbar where they are — Settings > Windows.
+   * The layer is the whole viewport either way, so "stops at the panels" is
+   * the work area written out rather than 100%.
+   */
   const style: React.CSSProperties = fullscreen
-    ? { transform: 'translate3d(0,0,0)', width: '100%', height: '100%', zIndex: 950 }
+    ? settings.windows.fullscreenCoversPanels
+      ? { transform: 'translate3d(0,0,0)', width: '100%', height: '100%', zIndex: 950 }
+      : {
+          transform: `translate3d(${area.x}px, ${area.y}px, 0)`,
+          width: area.width,
+          height: area.height,
+          zIndex: 950,
+        }
     : {
         transform: `translate3d(${bounds.x}px, ${bounds.y}px, 0)`,
         width: bounds.width,
@@ -291,7 +347,10 @@ export const WindowFrame = memo(function WindowFrame({ id }: { id: WindowId }) {
       };
 
   const Icon = app.icon;
-  const showChrome = titleBar !== 'hidden' && !fullscreen;
+  // macOS hides the title bar in full screen and gives it back on approach;
+  // someone who would rather keep the traffic lights turns that off.
+  const showChrome =
+    titleBar !== 'hidden' && (!fullscreen || !settings.windows.fullscreenHidesTitleBar);
 
   const shortcutFor = (shortcutId: GlobalShortcutId) =>
     formatShortcut(

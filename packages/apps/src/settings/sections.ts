@@ -57,7 +57,16 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
   {
     id: 'display',
     label: 'Display',
-    keywords: ['scale', 'resolution', 'screen', 'zoom', 'shadows', 'snapping'],
+    keywords: [
+      'scale',
+      'resolution',
+      'screen',
+      'zoom',
+      'shadows',
+      'snapping',
+      'tiling',
+      'full screen',
+    ],
   },
   {
     id: 'security',
@@ -202,6 +211,28 @@ export const SETTINGS_ROWS: SettingsRowIndex[] = [
   row('display', 'snapping', 'Window snapping', ['tiling', 'edges']),
   row('display', 'shadows', 'Window shadows', ['performance']),
   row('display', 'overlay', 'Performance overlay', ['fps', 'memory', 'debug']),
+  row('display', 'tilingGap', 'Gap between tiled windows', ['tiling', 'gap', 'margin']),
+  row('display', 'fullscreenCoversPanels', 'Full screen covers the panels', [
+    'fullscreen',
+    'menubar',
+    'taskbar',
+  ]),
+  row('display', 'fullscreenHidesTitleBar', 'Full screen hides the title bar', [
+    'fullscreen',
+    'title bar',
+    'window controls',
+  ]),
+  row('display', 'immersiveSystemBar', 'Slide the menubar away in full screen', [
+    'immersive',
+    'menubar',
+    'auto-hide',
+  ]),
+  row('display', 'immersiveTaskbar', 'Slide the taskbar away in full screen', [
+    'immersive',
+    'taskbar',
+    'dock',
+    'auto-hide',
+  ]),
   row('display', 'viewport', 'Viewport', ['resolution', 'pixel ratio', 'size']),
   row('security', 'autoLock', 'Lock after', ['auto lock', 'idle', 'timeout']),
   row('security', 'screensaver', 'Screensaver', ['clock', 'drift', 'starfield']),

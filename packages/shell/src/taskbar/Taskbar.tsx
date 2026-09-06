@@ -14,7 +14,7 @@
  */
 
 import { useProcessStore, useWindowStore } from '@lumen/kernel';
-import { useSettings } from '@lumen/kernel/react';
+import { useRuntimeSettings } from '@lumen/kernel/react';
 import { cx, Tooltip, useMediaQuery } from '@lumen/ui';
 import { type CSSProperties, useMemo, useRef, useState } from 'react';
 import { useEdgeReveal } from '../hooks/useEdgeReveal';
@@ -43,7 +43,7 @@ import { useMagnify } from './useMagnify';
 const FLOAT_PADDING = 3;
 
 export function Taskbar() {
-  const settings = useSettings();
+  const settings = useRuntimeSettings();
   const taskbar = settings.taskbar;
   const startOpen = useShellStore((s) => s.startMenu);
   const [revealed, setRevealed] = useState(false);

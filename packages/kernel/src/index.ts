@@ -11,6 +11,17 @@ export {
 export { useClipboardStore } from './clipboard/store';
 export type { ScreensaverPreset } from './desktop/screensavers';
 export { SCREENSAVERS, screensaverById } from './desktop/screensavers';
+export type { Rgb } from './desktop/tint';
+export {
+  averagePixels,
+  CHROME_TINT_MIX,
+  chromeTintValue,
+  parseHex,
+  presetTint,
+  quietTint,
+  toHex,
+  weightedAverage,
+} from './desktop/tint';
 export type { WallpaperPreset } from './desktop/wallpapers';
 export { WALLPAPERS, wallpaperById, wallpaperUrl } from './desktop/wallpapers';
 export type { KernelEvents } from './events';
@@ -43,6 +54,12 @@ export type {
   ServiceStatus,
 } from './services/types';
 export { useSessionStore } from './session/store';
+export type { LowPowerOverride } from './settings/runtime';
+export {
+  isOverriddenByLowPower,
+  LOW_POWER_OVERRIDES,
+  runtimeSettings,
+} from './settings/runtime';
 export * from './settings/schema';
 export type { SettingsPath } from './settings/store';
 export { getSettings, useSettingsStore } from './settings/store';

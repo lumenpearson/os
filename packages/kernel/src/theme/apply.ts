@@ -1,5 +1,6 @@
 import { accents } from '@lumen/tokens';
 import { events } from '../events';
+import { runtimeSettings } from '../settings/runtime';
 import type { Settings } from '../settings/schema';
 
 let mediaQuery: MediaQueryList | null = null;
@@ -20,9 +21,14 @@ export function resolveTheme(mode: Settings['appearance']['theme']): 'light' | '
   return matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 }
 
-/** Write the current settings into the DOM: theme, accent, scale, motion, contrast, cursor. */
-export function applyThemeToDocument(settings: Settings): void {
+/**
+ * Write the current settings into the DOM: theme, accent, scale, motion,
+ * contrast, cursor. Low Power Mode is applied here rather than at each
+ * consumer, so everything driven by these attributes follows it at once.
+ */
+export function applyThemeToDocument(stored: Settings): void {
   if (typeof document === 'undefined') return;
+  const settings = runtimeSettings(stored);
   const root = document.documentElement;
   const theme = resolveTheme(settings.appearance.theme);
   root.dataset.theme = theme;
@@ -94,7 +100,7 @@ export function applyThemeToDocument(settings: Settings): void {
   }
 
   // follow the OS theme while in auto mode
-  latest = settings;
+  latest = stored;
   if (settings.appearance.theme === 'auto' && typeof matchMedia === 'function') {
     if (!mediaQuery) mediaQuery = matchMedia('(prefers-color-scheme: dark)');
     if (!mediaListener) {

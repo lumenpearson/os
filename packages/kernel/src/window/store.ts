@@ -1,9 +1,13 @@
 import { create } from 'zustand';
 import { events } from '../events';
+import { getSettings } from '../settings/store';
 import type { AppId, Pid, Rect, SnapSide, WindowId, WindowOptions, WindowState } from '../types';
 import { clampToArea, initialBounds, rectsEqual, snapRect } from './geometry';
 
 const Z_BASE = 100;
+
+/** Settings > Windows > tiling gap, read at the moment a window is tiled. */
+const tilingGap = () => getSettings().windows.tilingGap;
 
 interface WindowStore {
   windows: Record<WindowId, WindowState>;
@@ -265,7 +269,7 @@ export const useWindowStore = create<WindowStore>((set, get) => ({
           snap: side,
           maximized: false,
           restoreBounds: w.snap || w.maximized ? w.restoreBounds : w.bounds,
-          bounds: snapRect(side, s.area),
+          bounds: snapRect(side, s.area, tilingGap()),
         },
       },
     });
@@ -302,7 +306,7 @@ export const useWindowStore = create<WindowStore>((set, get) => ({
       const windows: Record<WindowId, WindowState> = {};
       for (const [id, w] of Object.entries(s.windows)) {
         if (w.maximized) windows[id] = { ...w, bounds: { ...s.area } };
-        else if (w.snap) windows[id] = { ...w, bounds: snapRect(w.snap, s.area) };
+        else if (w.snap) windows[id] = { ...w, bounds: snapRect(w.snap, s.area, tilingGap()) };
         else {
           const min = { width: w.options.minWidth ?? 320, height: w.options.minHeight ?? 200 };
           // Clamp the size the user actually chose, not the one a previous

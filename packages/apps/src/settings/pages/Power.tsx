@@ -48,7 +48,7 @@ export function PowerPage() {
         <Row
           id="power.lowPower"
           label="Low power mode"
-          description="Fewer animations and a slower system clock."
+          description="Holds animation, transparency, window shadows and taskbar magnification off. Your own settings for those are kept and come back when it is switched off."
         >
           <Switch
             checked={power.lowPowerMode}

@@ -152,3 +152,46 @@ describe('animation and blur', () => {
     expect(document.documentElement.dataset.transparency).toBe('reduced');
   });
 });
+
+describe('low power mode', () => {
+  const root = () => document.documentElement;
+
+  it('switches motion, transparency and shadows off whatever the settings say', () => {
+    const s = defaultSettings();
+    s.appearance.reduceMotion = false;
+    s.appearance.reduceTransparency = false;
+    s.appearance.blur = 14;
+    s.display.shadows = true;
+    s.power.lowPowerMode = true;
+    applyThemeToDocument(s);
+    expect(root().dataset.motion).toBe('reduced');
+    expect(root().dataset.transparency).toBe('reduced');
+    expect(root().dataset.shadows).toBe('off');
+  });
+
+  it('gives all three back when it is switched off', () => {
+    const s = defaultSettings();
+    s.appearance.reduceMotion = false;
+    s.appearance.reduceTransparency = false;
+    s.appearance.blur = 14;
+    s.display.shadows = true;
+    s.power.lowPowerMode = true;
+    applyThemeToDocument(s);
+    s.power.lowPowerMode = false;
+    applyThemeToDocument(s);
+    expect(root().dataset.motion).toBe('full');
+    expect(root().dataset.transparency).toBe('full');
+    expect(root().dataset.shadows).toBe('on');
+  });
+
+  it('survives an OS theme flip: the replay applies it too', () => {
+    const s = defaultSettings();
+    s.appearance.theme = 'auto';
+    s.display.shadows = true;
+    s.power.lowPowerMode = true;
+    applyThemeToDocument(s);
+    flipSystemTheme();
+    expect(root().dataset.shadows).toBe('off');
+    expect(root().dataset.motion).toBe('reduced');
+  });
+});

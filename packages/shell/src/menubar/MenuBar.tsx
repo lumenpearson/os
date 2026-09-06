@@ -15,7 +15,7 @@ import {
   useCurrentUser,
   useFocusedWindow,
   useKernel,
-  useSettings,
+  useRuntimeSettings,
   useUnreadCount,
 } from '@lumen/kernel/react';
 import {
@@ -54,7 +54,7 @@ import { systemBarMenuItems } from './systemBarMenu';
  */
 export function MenuBar() {
   const kernel = useKernel();
-  const settings = useSettings();
+  const settings = useRuntimeSettings();
   const focused = useFocusedWindow();
   const app = useRegistryStore((s) => (focused ? s.apps[focused.appId] : undefined));
   const appMenus = useMenuStore((s) => (focused ? s.byWindow[focused.id] : undefined));
@@ -312,7 +312,7 @@ function MenuBarItem({
 
 function StatusItems() {
   const kernel = useKernel();
-  const settings = useSettings();
+  const settings = useRuntimeSettings();
   const unread = useUnreadCount();
   const user = useCurrentUser();
   const now = useClock(settings.menubar.showSeconds ? 1000 : 10_000);

@@ -1,5 +1,5 @@
 import { useSessionStore } from '@lumen/kernel';
-import { useClock, useSettings } from '@lumen/kernel/react';
+import { useClock, useRuntimeSettings } from '@lumen/kernel/react';
 import { useEffect, useRef } from 'react';
 
 type CanvasMode = 'drift' | 'starfield' | 'contour' | 'rings';
@@ -7,7 +7,7 @@ type CanvasMode = 'drift' | 'starfield' | 'contour' | 'rings';
 /** Idle screensaver. Any input dismisses it; the session store decides when it shows. */
 export function ScreensaverLayer() {
   const active = useSessionStore((s) => s.screensaverActive);
-  const settings = useSettings();
+  const settings = useRuntimeSettings();
   const kind = settings.lock.screensaver;
   const still = settings.appearance.reduceMotion;
   if (!active || kind === 'none') return null;
@@ -28,7 +28,7 @@ export function ScreensaverLayer() {
 }
 
 function DriftingClock({ still }: { still: boolean }) {
-  const settings = useSettings();
+  const settings = useRuntimeSettings();
   const now = useClock(1000);
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {

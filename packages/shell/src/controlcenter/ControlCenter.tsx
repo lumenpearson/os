@@ -1,4 +1,4 @@
-import { useKernel, useSetting, useSettings } from '@lumen/kernel/react';
+import { useKernel, useRuntimeSettings, useSetting } from '@lumen/kernel/react';
 import { Button, cx, Slider, useClickOutside, useEscape } from '@lumen/ui';
 import {
   Bluetooth,
@@ -22,7 +22,7 @@ export function ControlCenter() {
   const toggle = useShellStore((s) => s.toggle);
   const brightness = useShellStore((s) => s.brightness);
   const setBrightness = useShellStore((s) => s.setBrightness);
-  const settings = useSettings();
+  const settings = useRuntimeSettings();
   const [network, setNetwork] = useSetting('network');
   const [sound, setSound] = useSetting('sound');
   const [notifications, setNotifications] = useSetting('notifications');

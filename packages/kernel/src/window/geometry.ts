@@ -47,29 +47,48 @@ export function initialBounds(options: WindowOptions, area: Rect, existing: Rect
   return clampToArea(candidate, area);
 }
 
-export function snapRect(side: SnapSide, area: Rect): Rect {
-  const half = Math.round(area.width / 2);
-  const halfH = Math.round(area.height / 2);
+/**
+ * The rectangle a window takes when it is tiled to `side`.
+ *
+ * `gap` is Settings > Windows > "Gap between tiled windows": the margin the
+ * tiles keep from the edges of the work area and from each other. It is one
+ * number for both, so two tiles side by side are separated by exactly the
+ * distance each keeps from the screen edge, and at 0 — the default — the
+ * arithmetic is the same as it was before gaps existed.
+ */
+export function snapRect(side: SnapSide, area: Rect, gap = 0): Rect {
+  // A gap wider than the area would invert the tiles. Cap it well below that.
+  const g = Math.max(
+    0,
+    Math.min(Math.round(gap), Math.floor(Math.min(area.width, area.height) / 6)),
+  );
+  const inner: Rect = {
+    x: area.x + g,
+    y: area.y + g,
+    width: area.width - g * 2,
+    height: area.height - g * 2,
+  };
+  const half = Math.round((inner.width - g) / 2);
+  const halfH = Math.round((inner.height - g) / 2);
+  const right = inner.x + half + g;
+  const bottom = inner.y + halfH + g;
+  const restW = inner.width - half - g;
+  const restH = inner.height - halfH - g;
   switch (side) {
     case 'left':
-      return { x: area.x, y: area.y, width: half, height: area.height };
+      return { x: inner.x, y: inner.y, width: half, height: inner.height };
     case 'right':
-      return { x: area.x + half, y: area.y, width: area.width - half, height: area.height };
+      return { x: right, y: inner.y, width: restW, height: inner.height };
     case 'top':
-      return { ...area };
+      return { ...inner };
     case 'top-left':
-      return { x: area.x, y: area.y, width: half, height: halfH };
+      return { x: inner.x, y: inner.y, width: half, height: halfH };
     case 'top-right':
-      return { x: area.x + half, y: area.y, width: area.width - half, height: halfH };
+      return { x: right, y: inner.y, width: restW, height: halfH };
     case 'bottom-left':
-      return { x: area.x, y: area.y + halfH, width: half, height: area.height - halfH };
+      return { x: inner.x, y: bottom, width: half, height: restH };
     case 'bottom-right':
-      return {
-        x: area.x + half,
-        y: area.y + halfH,
-        width: area.width - half,
-        height: area.height - halfH,
-      };
+      return { x: right, y: bottom, width: restW, height: restH };
   }
 }
 

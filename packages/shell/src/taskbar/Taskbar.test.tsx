@@ -330,6 +330,23 @@ describe('magnify on hover', () => {
         .transform,
     ).toBe('');
   });
+
+  it('stays still under Low Power Mode, with the setting left as it was', async () => {
+    setTaskbar({ items: ['pinned'], magnify: true });
+    act(() => {
+      useSettingsStore.getState().patch('power', { lowPowerMode: true });
+    });
+    mount();
+    const buttons = pinnedButtons();
+    stubRow(buttons, 48, 44);
+    fireEvent.pointerMove(screen.getByTestId('taskbar-row'), { clientX: 22, clientY: 22 });
+    await Promise.resolve();
+    expect(
+      (buttons[0] as HTMLElement).querySelector<HTMLElement>('[data-taskbar-glyph]')?.style
+        .transform,
+    ).toBe('');
+    expect(useSettingsStore.getState().settings.taskbar.magnify).toBe(true);
+  });
 });
 
 describe('the context menu', () => {

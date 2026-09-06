@@ -16,6 +16,7 @@ import { useMenuStore } from '../menu/store';
 import { selectUnreadCount, useNotificationStore } from '../notifications/store';
 import { useProcessStore } from '../process/store';
 import { useSessionStore } from '../session/store';
+import { runtimeSettings } from '../settings/runtime';
 import type { Settings } from '../settings/schema';
 import { useSettingsStore } from '../settings/store';
 import type { AppDefinition, AppId, Pid, WindowId, WindowState } from '../types';
@@ -57,6 +58,15 @@ export function useKernelEvent<K extends keyof KernelEvents>(
 
 export function useSettings(): Settings {
   return useSettingsStore((s) => s.settings);
+}
+
+/**
+ * The settings as the system should behave right now, with Low Power Mode
+ * applied. Anything that draws or animates wants this one; Settings itself
+ * wants `useSetting`, which reports what the person chose.
+ */
+export function useRuntimeSettings(): Settings {
+  return runtimeSettings(useSettingsStore((s) => s.settings));
 }
 
 export function useSetting<K extends keyof Settings>(

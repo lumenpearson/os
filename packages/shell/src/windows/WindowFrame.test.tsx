@@ -1,5 +1,11 @@
 import type { Kernel } from '@lumen/kernel';
-import { useRegistryStore, useWindowStore, type WindowState } from '@lumen/kernel';
+import {
+  defaultSettings,
+  useRegistryStore,
+  useSettingsStore,
+  useWindowStore,
+  type WindowState,
+} from '@lumen/kernel';
 import { KernelProvider } from '@lumen/kernel/react';
 import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -55,6 +61,7 @@ const IN_TITLE_BAR = 10;
 const IN_BODY = 200;
 
 beforeEach(() => {
+  useSettingsStore.setState({ settings: defaultSettings() });
   useRegistryStore.setState({
     apps: {
       'lumen.files': {
@@ -121,5 +128,32 @@ describe('the title bar menu', () => {
       'aria-disabled',
       'true',
     );
+  });
+});
+
+describe('full screen', () => {
+  const frame = () => screen.getByTestId('window');
+
+  it('covers the whole display, panels included', () => {
+    mount({ fullscreen: true });
+    expect(frame()).toHaveStyle({ width: '100%', height: '100%' });
+  });
+
+  it('stops at the work area when told not to cover the panels', () => {
+    useSettingsStore.getState().patch('windows', { fullscreenCoversPanels: false });
+    mount({ fullscreen: true });
+    const area = useWindowStore.getState().area;
+    expect(frame()).toHaveStyle({ width: `${area.width}px`, height: `${area.height}px` });
+  });
+
+  it('hides the title bar', () => {
+    mount({ fullscreen: true });
+    expect(screen.queryByTestId('window-titlebar')).not.toBeInTheDocument();
+  });
+
+  it('keeps the title bar when the setting says to', () => {
+    useSettingsStore.getState().patch('windows', { fullscreenHidesTitleBar: false });
+    mount({ fullscreen: true });
+    expect(screen.getByTestId('window-titlebar')).toBeInTheDocument();
   });
 });

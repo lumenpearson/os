@@ -6,6 +6,7 @@ import { DialogProvider } from '@lumen/ui';
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { BootScreen } from './boot/BootScreen';
 import { CursorLayer } from './cursor/CursorLayer';
+import { useDynamicChrome } from './desktop/useDynamicChrome';
 import { useHostFocus } from './hooks/useHostFocus';
 import { useIdleWatch } from './hooks/useIdleWatch';
 import { PerformanceOverlay } from './perf/PerformanceOverlay';
@@ -72,6 +73,7 @@ function Session() {
   const state = useSessionStore((s) => s.state);
   useIdleWatch();
   useHostFocus();
+  useDynamicChrome();
   useStartupSound(state);
   return (
     <Suspense fallback={<BootScreen />}>

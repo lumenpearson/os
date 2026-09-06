@@ -25,8 +25,12 @@ export interface Immersive {
 export function useImmersive(): Immersive {
   const fullscreen = useFullscreenWindow();
   const windows = useSettings().windows;
+  // A panel gets out of the way only when the window is going to use the
+  // space. With full screen set to stop at the panels, sliding them off would
+  // uncover the wallpaper and nothing else.
+  const covers = fullscreen && windows.fullscreenCoversPanels;
   return {
-    systemBar: fullscreen && windows.immersiveSystemBar,
-    taskbar: fullscreen && windows.immersiveTaskbar,
+    systemBar: covers && windows.immersiveSystemBar,
+    taskbar: covers && windows.immersiveTaskbar,
   };
 }

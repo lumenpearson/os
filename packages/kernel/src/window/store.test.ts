@@ -1,4 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
+import { defaultSettings } from '../settings/schema';
+import { useSettingsStore } from '../settings/store';
+import { snapRect } from './geometry';
 import { useWindowStore } from './store';
 
 const area = { x: 0, y: 26, width: 1280, height: 700 };
@@ -95,5 +98,34 @@ describe('a work area that shrinks and grows again', () => {
     const back = useWindowStore.getState().windows[id]?.bounds;
     expect(back?.width).toBe(900);
     expect(back?.height).toBe(600);
+  });
+});
+
+describe('the tiling gap', () => {
+  beforeEach(() => {
+    useWindowStore.setState({ windows: {}, order: [], focusedId: null, nextZ: 100, area });
+    useSettingsStore.setState({ settings: defaultSettings() });
+  });
+
+  it('tiles flush to the edges at the default of 0', () => {
+    const w = useWindowStore.getState().open(1, 'x', { width: 600, height: 400 });
+    useWindowStore.getState().snap(w.id, 'left');
+    expect(useWindowStore.getState().windows[w.id]?.bounds).toEqual(snapRect('left', area));
+  });
+
+  it('reads the setting when a window is tiled', () => {
+    useSettingsStore.getState().patch('windows', { tilingGap: 12 });
+    const w = useWindowStore.getState().open(1, 'x', { width: 600, height: 400 });
+    useWindowStore.getState().snap(w.id, 'left');
+    expect(useWindowStore.getState().windows[w.id]?.bounds).toEqual(snapRect('left', area, 12));
+  });
+
+  it('keeps the gap when the work area changes under a tiled window', () => {
+    useSettingsStore.getState().patch('windows', { tilingGap: 8 });
+    const w = useWindowStore.getState().open(1, 'x', { width: 600, height: 400 });
+    useWindowStore.getState().snap(w.id, 'right');
+    const smaller = { x: 0, y: 26, width: 900, height: 500 };
+    useWindowStore.getState().setArea(smaller);
+    expect(useWindowStore.getState().windows[w.id]?.bounds).toEqual(snapRect('right', smaller, 8));
   });
 });

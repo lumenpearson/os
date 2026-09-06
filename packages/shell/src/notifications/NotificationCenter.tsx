@@ -1,6 +1,6 @@
 import { formatRelative } from '@lumen/apps';
 import { type Notification, useNotificationStore, useRegistryStore } from '@lumen/kernel';
-import { useNotifications, useSetting, useSettings } from '@lumen/kernel/react';
+import { useNotifications, useRuntimeSettings, useSetting } from '@lumen/kernel/react';
 import { Button, cx, IconButton, Switch, useClickOutside, useEscape } from '@lumen/ui';
 import { X } from 'lucide-react';
 import { useEffect, useMemo, useRef } from 'react';
@@ -11,7 +11,7 @@ export function NotificationCenter() {
   const open = useShellStore((s) => s.notificationCenter);
   const toggle = useShellStore((s) => s.toggle);
   const { items } = useNotifications();
-  const settings = useSettings();
+  const settings = useRuntimeSettings();
   const [notif, setNotif] = useSetting('notifications');
   const apps = useRegistryStore((s) => s.apps);
   const markAllRead = useNotificationStore((s) => s.markAllRead);

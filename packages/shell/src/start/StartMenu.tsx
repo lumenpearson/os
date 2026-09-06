@@ -5,7 +5,7 @@ import {
   useCurrentUser,
   useInstalledApps,
   useKernel,
-  useSettings,
+  useRuntimeSettings,
 } from '@lumen/kernel/react';
 import { AnchoredMenu, Avatar, cx, SearchField, useClickOutside, useEscape } from '@lumen/ui';
 import { basename } from '@lumen/vfs';
@@ -29,7 +29,7 @@ export function StartMenu() {
   const kernel = useKernel();
   const open = useShellStore((s) => s.startMenu);
   const toggle = useShellStore((s) => s.toggle);
-  const settings = useSettings();
+  const settings = useRuntimeSettings();
   const apps = useApps();
   const installed = useInstalledApps();
   const user = useCurrentUser();

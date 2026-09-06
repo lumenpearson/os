@@ -106,7 +106,12 @@
   --lumen-surface: #ffffff;
   --lumen-surface-2: #ececee;
   --lumen-surface-3: #e1e2e5;
-  --lumen-chrome: rgb(246 246 247 / 0.82);
+  /* The panel background, in two parts so the shell can tint it without
+     knowing what it is: Settings > Wallpaper > Dynamic chrome overrides
+     --lumen-chrome with a mix of the wallpaper's colour and this base, and
+     removes the override again when it is switched off. */
+  --lumen-chrome-base: rgb(246 246 247 / 0.82);
+  --lumen-chrome: var(--lumen-chrome-base);
   --lumen-ink: #141517;
   --lumen-ink-2: #5b5e66;
   --lumen-ink-3: #8b8f98;
@@ -143,7 +148,8 @@
   --lumen-surface: #232428;
   --lumen-surface-2: #2b2c31;
   --lumen-surface-3: #35363c;
-  --lumen-chrome: rgb(30 31 35 / 0.78);
+  --lumen-chrome-base: rgb(30 31 35 / 0.78);
+  --lumen-chrome: var(--lumen-chrome-base);
   --lumen-ink: #ececee;
   --lumen-ink-2: #a3a6ae;
   --lumen-ink-3: #6f737c;
