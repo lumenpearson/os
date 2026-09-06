@@ -224,6 +224,34 @@ describe('the desktop selection rectangle', () => {
     expect(selection()).toEqual(['alpha.txt']);
   });
 
+  it('is a crosshair for as long as the rectangle is being drawn, and no longer', async () => {
+    await mount();
+    expect(layer().dataset.cursor).toBeUndefined();
+
+    press(300, 300);
+    // Inside the threshold this is still the click that clears the selection.
+    await moveTo(302, 301);
+    expect(layer().dataset.cursor).toBeUndefined();
+
+    await moveTo(360, 360);
+    expect(layer().dataset.cursor).toBe('crosshair');
+
+    await release(360, 360);
+    expect(layer().dataset.cursor).toBeUndefined();
+  });
+
+  it('gives the crosshair up when Escape cancels the drag', async () => {
+    await mount();
+    press(300, 300);
+    await moveTo(360, 360);
+    expect(layer().dataset.cursor).toBe('crosshair');
+
+    await act(async () => {
+      fireEvent.keyDown(window, { key: 'Escape' });
+    });
+    expect(layer().dataset.cursor).toBeUndefined();
+  });
+
   it('does not draw a rectangle for a drag that starts on an icon', async () => {
     await mount();
     fireEvent.pointerDown(icon('beta.txt'), {

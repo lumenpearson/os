@@ -161,6 +161,65 @@ describe('full screen', () => {
   });
 });
 
+describe('the resize handles', () => {
+  /** In the order the frame draws them: n, s, e, w, then the four corners. */
+  const handleCursors = () =>
+    [...screen.getByTestId('window').querySelectorAll<HTMLElement>('[data-cursor]')].map(
+      (el) => el.dataset.cursor,
+    );
+
+  it('names the one edge an edge handle moves, and the pair a corner moves', () => {
+    mount();
+    expect(handleCursors()).toEqual([
+      'n-resize',
+      's-resize',
+      'e-resize',
+      'w-resize',
+      'nesw-resize',
+      'nwse-resize',
+      'nwse-resize',
+      'nesw-resize',
+    ]);
+  });
+});
+
+describe('the cursor while the window is dragged', () => {
+  function pressTitleBar() {
+    mount();
+    const frame = screen.getByTestId('window');
+    fireEvent.pointerDown(screen.getByTestId('window-titlebar'), {
+      button: 0,
+      clientX: 400,
+      clientY: IN_TITLE_BAR,
+    });
+    return frame;
+  }
+
+  it('closes the hand once the window is following it, not on the press', () => {
+    const frame = pressTitleBar();
+    expect(frame.dataset.cursor).toBeUndefined();
+
+    // Inside the threshold this is still a click on the title bar.
+    fireEvent.pointerMove(frame, { clientX: 401, clientY: IN_TITLE_BAR });
+    expect(frame.dataset.cursor).toBeUndefined();
+
+    fireEvent.pointerMove(frame, { clientX: 600, clientY: 300 });
+    expect(frame.dataset.cursor).toBe('grabbing');
+
+    fireEvent.pointerUp(frame, { clientX: 600, clientY: 300 });
+    expect(frame.dataset.cursor).toBeUndefined();
+  });
+
+  it('lets go when the host takes the pointer away mid-drag', () => {
+    const frame = pressTitleBar();
+    fireEvent.pointerMove(frame, { clientX: 600, clientY: 300 });
+    expect(frame.dataset.cursor).toBe('grabbing');
+
+    fireEvent.pointerCancel(frame, { clientX: 600, clientY: 300 });
+    expect(frame.dataset.cursor).toBeUndefined();
+  });
+});
+
 describe('the snap preview during a drag', () => {
   /** Away from the corners, so the pointer is in a side zone and not a quadrant. */
   const MID_HEIGHT = 300;

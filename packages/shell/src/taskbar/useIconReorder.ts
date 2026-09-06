@@ -71,7 +71,10 @@ export function useIconReorder(options: IconReorderOptions): IconReorder {
     if (frame.current) cancelAnimationFrame(frame.current);
     frame.current = 0;
     const row = rowRef.current;
-    if (row) delete row.dataset.dragging;
+    if (row) {
+      delete row.dataset.dragging;
+      delete row.dataset.cursor;
+    }
     if (!d) return null;
     for (const el of d.buttons) {
       el.style.transform = '';
@@ -91,7 +94,12 @@ export function useIconReorder(options: IconReorderOptions): IconReorder {
         if (Math.abs(delta) < THRESHOLD) return;
         d.moved = true;
         const row = rowRef.current;
-        if (row) row.dataset.dragging = 'true';
+        if (row) {
+          row.dataset.dragging = 'true';
+          // On the row rather than the icon: the hand keeps the closed cursor
+          // as it passes over the icons it is displacing.
+          row.dataset.cursor = 'grabbing';
+        }
         d.buttons.forEach((el, i) => {
           // The dragged icon tracks the hand; the ones it displaces glide.
           el.style.transition =

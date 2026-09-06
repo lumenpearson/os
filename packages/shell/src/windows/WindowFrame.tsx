@@ -28,11 +28,13 @@ import { WindowControls } from './WindowControls';
 import { windowMenuItems } from './windowMenu';
 
 const HANDLES: ResizeHandle[] = ['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw'];
+// An edge handle moves that one edge, so it names the edge and gets the single
+// arrow; only a corner, which moves two edges at once, is two-headed.
 const HANDLE_CURSOR: Record<ResizeHandle, string> = {
-  n: 'ns-resize',
-  s: 'ns-resize',
-  e: 'ew-resize',
-  w: 'ew-resize',
+  n: 'n-resize',
+  s: 's-resize',
+  e: 'e-resize',
+  w: 'w-resize',
   ne: 'nesw-resize',
   sw: 'nesw-resize',
   nw: 'nwse-resize',
@@ -220,8 +222,13 @@ export const WindowFrame = memo(function WindowFrame({ id }: { id: WindowId }) {
     const onMove = (ev: PointerEvent) => {
       const dx = ev.clientX - start.x;
       const dy = ev.clientY - start.y;
-      if (!moved && Math.abs(dx) + Math.abs(dy) < 3) return;
-      moved = true;
+      if (!moved) {
+        if (Math.abs(dx) + Math.abs(dy) < 3) return;
+        moved = true;
+        // The frame has the pointer captured, so it answers for the cursor
+        // wherever the hand goes; said once, not on every move.
+        el.dataset.cursor = 'grabbing';
+      }
       latest = keepTitleVisible({ ...bounds, x: bounds.x + dx, y: bounds.y + dy }, store.area);
       if (settings.display.snapping) {
         const zone = snapZoneAt(ev.clientX, ev.clientY, store.area);
@@ -247,6 +254,9 @@ export const WindowFrame = memo(function WindowFrame({ id }: { id: WindowId }) {
       if (raf) cancelAnimationFrame(raf);
       useShellStore.getState().setInteracting(false);
       useSnapPreview.getState().set(null);
+      // Before the early return below: a cancelled drag has to let go of the
+      // hand as surely as a finished one.
+      delete el.dataset.cursor;
       if (!moved) return;
       // The chase is over the moment the hand lets go: the window belongs at
       // the position the pointer chose, not part of the way there.

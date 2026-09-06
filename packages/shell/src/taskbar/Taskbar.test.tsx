@@ -275,6 +275,30 @@ describe('dragging a pinned icon', () => {
     expect(dragged.style.transform).toBe('');
   });
 
+  it('offers an open hand at rest and a closed one while the drag runs', () => {
+    setTaskbar({ items: ['pinned'] });
+    mount();
+    const buttons = pinnedButtons();
+    stubRow(buttons, 48, 44);
+    const row = screen.getByTestId('taskbar-pinned');
+    const dragged = buttons[0] as HTMLElement;
+    expect(dragged.className).toContain('cursor-grab');
+    expect(row.dataset.cursor).toBeUndefined();
+
+    fireEvent.pointerDown(dragged, { clientX: 22, clientY: 22, button: 0 });
+    fireEvent.pointerMove(window, { clientX: 118, clientY: 22 });
+    expect(row.dataset.cursor).toBe('grabbing');
+
+    fireEvent.pointerUp(window, { clientX: 118, clientY: 22 });
+    expect(row.dataset.cursor).toBeUndefined();
+  });
+
+  it('keeps the hand off a lone pinned icon, which has nowhere to be dropped', () => {
+    setTaskbar({ items: ['pinned'], pinned: ['lumen.files'] });
+    mount();
+    expect((pinnedButtons()[0] as HTMLElement).className).not.toContain('cursor-grab');
+  });
+
   it('leaves the order alone when the icon is only clicked', async () => {
     setTaskbar({ items: ['pinned'] });
     mount();

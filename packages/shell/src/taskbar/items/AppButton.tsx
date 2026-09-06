@@ -66,7 +66,7 @@ export function AppButton({
             ITEM_BUTTON,
             active ? 'bg-surface-2' : 'hover:bg-surface-2/70',
             labelled && 'gap-2 px-2',
-            reorderable && 'touch-none',
+            reorderable && 'touch-none cursor-grab',
           )}
           style={{ minWidth: size, height: size }}
         >

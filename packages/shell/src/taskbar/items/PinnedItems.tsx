@@ -41,7 +41,9 @@ export function PinnedItems(props: TaskbarItemProps) {
           app={app}
           running={isRunning(app.id)}
           active={isActive(app.id)}
-          reorderable
+          // One icon has nowhere to go, and the drag knows it — an open hand
+          // over the only pinned app would promise a reorder that cannot run.
+          reorderable={apps.length > 1}
           onPointerDown={onPointerDown(index)}
           onActivate={() => {
             // The click that ends a drag is the drop, not a launch.

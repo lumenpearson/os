@@ -2,6 +2,7 @@ import { FileTypeIcon } from '@lumen/apps';
 import { useClipboardStore, WALLPAPERS } from '@lumen/kernel';
 import {
   boxesByPath,
+  DRAG_THRESHOLD,
   useKernel,
   useMarquee,
   useSetting,
@@ -94,6 +95,37 @@ export function DesktopIcons() {
     onChange: (keys) => setSelected(new Set(keys)),
   });
   const startMarquee = marquee.start;
+
+  /**
+   * The crosshair belongs to the rectangle, not to the press: until the
+   * pointer has travelled the band's own threshold this is still the click
+   * that clears the selection, and the arrow is the truth. Escape puts the
+   * selection back and ends the drag, so it ends the cursor too.
+   */
+  const crosshairWhileDrawing = (e: React.PointerEvent) => {
+    const root = rootRef.current;
+    if (!root || e.button !== 0) return;
+    const from = { x: e.clientX, y: e.clientY };
+    const onMove = (ev: PointerEvent) => {
+      if (root.dataset.cursor) return;
+      if (Math.abs(ev.clientX - from.x) + Math.abs(ev.clientY - from.y) < DRAG_THRESHOLD) return;
+      root.dataset.cursor = 'crosshair';
+    };
+    const stop = () => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', stop);
+      window.removeEventListener('pointercancel', stop);
+      window.removeEventListener('keydown', onKeyDown);
+      delete root.dataset.cursor;
+    };
+    const onKeyDown = (ev: KeyboardEvent) => {
+      if (ev.key === 'Escape') stop();
+    };
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', stop);
+    window.addEventListener('pointercancel', stop);
+    window.addEventListener('keydown', onKeyDown);
+  };
 
   if (!desktop.showIcons) return null;
 
@@ -256,7 +288,9 @@ export function DesktopIcons() {
       aria-multiselectable="true"
       tabIndex={-1}
       onPointerDown={(e) => {
-        if (e.target === e.currentTarget) startMarquee(e);
+        if (e.target !== e.currentTarget) return;
+        startMarquee(e);
+        crosshairWhileDrawing(e);
       }}
       onContextMenu={(e) => {
         if (e.target !== e.currentTarget) return;
