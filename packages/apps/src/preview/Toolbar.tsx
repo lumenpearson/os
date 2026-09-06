@@ -75,7 +75,7 @@ export function PreviewToolbar({
   onReveal,
 }: PreviewToolbarProps) {
   return (
-    <Toolbar dense>
+    <Toolbar dense windowControls>
       <ToolbarGroup>
         <IconButton label="Previous" disabled={!hasPrevious} onClick={onPrevious}>
           <ChevronLeft />

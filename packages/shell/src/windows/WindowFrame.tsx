@@ -434,9 +434,15 @@ export const WindowFrame = memo(function WindowFrame({ id }: { id: WindowId }) {
         <header
           ref={headerRef}
           className={cx(
-            'relative flex shrink-0 items-center select-none',
+            // `relative` belongs to the default bar alone, which positions its
+            // centred title against it. Leaving it in the shared list made the
+            // inset bar relative too: Tailwind orders `.relative` after
+            // `.absolute` in the sheet, so the branch below could not win, and
+            // every window that asked for an inset bar got a 36px strip of
+            // nothing above the app's own toolbar instead.
+            'flex shrink-0 items-center select-none',
             titleBar === 'default'
-              ? 'h-(--lumen-window-titlebar-h) border-b border-rule bg-canvas'
+              ? 'relative h-(--lumen-window-titlebar-h) border-b border-rule bg-canvas'
               : 'pointer-events-none absolute left-0 top-0 z-10 h-(--lumen-window-titlebar-h) w-full',
           )}
           data-testid="window-titlebar"
