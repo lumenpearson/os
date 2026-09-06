@@ -3,6 +3,7 @@ import { VfsError } from './errors';
 import { IndexedDbAdapter } from './idb';
 import { MemoryAdapter } from './memory';
 import { basename } from './path';
+import { type Elevation, elevate, NO_PROTECTION } from './protection';
 import type { VfsAdapter } from './types';
 import { Vfs } from './vfs';
 
@@ -26,12 +27,12 @@ describe.each(adapters)('Vfs over %s adapter', (_name, make) => {
   });
 
   it('round-trips text and json', async () => {
-    await fs.writeJson('/System/settings.json', { theme: 'dark' }, { recursive: true });
-    expect(await fs.readJson<{ theme: string }>('/System/settings.json')).toEqual({
+    await fs.writeJson('/Users/ada/settings.json', { theme: 'dark' }, { recursive: true });
+    expect(await fs.readJson<{ theme: string }>('/Users/ada/settings.json')).toEqual({
       theme: 'dark',
     });
-    expect(await fs.readText('/System/settings.json')).toContain('"theme": "dark"');
-    const st = await fs.stat('/System/settings.json');
+    expect(await fs.readText('/Users/ada/settings.json')).toContain('"theme": "dark"');
+    const st = await fs.stat('/Users/ada/settings.json');
     expect(st.kind).toBe('file');
     expect(st.size).toBeGreaterThan(10);
   });
@@ -194,5 +195,166 @@ describe('copying over a file that already exists', () => {
     await plain.copy('/a.txt', '/b.txt');
     off();
     expect(seen).toContain('change:/b.txt');
+  });
+});
+
+describe('the paths the system owns', () => {
+  const authority = () => ({ elevation: elevate('vfs test') });
+
+  async function withSystem(): Promise<Vfs> {
+    const fs = new Vfs(new MemoryAdapter());
+    // Even the fixture has to say who it is: creating /System is refused too,
+    // or the terminal could put files there that nothing could ever remove.
+    await fs.ensureDir('/System/Wallpapers', authority());
+    await fs.writeText('/System/kernel.bin', 'boot', authority());
+    await fs.mkdir('/Applications', authority());
+    await fs.writeText('/Applications/Files.app', '{}');
+    await fs.ensureDir('/Users/ada');
+    await fs.writeText('/Users/ada/notes.txt', 'mine');
+    return fs;
+  }
+
+  it('refuses rm -r /System, which is the whole point', async () => {
+    const fs = await withSystem();
+    const seen: string[] = [];
+    const off = fs.subscribe((e) => seen.push(e.type));
+
+    await expect(fs.remove('/System', { recursive: true })).rejects.toMatchObject({
+      code: 'EACCES',
+    });
+
+    off();
+    // Nothing happened: no partial delete, and nothing told the open windows
+    // that anything had.
+    expect(await fs.exists('/System/kernel.bin')).toBe(true);
+    expect(seen).toEqual([]);
+  });
+
+  it('refuses to write, remove, rename, or move anything onto a system path', async () => {
+    const fs = await withSystem();
+    await expect(fs.writeText('/System/kernel.bin', 'x')).rejects.toMatchObject({ code: 'EACCES' });
+    await expect(fs.writeText('/System/new.txt', 'x')).rejects.toMatchObject({ code: 'EACCES' });
+    await expect(fs.mkdir('/System/Extra')).rejects.toMatchObject({ code: 'EACCES' });
+    await expect(fs.remove('/System/kernel.bin')).rejects.toMatchObject({ code: 'EACCES' });
+    await expect(fs.rename('/System/kernel.bin', '/Users/ada/k')).rejects.toMatchObject({
+      code: 'EACCES',
+    });
+    await expect(fs.rename('/Users/ada/notes.txt', '/System/kernel.bin')).rejects.toMatchObject({
+      code: 'EACCES',
+    });
+    await expect(fs.copy('/Users/ada/notes.txt', '/System/notes.txt')).rejects.toMatchObject({
+      code: 'EACCES',
+    });
+    await expect(fs.trash('/System')).rejects.toMatchObject({ code: 'EACCES' });
+    expect(await fs.readText('/System/kernel.bin')).toBe('boot');
+  });
+
+  it('protects the Applications folder without freezing what is installed in it', async () => {
+    const fs = await withSystem();
+    await expect(fs.remove('/Applications', { recursive: true })).rejects.toMatchObject({
+      code: 'EACCES',
+    });
+    await expect(fs.rename('/Applications', '/Apps')).rejects.toMatchObject({ code: 'EACCES' });
+    // Installing and uninstalling a program is ordinary work.
+    await fs.writeText('/Applications/Quick Notes.app', '{}');
+    await fs.remove('/Applications/Quick Notes.app');
+    expect(await fs.exists('/Applications/Files.app')).toBe(true);
+  });
+
+  it('always allows reading', async () => {
+    const fs = await withSystem();
+    expect(await fs.readText('/System/kernel.bin')).toBe('boot');
+    expect((await fs.readDir('/System')).map((e) => e.name)).toEqual(['Wallpapers', 'kernel.bin']);
+    expect((await fs.stat('/System')).kind).toBe('directory');
+    expect(await fs.du('/System')).toBe(4);
+    await fs.copy('/System/kernel.bin', '/Users/ada/copy.bin');
+    expect(await fs.readText('/Users/ada/copy.bin')).toBe('boot');
+  });
+
+  it('goes through for a caller that passes its authority', async () => {
+    const fs = await withSystem();
+    await fs.writeText('/System/kernel.bin', 'newer', authority());
+    await fs.mkdir('/System/Extra', authority());
+    await fs.copy('/Users/ada/notes.txt', '/System/Extra/notes.txt', authority());
+    await fs.rename('/System/Extra', '/System/Spare', authority());
+    await fs.remove('/System/Spare', { recursive: true, ...authority() });
+    expect(await fs.readText('/System/kernel.bin')).toBe('newer');
+    expect(await fs.exists('/System/Spare')).toBe(false);
+
+    await fs.remove('/System', { recursive: true, ...authority() });
+    expect(await fs.exists('/System')).toBe(false);
+  });
+
+  it('does not take a look-alike token for authority', async () => {
+    const fs = await withSystem();
+    // What a forged options object would look like coming out of JSON.
+    const forged = { elevation: { reason: 'sudo', grantedAt: Date.now() } } as unknown as {
+      elevation: Elevation;
+    };
+    await expect(fs.remove('/System', { recursive: true, ...forged })).rejects.toMatchObject({
+      code: 'EACCES',
+    });
+    expect(await fs.exists('/System')).toBe(true);
+  });
+
+  it('refuses even the kernel state files to a caller with no authority', async () => {
+    // The kernel rewrites settings, accounts and window state as the OS runs,
+    // and passes authority for each of those saves. Nothing is exempt by path.
+    const fs = await withSystem();
+    await expect(fs.writeJson('/System/settings.json', { theme: 'dark' })).rejects.toMatchObject({
+      code: 'EACCES',
+    });
+    await expect(fs.remove('/System/settings.json')).rejects.toMatchObject({ code: 'EACCES' });
+    await expect(fs.rename('/System/settings.json', '/System/old.json')).rejects.toMatchObject({
+      code: 'EACCES',
+    });
+  });
+
+  /**
+   * The composites are where a guard is usually forgotten: each of these
+   * reaches a protected path through two or three calls rather than one, and
+   * a rule applied only at `remove` would let every one of them through.
+   */
+  it('refuses every route into the system tree, not only the direct ones', async () => {
+    const fs = await withSystem();
+    const code = async (fn: () => Promise<unknown>) => {
+      try {
+        await fn();
+        return 'allowed';
+      } catch (e) {
+        return (e as { code?: string }).code;
+      }
+    };
+    expect(await code(() => fs.trash('/System'))).toBe('EACCES');
+    expect(await code(() => fs.trash('/System/kernel.bin'))).toBe('EACCES');
+    expect(await code(() => fs.moveInto('/Users/ada/notes.txt', '/System'))).toBe('EACCES');
+    expect(await code(() => fs.copyInto('/Users/ada/notes.txt', '/System'))).toBe('EACCES');
+    expect(await code(() => fs.createFolder('/System', 'New Folder'))).toBe('EACCES');
+    expect(await code(() => fs.copy('/Users/ada/notes.txt', '/System/kernel.bin'))).toBe('EACCES');
+    expect(await fs.readText('/System/kernel.bin')).toBe('boot');
+  });
+
+  it('normalises before it decides, so .. and a trailing slash are the same path', async () => {
+    const fs = await withSystem();
+    await expect(fs.remove('/Users/../System')).rejects.toMatchObject({ code: 'EACCES' });
+    await expect(fs.remove('/System/')).rejects.toMatchObject({ code: 'EACCES' });
+    await expect(fs.writeText('/Users/ada/../../System/z', 'z')).rejects.toMatchObject({
+      code: 'EACCES',
+    });
+  });
+
+  it('lets the kernel through when it says so', async () => {
+    const fs = await withSystem();
+    const authority = { elevation: elevate('test: the kernel saving settings') };
+    await fs.writeJson('/System/settings.json', { theme: 'dark' }, authority);
+    expect(await fs.readJson('/System/settings.json')).toEqual({ theme: 'dark' });
+  });
+
+  it('protects nothing when the policy says so', async () => {
+    const fs = new Vfs(new MemoryAdapter(), '/Trash', NO_PROTECTION);
+    await fs.ensureDir('/System');
+    await fs.writeText('/System/kernel.bin', 'boot');
+    await fs.remove('/System', { recursive: true });
+    expect(await fs.exists('/System')).toBe(false);
   });
 });

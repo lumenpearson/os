@@ -5,8 +5,9 @@
  * `;`, `&&` and `||` with exit codes in `$?`.
  */
 
-import { dirname, type Vfs } from '@lumen/vfs';
+import { dirname, isProtectedPath, type Vfs, VfsError } from '@lumen/vfs';
 import {
+  authority,
   type CommandContext,
   commands,
   describeError,
@@ -284,9 +285,21 @@ export class Shell {
 
   private async writeRedirect(op: '>' | '>>', target: string, text: string): Promise<void> {
     const path = resolvePath(this.state, target);
-    await this.vfs.ensureDir(dirname(path));
+    // `sudo echo hi > /System/f` cannot work, here or on any other system:
+    // the redirection belongs to the shell, not to the command, and the shell
+    // opens the file with the rights it already had. Say what does work
+    // instead of letting it fail with "permission denied".
+    if (isProtectedPath(path) && !this.state.elevation) {
+      throw new VfsError(
+        'EACCES',
+        path,
+        `${path} is part of the system. A redirection cannot be elevated; write it with "sudo cp".`,
+      );
+    }
+    const grant = authority(this.state);
+    await this.vfs.ensureDir(dirname(path), grant);
     if (op === '>') {
-      await this.vfs.writeText(path, text);
+      await this.vfs.writeText(path, text, grant);
       return;
     }
     let existing = '';
@@ -295,7 +308,7 @@ export class Shell {
     } catch {
       existing = '';
     }
-    await this.vfs.writeText(path, existing + text);
+    await this.vfs.writeText(path, existing + text, grant);
   }
 }
 

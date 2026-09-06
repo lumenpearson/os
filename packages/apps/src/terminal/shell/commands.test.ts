@@ -1,4 +1,4 @@
-import { MemoryAdapter, Vfs } from '@lumen/vfs';
+import { elevate, MemoryAdapter, Vfs } from '@lumen/vfs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   createShellState,
@@ -35,7 +35,15 @@ interface Harness {
   kernel: ShellKernel;
 }
 
-function harness(kernelOverrides: Partial<ShellKernel> = {}, vfs?: Vfs): Harness {
+/**
+ * `password` stands in for the person at the keyboard. Leave it out and there
+ * is nobody to ask, which is how sudo behaves in a script.
+ */
+function harness(
+  kernelOverrides: Partial<ShellKernel> = {},
+  vfs?: Vfs,
+  password?: (prompt: string) => Promise<string | null>,
+): Harness {
   let out = '';
   let err = '';
   const state = createShellState({ home: HOME, user: 'ada', cwd: HOME });
@@ -108,6 +116,7 @@ function harness(kernelOverrides: Partial<ShellKernel> = {}, vfs?: Vfs): Harness
     kernel,
     columns: 80,
     io: { stdout: (t) => (out += t), stderr: (t) => (err += t) },
+    ...(password ? { password } : {}),
   });
   return {
     vfs: filesystem,
@@ -657,5 +666,143 @@ describe('sudo', () => {
     const h = harness();
     expect(await h.run('sudo whoami')).toBe(1);
     expect(h.err()).toContain('no way to ask');
+  });
+});
+
+describe('the paths the system owns', () => {
+  const fixture = () => ({ elevation: elevate('commands test fixture') });
+
+  async function seeded(): Promise<Vfs> {
+    const vfs = await seed();
+    await vfs.ensureDir(`${SYSTEM}/Wallpapers`, fixture());
+    await vfs.writeText(`${SYSTEM}/kernel.bin`, 'boot', fixture());
+    await vfs.writeJson(`${SYSTEM}/settings.json`, { theme: 'dark' }, fixture());
+    return vfs;
+  }
+
+  const SYSTEM = '/System';
+
+  it('refuses rm and says which command would work', async () => {
+    const vfs = await seeded();
+    const h = harness({}, vfs);
+
+    expect(await h.run('rm -r /System')).toBe(1);
+
+    expect(h.err()).toContain('system files are protected');
+    expect(h.err()).toContain('sudo rm -r /System');
+    expect(await vfs.exists(`${SYSTEM}/kernel.bin`)).toBe(true);
+  });
+
+  it('refuses mv, cp and a redirection onto a system path', async () => {
+    const vfs = await seeded();
+    const h = harness({}, vfs);
+
+    expect(await h.run('mv /System/kernel.bin ~/kernel.bin')).toBe(1);
+    // The hint repeats the line as the shell resolved it, `~` and all.
+    expect(h.err()).toContain('sudo mv /System/kernel.bin /Users/ada/kernel.bin');
+    expect(await h.run('mv ~/Documents/notes.txt /System/notes.txt')).toBe(1);
+    expect(await h.run('cp ~/Documents/notes.txt /System/notes.txt')).toBe(1);
+    expect(h.err()).toContain('sudo cp /Users/ada/Documents/notes.txt /System/notes.txt');
+    expect(await h.run('mkdir /System/Extra')).toBe(1);
+    expect(await h.run('touch /System/marker')).toBe(1);
+
+    expect(await h.run('echo hi > /System/hi.txt')).toBe(1);
+    // A redirection is the shell's own doing and cannot be elevated, so the
+    // message names something that can be.
+    expect(h.err()).toContain('sudo cp');
+
+    expect(await vfs.exists(`${SYSTEM}/kernel.bin`)).toBe(true);
+    expect(await vfs.exists(`${SYSTEM}/notes.txt`)).toBe(false);
+    expect(await vfs.exists(`${SYSTEM}/hi.txt`)).toBe(false);
+    expect(await vfs.exists(`${SYSTEM}/Extra`)).toBe(false);
+  });
+
+  it('refuses to write the files the kernel rewrites for itself', async () => {
+    // The VFS lets the kernel save its own settings; a person at a prompt is
+    // not the kernel.
+    const vfs = await seeded();
+    const h = harness({}, vfs);
+
+    expect(await h.run('echo {} > /System/settings.json')).toBe(1);
+    expect(await h.run('cp ~/Documents/notes.txt /System/settings.json')).toBe(1);
+
+    expect(await vfs.readText(`${SYSTEM}/settings.json`)).toContain('dark');
+  });
+
+  it('reads them without complaint', async () => {
+    const h = harness({}, await seeded());
+    expect(await h.run('cat /System/kernel.bin')).toBe(0);
+    expect(h.out()).toBe('boot');
+    expect(await h.run('ls /System')).toBe(0);
+    expect(h.out()).toContain('Wallpapers/');
+    expect(await h.run('cp /System/kernel.bin ~/kernel.bin')).toBe(0);
+  });
+});
+
+describe('sudo with a password to give', () => {
+  const ask = (answer: string | null) => async () => answer;
+
+  async function seeded(): Promise<Vfs> {
+    const vfs = await seed();
+    await vfs.ensureDir('/System', { elevation: elevate('sudo test fixture') });
+    await vfs.writeText('/System/kernel.bin', 'boot', {
+      elevation: elevate('sudo test fixture'),
+    });
+    return vfs;
+  }
+
+  it('runs the wrapped command once the password checks out', async () => {
+    const authenticate = vi.fn(async (password: string) => password === 'secret');
+    const h = harness({ authenticate }, await seed(), ask('secret'));
+
+    expect(await h.run('sudo whoami')).toBe(0);
+
+    expect(h.out()).toBe('ada\n');
+    expect(authenticate).toHaveBeenCalledWith('secret');
+  });
+
+  it('grants the file system authority for that one command', async () => {
+    const vfs = await seeded();
+    const h = harness({}, vfs, ask('secret'));
+
+    expect(await h.run('sudo rm /System/kernel.bin')).toBe(0);
+    expect(await vfs.exists('/System/kernel.bin')).toBe(false);
+
+    expect(await h.run('sudo cp ~/Documents/notes.txt /System/notes.txt')).toBe(0);
+    expect(await vfs.readText('/System/notes.txt')).toContain('alpha');
+    expect(await h.run('sudo mkdir /System/Extra')).toBe(0);
+  });
+
+  it('takes the authority away again when the command returns', async () => {
+    const vfs = await seeded();
+    const h = harness({}, vfs, ask('secret'));
+
+    expect(await h.run('sudo echo done')).toBe(0);
+    expect(h.state.elevation).toBeUndefined();
+    expect(h.state.env.LUMEN_SUDO).toBeUndefined();
+
+    expect(await h.run('rm -r /System')).toBe(1);
+    expect(await vfs.exists('/System/kernel.bin')).toBe(true);
+  });
+
+  it('does not elevate on a wrong password, and does not run the command', async () => {
+    const vfs = await seeded();
+    const h = harness({}, vfs, ask('hunter2'));
+
+    expect(await h.run('sudo rm /System/kernel.bin')).toBe(1);
+
+    expect(h.err()).toContain('wrong password');
+    expect(await vfs.exists('/System/kernel.bin')).toBe(true);
+    expect(h.state.elevation).toBeUndefined();
+  });
+
+  it('does nothing when the prompt is dismissed', async () => {
+    const vfs = await seeded();
+    const h = harness({}, vfs, ask(null));
+
+    expect(await h.run('sudo rm /System/kernel.bin')).toBe(1);
+
+    expect(h.err()).toContain('cancelled');
+    expect(await vfs.exists('/System/kernel.bin')).toBe(true);
   });
 });

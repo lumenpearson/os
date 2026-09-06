@@ -11,6 +11,14 @@ export const USERS_DIR = '/Users';
 export const TRASH_DIR = '/Trash';
 export const WALLPAPERS_DIR = '/System/Wallpapers';
 
+/**
+ * The files the kernel itself rewrites while the OS runs. /System is a
+ * protected path, so each of these writes carries the kernel's own authority
+ * (`elevate` in `kernel.ts`); nothing else can write, delete or rename them.
+ * `layout.test.ts` keeps the layout and the VFS policy describing one disk.
+ */
+export const SYSTEM_STATE_FILES = [SETTINGS_FILE, USERS_FILE, STATE_FILE] as const;
+
 export const HOME_SUBDIRS = [
   'Desktop',
   'Documents',

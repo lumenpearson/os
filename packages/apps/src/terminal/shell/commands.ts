@@ -7,10 +7,13 @@
  */
 
 import {
+  type Authority,
   basename,
   dirname,
+  elevate,
   extname,
   formatBytes,
+  isProtectedPath,
   join,
   resolve,
   type Vfs,
@@ -44,6 +47,13 @@ export interface ShellState {
   history: string[];
   lastStatus: number;
   startedAt: number;
+  /**
+   * Authority to change the paths the system owns, held for the length of one
+   * `sudo` command and dropped again when it returns. It is not an environment
+   * variable on purpose: `LUMEN_SUDO` is a string a script could set for
+   * itself, this is a token the VFS only accepts from `elevate`.
+   */
+  elevation: Authority['elevation'];
 }
 
 export interface ShellInit {
@@ -75,6 +85,7 @@ export function createShellState(init: ShellInit): ShellState {
     history: [],
     lastStatus: 0,
     startedAt: Date.now(),
+    elevation: undefined,
   };
 }
 
@@ -263,7 +274,9 @@ export function describeError(e: unknown): string {
       case 'ENOTEMPTY':
         return 'Directory not empty';
       case 'EACCES':
-        return 'Permission denied';
+        // A refused system path explains itself in a sentence; a bare EACCES
+        // from an adapter does not, and gets the usual words.
+        return e.message.startsWith('EACCES') ? 'Permission denied' : e.message;
       case 'ENOSPC':
         return 'No space left on device';
       case 'EINVAL':
@@ -281,6 +294,32 @@ export function resolvePath(state: ShellState, input: string): string {
   if (input === '~') return state.home;
   if (input.startsWith('~/')) return join(state.home, input.slice(2));
   return resolve(state.cwd, input);
+}
+
+/** Whatever authority the session holds, in the shape a VFS call takes it. */
+export function authority(state: ShellState): Authority {
+  return state.elevation ? { elevation: state.elevation } : {};
+}
+
+/**
+ * The line to print instead of doing it, or null to go ahead.
+ *
+ * The VFS is what enforces this — the shell asks it the same question early so
+ * that the refusal can name the command that would work. It asks about the
+ * path rather than the operation on purpose: the VFS lets the kernel rewrite
+ * its own state files under /System, and a person typing at a prompt is not
+ * the kernel.
+ */
+export function systemRefusal(
+  ctx: CommandContext,
+  command: string,
+  args: readonly string[],
+  shown: string,
+  path: string,
+): string | null {
+  if (ctx.state.elevation) return null;
+  if (!isProtectedPath(path)) return null;
+  return `${command}: ${shown}: system files are protected. Try: sudo ${[command, ...args].join(' ')}\n`;
 }
 
 const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' });
@@ -537,9 +576,15 @@ define({
     let status = 0;
     for (const d of rest) {
       const path = resolvePath(ctx.state, d);
+      const refusal = systemRefusal(ctx, 'mkdir', args, d, path);
+      if (refusal) {
+        ctx.stderr(refusal);
+        status = 1;
+        continue;
+      }
       try {
-        if (flags.has('p')) await ctx.vfs.ensureDir(path);
-        else await ctx.vfs.mkdir(path);
+        if (flags.has('p')) await ctx.vfs.ensureDir(path, authority(ctx.state));
+        else await ctx.vfs.mkdir(path, authority(ctx.state));
       } catch (e) {
         ctx.stderr(`mkdir: ${d}: ${describeError(e)}\n`);
         status = 1;
@@ -559,11 +604,19 @@ define({
     let status = 0;
     for (const f of args) {
       const path = resolvePath(ctx.state, f);
+      const refusal = systemRefusal(ctx, 'touch', args, f, path);
+      if (refusal) {
+        ctx.stderr(refusal);
+        status = 1;
+        continue;
+      }
+      const grant = authority(ctx.state);
       try {
         if (await ctx.vfs.exists(path)) {
           const st = await ctx.vfs.stat(path);
-          if (st.kind === 'file') await ctx.vfs.writeFile(path, await ctx.vfs.readFile(path));
-        } else await ctx.vfs.writeText(path, '');
+          if (st.kind === 'file')
+            await ctx.vfs.writeFile(path, await ctx.vfs.readFile(path), grant);
+        } else await ctx.vfs.writeText(path, '', grant);
       } catch (e) {
         ctx.stderr(`touch: ${f}: ${describeError(e)}\n`);
         status = 1;
@@ -585,6 +638,12 @@ define({
     for (const p of rest) {
       throwIfAborted(ctx.signal);
       const path = resolvePath(ctx.state, p);
+      const refusal = systemRefusal(ctx, 'rm', args, p, path);
+      if (refusal) {
+        ctx.stderr(refusal);
+        status = 1;
+        continue;
+      }
       try {
         const st = await ctx.vfs.stat(path);
         if (st.kind === 'directory' && !flags.has('r')) {
@@ -592,7 +651,7 @@ define({
           status = 1;
           continue;
         }
-        await ctx.vfs.remove(path, { recursive: true });
+        await ctx.vfs.remove(path, { recursive: true, ...authority(ctx.state) });
       } catch (e) {
         if (flags.has('f') && VfsError.is(e, 'ENOENT')) continue;
         ctx.stderr(`rm: ${p}: ${describeError(e)}\n`);
@@ -625,7 +684,7 @@ define({
           status = 1;
           continue;
         }
-        await ctx.vfs.remove(path);
+        await ctx.vfs.remove(path, authority(ctx.state));
       } catch (e) {
         ctx.stderr(`rmdir: ${d}: ${describeError(e)}\n`);
         status = 1;
@@ -660,18 +719,28 @@ define({
     let status = 0;
     for (const s of sources) {
       const from = resolvePath(ctx.state, s);
+      const grant = authority(ctx.state);
       try {
         const to = await destinationFor(ctx, from, dest);
         if (to === from) continue;
+        // Both ends: moving a system file away and moving something onto one
+        // are the same loss.
+        const refusal =
+          systemRefusal(ctx, 'mv', args, s, from) ?? systemRefusal(ctx, 'mv', args, dest, to);
+        if (refusal) {
+          ctx.stderr(refusal);
+          status = 1;
+          continue;
+        }
         const existing = await ctx.vfs.exists(to);
         if (
           existing &&
           (await ctx.vfs.stat(to)).kind === 'file' &&
           (await ctx.vfs.stat(from)).kind === 'file'
         ) {
-          await ctx.vfs.remove(to);
+          await ctx.vfs.remove(to, grant);
         }
-        await ctx.vfs.rename(from, to);
+        await ctx.vfs.rename(from, to, grant);
       } catch (e) {
         ctx.stderr(`mv: ${s}: ${describeError(e)}\n`);
         status = 1;
@@ -713,7 +782,14 @@ define({
           status = 1;
           continue;
         }
-        await ctx.vfs.copy(from, to);
+        // Reading a system file is fine; landing on one is not.
+        const refusal = systemRefusal(ctx, 'cp', args, dest, to);
+        if (refusal) {
+          ctx.stderr(refusal);
+          status = 1;
+          continue;
+        }
+        await ctx.vfs.copy(from, to, authority(ctx.state));
       } catch (e) {
         ctx.stderr(`cp: ${s}: ${describeError(e)}\n`);
         status = 1;
@@ -1878,14 +1954,20 @@ define({
       ctx.stderr('sudo: wrong password\n');
       return 1;
     }
-    // The grant lasts for this command and no longer.
+    // The grant lasts for this command and no longer. Two things carry it:
+    // LUMEN_SUDO, which commands and scripts can read, and the elevation the
+    // VFS accepts for a protected path — minted here, where the password has
+    // just been checked, and dropped again below whatever the command does.
     const before = ctx.state.env.LUMEN_SUDO;
+    const beforeElevation = ctx.state.elevation;
     ctx.state.env.LUMEN_SUDO = '1';
+    ctx.state.elevation = elevate(`sudo ${args.join(' ')}`);
     try {
       return await ctx.execute(args.map(quoteArg).join(' '));
     } finally {
       if (before === undefined) delete ctx.state.env.LUMEN_SUDO;
       else ctx.state.env.LUMEN_SUDO = before;
+      ctx.state.elevation = beforeElevation;
     }
   },
 });

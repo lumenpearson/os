@@ -2,6 +2,7 @@ import type { Platform } from '@lumen/platform';
 import {
   basename,
   dirname,
+  elevate,
   extname,
   fileCategory,
   isInside,
@@ -584,7 +585,10 @@ export class Kernel {
 
   saveSettings(): Promise<void> {
     return this.vfs
-      .writeJson(SETTINGS_FILE, getSettings(), { recursive: true })
+      .writeJson(SETTINGS_FILE, getSettings(), {
+        recursive: true,
+        elevation: elevate('kernel: saveSettings'),
+      })
       .catch((e) => log.error('kernel', 'saveSettings', String(e)));
   }
 
@@ -599,7 +603,10 @@ export class Kernel {
 
   private saveUsers(): Promise<void> {
     return this.vfs
-      .writeJson(USERS_FILE, useUsersStore.getState().users, { recursive: true })
+      .writeJson(USERS_FILE, useUsersStore.getState().users, {
+        recursive: true,
+        elevation: elevate('kernel: saveUsers'),
+      })
       .catch((e) => log.error('kernel', 'saveUsers', String(e)));
   }
 
@@ -614,7 +621,10 @@ export class Kernel {
 
   private saveState(): Promise<void> {
     return this.vfs
-      .writeJson(STATE_FILE, this.stateFile, { recursive: true })
+      .writeJson(STATE_FILE, this.stateFile, {
+        recursive: true,
+        elevation: elevate('kernel: saveState'),
+      })
       .catch((e) => log.error('kernel', 'saveState', String(e)));
   }
 

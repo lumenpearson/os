@@ -23,6 +23,20 @@ export {
   uniqueName,
 } from './path';
 export type {
+  Authority,
+  Elevation,
+  ProtectedOperation,
+  ProtectionPolicy,
+} from './protection';
+export {
+  elevate,
+  isElevated,
+  isProtectedPath,
+  NO_PROTECTION,
+  requiresElevation,
+  SYSTEM_PROTECTION,
+} from './protection';
+export type {
   DirEntry,
   FileKind,
   FileStat,

@@ -1,6 +1,15 @@
 import { VfsError } from './errors';
 import { fileCategory } from './mime';
 import { basename, dirname, isInside, join, normalize, SEP, uniqueName } from './path';
+import {
+  type Authority,
+  isElevated,
+  type ProtectedOperation,
+  type ProtectionPolicy,
+  protectionError,
+  requiresElevation,
+  SYSTEM_PROTECTION,
+} from './protection';
 import type {
   DirEntry,
   FileStat,
@@ -32,11 +41,29 @@ export interface SearchOptions {
 export class Vfs {
   readonly adapter: VfsAdapter;
   readonly trashPath: string;
+  /** Which paths the system owns. Data, so a test can hand in another set. */
+  readonly protection: ProtectionPolicy;
   private readonly listeners = new Set<VfsListener>();
 
-  constructor(adapter: VfsAdapter, trashPath = '/Trash') {
+  constructor(
+    adapter: VfsAdapter,
+    trashPath = '/Trash',
+    protection: ProtectionPolicy = SYSTEM_PROTECTION,
+  ) {
     this.adapter = adapter;
     this.trashPath = normalize(trashPath);
+    this.protection = protection;
+  }
+
+  /**
+   * Refuse a change to a path the system owns unless the caller passed
+   * authority for it. Every operation that writes, removes or renames goes
+   * through here before the adapter is touched, so a refusal changes nothing
+   * and emits nothing.
+   */
+  private guard(operation: ProtectedOperation, path: string, authority?: Authority): void {
+    if (isElevated(authority?.elevation)) return;
+    if (requiresElevation(operation, path, this.protection)) throw protectionError(operation, path);
   }
 
   // ── events ─────────────────────────────────────────────────────────────
@@ -105,50 +132,59 @@ export class Vfs {
   async writeFile(
     path: string,
     data: Uint8Array | ArrayBuffer | Blob,
-    options?: WriteOptions,
+    options?: WriteOptions & Authority,
   ): Promise<void> {
     const n = normalize(path);
     // The three adapters each rejected this differently — EINVAL, EISDIR and
     // EIO — so a caller branching on the code to say "that is a folder" was
     // right on one platform and wrong on the others. Decide it here, once.
     if (n === SEP) throw new VfsError('EISDIR', n);
+    this.guard('write', n, options);
     const existed = await this.exists(n);
     const bytes = await toBytes(data);
-    await this.adapter.writeFile(n, bytes, options);
+    await this.adapter.writeFile(n, bytes, forAdapter(options));
     this.emit({ type: existed ? 'change' : 'create', path: n, kind: 'file' });
   }
 
-  writeText(path: string, text: string, options?: WriteOptions): Promise<void> {
+  writeText(path: string, text: string, options?: WriteOptions & Authority): Promise<void> {
     return this.writeFile(path, encoder.encode(text), options);
   }
 
-  writeJson(path: string, value: unknown, options?: WriteOptions): Promise<void> {
+  writeJson(path: string, value: unknown, options?: WriteOptions & Authority): Promise<void> {
     return this.writeText(path, `${JSON.stringify(value, null, 2)}\n`, options);
   }
 
-  async mkdir(path: string, options?: WriteOptions): Promise<void> {
+  async mkdir(path: string, options?: WriteOptions & Authority): Promise<void> {
     const n = normalize(path);
-    await this.adapter.mkdir(n, options);
+    // Creating inside a protected tree is refused too: what it left behind
+    // could not be removed again, since removing is refused as well.
+    this.guard('write', n, options);
+    await this.adapter.mkdir(n, forAdapter(options));
     this.emit({ type: 'create', path: n, kind: 'directory' });
   }
 
-  async ensureDir(path: string): Promise<void> {
+  async ensureDir(path: string, options?: Authority): Promise<void> {
     const n = normalize(path);
     if (await this.isDirectory(n)) return;
-    await this.mkdir(n, { recursive: true });
+    await this.mkdir(n, { recursive: true, ...options });
   }
 
-  async remove(path: string, options?: RemoveOptions): Promise<void> {
+  async remove(path: string, options?: RemoveOptions & Authority): Promise<void> {
     const n = normalize(path);
+    this.guard('remove', n, options);
     const st = await this.stat(n);
-    await this.adapter.remove(n, { recursive: true, ...options });
+    await this.adapter.remove(n, { recursive: true, ...forAdapter(options) });
     this.emit({ type: 'remove', path: n, kind: st.kind });
   }
 
-  async rename(from: string, to: string): Promise<void> {
+  async rename(from: string, to: string, options?: Authority): Promise<void> {
     const nf = normalize(from);
     const nt = normalize(to);
     if (nf === nt) return;
+    this.guard('rename', nf, options);
+    // Both ends matter: moving an ordinary file onto a system path replaces it
+    // just as surely as editing it.
+    this.guard('overwrite', nt, options);
     const st = await this.stat(nf);
     await this.adapter.rename(nf, nt);
     this.emit({ type: 'rename', path: nf, to: nt, kind: st.kind });
@@ -157,11 +193,14 @@ export class Vfs {
   // ── composite operations ───────────────────────────────────────────────
 
   /** Copy a file or a whole tree. `to` is the destination path (not the parent). */
-  async copy(from: string, to: string): Promise<void> {
+  async copy(from: string, to: string, options?: Authority): Promise<void> {
     const nf = normalize(from);
     const nt = normalize(to);
     if (isInside(nf, nt, true))
       throw new VfsError('EINVAL', nt, 'cannot copy a folder into itself');
+    // The adapter's copyFile skips writeFile, so the destination is checked
+    // here rather than left to the slow path alone.
+    this.guard('write', nt, options);
     const st = await this.stat(nf);
     if (st.kind === 'file') {
       if (this.adapter.copyFile) {
@@ -173,13 +212,13 @@ export class Vfs {
         await this.adapter.copyFile(nf, nt);
         this.emit({ type: existed ? 'change' : 'create', path: nt, kind: 'file' });
       } else {
-        await this.writeFile(nt, await this.readFile(nf));
+        await this.writeFile(nt, await this.readFile(nf), options);
       }
       return;
     }
-    await this.mkdir(nt, { recursive: true });
+    await this.mkdir(nt, { recursive: true, ...options });
     for (const entry of await this.readDir(nf)) {
-      await this.copy(entry.path, join(nt, entry.name));
+      await this.copy(entry.path, join(nt, entry.name), options);
     }
   }
 
@@ -346,6 +385,18 @@ function withCopySuffix(name: string): string {
   const idx = name.lastIndexOf('.');
   if (idx <= 0) return `${name} copy`;
   return `${name.slice(0, idx)} copy${name.slice(idx)}`;
+}
+
+/**
+ * Adapters never see the authority: whether a change is allowed is a policy
+ * decision taken above them, and passing the token down would invite one of
+ * them to make that decision differently.
+ */
+function forAdapter<T extends object>(options: (T & Authority) | undefined): T | undefined {
+  if (!options) return undefined;
+  const { elevation: _elevation, ...rest } = options;
+  // `Omit<T & Authority, 'elevation'>` is T for every T the callers use here.
+  return rest as T;
 }
 
 async function toBytes(data: Uint8Array | ArrayBuffer | Blob): Promise<Uint8Array> {

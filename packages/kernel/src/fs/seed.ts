@@ -1,4 +1,4 @@
-import { join, type Vfs } from '@lumen/vfs';
+import { elevate, join, type Vfs } from '@lumen/vfs';
 import type { AppManifest } from '../types';
 import {
   APPLICATIONS_DIR,
@@ -10,10 +10,19 @@ import {
   WALLPAPERS_DIR,
 } from './layout';
 
-/** Create the system directories. Idempotent. */
+/**
+ * Create the system directories. Idempotent.
+ *
+ * /System and /Applications are protected paths: the VFS refuses to create,
+ * change or delete them unless the caller passes authority for it. The kernel
+ * is the one caller that legitimately does, and this is where it says so — the
+ * authority is minted for these calls and goes out of scope with them, rather
+ * than sitting on the file system as a flag anything else could pick up.
+ */
 export async function seedSystem(vfs: Vfs): Promise<void> {
+  const authority = { elevation: elevate('kernel: seeding the system directories') };
   for (const dir of [SYSTEM_DIR, APPLICATIONS_DIR, USERS_DIR, TRASH_DIR, WALLPAPERS_DIR]) {
-    await vfs.ensureDir(dir);
+    await vfs.ensureDir(dir, authority);
   }
 }
 
@@ -49,7 +58,9 @@ export async function seedApplications(
   vfs: Vfs,
   apps: Array<{ id: string; name: string; description: string }>,
 ) {
-  await vfs.ensureDir(APPLICATIONS_DIR);
+  // The folder itself is the system's; the manifests inside it are not, so
+  // installing and removing programs needs no authority.
+  await vfs.ensureDir(APPLICATIONS_DIR, { elevation: elevate('kernel: /Applications') });
   const existing = new Set((await vfs.readDir(APPLICATIONS_DIR)).map((e) => e.name));
   for (const app of apps) {
     const file = `${app.name}.app`;

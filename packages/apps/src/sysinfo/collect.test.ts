@@ -1,5 +1,5 @@
 import type { Platform, PlatformKind, SystemInfo } from '@lumen/platform';
-import { MemoryAdapter, Vfs } from '@lumen/vfs';
+import { elevate, MemoryAdapter, Vfs } from '@lumen/vfs';
 import { describe, expect, it } from 'vitest';
 import { collectSnapshot, readPreviousUptime, readStorage, readVfsBytes } from './collect';
 import type { FrameSampler } from './refresh';
@@ -77,18 +77,25 @@ describe('readStorage', () => {
 });
 
 describe('readPreviousUptime', () => {
+  /**
+   * /System is protected, so standing in for the kernel means saying so — the
+   * same authority `Kernel.saveState` passes. Reading it back needs none:
+   * the rule refuses changes, never reads.
+   */
+  const asKernel = { recursive: true, elevation: elevate('test: the kernel writing its state') };
+
   it('reads the total the kernel recorded', async () => {
     const vfs = await makeVfs();
-    await vfs.writeJson('/System/state.json', { totalUptimeMs: 1234 }, { recursive: true });
+    await vfs.writeJson('/System/state.json', { totalUptimeMs: 1234 }, asKernel);
     await expect(readPreviousUptime(vfs)).resolves.toBe(1234);
   });
 
   it('has no total when the state file is missing, broken or nonsense', async () => {
     const vfs = await makeVfs();
     await expect(readPreviousUptime(vfs)).resolves.toBeNull();
-    await vfs.writeText('/System/state.json', 'not json', { recursive: true });
+    await vfs.writeText('/System/state.json', 'not json', asKernel);
     await expect(readPreviousUptime(vfs)).resolves.toBeNull();
-    await vfs.writeJson('/System/state.json', { totalUptimeMs: -1 });
+    await vfs.writeJson('/System/state.json', { totalUptimeMs: -1 }, asKernel);
     await expect(readPreviousUptime(vfs)).resolves.toBeNull();
   });
 });
