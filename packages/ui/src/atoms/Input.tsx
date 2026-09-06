@@ -5,6 +5,7 @@ import {
   type TextareaHTMLAttributes,
 } from 'react';
 import { cx } from '../cx';
+import { useControlId } from '../fieldId';
 
 export interface InputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'size'> {
   /** Use the monospace face (paths, values, codes). */
@@ -16,13 +17,15 @@ export interface InputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 
 }
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
-  { mono, leading, trailing, size = 'md', invalid, className, ...rest },
+  { mono, leading, trailing, size = 'md', invalid, className, id, ...rest },
   ref,
 ) {
   const h = size === 'sm' ? 'h-6 text-sm' : size === 'lg' ? 'h-9 text-md' : 'h-7';
+  const inputId = useControlId(id);
   const input = (
     <input
       ref={ref}
+      id={inputId}
       aria-invalid={invalid || undefined}
       className={cx(
         'lumen-control w-full',
@@ -60,12 +63,14 @@ export interface TextAreaProps extends TextareaHTMLAttributes<HTMLTextAreaElemen
 }
 
 export const TextArea = forwardRef<HTMLTextAreaElement, TextAreaProps>(function TextArea(
-  { mono, invalid, className, ...rest },
+  { mono, invalid, className, id, ...rest },
   ref,
 ) {
+  const textAreaId = useControlId(id);
   return (
     <textarea
       ref={ref}
+      id={textAreaId}
       aria-invalid={invalid || undefined}
       className={cx(
         'lumen-control h-auto min-h-20 resize-y py-1.5 leading-normal',

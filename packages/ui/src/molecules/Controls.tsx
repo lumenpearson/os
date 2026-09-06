@@ -4,6 +4,7 @@ import { forwardRef, type HTMLAttributes, type ReactNode, useId } from 'react';
 import { IconButton } from '../atoms/IconButton';
 import { Input, type InputProps } from '../atoms/Input';
 import { cx } from '../cx';
+import { FieldIdContext } from '../fieldId';
 
 export interface FieldProps {
   label: string;
@@ -16,7 +17,13 @@ export interface FieldProps {
   htmlFor?: string;
 }
 
-/** Label + control + hint/error. */
+/**
+ * Label + control + hint/error.
+ *
+ * The label is associated with the control automatically: the field's id is
+ * handed down and the control takes it unless it already has one of its own.
+ * A field is meant to hold a single control — see `fieldId.ts`.
+ */
 export function Field({ label, hint, error, children, inline, className, htmlFor }: FieldProps) {
   const id = useId();
   return (
@@ -31,7 +38,9 @@ export function Field({ label, hint, error, children, inline, className, htmlFor
       <label htmlFor={htmlFor ?? id} className={cx('text-base text-ink', inline && 'text-ink-2')}>
         {label}
       </label>
-      <div className="flex flex-col gap-1">{children}</div>
+      <div className="flex flex-col gap-1">
+        <FieldIdContext.Provider value={htmlFor ?? id}>{children}</FieldIdContext.Provider>
+      </div>
       {(hint || error) && (
         <p className={cx('text-sm', error ? 'text-danger' : 'text-ink-3', inline && 'col-start-2')}>
           {error ?? hint}

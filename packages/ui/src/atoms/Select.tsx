@@ -1,6 +1,7 @@
 import { ChevronDown } from 'lucide-react';
 import { forwardRef, type SelectHTMLAttributes } from 'react';
 import { cx } from '../cx';
+import { useControlId } from '../fieldId';
 
 export interface SelectOption<T extends string = string> {
   value: T;
@@ -19,13 +20,15 @@ export interface SelectProps<T extends string = string>
 
 /** A native select styled as a control; keyboard and screen-reader behaviour comes free. */
 export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select(
-  { options, value, onChange, size = 'md', mono, className, ...rest },
+  { options, value, onChange, size = 'md', mono, className, id, ...rest },
   ref,
 ) {
+  const selectId = useControlId(id);
   return (
     <span className={cx('relative inline-flex shrink-0', className)}>
       <select
         ref={ref}
+        id={selectId}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         className={cx(
