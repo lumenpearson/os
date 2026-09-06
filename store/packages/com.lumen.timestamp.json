@@ -1,0 +1,36 @@
+{
+  "id": "com.lumen.timestamp",
+  "kind": "app",
+  "name": "Timestamp Converter",
+  "tagline": "One instant, written every way a log might write it.",
+  "version": "1.1.0",
+  "publisher": "Lumen",
+  "category": "developer",
+  "size": 9480,
+  "price": "free",
+  "keywords": [
+    "unix",
+    "epoch",
+    "timestamp",
+    "date",
+    "iso"
+  ],
+  "updated": "2026-09-03T09:00:00Z",
+  "description": "Paste a Unix time and read it back as a date, or paste a date and read it back as a Unix time. One field takes all three forms: an integer in seconds, an integer in milliseconds, or anything the platform date parser accepts, including ISO 8601 with an offset.\n\nSeconds and milliseconds are told apart by magnitude, with the cut at a hundred billion — below it the number is read as seconds, above it as milliseconds — and the line under the field says which reading was taken, so a number near the boundary is never ambiguous to the reader.\n\nThe table gives seconds, milliseconds, ISO 8601 in UTC, local time with its offset, the weekday, the ISO week, the day of the year and the RFC 1123 form used in HTTP headers. \"Follow the clock\" turns the window into a ticking Unix clock; a day forward and a day back step by exactly 86,400 seconds.",
+  "payload": "payload/com.lumen.timestamp-1.1.0.json",
+  "sha256": "741780a35ed9ea8afa80b2bf1e7afd40dcb5cae0529c030bf53b0541992cc7ed",
+  "requires": {
+    "os": ">=0.1.0"
+  },
+  "capabilities": [
+    "storage"
+  ],
+  "screenshots": [
+    {
+      "shape": "type",
+      "seed": 33,
+      "tone": "neutral"
+    }
+  ],
+  "releaseNotes": "Added the ISO week, the day of the year and day stepping."
+}

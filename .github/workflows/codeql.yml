@@ -1,0 +1,50 @@
+name: CodeQL
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    # Weekly, so a vulnerability disclosed after a change still surfaces
+    # against code nobody has touched since.
+    - cron: '17 4 * * 1'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: codeql-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  analyze:
+    name: Analyze ${{ matrix.language }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      security-events: write
+      actions: read
+    strategy:
+      fail-fast: false
+      matrix:
+        # Rust is not analysed here: CodeQL's Rust support is still in preview,
+        # and `cargo clippy -D warnings` plus the crate's own tests already run
+        # on every change. Adding a preview analyser would produce noise, not
+        # findings.
+        language: [javascript-typescript, actions]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          # security-and-quality is the wider pack; the extra maintainability
+          # rules are worth reading on a codebase this young.
+          queries: security-and-quality
+
+      # No build step: the JavaScript and Actions analyses read source
+      # directly, and building would only add a chance to fail for reasons
+      # unrelated to what is being scanned.
+      - uses: github/codeql-action/analyze@v3
+        with:
+          category: /language:${{ matrix.language }}

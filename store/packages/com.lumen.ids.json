@@ -1,0 +1,37 @@
+{
+  "id": "com.lumen.ids",
+  "kind": "app",
+  "name": "ID Generator",
+  "tagline": "UUIDs, ULIDs and tokens, in the quantity you asked for.",
+  "version": "1.2.1",
+  "publisher": "Lumen",
+  "category": "developer",
+  "size": 10138,
+  "price": "free",
+  "keywords": [
+    "uuid",
+    "ulid",
+    "guid",
+    "token",
+    "random",
+    "id"
+  ],
+  "updated": "2026-09-02T09:00:00Z",
+  "description": "Five kinds of identifier, generated in batches. UUID v4 is pure randomness; UUID v7 and ULID put a millisecond timestamp at the front so keys made later sort later; the URL-safe token is twenty-one characters of the alphabet that survives a query string; the hex token is sixteen bytes for pasting into configuration.\n\nRandomness comes from crypto.getRandomValues, falling back to Math.random only where the platform has no cryptographic source — which no browser the OS runs in does. The two time-ordered forms share one clock with a counter byte, so a hundred ids minted inside the same millisecond still come out in the order they were made.\n\nThe table under the output states the bits of randomness, what the form sorts by and what it is worth using for, so the choice can be made once and defended later.",
+  "payload": "payload/com.lumen.ids-1.2.1.json",
+  "sha256": "11f3141c11f6069269d13b8a02eb4510529282c1cba8c0479ffcebfc1a354007",
+  "requires": {
+    "os": ">=0.1.0"
+  },
+  "capabilities": [
+    "storage"
+  ],
+  "screenshots": [
+    {
+      "shape": "grid",
+      "seed": 24,
+      "tone": "neutral"
+    }
+  ],
+  "releaseNotes": "The monotonic counter now sits immediately after the timestamp in both UUID v7 and ULID, so a batch minted in one millisecond sorts correctly. Added the hex token."
+}

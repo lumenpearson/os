@@ -1,0 +1,207 @@
+/*
+ * Component styles that are awkward as utilities: focus rings, native
+ * control resets, menu keyboard states. Everything else is Tailwind utilities
+ * over the tokens in @lumen/tokens.
+ */
+@layer components {
+  .lumen-control {
+    /* In rem, so the control grows with the text it holds: at Font size 130 %
+       a 28px box around a 17px line clipped its own placeholder. */
+    height: 1.75rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--lumen-rule-strong);
+    background: var(--lumen-surface);
+    color: var(--lumen-ink);
+    padding: 0 8px;
+    font-size: var(--text-base);
+    line-height: 1.625rem;
+    transition:
+      border-color var(--duration-fast) var(--ease-standard),
+      background-color var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard);
+  }
+  .lumen-control:hover:not(:disabled) {
+    border-color: var(--lumen-ink-3);
+  }
+  .lumen-control:focus-visible,
+  .lumen-control:focus-within {
+    outline: none;
+    border-color: var(--lumen-accent);
+    box-shadow: 0 0 0 3px var(--lumen-accent-soft);
+  }
+  .lumen-control:disabled,
+  .lumen-control[aria-disabled="true"] {
+    opacity: 0.5;
+  }
+  .lumen-control::placeholder {
+    color: var(--lumen-ink-3);
+  }
+
+  .lumen-focus:focus-visible {
+    outline: 2px solid var(--lumen-accent);
+    outline-offset: 1px;
+  }
+
+  .lumen-menu {
+    min-width: 12.5rem;
+    padding: 4px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--lumen-rule);
+    background: var(--lumen-surface);
+    box-shadow: var(--lumen-shadow-lg);
+    color: var(--lumen-ink);
+  }
+  /* The rule above is the default: an opaque menu. Translucency applies only
+     when the user turns it on in Settings > Appearance, which is what the
+     macOS-like reading of the shell asks for and what Reduce Transparency
+     switches back off. */
+  /* deslop-ignore 19 */
+  :root[data-transparency="full"] .lumen-menu {
+    background: color-mix(in srgb, var(--lumen-surface) 86%, transparent);
+    /* Prefixed first, standard last: the minifier keeps the last declaration
+       of a longhand, and the other order shipped the prefix alone. */
+    /* deslop-ignore-next-line 19 */
+    -webkit-backdrop-filter: blur(var(--lumen-blur, 14px)) saturate(1.4);
+    /* deslop-ignore-next-line 19 */
+    backdrop-filter: blur(var(--lumen-blur, 14px)) saturate(1.4);
+  }
+
+  /*
+   * The scrim behind a modal. With transparency on it takes a light blur, so
+   * what is behind the sheet reads as out of reach rather than merely dimmed;
+   * with Reduce Transparency it is the plain wash and nothing else.
+   */
+  .lumen-scrim {
+    background: var(--lumen-scrim);
+  }
+  /* deslop-ignore 19 */
+  :root[data-transparency="full"] .lumen-scrim {
+    /* deslop-ignore-next-line 19 */
+    -webkit-backdrop-filter: blur(6px);
+    /* deslop-ignore-next-line 19 */
+    backdrop-filter: blur(6px);
+  }
+  .lumen-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    height: 1.625rem;
+    padding: 0 8px 0 24px;
+    border-radius: var(--radius-sm);
+    font-size: var(--text-base);
+    white-space: nowrap;
+    position: relative;
+    user-select: none;
+  }
+  .lumen-menu-item[data-active="true"] {
+    background: var(--lumen-accent);
+    color: var(--lumen-accent-ink);
+  }
+  .lumen-menu-item[aria-disabled="true"] {
+    color: var(--lumen-ink-3);
+  }
+  .lumen-menu-item[data-danger="true"]:not([data-active="true"]) {
+    color: var(--lumen-danger);
+  }
+  .lumen-menu-shortcut {
+    margin-left: auto;
+    padding-left: 24px;
+    /* Shortcuts are one of the accents the design rules put in JetBrains Mono,
+       and the fixed advance keeps a column of them aligned down the menu. */
+    /* deslop-ignore-next-line 34 */
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: var(--lumen-ink-3);
+    letter-spacing: 0.02em;
+  }
+  .lumen-menu-item[data-active="true"] .lumen-menu-shortcut {
+    color: color-mix(in srgb, var(--lumen-accent-ink) 78%, transparent);
+  }
+  .lumen-menu-separator {
+    height: 1px;
+    margin: 4px 8px;
+    background: var(--lumen-rule);
+  }
+
+  .lumen-scroll {
+    overflow: auto;
+    overscroll-behavior: contain;
+  }
+
+  .lumen-list-row {
+    display: grid;
+    align-items: center;
+    height: 1.5rem;
+    padding: 0 8px;
+    border-radius: var(--radius-xs);
+    font-size: var(--text-base);
+  }
+  .lumen-list-row[aria-selected="true"] {
+    background: var(--lumen-selection);
+  }
+  .lumen-list-row[aria-selected="true"][data-focused="true"] {
+    background: var(--lumen-accent);
+    color: var(--lumen-accent-ink);
+  }
+  /*
+   * A folder's glyph is the accent, and so is the row under it once selected,
+   * so the icon disappeared into its own row. On that row it takes the
+   * accent's ink instead — the same colour as the name beside it. Only icons
+   * that actually use the accent are touched: a green spreadsheet or a blue
+   * source file still reads on the accent, and turning them all white would
+   * throw away the one thing the colour is for.
+   */
+  .lumen-list-row[aria-selected="true"][data-focused="true"] [data-icon-tone="accent"] {
+    color: var(--lumen-accent-ink);
+  }
+
+  .lumen-pop-enter {
+    animation: lumen-pop var(--duration-base) var(--ease-out);
+    transform-origin: var(--lumen-pop-origin, top left);
+  }
+  @keyframes lumen-pop {
+    from {
+      opacity: 0;
+      transform: scale(0.96) translateY(-2px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  .lumen-fade-enter {
+    animation: lumen-fade var(--duration-base) var(--ease-out);
+  }
+  @keyframes lumen-fade {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  /* Personalisation > Animation switches each of these off by category. The
+     element still appears; it simply appears at once. */
+  :root[data-anim-menus="off"] .lumen-pop-enter,
+  :root[data-anim-dialogs="off"] .lumen-fade-enter:has([role="dialog"]),
+  :root[data-anim-panels="off"] [data-panel],
+  :root[data-anim-pages="off"] [data-page-enter] {
+    animation: none;
+  }
+  :root[data-anim-windows="off"] [data-testid="window"] {
+    transition: none;
+  }
+
+  .lumen-spin {
+    /* The centre is pinned below and the keyframe carries rotation only,
+       so nothing wobbles. */
+    /* deslop-ignore-next-line 27 */
+    animation: lumen-spin 0.8s linear infinite;
+    transform-origin: 50% 50%;
+  }
+  @keyframes lumen-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+}

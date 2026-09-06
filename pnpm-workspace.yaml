@@ -1,0 +1,10 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+  - "packages/config/*"
+
+onlyBuiltDependencies:
+  - esbuild
+  - "@biomejs/biome"
+  - "@tauri-apps/cli"
+  - "@swc/core"

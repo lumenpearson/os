@@ -1,0 +1,42 @@
+{
+  "id": "com.lumen.bundle.developer",
+  "kind": "bundle",
+  "name": "Developer Kit",
+  "tagline": "Six tools and a face for the parts of the day spent in a terminal.",
+  "version": "1.2.0",
+  "publisher": "Lumen",
+  "category": "bundles",
+  "size": 116995,
+  "price": "free",
+  "keywords": [
+    "bundle",
+    "developer",
+    "tools",
+    "terminal"
+  ],
+  "updated": "2026-09-03T09:00:00Z",
+  "description": "The six programs that answer the questions that interrupt a working day: what does this pattern match, what changed between these two files, what do these bytes say, when does this cron line fire, what identifier should this row get, and what time is this stamp.\n\nThe monospace italic comes with them, because every one of these tools prints values in the monospace face and half of them want a second voice inside it for a comment or a note.\n\nInstalling the bundle installs each member separately; removing the bundle leaves them in place, so nothing you have started using disappears because a bundle was tidied away.",
+  "requires": {
+    "os": ">=0.1.0"
+  },
+  "capabilities": [
+    "storage"
+  ],
+  "screenshots": [
+    {
+      "shape": "grid",
+      "seed": 81,
+      "tone": "accent"
+    }
+  ],
+  "releaseNotes": "Added the Timestamp Converter.",
+  "members": [
+    "com.lumen.regex",
+    "com.lumen.diff",
+    "com.lumen.encoder",
+    "com.lumen.cron",
+    "com.lumen.ids",
+    "com.lumen.timestamp",
+    "com.lumen.font.mono-italic"
+  ]
+}

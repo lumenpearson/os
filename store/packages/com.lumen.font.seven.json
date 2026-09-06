@@ -1,0 +1,36 @@
+{
+  "id": "com.lumen.font.seven",
+  "kind": "font",
+  "name": "Lumen Seven",
+  "tagline": "A seven-segment face for clocks and counters.",
+  "version": "1.0.0",
+  "publisher": "Lumen",
+  "category": "fonts",
+  "size": 4641,
+  "price": "free",
+  "keywords": [
+    "font",
+    "display",
+    "clock",
+    "digits",
+    "seven-segment"
+  ],
+  "updated": "2026-08-06T09:00:00Z",
+  "description": "The sixteen hexadecimal digits, a minus, a full stop and a colon, drawn as a seven-segment display: a 90 unit stroke on a 440 by 700 box with a six unit notch at every join, so the segments read as separate bars at any size. Every glyph has the same advance, so a counter does not shuffle as it counts.\n\nIt is a display face and nothing else. There are no letters beyond the six a hex digit needs — a to f render as the same segment shapes as A to F — and no punctuation beyond what a readout uses. Set it large, in a clock, a timer, a meter or a lap list.\n\nThe outlines are computed from the segment layout rather than taken from any existing typeface, and the file is built by this repository during the catalogue build, which is why it is a little over three kilobytes.",
+  "payload": "payload/com.lumen.font.seven-1.0.0.json",
+  "sha256": "55d7d02db020f0b8be7a152e4d990bcc5edd0615888c10f5e920b0b6e47eb6a2",
+  "requires": {
+    "os": ">=0.1.0"
+  },
+  "capabilities": [
+    "fonts"
+  ],
+  "screenshots": [
+    {
+      "shape": "grid",
+      "seed": 47,
+      "tone": "accent"
+    }
+  ],
+  "releaseNotes": "First release."
+}

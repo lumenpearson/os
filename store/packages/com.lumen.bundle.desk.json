@@ -1,0 +1,47 @@
+{
+  "id": "com.lumen.bundle.desk",
+  "kind": "bundle",
+  "name": "Desk Set",
+  "tagline": "Time, rhythm, a table and two faces to read them in.",
+  "version": "1.1.0",
+  "publisher": "Lumen",
+  "category": "bundles",
+  "size": 39276,
+  "price": "free",
+  "keywords": [
+    "bundle",
+    "time",
+    "metronome",
+    "stopwatch",
+    "desk"
+  ],
+  "updated": "2026-08-28T09:00:00Z",
+  "description": "The things that sit at the edge of a desk rather than at the centre of the work: a stopwatch that records laps, a metronome that holds a tempo, and a table view for whatever delimited text has just landed in the clipboard.\n\nTwo drawn faces come with them. The seven-segment face sets the stopwatch and the metronome the way a physical one would be set; the block face gives a terminal the eighth blocks and box rules that meet exactly, which is what a sparkline in a status line needs.\n\nFive packages, and the two faces between them are smaller than one subset of a web font.",
+  "requires": {
+    "os": ">=0.1.0"
+  },
+  "capabilities": [
+    "storage",
+    "audio"
+  ],
+  "screenshots": [
+    {
+      "shape": "rings",
+      "seed": 87,
+      "tone": "neutral"
+    },
+    {
+      "shape": "type",
+      "seed": 90,
+      "tone": "accent"
+    }
+  ],
+  "releaseNotes": "Added the block face.",
+  "members": [
+    "com.lumen.stopwatch",
+    "com.lumen.metronome",
+    "com.lumen.csv",
+    "com.lumen.font.seven",
+    "com.lumen.font.blocks"
+  ]
+}

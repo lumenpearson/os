@@ -1,0 +1,41 @@
+{
+  "id": "com.lumen.bundle.design",
+  "kind": "bundle",
+  "name": "Design Kit",
+  "tagline": "Contrast, easing, filler text, an italic and a set of icons.",
+  "version": "1.0.0",
+  "publisher": "Lumen",
+  "category": "bundles",
+  "size": 100646,
+  "price": "free",
+  "keywords": [
+    "bundle",
+    "design",
+    "colour",
+    "typography",
+    "icons"
+  ],
+  "updated": "2026-08-30T09:00:00Z",
+  "description": "Everything in this catalogue that is used while a screen is being drawn rather than while a program is being written: the contrast checker for deciding whether a pair of colours can be read, the bezier editor for shaping how something moves, and the word sampler for filling a layout with text that has the vocabulary of the real copy.\n\nThe interface italic and the studio icon set come with them. Both are the kind of thing you notice you need halfway through a mockup, when stopping to find one is the most expensive part of the afternoon.\n\nFive packages, none of which needs a network after it is installed.",
+  "requires": {
+    "os": ">=0.1.0"
+  },
+  "capabilities": [
+    "storage"
+  ],
+  "screenshots": [
+    {
+      "shape": "ramp",
+      "seed": 84,
+      "tone": "accent"
+    }
+  ],
+  "releaseNotes": "First release.",
+  "members": [
+    "com.lumen.contrast",
+    "com.lumen.bezier",
+    "com.lumen.words",
+    "com.lumen.font.plex-italic",
+    "com.lumen.icons.studio"
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "id": "com.lumen.stopwatch",
+  "kind": "app",
+  "name": "Stopwatch",
+  "tagline": "Elapsed time, with laps that can be compared.",
+  "version": "1.0.3",
+  "publisher": "Lumen",
+  "category": "utilities",
+  "size": 8419,
+  "price": "free",
+  "keywords": [
+    "stopwatch",
+    "timer",
+    "laps",
+    "split",
+    "time"
+  ],
+  "updated": "2026-08-08T09:00:00Z",
+  "description": "Time is measured against performance.now, which is monotonic — the reading cannot jump when the system clock is corrected — and the display is repainted once per animation frame rather than on a timer.\n\nEach lap records two numbers: the split from the start and the time since the previous lap. Once there are three laps the fastest is marked in the accent and the slowest in grey, and the tally underneath gives the average lap. Laps are listed newest first, so the one you just took is the one under your eye.\n\nSpace starts and stops, L takes a lap, R resets. A stopped time and its laps survive closing the window; a running one is not resumed, because a reading taken across a reload would be a guess.",
+  "payload": "payload/com.lumen.stopwatch-1.0.3.json",
+  "sha256": "bba9e55286907ded3fadd3e334d3aee2efa901ea844582dcfd01c6e3a8e284af",
+  "requires": {
+    "os": ">=0.1.0"
+  },
+  "capabilities": [
+    "storage"
+  ],
+  "screenshots": [
+    {
+      "shape": "ramp",
+      "seed": 27,
+      "tone": "neutral"
+    }
+  ],
+  "releaseNotes": "The average lap is shown under the list. Laps survive a restart."
+}
