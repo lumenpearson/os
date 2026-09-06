@@ -3,7 +3,7 @@
  * and whether it is running now. Launch or quit from the same row.
  */
 import type { AppDefinition, AppId, Pid } from '@lumen/kernel';
-import { Button, type Column, DataTable, useElementSize } from '@lumen/ui';
+import { type Column, DataTable, RowAction, useElementSize } from '@lumen/ui';
 import { useMemo, useState } from 'react';
 import { EM_DASH } from './format';
 import { rankMap, type SortState, type SortValue, sortRows, toggleSort } from './sort';
@@ -126,18 +126,20 @@ export function AppsTab({ apps, running, onLaunch, onQuit }: AppsTabProps) {
     cols.push({
       id: 'actions',
       header: '',
-      width: '128px',
+      // Two actions at their minimum width, the gap between them, and the
+      // cell's own padding. Narrower and Quit is pushed out of its own lane.
+      width: '146px',
       align: 'right',
       accessor: () => '',
       render: (row) => (
-        <span className="flex h-full items-center justify-end gap-1">
-          <Button size="sm" onClick={() => onLaunch(row.app.id)}>
+        <span className="flex h-full items-center justify-end gap-0.5">
+          <RowAction onClick={() => onLaunch(row.app.id)}>
             {row.pids.length > 0 && row.app.singleton ? 'Show' : 'Launch'}
-          </Button>
+          </RowAction>
           {row.pids.length > 0 && (
-            <Button size="sm" variant="ghost" onClick={() => onQuit(row.pids)}>
+            <RowAction danger onClick={() => onQuit(row.pids)}>
               Quit
-            </Button>
+            </RowAction>
           )}
         </span>
       ),

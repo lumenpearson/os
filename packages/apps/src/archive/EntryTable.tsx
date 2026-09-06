@@ -209,7 +209,10 @@ export function EntryTable({
             })}
           </div>
 
-          <div ref={bodyRef} className="p-1">
+          {/* Vertical only. A horizontal padding here would inset every row
+              from the header above it, and the lanes would stop lining up —
+              a little at the first column, more at every one after it. */}
+          <div ref={bodyRef} className="py-1">
             {rows.length === 0 && <p className="p-6 text-center text-sm text-ink-3">{empty}</p>}
             {rows.map((row, index) => {
               const { node } = row;

@@ -6,6 +6,8 @@ export type { InputProps, TextAreaProps } from './Input';
 export { Input, TextArea } from './Input';
 export type { AvatarProps, ProgressProps } from './Misc';
 export { Avatar, Count, Divider, Progress, Spinner, Surface } from './Misc';
+export type { RowActionProps } from './RowAction';
+export { RowAction } from './RowAction';
 export type { SelectOption, SelectProps } from './Select';
 export { Select } from './Select';
 export type { SliderProps } from './Slider';

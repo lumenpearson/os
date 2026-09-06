@@ -16,7 +16,7 @@ import {
   type ServiceState,
   useServiceStore,
 } from '@lumen/kernel';
-import { Button, type Column, DataTable, Select, useElementSize } from '@lumen/ui';
+import { type Column, DataTable, RowAction, Select, useElementSize } from '@lumen/ui';
 import { useMemo, useState } from 'react';
 import { rankMap, type SortState, type SortValue, sortRows, toggleSort } from './sort';
 
@@ -166,31 +166,24 @@ export function ServicesTab() {
     cols.push({
       id: 'actions',
       header: '',
-      width: '104px',
+      width: '88px',
       align: 'right',
       accessor: () => '',
-      render: (row) => (
-        <span className="flex h-full items-center justify-end gap-1">
-          {row.state === 'running' ? (
-            <Button
-              size="sm"
-              variant="ghost"
-              disabled={row.essential}
-              title={row.essential ? 'The system requires this service' : undefined}
-              onClick={() => useServiceStore.getState().stop(row.service.id)}
-            >
-              Stop
-            </Button>
-          ) : (
-            <Button
-              size="sm"
-              onClick={() => useServiceStore.getState().start(row.service.id, Date.now())}
-            >
-              Start
-            </Button>
-          )}
-        </span>
-      ),
+      render: (row) =>
+        row.state === 'running' ? (
+          <RowAction
+            danger
+            disabled={row.essential}
+            title={row.essential ? 'The system requires this service' : undefined}
+            onClick={() => useServiceStore.getState().stop(row.service.id)}
+          >
+            Stop
+          </RowAction>
+        ) : (
+          <RowAction onClick={() => useServiceStore.getState().start(row.service.id, Date.now())}>
+            Start
+          </RowAction>
+        ),
     });
     return cols;
   }, [ranks, width]);

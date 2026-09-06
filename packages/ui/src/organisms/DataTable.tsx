@@ -3,6 +3,13 @@ import { ChevronDown, ChevronUp } from 'lucide-react';
 import { type ReactNode, useMemo, useState } from 'react';
 import { cx } from '../cx';
 
+/**
+ * The inset shared by the header and by `.lumen-list-row`, which is where the
+ * rows get theirs. One value, applied to both, is the whole reason the lanes
+ * line up; change it here and in `.lumen-list-row` together.
+ */
+const LANE_INSET = 'px-2';
+
 export interface Column<T> {
   id: string;
   header: string;
@@ -40,6 +47,16 @@ export interface DataTableProps<T> {
 /**
  * A sortable, keyboard-navigable list view (Files list mode, Task Manager,
  * Storage). Rows are a CSS grid so columns line up without a <table>.
+ *
+ * The header and the rows are two separate grids, and nothing makes their
+ * tracks agree except being laid out in boxes of exactly the same width. That
+ * is why the header lives inside the scroll port rather than above it, and
+ * why both it and every row are inset by `LANE_INSET` and nothing else: a
+ * padding on one and not the other is redistributed across the flexible
+ * tracks, so the lanes drift a little on the left, more with every column,
+ * and by the last one the header is over the wrong thing entirely. Being
+ * inside the same port also means a scrollbar takes its width from both, and
+ * that a table too wide for its window scrolls its header with its rows.
  */
 export function DataTable<T>({
   columns,
@@ -157,13 +174,18 @@ export function DataTable<T>({
       aria-multiselectable={Boolean(onSelect)}
       tabIndex={0}
       onKeyDown={onKeyDown}
-      className={cx('flex h-full min-h-0 flex-col outline-none', className)}
+      className={cx('lumen-scroll h-full min-h-0 outline-none', className)}
     >
       <div
         role="row"
         // A rule between the columns: a wide table of numbers is read across as
-        // well as down, and the eye needs the lane.
-        className="grid shrink-0 border-b border-rule bg-canvas text-sm text-ink-2 select-none [&>*+*]:border-l [&>*+*]:border-rule/60"
+        // well as down, and the eye needs the lane. `LANE_INSET` is the row's
+        // own padding repeated here; see the note on the component.
+        className={cx(
+          'sticky top-0 z-10 grid border-b border-rule bg-canvas text-sm text-ink-2 select-none',
+          '[&>*+*]:border-l [&>*+*]:border-rule/60',
+          LANE_INSET,
+        )}
         style={{ gridTemplateColumns: template }}
       >
         {columns.map((c) => {
@@ -200,7 +222,9 @@ export function DataTable<T>({
           );
         })}
       </div>
-      <div className="lumen-scroll flex-1 p-1">
+      {/* Vertical breathing room only: a horizontal padding here would inset
+          the rows from the header and put every lane back out of step. */}
+      <div className="py-1">
         {sorted.length === 0 && emptyState}
         {sorted.map((row, i) => {
           const key = keys[i] as string;
