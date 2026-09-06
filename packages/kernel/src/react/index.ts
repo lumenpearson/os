@@ -10,6 +10,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { useRegistryStore } from '../apps/registry';
 import { useClipboardStore } from '../clipboard/store';
 import { events, type KernelEvents } from '../events';
+import { type MessageKey, resolveLanguage, translate } from '../i18n';
 import type { Kernel } from '../kernel';
 import { useLogStore } from '../log/store';
 import { useMenuStore } from '../menu/store';
@@ -67,6 +68,19 @@ export function useSettings(): Settings {
  */
 export function useRuntimeSettings(): Settings {
   return runtimeSettings(useSettingsStore((s) => s.settings));
+}
+
+/**
+ * The translator, subscribed narrowly to the two settings that decide the
+ * language, so changing the accent does not re-render every string in the OS.
+ * Outside a component use `t` from the kernel barrel, which reads the store
+ * once and does not subscribe at all.
+ */
+export function useT(): (key: MessageKey, vars?: Record<string, string | number>) => string {
+  const language = useSettingsStore((s) =>
+    resolveLanguage({ language: s.settings.region.language, locale: s.settings.region.locale }),
+  );
+  return (key, vars) => translate(language, key, vars);
 }
 
 export function useSetting<K extends keyof Settings>(

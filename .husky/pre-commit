@@ -8,3 +8,4 @@ pnpm check:portability
 
 # The landing page's app list has to be the one the OS ships.
 pnpm check:apps
+pnpm check:i18n

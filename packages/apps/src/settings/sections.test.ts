@@ -32,7 +32,9 @@ describe('SETTINGS_SECTIONS', () => {
       'reset',
       'about',
     ]);
-    expect(SETTINGS_SECTIONS.every((s) => s.label.length > 0 && s.keywords.length > 0)).toBe(true);
+    expect(SETTINGS_SECTIONS.every((s) => s.labelKey.length > 0 && s.keywords.length > 0)).toBe(
+      true,
+    );
   });
 
   it('places every section in exactly one sidebar group', () => {

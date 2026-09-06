@@ -1,5 +1,6 @@
 import type { AccentId } from '@lumen/tokens';
 import type { ScreensaverId } from '../desktop/screensavers';
+import type { Language } from '../i18n/en';
 
 export type { ScreensaverId };
 
@@ -136,6 +137,12 @@ export interface Settings {
     muted: string[];
   };
   region: {
+    /**
+     * The language the interface is written in. `auto` follows `locale`.
+     * Separate from `locale` on purpose: the region says how to write a date,
+     * and only some of the regions on offer have a dictionary behind them.
+     */
+    language: 'auto' | Language;
     locale: string;
     timeZone: string;
     firstDayOfWeek: 0 | 1;
@@ -321,6 +328,7 @@ export function defaultSettings(): Settings {
       muted: [],
     },
     region: {
+      language: 'auto',
       locale: safeLocale(),
       timeZone: tz,
       firstDayOfWeek: 1,

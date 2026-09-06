@@ -28,6 +28,17 @@ export type { KernelEvents } from './events';
 export { EventBus, events } from './events';
 export * from './fs/layout';
 export { seedApplications, seedHome, seedSystem } from './fs/seed';
+export type { Language, MessageKey } from './i18n';
+export {
+  en,
+  interpolate,
+  LANGUAGES,
+  languageForLocale,
+  resolveLanguage,
+  ru,
+  t,
+  translate,
+} from './i18n';
 export type { KernelOptions } from './kernel';
 export { createKernel, getKernel, Kernel } from './kernel';
 export { log, useLogStore } from './log/store';

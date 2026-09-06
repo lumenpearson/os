@@ -1,5 +1,5 @@
 import type { MenuTemplate } from '@lumen/kernel';
-import { useSettingsStore } from '@lumen/kernel';
+import { t, useSettingsStore } from '@lumen/kernel';
 import {
   EmptyState,
   SearchField,
@@ -130,7 +130,7 @@ export default function Settings(props: AppProps) {
         items: SETTINGS_SECTIONS.map((s) => ({
           id: s.id,
           type: 'radio',
-          label: s.label,
+          label: t(s.labelKey),
           checked: s.id === section,
           onSelect: () => {
             setQuery('');
@@ -165,7 +165,7 @@ export default function Settings(props: AppProps) {
           .map((id) => {
             const s = sectionById(id);
             const Icon = ICONS[id];
-            return { id, label: s.label, icon: <Icon />, onSelect: () => setSection(id) };
+            return { id, label: t(s.labelKey), icon: <Icon />, onSelect: () => setSection(id) };
           }),
       })).filter((g) => g.items.length > 0),
     [visible],
@@ -175,7 +175,7 @@ export default function Settings(props: AppProps) {
     () =>
       SETTINGS_SECTIONS.filter((s) => visible.has(s.id)).map((s) => ({
         value: s.id,
-        label: s.label,
+        label: t(s.labelKey),
       })),
     [visible],
   );

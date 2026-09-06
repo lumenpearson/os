@@ -1,3 +1,4 @@
+import { type MessageKey, t } from '@lumen/kernel';
 /**
  * The section list and the per-row search index. Pure data plus the search
  * function, so the shell's Spotlight can import SETTINGS_SECTIONS without
@@ -28,35 +29,49 @@ export type SectionId =
 
 export interface SettingsSection {
   id: SectionId;
-  label: string;
+  /**
+   * The dictionary key for the section's name, not the name. A section list
+   * is data built once at module load, long before anyone has chosen a
+   * language, so it carries the key and whoever draws it does the lookup.
+   */
+  labelKey: MessageKey;
+  /**
+   * What someone might type to find this section, in the source language.
+   * Search matches these AND the translated label, so a Russian interface
+   * finds "Оформление" by its own name and an English keyword still works.
+   */
   keywords: string[];
 }
 
 export const SETTINGS_SECTIONS: SettingsSection[] = [
   {
     id: 'general',
-    label: 'General',
+    labelKey: 'settings.general',
     keywords: ['user', 'name', 'avatar', 'computer', 'update', 'about'],
   },
   {
     id: 'appearance',
-    label: 'Appearance',
+    labelKey: 'settings.appearance',
     keywords: ['theme', 'dark', 'light', 'accent', 'colour', 'color', 'font', 'contrast', 'motion'],
   },
   {
     id: 'animation',
-    label: 'Animation',
+    labelKey: 'settings.animation',
     keywords: ['motion', 'transitions', 'speed', 'duration', 'minimise', 'minimize', 'drag'],
   },
-  { id: 'wallpaper', label: 'Wallpaper', keywords: ['desktop', 'background', 'picture', 'icons'] },
+  {
+    id: 'wallpaper',
+    labelKey: 'settings.wallpaper',
+    keywords: ['desktop', 'background', 'picture', 'icons'],
+  },
   {
     id: 'taskbar',
-    label: 'Taskbar & Menubar',
+    labelKey: 'settings.taskbar',
     keywords: ['dock', 'pinned', 'clock', 'menu bar', 'tray'],
   },
   {
     id: 'display',
-    label: 'Display',
+    labelKey: 'settings.display',
     keywords: [
       'scale',
       'resolution',
@@ -70,7 +85,7 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
   },
   {
     id: 'security',
-    label: 'Lock Screen & Security',
+    labelKey: 'settings.lock',
     keywords: [
       'password',
       'lock',
@@ -84,43 +99,59 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
   },
   {
     id: 'notifications',
-    label: 'Notifications',
+    labelKey: 'settings.notifications',
     keywords: ['alerts', 'banners', 'do not disturb', 'focus'],
   },
-  { id: 'sound', label: 'Sound', keywords: ['volume', 'audio', 'mute', 'speaker'] },
+  { id: 'sound', labelKey: 'settings.sound', keywords: ['volume', 'audio', 'mute', 'speaker'] },
   {
     id: 'network',
-    label: 'Network',
+    labelKey: 'settings.network',
     keywords: ['wi-fi', 'wifi', 'bluetooth', 'airplane', 'internet'],
   },
   {
     id: 'keyboard',
-    label: 'Keyboard',
+    labelKey: 'settings.keyboard',
     keywords: ['shortcuts', 'hotkeys', 'modifier', 'ctrl', 'cmd'],
   },
-  { id: 'cursor', label: 'Cursor', keywords: ['mouse', 'pointer', 'arrow', 'trail'] },
+  { id: 'cursor', labelKey: 'settings.cursor', keywords: ['mouse', 'pointer', 'arrow', 'trail'] },
   {
     id: 'region',
-    label: 'Language & Region',
+    labelKey: 'settings.region',
     keywords: ['locale', 'time zone', 'date', 'format', 'units', 'temperature'],
   },
   {
     id: 'files',
-    label: 'Files',
+    labelKey: 'settings.files',
     keywords: ['finder', 'explorer', 'hidden', 'extensions', 'home folder', 'trash'],
   },
-  { id: 'storage', label: 'Storage', keywords: ['disk', 'space', 'usage', 'trash', 'quota'] },
+  {
+    id: 'storage',
+    labelKey: 'settings.storage',
+    keywords: ['disk', 'space', 'usage', 'trash', 'quota'],
+  },
   {
     id: 'store',
-    label: 'Store',
+    labelKey: 'settings.store',
     keywords: ['software', 'catalogue', 'catalog', 'packages', 'apps', 'fonts', 'icons', 'install'],
   },
-  { id: 'privacy', label: 'Privacy', keywords: ['recents', 'history', 'log', 'telemetry'] },
-  { id: 'power', label: 'Power', keywords: ['sleep', 'restart', 'shut down', 'battery', 'energy'] },
-  { id: 'reset', label: 'Reset', keywords: ['defaults', 'erase', 'factory', 'start over'] },
+  {
+    id: 'privacy',
+    labelKey: 'settings.privacy',
+    keywords: ['recents', 'history', 'log', 'telemetry'],
+  },
+  {
+    id: 'power',
+    labelKey: 'settings.power',
+    keywords: ['sleep', 'restart', 'shut down', 'battery', 'energy'],
+  },
+  {
+    id: 'reset',
+    labelKey: 'settings.reset',
+    keywords: ['defaults', 'erase', 'factory', 'start over'],
+  },
   {
     id: 'about',
-    label: 'About',
+    labelKey: 'settings.about',
     keywords: ['version', 'kernel', 'licence', 'license', 'github', 'uptime'],
   },
 ];
@@ -368,7 +399,10 @@ export function searchSettings(query: string): SearchResult[] {
   const results: SearchResult[] = [];
   SETTINGS_SECTIONS.forEach((section, order) => {
     let score = 0;
-    const label = matchField(section.label, q);
+    // The section's name in the language on screen, so someone reading a
+    // Russian interface can find «Оформление» by typing it. The English
+    // keywords stay a second route in, for anyone who knows the OS by them.
+    const label = matchField(t(section.labelKey), q);
     if (label === 'prefix') score = SCORE.labelPrefix;
     else if (label === 'includes') score = SCORE.labelIncludes;
     else {

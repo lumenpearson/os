@@ -4,7 +4,7 @@
  * commands its status buttons run, reachable from anywhere along the strip.
  */
 
-import type { GlobalShortcutId } from '@lumen/kernel';
+import { type GlobalShortcutId, t } from '@lumen/kernel';
 import type { MenuEntry } from '@lumen/ui';
 
 export interface SystemBarMenuState {
@@ -27,13 +27,13 @@ export function systemBarMenuItems(
   return [
     {
       id: 'control-center',
-      label: 'Control Center',
+      label: t('systemBar.controlCenter'),
       shortcut: shortcut('shell.controlCenter'),
       onSelect: actions.controlCenter,
     },
     {
       id: 'notifications',
-      label: 'Notifications',
+      label: t('systemBar.notifications'),
       // The count is the one thing the item cannot say for itself, and it is
       // read from the store rather than decorated onto it.
       hint: state.unread > 0 ? `${state.unread} unread` : undefined,
@@ -42,11 +42,11 @@ export function systemBarMenuItems(
     },
     {
       id: 'search',
-      label: 'Search',
+      label: t('systemBar.search'),
       shortcut: shortcut('shell.spotlight'),
       onSelect: actions.search,
     },
     { id: 'bar-sep', type: 'separator' },
-    { id: 'settings', label: 'Menubar Settings…', onSelect: actions.settings },
+    { id: 'settings', label: t('systemBar.settings'), onSelect: actions.settings },
   ];
 }

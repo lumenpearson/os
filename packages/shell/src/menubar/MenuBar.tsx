@@ -16,6 +16,7 @@ import {
   useFocusedWindow,
   useKernel,
   useRuntimeSettings,
+  useT,
   useUnreadCount,
 } from '@lumen/kernel/react';
 import {
@@ -58,6 +59,9 @@ export function MenuBar() {
   const focused = useFocusedWindow();
   const app = useRegistryStore((s) => (focused ? s.apps[focused.appId] : undefined));
   const appMenus = useMenuStore((s) => (focused ? s.byWindow[focused.id] : undefined));
+  // The hook, not the bare `t`: the bar has to redraw when the language
+  // changes, and a menu built from plain data would keep the old words.
+  const t = useT();
   const [open, setOpen] = useState<string | null>(null);
   const barRef = useRef<HTMLDivElement>(null);
   const refs = useMemo(() => [barRef], []);
@@ -80,23 +84,23 @@ export function MenuBar() {
   );
 
   const systemMenu: MenuEntry[] = [
-    { label: 'About This Computer', onSelect: () => void kernel.launch('lumen.sysinfo') },
+    { label: t('system.about'), onSelect: () => void kernel.launch('lumen.sysinfo') },
     { type: 'separator' },
-    { label: 'System Settings…', onSelect: () => void kernel.launch('lumen.settings') },
-    { label: 'Software Center…', onSelect: () => void kernel.launch('lumen.software') },
+    { label: t('system.settings'), onSelect: () => void kernel.launch('lumen.settings') },
+    { label: t('system.software'), onSelect: () => void kernel.launch('lumen.software') },
     { type: 'separator' },
     {
-      label: 'Task Manager…',
+      label: t('system.taskManager'),
       shortcut: formatShortcut('Mod+Shift+Escape', settings.keyboard.modifier),
       onSelect: () => void kernel.launch('lumen.taskmanager'),
     },
     { type: 'separator' },
-    { label: 'Sleep', onSelect: () => kernel.sleep() },
-    { label: 'Restart…', onSelect: () => void kernel.restart() },
-    { label: 'Shut Down…', onSelect: () => void kernel.shutdown() },
+    { label: t('system.sleep'), onSelect: () => kernel.sleep() },
+    { label: t('system.restart'), onSelect: () => void kernel.restart() },
+    { label: t('system.shutDown'), onSelect: () => void kernel.shutdown() },
     { type: 'separator' },
     {
-      label: 'Lock Screen',
+      label: t('system.lock'),
       shortcut: formatShortcut('Mod+Alt+L', settings.keyboard.modifier),
       onSelect: () => kernel.lock(),
     },
@@ -105,23 +109,23 @@ export function MenuBar() {
   const appMenu: MenuEntry[] | null = app
     ? [
         {
-          label: `About ${app.name}`,
+          label: t('system.aboutApp', { app: app.name }),
           onSelect: () => void kernel.launch('lumen.help', { section: 'apps' }),
         },
         { type: 'separator' },
         {
-          label: 'Hide',
+          label: t('system.hide'),
           shortcut: formatShortcut('Mod+M', settings.keyboard.modifier),
           onSelect: () => focused && useWindowStore.getState().minimize(focused.id),
         },
         {
-          label: 'New Window',
+          label: t('system.newWindow'),
           enabled: !app.singleton,
           onSelect: () => void kernel.launch(app.id),
         },
         { type: 'separator' },
         {
-          label: `Quit ${app.name}`,
+          label: t('system.quit', { app: app.name }),
           shortcut: formatShortcut('Mod+Q', settings.keyboard.modifier),
           onSelect: () => focused && void kernel.quitApp(focused.pid),
         },
@@ -179,7 +183,7 @@ export function MenuBar() {
     <div
       ref={barRef}
       role="menubar"
-      aria-label="Menu bar"
+      aria-label={t('a11y.menuBar')}
       data-testid="menubar"
       className={cx(
         'absolute inset-x-0 top-0 z-[1001] flex h-(--lumen-menubar-h) items-stretch bg-chrome text-ink select-none',
@@ -311,6 +315,7 @@ function MenuBarItem({
 }
 
 function StatusItems() {
+  const t = useT();
   const kernel = useKernel();
   const settings = useRuntimeSettings();
   const unread = useUnreadCount();
@@ -381,7 +386,7 @@ function StatusItems() {
       <button
         type="button"
         className={item}
-        aria-label="Search"
+        aria-label={t('a11y.search')}
         onClick={() => toggle('spotlight')}
       >
         <Search />
@@ -389,7 +394,7 @@ function StatusItems() {
       <button
         type="button"
         className={item}
-        aria-label="Control Center"
+        aria-label={t('a11y.controlCenter')}
         data-testid="control-center-button"
         onClick={() => toggle('controlCenter')}
       >
