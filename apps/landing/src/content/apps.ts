@@ -51,6 +51,14 @@ export const apps: readonly AppEntry[] = [
   },
   { name: 'Units', summary: 'Convert between fourteen kinds of unit, including the awkward ones.' },
   {
+    name: 'Colour',
+    summary: 'Pick a colour, read it four ways, and check its contrast and colour-blind legibility.',
+  },
+  {
+    name: 'Character Map',
+    summary: 'Find a character by Unicode block or code point, with its encodings and escapes.',
+  },
+  {
     name: 'Calendar',
     summary: 'Keep a calendar: month, week, day and agenda, with repeating events.',
   },
