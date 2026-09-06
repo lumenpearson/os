@@ -447,6 +447,7 @@ export function Grid({
           type="button"
           aria-label={`Resize column ${colToLetters(col)}`}
           tabIndex={-1}
+          data-cursor="col-resize"
           onPointerDown={(e) => startResize(e, 'col', col)}
           onDoubleClick={() => onColumnResize(col, DEFAULT_COL_WIDTH)}
           className="absolute -right-1 top-0 h-full w-2 cursor-col-resize border-0 bg-transparent p-0"
@@ -474,6 +475,7 @@ export function Grid({
           type="button"
           aria-label={`Resize row ${row + 1}`}
           tabIndex={-1}
+          data-cursor="row-resize"
           onPointerDown={(e) => startResize(e, 'row', row)}
           onDoubleClick={() => onRowResize(row, DEFAULT_ROW_HEIGHT)}
           className="absolute -bottom-1 left-0 h-2 w-full cursor-row-resize border-0 bg-transparent p-0"
@@ -520,9 +522,18 @@ export function Grid({
         className="lumen-scroll absolute bottom-0 right-0 outline-none"
         style={{ left: HEADER_W, top: HEADER_H }}
       >
+        {/*
+          A press here selects a range — of cells, or of the reference a
+          half-written formula is pointing at — so the sheet says `cell`. It
+          sits on the content rather than the scroller, which leaves the arrow
+          over the scrollbars; and since the shape is read from the nearest
+          ancestor carrying a hint, the two children that mean something else
+          have to say so on themselves.
+        */}
         <div
           ref={content}
-          className="relative text-base"
+          data-cursor="cell"
+          className="relative cursor-cell text-base"
           style={{ width: totalWidth, height: totalHeight }}
         >
           {cellRows}
@@ -556,6 +567,7 @@ export function Grid({
             <button
               type="button"
               aria-label="Fill from the selection"
+              data-cursor="crosshair"
               onPointerDown={onFillPointerDown}
               className="absolute size-2 cursor-crosshair rounded-[1px] border border-surface bg-accent p-0"
               style={{
@@ -568,6 +580,7 @@ export function Grid({
               ref={editorInput}
               value={editor.text}
               aria-label={`Edit ${coordKey(editor.cell)}`}
+              data-cursor="text"
               onChange={(e) =>
                 onEditorChange({
                   ...editor,
@@ -581,7 +594,7 @@ export function Grid({
               }}
               onPointerDown={(e) => e.stopPropagation()}
               className={cx(
-                'absolute z-10 border border-accent bg-surface px-1 text-base text-ink outline-none',
+                'absolute z-10 cursor-text border border-accent bg-surface px-1 text-base text-ink outline-none',
                 editor.text.startsWith('=') && 'mono',
               )}
               style={{

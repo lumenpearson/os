@@ -28,14 +28,17 @@ const ALSO_IN_A1 = { clientX: 80, clientY: 18 };
 const IN_B1 = { clientX: 120, clientY: 10 };
 const ALSO_IN_B1 = { clientX: 150, clientY: 18 };
 
-function mount(onReferencePick: (range: ReturnType<typeof rangeOf>) => boolean) {
+function mount(
+  onReferencePick: (range: ReturnType<typeof rangeOf>) => boolean,
+  editor: EditorState | null = EDITOR,
+) {
   render(
     <Grid
       sheet={emptySheet('Budget')}
       values={new Map() as Evaluated}
       selection={SELECTION}
       onSelectionChange={() => {}}
-      editor={EDITOR}
+      editor={editor}
       onEditorChange={() => {}}
       onCommit={() => {}}
       onFill={() => {}}
@@ -99,5 +102,42 @@ describe('picking a reference by dragging over the grid', () => {
 
     // Down on B1 picks it; the move inside B1 adds nothing.
     expect(pick).toHaveBeenCalledTimes(3);
+  });
+});
+
+/**
+ * The OS reads the hint from the nearest ancestor carrying one, so the sheet's
+ * `cell` covers every cell in it — and anything inside that does something
+ * else has to say so on itself or be swallowed by it.
+ */
+describe('what the pointer says the sheet will do', () => {
+  it('selects a range over the cells', () => {
+    const grid = mount(() => true);
+    expect(grid.firstElementChild).toHaveAttribute('data-cursor', 'cell');
+  });
+
+  it('draws a fill out of the handle, not a selection', () => {
+    mount(() => true);
+    expect(screen.getByRole('button', { name: 'Fill from the selection' })).toHaveAttribute(
+      'data-cursor',
+      'crosshair',
+    );
+  });
+
+  it('edits text in the open cell editor', () => {
+    mount(() => true, { ...EDITOR, source: 'grid' });
+    expect(screen.getByRole('textbox', { name: 'Edit A1' })).toHaveAttribute('data-cursor', 'text');
+  });
+
+  it('resizes the column and the row from the header edges', () => {
+    mount(() => true);
+    expect(screen.getByRole('button', { name: 'Resize column A' })).toHaveAttribute(
+      'data-cursor',
+      'col-resize',
+    );
+    expect(screen.getByRole('button', { name: 'Resize row 1' })).toHaveAttribute(
+      'data-cursor',
+      'row-resize',
+    );
   });
 });

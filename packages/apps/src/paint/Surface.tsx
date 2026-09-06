@@ -286,6 +286,11 @@ export function Surface({
     let latest = base;
     let pending = 0;
     const node = stage.current;
+    // The tool's cursor is a claim about the next mark; while the middle
+    // button carries the image the claim is that it is being carried. React
+    // writes the attribute only when the tool changes, so the pan puts it back.
+    const surface = host.current;
+    if (surface) surface.dataset.cursor = 'grabbing';
     const move = (e: PointerEvent) => {
       latest = panBy(base, e.clientX - from.x, e.clientY - from.y, size, viewport, dpr);
       if (pending) return;
@@ -302,6 +307,7 @@ export function Surface({
       window.removeEventListener('pointerup', up);
       window.removeEventListener('pointercancel', up);
       if (pending) cancelAnimationFrame(pending);
+      if (surface) surface.dataset.cursor = toolSpec(tool).cursor;
       liveView.current = latest;
       onView(latest);
     };

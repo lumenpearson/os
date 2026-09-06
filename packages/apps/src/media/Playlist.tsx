@@ -160,6 +160,9 @@ export function Playlist({
                       onPointerDown={(event) => startDrag(event, at)}
                       className={cx(
                         'flex size-5 shrink-0 cursor-grab items-center justify-center rounded-xs text-ink-3',
+                        // The handle keeps the pointer for the length of the
+                        // drag, so the closed hand lasts as long as the hold.
+                        'active:cursor-grabbing',
                         'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 lumen-focus',
                       )}
                     >

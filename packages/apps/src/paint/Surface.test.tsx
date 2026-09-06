@@ -110,3 +110,16 @@ describe('the wheel', () => {
     expect(onView).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('a middle-button pan', () => {
+  it('says the image is being carried, and gives the tool its cursor back', () => {
+    const { host } = mount(() => {});
+
+    expect(host.dataset.cursor).toBe('crosshair');
+    fireEvent.pointerDown(host, { button: 1, clientX: 10, clientY: 10 });
+    expect(host.dataset.cursor).toBe('grabbing');
+
+    fireEvent.pointerUp(window);
+    expect(host.dataset.cursor).toBe('crosshair');
+  });
+});

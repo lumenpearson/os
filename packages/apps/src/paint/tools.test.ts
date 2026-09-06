@@ -34,6 +34,21 @@ describe('the palette', () => {
     }
   });
 
+  it('claims a point where one is placed, and an area where the fill spreads', () => {
+    const precise = [
+      'pencil',
+      'brush',
+      'eraser',
+      'line',
+      'rectangle',
+      'ellipse',
+      'select',
+    ] as const;
+    for (const id of precise) expect(toolSpec(id).cursor).toBe('crosshair');
+    expect(toolSpec('fill').cursor).toBe('cell');
+    expect(toolSpec('text').cursor).toBe('text');
+  });
+
   it('starts on the pencil', () => {
     expect(DEFAULT_TOOL).toBe('pencil');
     expect(isToolId(DEFAULT_TOOL)).toBe(true);

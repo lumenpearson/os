@@ -99,7 +99,9 @@ export const TOOL_SPECS: Record<ToolId, ToolSpec> = {
     key: 'g',
     glyph: PaintBucket,
     options: ['tolerance'],
-    cursor: 'crosshair',
+    // The pixel under the pointer chooses the region, but the region is what
+    // changes: `cell` says area where the crosshair would promise a point.
+    cursor: 'cell',
     hint: 'Floods the region under the cursor.',
   },
   eyedropper: {
