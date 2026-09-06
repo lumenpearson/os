@@ -1,4 +1,4 @@
-import { CalendarDays } from 'lucide-react';
+import { Calendar } from 'lucide-react';
 import { lazy } from 'react';
 import { createAppIcon, defineApp } from '../_sdk';
 
@@ -12,7 +12,7 @@ export default defineApp({
   name: 'Calendar',
   description: 'Keep a calendar: month, week, day and agenda, with repeating events.',
   category: 'office',
-  icon: createAppIcon({ glyph: CalendarDays, tone: 'graphite' }),
+  icon: createAppIcon({ glyph: Calendar, tone: 'red' }),
   component: lazy(() => import('./Calendar')),
   window: { width: 1000, height: 680, minWidth: 420, minHeight: 360, titleBar: 'inset' },
   singleton: true,

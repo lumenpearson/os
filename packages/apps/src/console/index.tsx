@@ -1,4 +1,4 @@
-import { ScrollText } from 'lucide-react';
+import { Logs } from 'lucide-react';
 import { lazy } from 'react';
 import { createAppIcon, defineApp } from '../_sdk';
 
@@ -13,7 +13,7 @@ export default defineApp({
   name: 'Console',
   description: 'Read the system log: kernel events, notifications and errors.',
   category: 'developer',
-  icon: createAppIcon({ glyph: ScrollText, tone: 'graphite' }),
+  icon: createAppIcon({ glyph: Logs, tone: 'graphite' }),
   component: lazy(() => import('./Console')),
   window: { width: 900, height: 600, minWidth: 420, minHeight: 280, titleBar: 'inset' },
   singleton: true,

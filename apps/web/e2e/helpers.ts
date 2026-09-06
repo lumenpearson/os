@@ -118,3 +118,34 @@ export async function settledBox(locator: import('@playwright/test').Locator): P
   }
   throw new Error('the box never stopped moving');
 }
+
+/**
+ * A point on a window's top row that is bare chrome rather than a control.
+ *
+ * Apps draw their own toolbar on that row, so its midpoint is usually a
+ * breadcrumb or a button — and a button has to navigate, not drag. Asking the
+ * page which stretch of the row is free beats guessing at a layout that
+ * changes with the app.
+ */
+export async function freeTitleBarSpot(page: Page, box: Box): Promise<{ x: number; y: number }> {
+  const y = Math.round(box.y) + 18;
+  const x = await page.evaluate(
+    ({ left, right, row }) => {
+      const free = (at: number) =>
+        !document
+          .elementFromPoint(at, row)
+          ?.closest('button, a, input, select, textarea, [role="button"], [role="textbox"]');
+      let start: number | null = null;
+      for (let at = left; at <= right; at += 2) {
+        if (free(at)) {
+          if (start === null) start = at;
+          else if (at - start >= 24) return (start + at) / 2;
+        } else start = null;
+      }
+      return null;
+    },
+    { left: Math.round(box.x) + 2, right: Math.round(box.x + box.width) - 2, row: y },
+  );
+  if (x === null) throw new Error('the top row is controls end to end, with nowhere to grab it');
+  return { x, y };
+}

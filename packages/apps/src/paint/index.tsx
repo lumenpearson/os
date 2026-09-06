@@ -1,4 +1,4 @@
-import { Paintbrush } from 'lucide-react';
+import { Palette } from 'lucide-react';
 import { lazy } from 'react';
 import { createAppIcon, defineApp } from '../_sdk';
 
@@ -12,7 +12,7 @@ export default defineApp({
   name: 'Paint',
   description: 'Draw and edit pictures pixel by pixel.',
   category: 'media',
-  icon: createAppIcon({ glyph: Paintbrush, tone: 'graphite' }),
+  icon: createAppIcon({ glyph: Palette, tone: 'amber' }),
   component: lazy(() => import('./Paint')),
   window: { width: 980, height: 700, minWidth: 480, minHeight: 380, titleBar: 'inset' },
   // Below Preview, which stays what a double-click opens: opening a photo to

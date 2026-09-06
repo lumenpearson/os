@@ -15,7 +15,11 @@
  * No React state is written while the pointer is down. A pan moves the stage
  * by writing its style inside `requestAnimationFrame` and reports the view
  * once, at the end; the selection marquee is drawn straight onto the overlay
- * and becomes state only when the drag finishes.
+ * and becomes state only when the drag finishes. The wheel makes the same
+ * bargain, with a short timer standing in for the pointer lifting. The price
+ * is the overlay: it is drawn from the committed view, so through a pan or a
+ * wheel the grid sits where the stage was rather than where it is, and catches
+ * up when the gesture lands.
  */
 
 import { cx } from '@lumen/ui';
@@ -24,6 +28,7 @@ import {
   type WheelEvent as ReactWheelEvent,
   useCallback,
   useEffect,
+  useLayoutEffect,
   useRef,
 } from 'react';
 import { formatHex, parseHex, type Rgba } from './colour';
@@ -64,6 +69,9 @@ import {
 
 /** Zoom per wheel notch. A trackpad sends many small deltas; a mouse, few big. */
 const WHEEL_ZOOM = 1.0015;
+
+/** How long after the last wheel notch the view is handed back to React. */
+const WHEEL_SETTLE_MS = 120;
 
 /**
  * Transparency is shown as a check rather than as white, because white is a
@@ -118,6 +126,15 @@ export function Surface({
   const gesture = useRef<Gesture | null>(null);
   /** The marquee while it is being dragged, before it becomes the selection. */
   const marquee = useRef<Rect | null>(null);
+  /**
+   * The view on screen. Between the first wheel notch and the settle it is
+   * ahead of the `view` prop, so everything that converts screen to image —
+   * the next notch, a pan, the pixel under the pointer — reads it rather than
+   * the prop, which is one gesture behind.
+   */
+  const liveView = useRef<View>(view);
+  const wheelFrame = useRef(0);
+  const settle = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const dpr = clampDpr(typeof devicePixelRatio === 'number' ? devicePixelRatio : 1);
 
@@ -192,6 +209,43 @@ export function Surface({
   };
   useEffect(() => () => cancelAnimationFrame(frame.current), []);
 
+  // The prop is the truth again the moment React has it, whether that came
+  // from a gesture ending or from a zoom command on the menu.
+  useLayoutEffect(() => {
+    liveView.current = view;
+  }, [view]);
+
+  useEffect(
+    () => () => {
+      if (wheelFrame.current) cancelAnimationFrame(wheelFrame.current);
+      if (settle.current) clearTimeout(settle.current);
+    },
+    [],
+  );
+
+  /** Put the stage where `liveView` says without going through React. */
+  const paintStage = () => {
+    if (wheelFrame.current) return;
+    wheelFrame.current = requestAnimationFrame(() => {
+      wheelFrame.current = 0;
+      const node = stage.current;
+      if (!node) return;
+      const next = liveView.current;
+      node.style.left = `${next.x}px`;
+      node.style.top = `${next.y}px`;
+      node.style.width = `${size.width * next.scale}px`;
+      node.style.height = `${size.height * next.scale}px`;
+    });
+  };
+
+  /** Hand the wheel's view to React now rather than on the settle timer. */
+  const commitWheel = () => {
+    if (!settle.current) return;
+    clearTimeout(settle.current);
+    settle.current = null;
+    onView(liveView.current);
+  };
+
   const ink = () => parseHex(prefs.foreground) ?? { r: 0, g: 0, b: 0, a: 255 };
   const paper = () => parseHex(prefs.background) ?? { r: 255, g: 255, b: 255, a: 255 };
 
@@ -199,7 +253,7 @@ export function Surface({
   const pixelAt = (event: { clientX: number; clientY: number }): Point => {
     const box = host.current?.getBoundingClientRect();
     if (!box) return point(0, 0);
-    return toImagePixel(view, point(event.clientX - box.left, event.clientY - box.top));
+    return toImagePixel(liveView.current, point(event.clientX - box.left, event.clientY - box.top));
   };
 
   const clearPreview = () => {
@@ -228,11 +282,12 @@ export function Surface({
   /** A pan: the stage moves under the pointer, the view is told once, at the end. */
   const startPan = (event: ReactPointerEvent<HTMLDivElement>) => {
     const from = { x: event.clientX, y: event.clientY };
-    let latest = view;
+    const base = liveView.current;
+    let latest = base;
     let pending = 0;
     const node = stage.current;
     const move = (e: PointerEvent) => {
-      latest = panBy(view, e.clientX - from.x, e.clientY - from.y, size, viewport, dpr);
+      latest = panBy(base, e.clientX - from.x, e.clientY - from.y, size, viewport, dpr);
       if (pending) return;
       pending = requestAnimationFrame(() => {
         pending = 0;
@@ -247,6 +302,7 @@ export function Surface({
       window.removeEventListener('pointerup', up);
       window.removeEventListener('pointercancel', up);
       if (pending) cancelAnimationFrame(pending);
+      liveView.current = latest;
       onView(latest);
     };
     window.addEventListener('pointermove', move);
@@ -256,6 +312,9 @@ export function Surface({
 
   const onPointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
     if (event.button === 2) return;
+    // A wheel gesture may still be holding its view back, and the pointer is
+    // about to act on what is on screen. Hand it over now.
+    commitWheel();
     // The middle button pans, whatever the tool is — the same gesture every
     // image editor has, and the only one that works with no keyboard.
     if (event.button === 1) {
@@ -375,11 +434,17 @@ export function Surface({
     const box = host.current?.getBoundingClientRect();
     if (!box) return;
     const anchor = point(event.clientX - box.left, event.clientY - box.top);
-    if (event.ctrlKey || event.metaKey) {
-      onView(zoomTo(view, view.scale * WHEEL_ZOOM ** -event.deltaY, anchor, size, viewport, dpr));
-      return;
-    }
-    onView(panBy(view, -event.deltaX, -event.deltaY, size, viewport, dpr));
+    const from = liveView.current;
+    liveView.current =
+      event.ctrlKey || event.metaKey
+        ? zoomTo(from, from.scale * WHEEL_ZOOM ** -event.deltaY, anchor, size, viewport, dpr)
+        : panBy(from, -event.deltaX, -event.deltaY, size, viewport, dpr);
+    paintStage();
+    if (settle.current) clearTimeout(settle.current);
+    settle.current = setTimeout(() => {
+      settle.current = null;
+      onView(liveView.current);
+    }, WHEEL_SETTLE_MS);
   };
 
   const backing = backingSize(viewport, dpr);

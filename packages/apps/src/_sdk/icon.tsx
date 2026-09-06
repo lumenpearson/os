@@ -57,6 +57,10 @@ export function createAppIcon({
         <Glyph
           width={glyphSize}
           height={glyphSize}
+          // At size 16 the glyph box is 9 px, where 1.75 in the 24-unit
+          // viewBox comes out at 0.66 CSS px and greys out; the bump holds a
+          // hairline. It also eats what little interior there is, which is why
+          // app glyphs have to differ in outline — see icon.test.tsx.
           strokeWidth={size < 24 ? strokeWidth + 0.5 : strokeWidth}
           absoluteStrokeWidth={false}
         />

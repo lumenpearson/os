@@ -12,7 +12,7 @@ export default defineApp({
   name: 'Minesweeper',
   description: 'Clear the field without uncovering a mine.',
   category: 'games',
-  icon: createAppIcon({ glyph: Bomb, tone: 'graphite' }),
+  icon: createAppIcon({ glyph: Bomb, tone: 'red' }),
   component: lazy(() => import('./Minesweeper')),
   window: { width: 560, height: 620, minWidth: 300, minHeight: 360 },
   singleton: true,

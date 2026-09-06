@@ -1,4 +1,4 @@
-import { FileArchive } from 'lucide-react';
+import { Archive } from 'lucide-react';
 import { lazy } from 'react';
 import { createAppIcon, defineApp } from '../_sdk';
 
@@ -12,7 +12,7 @@ export default defineApp({
   name: 'Archive Utility',
   description: 'Open and create ZIP archives.',
   category: 'utilities',
-  icon: createAppIcon({ glyph: FileArchive, tone: 'graphite' }),
+  icon: createAppIcon({ glyph: Archive, tone: 'green' }),
   component: lazy(() => import('./Archive')),
   window: { width: 820, height: 560, minWidth: 380, minHeight: 300, titleBar: 'inset' },
   fileAssociations: [{ extensions: ['.zip'], role: 'editor', priority: 1 }],

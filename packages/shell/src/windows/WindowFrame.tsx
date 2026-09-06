@@ -9,6 +9,7 @@ import {
   type ResizeHandle,
   resizeRect,
   runtimeSettings,
+  type SnapSide,
   snapRect,
   snapZoneAt,
   useProcessStore,
@@ -177,6 +178,14 @@ export const WindowFrame = memo(function WindowFrame({ id }: { id: WindowId }) {
     let raf = 0;
     let moved = false;
     /**
+     * The zone the preview is currently showing. `undefined` until the first
+     * move, so the drag always states its zone once — including "no zone".
+     * The rect follows from the zone alone: the work area and the tiling gap
+     * are both fixed for the length of the drag, and `snapRect` reads nothing
+     * else, so re-setting it on every move only re-renders the preview.
+     */
+    let shownZone: SnapSide | null | undefined;
+    /**
      * Off, the window is pinned to the pointer and one frame paints wherever
      * the hand is. On, the frame keeps chasing after the hand stops, so the
      * loop re-arms itself until it arrives.
@@ -216,15 +225,18 @@ export const WindowFrame = memo(function WindowFrame({ id }: { id: WindowId }) {
       latest = keepTitleVisible({ ...bounds, x: bounds.x + dx, y: bounds.y + dy }, store.area);
       if (settings.display.snapping) {
         const zone = snapZoneAt(ev.clientX, ev.clientY, store.area);
-        useSnapPreview
-          .getState()
-          .set(
-            zone
-              ? zone === 'top'
-                ? store.area
-                : snapRect(zone, store.area, settings.windows.tilingGap)
-              : null,
-          );
+        if (zone !== shownZone) {
+          shownZone = zone;
+          useSnapPreview
+            .getState()
+            .set(
+              zone
+                ? zone === 'top'
+                  ? store.area
+                  : snapRect(zone, store.area, settings.windows.tilingGap)
+                : null,
+            );
+        }
       }
       schedule();
     };

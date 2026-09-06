@@ -19,7 +19,9 @@ import { type Shape, shapeForCursor } from './shapes';
  * The OS cursor. The native cursor is hidden through `[data-lumen-cursor=custom]`
  * (set by the kernel from Settings → Cursor); this layer draws an SVG that
  * follows the pointer inside requestAnimationFrame and changes shape from the
- * element under it. It steps aside over iframes and when the pointer leaves.
+ * element under it. Both happen in the frame: the pointer handler only records
+ * where the pointer is and what it is over. It steps aside over iframes and
+ * when the pointer leaves.
  */
 export function CursorLayer() {
   const settings = useSettings();
@@ -41,9 +43,33 @@ export function CursorLayer() {
     let visible = false;
     let pressed = false;
     const history: Array<{ x: number; y: number }> = [];
+    /** What the pointer was last over, and whether its shape is still unread. */
+    let target: Element | null = null;
+    let unread = false;
+
+    const shapeFor = (from: Element | null): Shape => {
+      let node: Element | null = from;
+      while (node && node !== document.body) {
+        const hinted = (node as HTMLElement).dataset?.cursor;
+        if (hinted) return shapeForCursor(hinted) ?? 'arrow';
+        node = node.parentElement;
+      }
+      if (!(from instanceof Element)) return 'arrow';
+      const computed = getComputedStyle(from).cursor;
+      if (computed && computed !== 'none') return shapeForCursor(computed) ?? 'arrow';
+      return 'arrow';
+    };
 
     const apply = () => {
       raf = 0;
+      // `shapeFor` ends in getComputedStyle, which forces the browser to settle
+      // style. Reading it here costs one flush per frame, in the frame where
+      // style is being recalculated anyway; reading it in the pointer handler
+      // cost one per event, on every pointer move anywhere in the OS.
+      if (unread) {
+        unread = false;
+        shape = shapeFor(target);
+      }
       el.style.transform = `translate3d(${x}px, ${y}px, 0)`;
       el.dataset.shape = shape;
       el.dataset.pressed = pressed ? 'true' : 'false';
@@ -67,26 +93,22 @@ export function CursorLayer() {
       if (!raf) raf = requestAnimationFrame(apply);
     };
 
-    const shapeFor = (target: Element | null): Shape => {
-      let node: Element | null = target;
-      while (node && node !== document.body) {
-        const hinted = (node as HTMLElement).dataset?.cursor;
-        if (hinted) return shapeForCursor(hinted) ?? 'arrow';
-        node = node.parentElement;
-      }
-      if (!target) return 'arrow';
-      const computed = getComputedStyle(target).cursor;
-      if (computed && computed !== 'none') return shapeForCursor(computed) ?? 'arrow';
-      return 'arrow';
-    };
-
     const onMove = (e: PointerEvent) => {
       x = e.clientX;
       y = e.clientY;
       visible = true;
-      const t = e.target as Element | null;
+      /*
+       * `e.target` is not always an element. A pointer move over the gap
+       * outside the document, or one delivered as the pointer leaves, reports
+       * the document itself, and `getComputedStyle` refuses anything that is
+       * not an element: Firefox threw a TypeError out of the move handler
+       * thirty-eight times in one session on the deployed build. The cast
+       * that used to stand here said Element and did not check.
+       */
+      const t = e.target instanceof Element ? e.target : null;
       if (t?.tagName === 'IFRAME' || t?.tagName === 'VIDEO') visible = false;
-      shape = shapeFor(t);
+      target = t;
+      unread = true;
       schedule();
     };
     const onDown = (e: PointerEvent) => {

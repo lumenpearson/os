@@ -1,4 +1,4 @@
-import { Image } from 'lucide-react';
+import { Eye } from 'lucide-react';
 import { lazy } from 'react';
 import { createAppIcon, defineApp } from '../_sdk';
 import { DOCUMENT_EXTENSIONS, IMAGE_EXTENSIONS, MEDIA_EXTENSIONS, TEXT_EXTENSIONS } from './kind';
@@ -17,7 +17,7 @@ export default defineApp({
   name: 'Preview',
   description: 'View images, PDFs, media and data files.',
   category: 'media',
-  icon: createAppIcon({ glyph: Image, tone: 'violet' }),
+  icon: createAppIcon({ glyph: Eye, tone: 'violet' }),
   component: lazy(() => import('./Preview')),
   window: { width: 900, height: 660, minWidth: 360, minHeight: 280, titleBar: 'inset' },
   fileAssociations: [

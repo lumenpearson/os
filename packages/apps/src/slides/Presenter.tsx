@@ -27,6 +27,8 @@ export function Presenter({ deck, index, onIndex, onExit }: PresenterProps) {
   const [strip, setStrip] = useState(false);
   const [chrome, setChrome] = useState(true);
   const idle = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /** Mirrors `chrome` so a pointer crossing the stage sets state at most once. */
+  const shown = useRef(true);
 
   const count = deck.slides.length;
   const slide = deck.slides[index];
@@ -34,9 +36,16 @@ export function Presenter({ deck, index, onIndex, onExit }: PresenterProps) {
   const theme = deck.theme ?? 'light';
 
   const wake = useCallback(() => {
-    setChrome(true);
+    if (!shown.current) {
+      shown.current = true;
+      setChrome(true);
+    }
     if (idle.current) clearTimeout(idle.current);
-    idle.current = setTimeout(() => setChrome(false), IDLE_MS);
+    idle.current = setTimeout(() => {
+      idle.current = null;
+      shown.current = false;
+      setChrome(false);
+    }, IDLE_MS);
   }, []);
 
   useEffect(() => {

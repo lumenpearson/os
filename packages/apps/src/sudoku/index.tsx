@@ -1,4 +1,4 @@
-import { Grid3x3 } from 'lucide-react';
+import { Hash } from 'lucide-react';
 import { lazy } from 'react';
 import { createAppIcon, defineApp } from '../_sdk';
 
@@ -13,7 +13,7 @@ export default defineApp({
   name: 'Sudoku',
   description: 'Generated puzzles at four grades, with pencil marks and hints.',
   category: 'games',
-  icon: createAppIcon({ glyph: Grid3x3, tone: 'blue' }),
+  icon: createAppIcon({ glyph: Hash, tone: 'violet' }),
   component: lazy(() => import('./Sudoku')),
   window: { width: 620, height: 720, minWidth: 340, minHeight: 460, titleBar: 'inset' },
   singleton: true,

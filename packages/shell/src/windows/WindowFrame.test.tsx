@@ -1,6 +1,8 @@
 import type { Kernel } from '@lumen/kernel';
 import {
   defaultSettings,
+  type Rect,
+  snapRect,
   useRegistryStore,
   useSettingsStore,
   useWindowStore,
@@ -10,6 +12,7 @@ import { KernelProvider } from '@lumen/kernel/react';
 import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it } from 'vitest';
+import { useSnapPreview } from './SnapPreview';
 import { WindowFrame } from './WindowFrame';
 
 /**
@@ -155,5 +158,65 @@ describe('full screen', () => {
     useSettingsStore.getState().patch('windows', { fullscreenHidesTitleBar: false });
     mount({ fullscreen: true });
     expect(screen.getByTestId('window-titlebar')).toBeInTheDocument();
+  });
+});
+
+describe('the snap preview during a drag', () => {
+  /** Away from the corners, so the pointer is in a side zone and not a quadrant. */
+  const MID_HEIGHT = 300;
+
+  function dragTitleBar() {
+    mount();
+    const frame = screen.getByTestId('window');
+    fireEvent.pointerDown(screen.getByTestId('window-titlebar'), {
+      button: 0,
+      clientX: 400,
+      clientY: IN_TITLE_BAR,
+    });
+    const seen: Array<Rect | null> = [];
+    const unsubscribe = useSnapPreview.subscribe((s) => seen.push(s.rect));
+    return {
+      seen,
+      moveTo(clientX: number, clientY: number) {
+        fireEvent.pointerMove(frame, { clientX, clientY });
+      },
+      /** Stop listening, then let go in open ground so the drag winds itself up. */
+      stop() {
+        unsubscribe();
+        fireEvent.pointerUp(frame, { clientX: 600, clientY: MID_HEIGHT });
+      },
+    };
+  }
+
+  it('is set once for a zone, not once for every move inside it', () => {
+    const drag = dragTitleBar();
+    drag.moveTo(4, MID_HEIGHT);
+    drag.moveTo(5, MID_HEIGHT + 10);
+    drag.moveTo(6, MID_HEIGHT + 20);
+    drag.stop();
+
+    const area = useWindowStore.getState().area;
+    expect(drag.seen).toEqual([snapRect('left', area, 0)]);
+  });
+
+  it('still reports every change of zone, including leaving one', () => {
+    const drag = dragTitleBar();
+    drag.moveTo(4, MID_HEIGHT);
+    drag.moveTo(600, MID_HEIGHT);
+    drag.moveTo(1276, MID_HEIGHT);
+    drag.stop();
+
+    const area = useWindowStore.getState().area;
+    expect(drag.seen).toEqual([snapRect('left', area, 0), null, snapRect('right', area, 0)]);
+  });
+
+  it('leaves the preview alone entirely when the drag never nears an edge', () => {
+    const drag = dragTitleBar();
+    drag.moveTo(600, MID_HEIGHT);
+    drag.moveTo(620, MID_HEIGHT);
+    drag.stop();
+
+    // The first move states "no zone" once; the rest have nothing to add.
+    expect(drag.seen).toEqual([null]);
   });
 });

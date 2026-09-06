@@ -1,4 +1,4 @@
-import { Grid2x2 } from 'lucide-react';
+import { Blocks } from 'lucide-react';
 import { lazy } from 'react';
 import { createAppIcon, defineApp } from '../_sdk';
 
@@ -13,7 +13,7 @@ export default defineApp({
   name: '2048',
   description: 'Slide the tiles together until one of them reads 2048.',
   category: 'games',
-  icon: createAppIcon({ glyph: Grid2x2, tone: 'amber' }),
+  icon: createAppIcon({ glyph: Blocks, tone: 'amber' }),
   component: lazy(() => import('./Twenty48')),
   window: { width: 460, height: 620, minWidth: 320, minHeight: 440, titleBar: 'inset' },
   singleton: true,

@@ -97,6 +97,8 @@ export function Grid({
   const dragging = useRef<'cells' | 'fill' | 'pick' | null>(null);
   /** Where a formula reference drag started. */
   const pickAnchor = useRef<Coord | null>(null);
+  /** The cell that drag last reached; a move inside one cell picks nothing new. */
+  const pickFocus = useRef<Coord | null>(null);
 
   const colOffsets = useMemo(
     () => offsets(size.cols, (i) => columnWidth(sheet, i)),
@@ -205,6 +207,7 @@ export function Grid({
       (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
       dragging.current = 'pick';
       pickAnchor.current = cell;
+      pickFocus.current = cell;
       return;
     }
     if (editor) onCommit(editor.cell, editor.text, 'none');
@@ -218,7 +221,12 @@ export function Grid({
   const onCellPointerMove = (e: React.PointerEvent) => {
     if (dragging.current === 'pick') {
       const from = pickAnchor.current;
-      if (from) onReferencePick(rangeOf(from, cellAt(e.clientX, e.clientY)));
+      if (!from) return;
+      const cell = cellAt(e.clientX, e.clientY);
+      const last = pickFocus.current;
+      if (last && cell.col === last.col && cell.row === last.row) return;
+      pickFocus.current = cell;
+      onReferencePick(rangeOf(from, cell));
       return;
     }
     if (dragging.current !== 'cells') return;
@@ -233,6 +241,7 @@ export function Grid({
       (e.currentTarget as HTMLElement).releasePointerCapture?.(e.pointerId);
       dragging.current = null;
       pickAnchor.current = null;
+      pickFocus.current = null;
     }
   };
 
