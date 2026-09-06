@@ -82,6 +82,19 @@ export function DesktopIcons() {
     });
   }, [sorted, positions, area.height, cell.h]);
 
+  /**
+   * A press on empty desktop draws the selection rectangle. The drag itself
+   * is the shared one: the desktop and the file views select the same way.
+   */
+  const marquee = useMarquee({
+    layer: rootRef,
+    band: marqueeRef,
+    boxes: () => (rootRef.current ? boxesByPath(rootRef.current, 'data-desktop-path') : []),
+    current: () => selected,
+    onChange: (keys) => setSelected(new Set(keys)),
+  });
+  const startMarquee = marquee.start;
+
   if (!desktop.showIcons) return null;
 
   const persist = (next: Record<string, { x: number; y: number }>) => {
@@ -141,19 +154,6 @@ export function DesktopIcons() {
     el.addEventListener('pointermove', onMove);
     el.addEventListener('pointerup', onUp);
   };
-
-  /**
-   * A press on empty desktop draws the selection rectangle. The drag itself
-   * is the shared one: the desktop and the file views select the same way.
-   */
-  const marquee = useMarquee({
-    layer: rootRef,
-    band: marqueeRef,
-    boxes: () => (rootRef.current ? boxesByPath(rootRef.current, 'data-desktop-path') : []),
-    current: () => selected,
-    onChange: (keys) => setSelected(new Set(keys)),
-  });
-  const startMarquee = marquee.start;
 
   const commitRename = async (entry: DirEntry, name: string) => {
     setRenaming(null);
