@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { launch, setupAndUnlock } from './helpers';
+import { launch, settledBox, setupAndUnlock } from './helpers';
 
 /**
  * The card lane in Files. Two things about it can only be checked in a
@@ -22,10 +22,13 @@ test.describe('the card lane', () => {
 
     const sidebar = page.getByRole('navigation').first();
     const table = page.getByRole('grid').first();
+    // Settled boxes: the window is still growing out of its open animation
+    // for the first frames, and a baseline taken then differs from a resting
+    // box for reasons that have nothing to do with the lane.
     const before = {
-      sidebar: await sidebar.boundingBox(),
-      table: await table.boundingBox(),
-      window: await page.getByTestId('window').first().boundingBox(),
+      sidebar: await settledBox(sidebar),
+      table: await settledBox(table),
+      window: await settledBox(page.getByTestId('window').first()),
     };
 
     // Walking the lane means having it: a click puts the keyboard on a card,

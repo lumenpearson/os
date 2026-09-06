@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { launch, setupAndUnlock } from './helpers';
+import { launch, settledBox, setupAndUnlock } from './helpers';
 
 /**
  * Three things about windows that only a real browser can answer: whether the
@@ -9,24 +9,59 @@ import { launch, setupAndUnlock } from './helpers';
  */
 
 test.describe('windows', () => {
-  test('drag the title bar anywhere along it, not only by the controls', async ({ page }) => {
+  test('drag the top row anywhere it is free, not only by the controls', async ({ page }) => {
     await setupAndUnlock(page);
     await launch(page, 'Files');
     const frame = page.getByTestId('window').first();
     await expect(frame).toBeVisible();
-    const before = await frame.boundingBox();
-    if (!before) throw new Error('the window has no box');
+    const before = await settledBox(frame);
 
-    // The middle of the bar: in Files that is the breadcrumb, which is exactly
-    // where dragging used to do nothing at all.
-    await page.mouse.move(before.x + before.width / 2, before.y + 14);
+    /*
+     * Files puts its own toolbar on the top row, so most of that row is
+     * breadcrumb, search and view buttons — and a button must navigate, not
+     * drag. What has to drag is the bare row between them. Asking the page
+     * where that is beats guessing: the midpoint of the row is a breadcrumb
+     * segment, and a test that dragged from there only passed because the
+     * open animation nudged the pointer into the gap beside it.
+     */
+    const grab = await page.evaluate(
+      ({ left, right, y }) => {
+        const free = (x: number) =>
+          !document
+            .elementFromPoint(x, y)
+            ?.closest('button, a, input, select, textarea, [role="button"], [role="textbox"]');
+        let start: number | null = null;
+        for (let x = left; x <= right; x += 2) {
+          if (free(x)) {
+            if (start === null) start = x;
+            else if (x - start >= 24) return (start + x) / 2;
+          } else start = null;
+        }
+        return null;
+      },
+      {
+        left: Math.round(before.x) + 2,
+        right: Math.round(before.x + before.width) - 2,
+        y: Math.round(before.y) + 18,
+      },
+    );
+    if (grab === null)
+      throw new Error('the top row is controls end to end, with nowhere to grab it');
+
+    // Right of the three window controls: dragging used to work only there.
+    const controls = await page.getByRole('button', { name: 'Close' }).first().boundingBox();
+    expect(grab, 'the grab point is past the window controls').toBeGreaterThan(
+      (controls?.x ?? before.x) + 40,
+    );
+
+    await page.mouse.move(grab, before.y + 18);
     await page.mouse.down();
-    await page.mouse.move(before.x + before.width / 2 + 120, before.y + 74, { steps: 10 });
+    await page.mouse.move(grab + 120, before.y + 78, { steps: 10 });
     await page.mouse.up();
 
-    const after = await frame.boundingBox();
-    expect(after?.x).toBeCloseTo(before.x + 120, -1);
-    expect(after?.y).toBeCloseTo(before.y + 60, -1);
+    const after = await settledBox(frame);
+    expect(after.x).toBeCloseTo(before.x + 120, -1);
+    expect(after.y).toBeCloseTo(before.y + 60, -1);
   });
 
   test('the controls of the window behind stay grey under the pointer', async ({ page }) => {

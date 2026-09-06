@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { launch, setupAndUnlock } from './helpers';
+import { launch, settledBox, setupAndUnlock } from './helpers';
 
 /**
  * Two settings a unit test cannot finish checking. One writes a CSS value the
@@ -39,8 +39,7 @@ test.describe('settings only a browser can answer', () => {
 
     await page.keyboard.press('Meta+ArrowLeft');
     const frame = page.getByTestId('window').first();
-    const box = await frame.boundingBox();
-    if (!box) throw new Error('the window has no box');
+    const box = await settledBox(frame);
     // The work area starts at the left edge, so the tile starts one gap in.
     expect(Math.round(box.x)).toBe(16);
   });

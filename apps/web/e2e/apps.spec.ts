@@ -1,5 +1,5 @@
 import { expect, type Page, test } from '@playwright/test';
-import { BUILT_IN_APPS, launch, setupAndUnlock } from './helpers';
+import { BUILT_IN_APPS, launch, settledBox, setupAndUnlock } from './helpers';
 
 /**
  * The newest applications at both ends of the size range the OS claims to
@@ -191,14 +191,14 @@ async function settledSpill(page: Page): Promise<{ px: number; where: string }> 
 /** Drag the east then the south edge inward; the window stops at its minimum. */
 async function shrinkToMinimum(page: Page) {
   const frame = page.getByTestId('window').first();
-  const first = await frame.boundingBox();
-  if (!first) throw new Error('the window has no box');
+  // The window is still growing out of its open animation for a few frames,
+  // and its edge — the thing this reaches for — is not yet where it will be.
+  const first = await settledBox(frame);
   await page.mouse.move(first.x + first.width - 2, first.y + first.height / 2);
   await page.mouse.down();
   await page.mouse.move(first.x + 40, first.y + first.height / 2, { steps: 12 });
   await page.mouse.up();
-  const second = await frame.boundingBox();
-  if (!second) throw new Error('the window has no box');
+  const second = await settledBox(frame);
   await page.mouse.move(second.x + second.width / 2, second.y + second.height - 2);
   await page.mouse.down();
   await page.mouse.move(second.x + second.width / 2, second.y + 40, { steps: 12 });

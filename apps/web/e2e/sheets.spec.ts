@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { launch, setupAndUnlock } from './helpers';
+import { launch, settledBox, setupAndUnlock } from './helpers';
 
 /**
  * Sheets keeps Add sheet and Delete sheet reachable however many sheets a
@@ -16,8 +16,7 @@ test('the sheet tabs scroll and never push the buttons out of the window', async
 
   // Shrink to the width the app promises to work at, then fill the row.
   const frame = page.getByTestId('window').first();
-  const box = await frame.boundingBox();
-  if (!box) throw new Error('the window has no box');
+  const box = await settledBox(frame);
   await page.mouse.move(box.x + box.width - 2, box.y + box.height / 2);
   await page.mouse.down();
   await page.mouse.move(box.x + 40, box.y + box.height / 2, { steps: 10 });
@@ -30,7 +29,7 @@ test('the sheet tabs scroll and never push the buttons out of the window', async
   await expect(tabs.getByRole('button')).toHaveCount(9);
 
   // Both buttons are still inside the window, whatever the tabs are doing.
-  const window = await frame.boundingBox();
+  const window = await settledBox(frame);
   for (const name of ['Add sheet', 'Delete sheet']) {
     const button = await page.getByRole('button', { name }).boundingBox();
     if (!button || !window) throw new Error(`${name} has no box`);

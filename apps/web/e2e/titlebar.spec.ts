@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { launch, setupAndUnlock } from './helpers';
+import { launch, settledBox, setupAndUnlock } from './helpers';
 
 /**
  * A window either draws a title bar of its own or lets the app have that row.
@@ -66,14 +66,14 @@ test.describe('the top row of a window', () => {
     await launch(page, '2048');
     const frame = page.getByTestId('window').last();
     await page.waitForTimeout(600);
-    const before = await frame.boundingBox();
+    const before = await settledBox(frame);
     if (!before) throw new Error('no window');
     // A point in the top row that is not one of the app's own controls.
     await page.mouse.move(before.x + before.width - 40, before.y + 12);
     await page.mouse.down();
     await page.mouse.move(before.x + before.width - 40 + 80, before.y + 12 + 60, { steps: 8 });
     await page.mouse.up();
-    const after = await frame.boundingBox();
+    const after = await settledBox(frame);
     if (!after) throw new Error('no window');
     expect(Math.round(after.x - before.x)).toBeGreaterThan(50);
     expect(Math.round(after.y - before.y)).toBeGreaterThan(30);

@@ -76,3 +76,45 @@ export const BUILT_IN_APPS = [
   '2048',
   'Solitaire',
 ] as const;
+
+/** What `boundingBox()` returns, once it has stopped changing. */
+export interface Box {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+function same(a: Box, b: Box) {
+  return a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height;
+}
+
+/**
+ * The box of an element that has finished moving.
+ *
+ * A window opens with a scale animation, so for the first ~200 ms its box is a
+ * position it never actually rests at: measured the frame it appears, a window
+ * that settles at x=180 reads x=188. A test that takes that as its baseline
+ * then asserts a drag landed 8 px short of where it truthfully landed, and
+ * fails or passes on how busy the machine was — which is what
+ * `windows.spec.ts` did on CI while passing locally.
+ *
+ * So read until three frames running agree. Anything still animating moves
+ * between frames; anything at rest does not.
+ */
+export async function settledBox(locator: import('@playwright/test').Locator): Promise<Box> {
+  const frame = () => locator.page().evaluate(() => new Promise(requestAnimationFrame));
+  let agreed = 0;
+  let last: Box | null = null;
+  for (let i = 0; i < 180; i++) {
+    const box = await locator.boundingBox();
+    if (box && last && same(box, last)) {
+      if (++agreed >= 2) return box;
+    } else {
+      agreed = 0;
+    }
+    last = box;
+    await frame();
+  }
+  throw new Error('the box never stopped moving');
+}
