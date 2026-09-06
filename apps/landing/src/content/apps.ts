@@ -41,6 +41,11 @@ export const apps: readonly AppEntry[] = [
   { name: 'Slides', summary: 'Presentations with layouts, notes and a full-screen player.' },
   { name: 'Preview', summary: 'View images, PDFs, media and data files.' },
   {
+    name: 'Photos',
+    summary:
+      'The pictures in your Pictures folder, with albums, favourites and a full-window view.',
+  },
+  {
     name: 'Media Player',
     summary: 'Play audio and video files with a playlist, loop and shuffle.',
   },
@@ -52,11 +57,16 @@ export const apps: readonly AppEntry[] = [
   { name: 'Units', summary: 'Convert between fourteen kinds of unit, including the awkward ones.' },
   {
     name: 'Colour',
-    summary: 'Pick a colour, read it four ways, and check its contrast and colour-blind legibility.',
+    summary:
+      'Pick a colour, read it four ways, and check its contrast and colour-blind legibility.',
   },
   {
     name: 'Character Map',
     summary: 'Find a character by Unicode block or code point, with its encodings and escapes.',
+  },
+  {
+    name: 'Clipboard',
+    summary: 'Everything Lumen has copied, ready to put back — with the ones worth keeping pinned.',
   },
   {
     name: 'Calendar',

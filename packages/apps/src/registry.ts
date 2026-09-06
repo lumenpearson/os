@@ -5,6 +5,7 @@ import calculator from './calculator';
 import calendar from './calendar';
 import charmap from './charmap';
 import chess from './chess';
+import clipboard from './clipboard';
 import clock from './clock';
 import colour from './colour';
 import consoleApp from './console';
@@ -16,6 +17,7 @@ import media from './media';
 import minesweeper from './minesweeper';
 import notes from './notes';
 import paint from './paint';
+import photos from './photos';
 import preview from './preview';
 import reminders from './reminders';
 import settings from './settings';
@@ -53,12 +55,14 @@ export const builtinApps: AppDefinition[] = [
   sheets,
   slides,
   preview,
+  photos,
   media,
   paint,
   calculator,
   units,
   colour,
   charmap,
+  clipboard,
   calendar,
   clock,
   settings,
