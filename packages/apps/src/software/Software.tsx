@@ -21,7 +21,6 @@ import {
   AppFrame,
   IconButton,
   SearchField,
-  SegmentedControl,
   Select,
   Toolbar,
   ToolbarSpacer,
@@ -57,6 +56,7 @@ import { buildSoftwareMenus, SECTIONS, type SectionId } from './menus';
 import { fetchPackage, type PackageDocument } from './remote';
 import { resourceIds } from './resources';
 import { COMPACT_AT, type StoreRoute, StoreSection } from './StoreSection';
+import { StoreSidebar } from './StoreSidebar';
 import {
   kindOptions,
   type Listing,
@@ -71,11 +71,23 @@ import { useInstalls } from './useInstalls';
 /** Below this the details pane takes the whole window instead of a column. */
 const TWO_PANE_AT = 640;
 
+/**
+ * Names the store has been asked for by, and where each one lands now.
+ *
+ * A launch argument is written down — in a menu, a link, a terminal command —
+ * and outlives the section it named. Catalogue became the Store, and the
+ * Store became Discover; both still arrive somewhere sensible rather than on
+ * the default with no explanation.
+ */
+const RENAMED: Record<string, SectionId> = {
+  catalogue: 'discover',
+  store: 'discover',
+  library: 'installed',
+};
+
 function toSection(value: unknown): SectionId | null {
   if (SECTIONS.some((s) => s.id === value)) return value as SectionId;
-  // The Catalogue section became the Store, and a launch argument written
-  // against the old name should still land somewhere sensible.
-  return value === 'catalogue' ? 'store' : null;
+  return typeof value === 'string' ? (RENAMED[value] ?? null) : null;
 }
 
 export default function Software(props: AppProps) {
@@ -93,7 +105,7 @@ export default function Software(props: AppProps) {
   const [updateSettings] = useSetting('updates');
   useTitle('Software Center');
 
-  const [section, setSection] = useState<SectionId>(() => toSection(args.section) ?? 'store');
+  const [section, setSection] = useState<SectionId>(() => toSection(args.section) ?? 'discover');
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('all');
   const [storeKind, setStoreKind] = useState('all');
@@ -230,7 +242,7 @@ export default function Software(props: AppProps) {
   }, []);
 
   const refreshStore = useCallback(() => {
-    setSection('store');
+    setSection('discover');
     refresh();
   }, [refresh]);
 
@@ -304,21 +316,17 @@ export default function Software(props: AppProps) {
     <AppFrame
       toolbar={
         <Toolbar dense>
-          <SegmentedControl
-            aria-label="Section"
-            size="sm"
-            options={SECTIONS.map((s) => ({ value: s.id, label: s.label }))}
-            value={section}
-            onChange={setSection}
-          />
+          {/* The sections moved to the sidebar, which already says which one
+              is open, so the toolbar is free to be about the section in view:
+              what is searched, and by what. */}
           <ToolbarSpacer />
           {section !== 'install' && (
             <SearchField
               ref={searchRef}
               size="sm"
               className="min-w-16 max-w-52"
-              placeholder={section === 'store' ? 'Search the store' : 'Search apps'}
-              aria-label={section === 'store' ? 'Search the store' : 'Search apps'}
+              placeholder={section === 'discover' ? 'Search the store' : 'Search apps'}
+              aria-label={section === 'discover' ? 'Search the store' : 'Search apps'}
               value={query}
               onChange={onQuery}
             />
@@ -332,7 +340,7 @@ export default function Software(props: AppProps) {
               onChange={setCategory}
             />
           )}
-          {section === 'store' && !compact && (
+          {section === 'discover' && !compact && (
             <>
               <Select
                 size="sm"
@@ -350,7 +358,7 @@ export default function Software(props: AppProps) {
               />
             </>
           )}
-          {section === 'store' && (
+          {section === 'discover' && (
             <IconButton size="sm" label="Refresh catalogue" onClick={refresh}>
               <RefreshCw />
             </IconButton>
@@ -362,62 +370,70 @@ export default function Software(props: AppProps) {
           <span>{counts['built-in']} built-in</span>
           <span>{counts.installed} installed</span>
           {section === 'installed' && <span>{visible.length} shown</span>}
-          {section === 'store' && <span>{listings.length} in the catalogue</span>}
+          {section === 'discover' && <span>{listings.length} in the catalogue</span>}
         </>
       }
     >
-      <div ref={bodyRef} className="flex min-h-0 flex-1 flex-col">
-        {section === 'store' && (
-          <StoreSection
-            view={view}
-            base={storeBase}
-            listings={listings}
-            filter={{ query, kind: storeKind, category: storeCategory }}
-            statusOf={statusOf}
-            jobs={installs.jobs}
-            subscribe={installs.subscribe}
-            compact={compact}
-            kinds={storeKinds}
-            categories={storeCategories}
-            route={route}
-            onRoute={setRoute}
-            onKind={setStoreKind}
-            onCategory={setStoreCategory}
-            onRefresh={refresh}
-            onStop={installs.stop}
-            onDismiss={installs.dismiss}
-            onInstall={startInstall}
-            onInstallSystem={(manifest) => void install(manifest)}
-            onOpenApp={open}
-          />
-        )}
-        {section === 'installed' && (
-          <InstalledSection
-            entries={visible}
-            selected={selected}
-            wide={wide}
-            updates={updates}
-            automatic={updateSettings.automatic}
-            onUpdateAll={updateAll}
-            onSelect={setSelectedId}
-            onOpen={(entry) => open(entry.id)}
-            onRemove={(entry) => void remove(entry)}
-          />
-        )}
-        {section === 'install' && (
-          <InstallSection
-            draft={draft}
-            origin={origin}
-            report={report}
-            plan={plan}
-            busy={busy}
-            textRef={textRef}
-            onDraft={onDraft}
-            onChooseFile={() => void chooseFile()}
-            onInstall={() => report.manifest && void install(report.manifest, { reveal: true })}
-            onError={(message) => notify('Could not read that file', message)}
-          />
-        )}
+      <div className="flex min-h-0 flex-1">
+        <StoreSidebar
+          section={section}
+          onSection={setSection}
+          installed={counts.installed}
+          updates={updates.length}
+        />
+        <div ref={bodyRef} className="flex min-h-0 flex-1 flex-col border-l border-rule">
+          {section === 'discover' && (
+            <StoreSection
+              view={view}
+              base={storeBase}
+              listings={listings}
+              filter={{ query, kind: storeKind, category: storeCategory }}
+              statusOf={statusOf}
+              jobs={installs.jobs}
+              subscribe={installs.subscribe}
+              compact={compact}
+              kinds={storeKinds}
+              categories={storeCategories}
+              route={route}
+              onRoute={setRoute}
+              onKind={setStoreKind}
+              onCategory={setStoreCategory}
+              onRefresh={refresh}
+              onStop={installs.stop}
+              onDismiss={installs.dismiss}
+              onInstall={startInstall}
+              onInstallSystem={(manifest) => void install(manifest)}
+              onOpenApp={open}
+            />
+          )}
+          {section === 'installed' && (
+            <InstalledSection
+              entries={visible}
+              selected={selected}
+              wide={wide}
+              updates={updates}
+              automatic={updateSettings.automatic}
+              onUpdateAll={updateAll}
+              onSelect={setSelectedId}
+              onOpen={(entry) => open(entry.id)}
+              onRemove={(entry) => void remove(entry)}
+            />
+          )}
+          {section === 'install' && (
+            <InstallSection
+              draft={draft}
+              origin={origin}
+              report={report}
+              plan={plan}
+              busy={busy}
+              textRef={textRef}
+              onDraft={onDraft}
+              onChooseFile={() => void chooseFile()}
+              onInstall={() => report.manifest && void install(report.manifest, { reveal: true })}
+              onError={(message) => notify('Could not read that file', message)}
+            />
+          )}
+        </div>
       </div>
     </AppFrame>
   );

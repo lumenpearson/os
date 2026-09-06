@@ -7,12 +7,55 @@
 
 import type { MenuTemplate } from '@lumen/kernel';
 
-export type SectionId = 'store' | 'installed' | 'install';
+export type SectionId =
+  | 'discover'
+  | 'categories'
+  | 'collections'
+  | 'deals'
+  | 'installed'
+  | 'updates'
+  | 'account'
+  | 'subscription'
+  | 'purchases'
+  | 'settings'
+  | 'install';
 
-export const SECTIONS: ReadonlyArray<{ id: SectionId; label: string }> = [
-  { id: 'store', label: 'Store' },
-  { id: 'installed', label: 'Installed' },
-  { id: 'install', label: 'Install' },
+export interface SectionMeta {
+  id: SectionId;
+  label: string;
+  /** Which band of the sidebar it sits in. */
+  group: 'store' | 'library' | 'account' | 'system';
+}
+
+/**
+ * Every place the store can be, in sidebar order.
+ *
+ * Three sections in a segmented control was the whole of it: a catalogue, a
+ * list of what was installed, and a file picker. Everything else the store
+ * already knew — the plan, the subscription, the receipts, the collections
+ * the catalogue ships — had nowhere to be shown. These are the places for it,
+ * and each one answers a question a person actually arrives with.
+ */
+export const SECTIONS: ReadonlyArray<SectionMeta> = [
+  { id: 'discover', label: 'Discover', group: 'store' },
+  { id: 'installed', label: 'Installed', group: 'library' },
+  { id: 'install', label: 'Add Package', group: 'system' },
+];
+
+/*
+ * The list above is what the store HAS, and a section joins it in the commit
+ * that builds its view — a sidebar entry that leads nowhere is a worse store
+ * than a short sidebar. The remaining ids in `SectionId` are the ones being
+ * built: categories, collections, deals, updates, account, subscription,
+ * purchases and settings.
+ */
+
+/** The sidebar's bands, in order, with the heading each one carries. */
+export const SECTION_GROUPS: ReadonlyArray<{ id: SectionMeta['group']; title: string }> = [
+  { id: 'store', title: 'Store' },
+  { id: 'library', title: 'Library' },
+  { id: 'account', title: 'Account' },
+  { id: 'system', title: 'Manage' },
 ];
 
 export interface SoftwareMenuState {
@@ -70,14 +113,27 @@ export function buildSoftwareMenus(
       id: 'view',
       label: 'View',
       items: [
-        ...SECTIONS.map((s, index) => ({
-          id: `view.${s.id}`,
-          type: 'radio' as const,
-          label: s.label,
-          shortcut: `Mod+${index + 1}`,
-          checked: state.section === s.id,
-          onSelect: () => actions.show(s.id),
-        })),
+        /*
+         * The View menu mirrors the sidebar, bands and all, so the two ways
+         * of moving around the store name the same places in the same order.
+         * Only the first nine carry a number: there is no Mod+10 key, and a
+         * shortcut printed beside an item that does not answer to it is worse
+         * than no shortcut at all.
+         */
+        ...SECTION_GROUPS.flatMap((group, groupIndex) => [
+          ...(groupIndex > 0 ? [{ type: 'separator' as const }] : []),
+          ...SECTIONS.filter((s) => s.group === group.id).map((s) => {
+            const index = SECTIONS.indexOf(s);
+            return {
+              id: `view.${s.id}`,
+              type: 'radio' as const,
+              label: s.label,
+              ...(index < 9 ? { shortcut: `Mod+${index + 1}` } : {}),
+              checked: state.section === s.id,
+              onSelect: () => actions.show(s.id),
+            };
+          }),
+        ]),
         { type: 'separator' },
         {
           id: 'view.refresh',

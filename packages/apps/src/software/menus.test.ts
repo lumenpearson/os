@@ -1,5 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
-import { buildSoftwareMenus, SECTIONS, type SoftwareActions } from './menus';
+import {
+  buildSoftwareMenus,
+  SECTION_GROUPS,
+  SECTIONS,
+  type SectionId,
+  type SoftwareActions,
+} from './menus';
 
 function actions(): SoftwareActions {
   return {
@@ -14,7 +20,7 @@ function actions(): SoftwareActions {
 
 describe('buildSoftwareMenus', () => {
   it('contributes File, Edit and View', () => {
-    expect(buildSoftwareMenus({ section: 'store' }, actions()).map((m) => m.label)).toEqual([
+    expect(buildSoftwareMenus({ section: 'discover' }, actions()).map((m) => m.label)).toEqual([
       'File',
       'Edit',
       'View',
@@ -46,36 +52,53 @@ describe('buildSoftwareMenus', () => {
   });
 
   it('offers Find where there is a search field, and stands it down where there is not', () => {
-    const find = (section: 'installed' | 'install' | 'store') =>
-      buildSoftwareMenus({ section }, actions())[1]?.items[0];
+    const find = (section: SectionId) => buildSoftwareMenus({ section }, actions())[1]?.items[0];
     expect(find('installed')?.enabled).toBe(true);
-    expect(find('store')?.enabled).toBe(true);
+    expect(find('discover')?.enabled).toBe(true);
     expect(find('install')?.enabled).toBe(false);
     expect(find('installed')?.shortcut).toBe('Mod+F');
   });
 
-  it('lists the three sections as radios, with the current one checked', () => {
+  it('mirrors the sidebar: every section, in its bands, current one checked', () => {
     const [, , view] = buildSoftwareMenus({ section: 'install' }, actions());
-    expect(view?.items.slice(0, 3).map((i) => i.label)).toEqual(SECTIONS.map((s) => s.label));
-    expect(view?.items.slice(0, 3).map((i) => i.type)).toEqual(['radio', 'radio', 'radio']);
-    expect(view?.items.slice(0, 3).map((i) => i.checked)).toEqual([false, false, true]);
-    expect(view?.items.slice(0, 3).map((i) => i.shortcut)).toEqual(['Mod+1', 'Mod+2', 'Mod+3']);
+    const radios = view?.items.filter((i) => i.type === 'radio') ?? [];
+    expect(radios.map((i) => i.label)).toEqual(SECTIONS.map((s) => s.label));
+    expect(radios.filter((i) => i.checked).map((i) => i.label)).toEqual(['Add Package']);
+
+    // A band boundary is a separator, so the menu reads in the same groups the
+    // sidebar draws: three of them between four bands.
+    const between = view?.items.filter((i) => i.type === 'separator') ?? [];
+    expect(between.length).toBe(SECTION_GROUPS.length - 1 + 1);
+  });
+
+  it('numbers only the sections a key can reach', () => {
+    // There is no Mod+10, and a shortcut printed beside an item that does not
+    // answer to it is worse than no shortcut at all. Stated as the rule rather
+    // than as a count, so it still holds as sections are added.
+    const [, , view] = buildSoftwareMenus({ section: 'discover' }, actions());
+    const radios = view?.items.filter((i) => i.type === 'radio') ?? [];
+    radios.forEach((item, index) => {
+      expect(item.shortcut, `${item.label}`).toBe(index < 9 ? `Mod+${index + 1}` : undefined);
+    });
   });
 
   it('refreshes the catalogue from the View menu, after a separator', () => {
     const spies = actions();
-    const [, , view] = buildSoftwareMenus({ section: 'store' }, spies);
-    expect(view?.items[3]?.type).toBe('separator');
-    expect(view?.items[4]?.label).toBe('Refresh Catalogue');
-    expect(view?.items[4]?.shortcut).toBe('Mod+R');
-    view?.items[4]?.onSelect?.();
+    const [, , view] = buildSoftwareMenus({ section: 'discover' }, spies);
+    const last = view?.items.at(-1);
+    expect(view?.items.at(-2)?.type).toBe('separator');
+    expect(last?.label).toBe('Refresh Catalogue');
+    expect(last?.shortcut).toBe('Mod+R');
+    last?.onSelect?.();
     expect(spies.refresh).toHaveBeenCalledOnce();
   });
 
   it('switches section from the View menu', () => {
     const spies = actions();
     const [, , view] = buildSoftwareMenus({ section: 'installed' }, spies);
-    view?.items[2]?.onSelect?.();
+    // By label rather than by index: the sections are grouped now, and a
+    // position in the list is no longer the same thing as a section.
+    view?.items.find((i) => i.label === 'Add Package')?.onSelect?.();
     expect(spies.show).toHaveBeenCalledWith('install');
   });
 });

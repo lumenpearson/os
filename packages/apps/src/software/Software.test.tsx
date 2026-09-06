@@ -92,7 +92,7 @@ async function openWindow() {
       </AppProvider>
     </KernelProvider>,
   );
-  await screen.findByRole('radio', { name: 'Installed' });
+  await screen.findByRole('navigation', { name: 'Sidebar' });
 }
 
 async function mount(preinstall: AppManifest[] = []) {
@@ -112,12 +112,23 @@ const rowNames = () =>
     .getAllByRole('button', { name: /.*/ })
     .map((b) => b.textContent ?? '');
 
+/**
+ * The sections are a sidebar now, not a segmented control. The name is
+ * anchored rather than exact because two of the entries carry a count.
+ */
+const sidebar = () => within(screen.getByRole('navigation', { name: 'Sidebar' }));
+
 async function show(section: string) {
-  await userEvent.click(screen.getByRole('radio', { name: section }));
+  await userEvent.click(sidebar().getByRole('button', { name: new RegExp(`^${section}`) }));
+}
+
+/** Which section the sidebar says is open. */
+function shown(section: string) {
+  return sidebar().getByRole('button', { name: new RegExp(`^${section}`) });
 }
 
 async function paste(json: string) {
-  await show('Install');
+  await show('Add Package');
   fireEvent.change(screen.getByLabelText('Manifest JSON'), { target: { value: json } });
 }
 
@@ -146,7 +157,7 @@ describe('the store', () => {
   });
 
   it('opens on the store and draws the catalogue it fetched', () => {
-    expect(screen.getByRole('radio', { name: 'Store' })).toHaveAttribute('aria-checked', 'true');
+    expect(shown('Discover')).toHaveAttribute('aria-current', 'page');
     expect(screen.getByText('Two programs to start with')).toBeInTheDocument();
     // A collection is a card you press, so its title is the button's own
     // label rather than a heading inside it.
@@ -574,7 +585,7 @@ describe('installing from pasted JSON', () => {
 describe('installing from a file', () => {
   beforeEach(async () => {
     await mount();
-    await show('Install');
+    await show('Add Package');
   });
 
   const zone = () => document.querySelector('[data-dragging]') as HTMLElement;
@@ -634,12 +645,11 @@ describe('the menubar', () => {
   it('moves between sections from the View menu', async () => {
     const view = useMenuStore.getState().byWindow[windowId]?.[2];
     await act(async () => {
-      view?.items[1]?.onSelect?.();
+      // By label: the sections are banded now, and the separators between the
+      // bands mean an index is no longer the same thing as a section.
+      view?.items.find((i) => i.label === 'Installed')?.onSelect?.();
     });
-    expect(screen.getByRole('radio', { name: 'Installed' })).toHaveAttribute(
-      'aria-checked',
-      'true',
-    );
+    expect(shown('Installed')).toHaveAttribute('aria-current', 'page');
   });
 
   it('refreshes the catalogue from the View menu', async () => {
@@ -647,7 +657,8 @@ describe('the menubar', () => {
     requests = [];
     const view = useMenuStore.getState().byWindow[windowId]?.[2];
     await act(async () => {
-      view?.items[4]?.onSelect?.();
+      // Refresh is the last item, after the sections and their bands.
+      view?.items.at(-1)?.onSelect?.();
     });
     await waitFor(() => expect(requests).toContain(`${DEFAULT_STORE_ORIGIN}index.json`));
   });
