@@ -25,7 +25,10 @@ import { ICON_TONES, type IconTone } from './icon';
  * have no shape in common and yet both draw a rounded frame around a dot and a
  * diagonal ridge. These groups are that judgement, made by eye at 9 px and
  * written down so it can be argued with. Every name here was read against its
- * node data in lucide-react 1.40; names no app uses yet are guards.
+ * node data in lucide-react 1.40; names no app uses yet are guards. The names
+ * are lucide's own, which is what the rendered class carries: `AlignLeft` and
+ * `FileJson` are re-exports that draw as `text-align-start` and `file-braces`,
+ * so a guard spelled the old way would sit here and never match.
  */
 const SILHOUETTES: readonly (readonly string[])[] = [
   // A rounded frame around a dot and a diagonal ridge.
@@ -34,7 +37,7 @@ const SILHOUETTES: readonly (readonly string[])[] = [
   // rules as a single compound path, so it shares no shape with the grids.
   ['grid-2x2', 'grid-3x2', 'grid-3x3', 'sheet', 'table-2'],
   // A portrait page with a folded top-right corner.
-  ['file-archive', 'file-code', 'file-json', 'file-spreadsheet', 'file-text'],
+  ['file-archive', 'file-braces', 'file-code', 'file-spreadsheet', 'file-text'],
   // A rounded portrait frame, one rule near the top, a field of dots below.
   // Plain `calendar` is deliberately not here: below its rule there is nothing
   // at all, so it reads as an empty frame where these read as a full one.
@@ -55,7 +58,7 @@ const SILHOUETTES: readonly (readonly string[])[] = [
   // Stacked text lines with a marker column down one side. `clipboard-list` is
   // not one of these: it has an outer frame, which is the kind of difference
   // that does survive at 9 px.
-  ['align-left', 'list', 'list-checks', 'logs'],
+  ['list', 'list-checks', 'logs', 'text-align-start'],
 ];
 
 /** What one app's tile actually draws, and the colour it draws it on. */

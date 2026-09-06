@@ -12,8 +12,8 @@ import { freeTitleBarSpot, launch, settledBox, setupAndUnlock } from './helpers'
  *    DOM writes are attribute writes on the dragged window and on the cursor
  *    layer's own node — the two things that are meant to move — and on
  *    essentially nothing else. A React commit at pointer rate arrives here as
- *    a `childList` record on every frame, so the test fails on what happened
- *    rather than on how long it took.
+ *    a write to the window's contents on every frame, so the test fails on
+ *    what happened rather than on how long it took.
  * 2. Relative timing. The runner measures its own idle frame rate first and
  *    the gesture is held against that, so a slow machine moves both sides.
  *    Nothing is asserted about the worst frame: shared CI has no GPU, frame
@@ -64,12 +64,22 @@ const OPENING_FRAMES = 12;
 /** Frames the opening may drop. Three seen for the dialog, one for the menu. */
 const OPENING_DROPS = 5;
 
+/** How often the kernel ticks its load figures, in ms. See `kernel.ts`. */
+const TICK_MS = 2000;
+
 /**
- * Frames of a drag that may write outside the window and the cursor. One: the
- * kernel's two-second tick lands inside a drag at most once, and a commit at
- * pointer rate would be on every frame of the seventy-two.
+ * Frames of a drag that may write outside the window and the cursor.
+ *
+ * The interference is a timer, so the allowance is counted in seconds and not
+ * in frames: however slowly the runner draws, a sample of `elapsed` ms spans
+ * at most that many kernel ticks. Seventy-two frames are 1.2 s on a runner
+ * holding 60 Hz — one tick — and 2.4 s on one holding 30, which is two, and a
+ * fixed one would simply fail there. A commit at pointer rate is on every
+ * frame of the seventy-two either way.
  */
-const OFFENDING_FRAMES = 1;
+function offenceAllowance(elapsed: number): number {
+  return Math.ceil(elapsed / TICK_MS);
+}
 
 interface Point {
   x: number;
@@ -371,10 +381,11 @@ async function stage(page: Page, gesture: MeasuredGesture): Promise<Stage> {
   const frame = page.getByTestId('window').first();
   await expect(frame).toBeVisible();
   if (gesture !== 'drag') await expect(page.getByTestId('paint-surface')).toBeVisible();
-  const from = await freeTitleBarSpot(page, await settledBox(frame));
+  const box = await settledBox(frame);
   await quiet(page);
 
   if (gesture === 'drag') {
+    const from = await freeTitleBarSpot(page, box);
     const path = dragPath(from, FRAMES);
     const size = page.viewportSize() ?? { width: 0, height: 0 };
     const room = 40;
@@ -383,9 +394,19 @@ async function stage(page: Page, gesture: MeasuredGesture): Promise<Stage> {
     );
     expect(strays, 'the drag stays clear of the snap zones at the edges of the screen').toBe(false);
     return {
-      run: (options) => dragging(page, from, () => sample(page, 'drag', { path, ...options })),
-      // The path is a closed loop and letting go put the window back, so the
-      // next drag starts from the same grab point.
+      run: async (options) => {
+        const reading = await dragging(page, from, () =>
+          sample(page, 'drag', { path, ...options }),
+        );
+        // The counterpart of the check the menu and the dialog get below: a
+        // pointerdown that lands on a control starts no drag, and the timing
+        // layers would then measure an idle page and report it as a gesture
+        // inside budget.
+        expect(reading.moves, 'the drag moved the window').toBeGreaterThan(FRAMES - 5);
+        return reading;
+      },
+      // The lap closes on the grab point, so letting go leaves the window
+      // where it was found and the next drag starts from the same place.
       reset: () => Promise.resolve(),
     };
   }
@@ -432,9 +453,12 @@ test.describe('frame budget', () => {
     const reading = await drag.run({ watch: true });
 
     /*
-     * A React commit at pointer rate — the defect this requirement is about —
-     * adds and removes nodes, so childList is held at zero and nothing is
-     * allowed to explain it away.
+     * childList is held at zero and nothing is allowed to explain it away: a
+     * window rebuilt under the pointer is the defect `windows.spec.ts` already
+     * watches for on a two-second tick, and mid-drag there is no excuse for it
+     * at all. Note what this does not catch on its own — a re-render that
+     * leaves the tree the same shape writes attributes, not children — which
+     * is the assertion below.
      *
      * The rest is judged by rate rather than by count, because one write on
      * one frame is not a rate. The kernel ticks its load figures every two
@@ -448,10 +472,10 @@ test.describe('frame budget', () => {
     expect(
       reading.offendingFrames,
       `frames writing outside the window and the cursor: ${reading.offences.join('; ')}`,
-    ).toBeLessThanOrEqual(OFFENDING_FRAMES);
+    ).toBeLessThanOrEqual(offenceAllowance(reading.elapsed));
 
     // And it was a real drag: both nodes were written on essentially every
-    // frame — 71 of 72 for the window, three times that for the cursor, which
+    // frame — 72 of 72 for the window, three times that for the cursor, which
     // sets a transform, a shape and a pressed flag. Without this an inert
     // gesture would pass the assertions above by touching nothing at all.
     expect(reading.writes.window, 'the window moved on every frame').toBeGreaterThan(FRAMES - 5);
