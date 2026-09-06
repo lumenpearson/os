@@ -52,6 +52,11 @@
   --radius-md: 8px;
   --radius-lg: 12px;
   --radius-xl: 16px;
+  /* A card's own corner. The references round a card noticeably more than a
+     control inside it, which is what makes the two read as different kinds of
+     thing rather than as two sizes of the same one; `--radius-md` on the
+     controls nested in it keeps the rule that inner = outer − padding. */
+  --radius-2xl: 20px;
   --radius-full: 9999px;
 
   /* motion */
@@ -73,6 +78,7 @@
   --color-surface-2: var(--lumen-surface-2);
   --color-stripe: var(--lumen-stripe);
   --color-surface-3: var(--lumen-surface-3);
+  --color-track: var(--lumen-track);
   --color-chrome: var(--lumen-chrome);
   --color-ink: var(--lumen-ink);
   --color-ink-2: var(--lumen-ink-2);
@@ -91,6 +97,7 @@
 
   --shadow-sm: var(--lumen-shadow-sm);
   --shadow-md: var(--lumen-shadow-md);
+  --shadow-card: var(--lumen-shadow-card);
   --shadow-lg: var(--lumen-shadow-lg);
   --shadow-window: var(--lumen-shadow-window);
   --shadow-window-active: var(--lumen-shadow-window-active);
@@ -123,6 +130,10 @@
    */
   --lumen-stripe: rgb(0 0 0 / 0.028);
   --lumen-surface-3: #e1e2e5;
+  /* The recessed track a segmented control sits in, and the groove a slider
+     runs along: darker than the surface around it, so the selected segment
+     reads as raised out of it rather than painted on. */
+  --lumen-track: rgb(0 0 0 / 0.06);
   /* The panel background, in two parts so the shell can tint it without
      knowing what it is: Settings > Wallpaper > Dynamic chrome overrides
      --lumen-chrome with a mix of the wallpaper's colour and this base, and
@@ -142,6 +153,11 @@
 
   --lumen-shadow-sm: 0 1px 2px rgb(0 0 0 / 0.08);
   --lumen-shadow-md: 0 4px 12px rgb(0 0 0 / 0.1), 0 1px 2px rgb(0 0 0 / 0.06);
+  /* A card lifted off the canvas rather than outlined on it: a hairline for
+     the edge and one soft, colourless drop for the lift. Design rule 4 wants
+     depth to be exactly these two things, so the shadow carries the hairline
+     as an inset ring instead of the card needing a border of its own. */
+  --lumen-shadow-card: 0 0 0 1px rgb(0 0 0 / 0.05), 0 2px 8px rgb(0 0 0 / 0.06);
   --lumen-shadow-lg: 0 12px 28px rgb(0 0 0 / 0.16), 0 2px 6px rgb(0 0 0 / 0.08);
   --lumen-shadow-window: 0 8px 24px rgb(0 0 0 / 0.16), 0 0 0 1px rgb(0 0 0 / 0.1);
   --lumen-shadow-window-active: 0 18px 44px rgb(0 0 0 / 0.24), 0 0 0 1px rgb(0 0 0 / 0.14);
@@ -176,6 +192,7 @@
   --lumen-surface-2: #2b2c31;
   --lumen-stripe: rgb(255 255 255 / 0.032);
   --lumen-surface-3: #35363c;
+  --lumen-track: rgb(255 255 255 / 0.07);
   --lumen-chrome-base: rgb(30 31 35 / 0.78);
   --lumen-chrome: var(--lumen-chrome-base);
   --lumen-ink: #ececee;
@@ -190,6 +207,10 @@
   --lumen-scrim: rgb(0 0 0 / 0.5);
   --lumen-shadow-sm: 0 1px 2px rgb(0 0 0 / 0.3);
   --lumen-shadow-md: 0 4px 12px rgb(0 0 0 / 0.36), 0 1px 2px rgb(0 0 0 / 0.24);
+  /* In the dark the lift comes from the edge rather than the drop: a shadow
+     on a dark ground is invisible, and the hairline is what separates a card
+     from the canvas behind it. */
+  --lumen-shadow-card: 0 0 0 1px rgb(255 255 255 / 0.07), 0 2px 8px rgb(0 0 0 / 0.4);
   --lumen-shadow-lg: 0 12px 28px rgb(0 0 0 / 0.46), 0 2px 6px rgb(0 0 0 / 0.3);
   --lumen-shadow-window: 0 8px 24px rgb(0 0 0 / 0.42), 0 0 0 1px rgb(255 255 255 / 0.08);
   --lumen-shadow-window-active: 0 18px 44px rgb(0 0 0 / 0.56), 0 0 0 1px rgb(255 255 255 / 0.12);
@@ -200,12 +221,19 @@
   --lumen-rule-strong: rgb(0 0 0 / 0.6);
   --lumen-ink-2: #303238;
   --lumen-ink-3: #4a4d55;
+  /* A card's edge and a track's floor are both separators, and high contrast
+     is a request to see the separators; leaving them at their quiet value
+     would keep the two things this mode is most about the hardest to find. */
+  --lumen-track: rgb(0 0 0 / 0.14);
+  --lumen-shadow-card: 0 0 0 1px rgb(0 0 0 / 0.28), 0 2px 8px rgb(0 0 0 / 0.06);
 }
 :root[data-theme="dark"][data-contrast="high"] {
   --lumen-rule: rgb(255 255 255 / 0.32);
   --lumen-rule-strong: rgb(255 255 255 / 0.6);
   --lumen-ink-2: #d5d7dc;
   --lumen-ink-3: #b3b6bd;
+  --lumen-track: rgb(255 255 255 / 0.16);
+  --lumen-shadow-card: 0 0 0 1px rgb(255 255 255 / 0.3), 0 2px 8px rgb(0 0 0 / 0.4);
 }
 
 :root[data-motion="reduced"] {
