@@ -1,29 +1,13 @@
 import { AVATAR_PRESETS } from '@lumen/kernel';
 import { useClock, useCurrentUser, useKernel, useSetting } from '@lumen/kernel/react';
-import {
-  Avatar,
-  Button,
-  cx,
-  Input,
-  Select,
-  type SelectOption,
-  SettingsGroup,
-  SettingsPage,
-  Switch,
-} from '@lumen/ui';
+import { Avatar, Button, cx, Input, SettingsGroup, SettingsPage, Switch } from '@lumen/ui';
 import { Info, RefreshCw } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { formatRelative, useLauncher } from '../../_sdk';
+import { useUpdates } from '../../software/useUpdates';
 import { useSystemInfo } from '../hooks';
 import { updateStatus } from '../logic';
 import { ChoiceGroup, Row, Value } from '../Row';
-
-const CHANNELS: SelectOption<'stable' | 'beta'>[] = [
-  { value: 'stable', label: 'Stable' },
-  { value: 'beta', label: 'Beta' },
-];
-
-const CHECK_DELAY_MS = 1200;
 
 export function GeneralPage() {
   const kernel = useKernel();
@@ -31,6 +15,7 @@ export function GeneralPage() {
   const { info } = useSystemInfo();
   const { launch } = useLauncher();
   const [updates, patchUpdates] = useSetting('updates');
+  const store = useUpdates();
   const now = useClock(30_000);
 
   const [draft, setDraft] = useState<string | null>(null);
@@ -39,22 +24,6 @@ export function GeneralPage() {
     const next = name.trim();
     if (next && next !== user?.name) void kernel.updateUser({ name: next });
     setDraft(null);
-  };
-
-  const [checking, setChecking] = useState(false);
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useEffect(
-    () => () => {
-      if (timer.current) clearTimeout(timer.current);
-    },
-    [],
-  );
-  const check = () => {
-    setChecking(true);
-    timer.current = setTimeout(() => {
-      patchUpdates({ lastChecked: Date.now() });
-      setChecking(false);
-    }, CHECK_DELAY_MS);
   };
 
   const version = info?.appVersion ?? '0.1.0';
@@ -129,35 +98,47 @@ export function GeneralPage() {
 
       <SettingsGroup title="Software update">
         <Row
+          id="general.version"
+          label="This system"
+          description="Lumen OS is updated by replacing the build it runs from; there is no release feed to check."
+        >
+          <Value>Lumen OS {version}</Value>
+        </Row>
+        <Row
           id="general.updates"
-          label={
-            checking
-              ? 'Checking for updates…'
-              : updateStatus(updates.lastChecked, version, (t) => formatRelative(t, now.getTime()))
-          }
+          label="Installed packages"
+          description={updateStatus(
+            {
+              checking: store.checking,
+              lastChecked: store.lastChecked,
+              available: store.updates.length,
+              error: store.error?.message ?? null,
+            },
+            (t) => formatRelative(t, now.getTime()),
+          )}
         >
           <Button
             size="sm"
-            loading={checking}
+            loading={store.checking}
             icon={<RefreshCw className="size-3.5" />}
-            onClick={check}
+            onClick={store.check}
           >
             Check for updates
           </Button>
-        </Row>
-        <Row id="general.updates.channel" label="Update channel">
-          <Select
-            options={CHANNELS}
-            value={updates.channel}
-            onChange={(channel) => patchUpdates({ channel })}
-          />
+          {store.updates.length > 0 && (
+            <Button size="sm" onClick={() => launch('lumen.software', { section: 'installed' })}>
+              Open Software Center
+            </Button>
+          )}
         </Row>
         <Row
           id="general.updates.automatic"
+          htmlFor="updates-automatic"
           label="Automatic updates"
-          description="Install updates when they are available."
+          description="Install a newer version as soon as Software Center finds one in the store."
         >
           <Switch
+            id="updates-automatic"
             checked={updates.automatic}
             onChange={(e) => patchUpdates({ automatic: e.target.checked })}
           />

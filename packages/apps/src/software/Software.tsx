@@ -27,6 +27,7 @@ import {
   ToolbarSpacer,
   useDialogs,
   useElementSize,
+  useLatest,
 } from '@lumen/ui';
 import { RefreshCw } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -53,7 +54,7 @@ import {
 } from './library';
 import { parseManifestText } from './manifest';
 import { buildSoftwareMenus, SECTIONS, type SectionId } from './menus';
-import type { PackageDocument } from './remote';
+import { fetchPackage, type PackageDocument } from './remote';
 import { resourceIds } from './resources';
 import { COMPACT_AT, type StoreRoute, StoreSection } from './StoreSection';
 import {
@@ -63,6 +64,7 @@ import {
   mergeListings,
   categoryOptions as storeCategoryOptions,
 } from './storefront';
+import { type AvailableUpdate, availableUpdates } from './updates';
 import { useCatalogue } from './useCatalogue';
 import { useInstalls } from './useInstalls';
 
@@ -88,6 +90,7 @@ export default function Software(props: AppProps) {
   const { close } = useWindowControls();
   const args = useArgs<{ section?: string }>(props.args);
   const [storeSettings] = useSetting('store');
+  const [updateSettings] = useSetting('updates');
   useTitle('Software Center');
 
   const [section, setSection] = useState<SectionId>(() => toSection(args.section) ?? 'store');
@@ -258,6 +261,45 @@ export default function Software(props: AppProps) {
     [installs],
   );
 
+  /**
+   * An installed package the catalogue has moved past. Updating one is an
+   * ordinary install of the newer version: `planInstall` already knows how to
+   * replace a manifest whose id is on the system, so nothing here is a second
+   * road into /Applications.
+   */
+  const updates = useMemo(() => availableUpdates(entries, catalogue), [entries, catalogue]);
+  const updateOne = useCallback(
+    async (update: AvailableUpdate) => {
+      const result = await fetchPackage(storeBase, update.id);
+      if (!result.ok) {
+        notify(`Could not update ${update.name}`, result.error.message);
+        return;
+      }
+      installs.start(result.value);
+    },
+    [storeBase, installs, notify],
+  );
+  const updateAll = useCallback(() => {
+    for (const update of updates) void updateOne(update);
+  }, [updates, updateOne]);
+
+  /**
+   * Settings > General > Automatic updates. Each version is started once per
+   * session: without the guard the catalogue arriving again — or the library
+   * changing as an install lands — would queue the same download repeatedly.
+   */
+  const started = useRef(new Set<string>());
+  const updateRef = useLatest(updateOne);
+  useEffect(() => {
+    if (!updateSettings.automatic) return;
+    for (const update of updates) {
+      const key = `${update.id}@${update.to}`;
+      if (started.current.has(key)) continue;
+      started.current.add(key);
+      void updateRef.current(update);
+    }
+  }, [updateSettings.automatic, updates, updateRef]);
+
   return (
     <AppFrame
       toolbar={
@@ -354,6 +396,9 @@ export default function Software(props: AppProps) {
             entries={visible}
             selected={selected}
             wide={wide}
+            updates={updates}
+            automatic={updateSettings.automatic}
+            onUpdateAll={updateAll}
             onSelect={setSelectedId}
             onOpen={(entry) => open(entry.id)}
             onRemove={(entry) => void remove(entry)}

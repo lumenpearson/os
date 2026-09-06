@@ -83,10 +83,34 @@ describe('status strings', () => {
     expect(networkStatus({ ...base, airplane: true })).toBe('Airplane mode');
   });
   it('describes the update state', () => {
-    expect(updateStatus(null, '0.1.0', () => 'x')).toBe('Lumen OS 0.1.0 · not checked yet');
-    expect(updateStatus(5, '0.1.0', () => 'just now')).toBe(
-      'Lumen OS 0.1.0 is up to date · checked just now',
+    const base = { checking: false, lastChecked: null, available: 0, error: null };
+    const relative = () => 'just now';
+    expect(updateStatus(base, relative)).toBe('The store has not been checked yet');
+    expect(updateStatus({ ...base, checking: true }, relative)).toBe('Checking the store…');
+    expect(updateStatus({ ...base, lastChecked: 5 }, relative)).toBe(
+      'Everything installed is up to date · checked just now',
     );
+    expect(updateStatus({ ...base, lastChecked: 5, available: 1 }, relative)).toBe(
+      '1 update available · checked just now',
+    );
+    expect(updateStatus({ ...base, lastChecked: 5, available: 3 }, relative)).toBe(
+      '3 updates available · checked just now',
+    );
+  });
+
+  it('says why a check failed instead of claiming it passed', () => {
+    const failed = {
+      checking: false,
+      lastChecked: 5,
+      available: 0,
+      error: 'The store could not be reached.',
+    };
+    expect(updateStatus(failed, () => 'just now')).toBe('The store could not be reached.');
+  });
+
+  it('never says up to date on the strength of a timer alone', () => {
+    const never = { checking: false, lastChecked: null, available: 0, error: null };
+    expect(updateStatus(never, () => 'just now')).not.toContain('up to date');
   });
   it('formats the viewport', () => {
     expect(viewportLabel(1440, 900, 2)).toBe('1440 × 900 · 2×');

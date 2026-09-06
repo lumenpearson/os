@@ -6,6 +6,8 @@ import {
   type Kernel,
   useMenuStore,
   useProcessStore,
+  useRegistryStore,
+  useSettingsStore,
 } from '@lumen/kernel';
 import { KernelProvider } from '@lumen/kernel/react';
 import { createWebPlatform } from '@lumen/platform';
@@ -17,7 +19,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { AppProvider, FileDialogProvider } from '../_sdk';
 import { CATALOGUE } from './catalogue';
 import { LUMEN_PATHS_MIME } from './drop';
-import { buildStore, DESK, SEVEN, STOPWATCH, type StoreFiles } from './fixture';
+import { buildStore, DESK, SEVEN, STOPWATCH, STOPWATCH_MANIFEST, type StoreFiles } from './fixture';
 import definition from './index';
 import Software from './Software';
 
@@ -656,5 +658,67 @@ describe('the menubar', () => {
       file?.items[1]?.onSelect?.();
     });
     expect(await screen.findByLabelText('Manifest JSON')).toBeInTheDocument();
+  });
+});
+
+/**
+ * An installed package the catalogue has moved past. The fixture serves
+ * Stopwatch 2.1.0, so a copy of 2.0.0 on the system is exactly one update.
+ */
+describe('updates', () => {
+  const OLD_STOPWATCH: AppManifest = { ...STOPWATCH_MANIFEST, version: '2.0.0' } as AppManifest;
+
+  const installedVersion = () =>
+    Object.values(useRegistryStore.getState().installed).find((a) => a.manifest.id === STOPWATCH)
+      ?.manifest.version ?? null;
+
+  async function mountWith(automatic: boolean, manifest: AppManifest = OLD_STOPWATCH) {
+    await boot([manifest]);
+    useSettingsStore.getState().patch('updates', { automatic });
+    await openWindow();
+    await show('Installed');
+  }
+
+  it('says how many, and which versions, when the store is ahead', async () => {
+    await mountWith(false);
+    expect(await screen.findByText('1 update available')).toBeInTheDocument();
+    expect(screen.getByText(/Stopwatch 2\.0\.0 → 2\.1\.0/)).toBeInTheDocument();
+  });
+
+  it('says nothing when the system is already on the catalogue version', async () => {
+    await mountWith(false, STOPWATCH_MANIFEST as AppManifest);
+    await screen.findByRole('list', { name: 'Installed apps' });
+    expect(screen.queryByText(/update available/)).not.toBeInTheDocument();
+  });
+
+  it('installs the newer version when Update All is pressed', async () => {
+    await mountWith(false);
+    expect(installedVersion()).toBe('2.0.0');
+    await userEvent.click(await screen.findByRole('button', { name: 'Update All' }));
+    await waitFor(() => expect(installedVersion()).toBe('2.1.0'));
+  });
+
+  it('waits to be asked while automatic updates are off', async () => {
+    await mountWith(false);
+    await screen.findByText('1 update available');
+    expect(installedVersion()).toBe('2.0.0');
+  });
+
+  it('installs on its own when automatic updates are on, with nothing pressed', async () => {
+    await mountWith(true);
+    await waitFor(() => expect(installedVersion()).toBe('2.1.0'));
+    // Nothing to ask for once it is done, and nothing was asked for on the way.
+    expect(screen.queryByRole('button', { name: 'Update All' })).not.toBeInTheDocument();
+  });
+
+  it('starts each version once, however often the library changes under it', async () => {
+    await mountWith(true);
+    await waitFor(() => expect(installedVersion()).toBe('2.1.0'));
+    const downloads = requests.filter((url) => url.includes('payload/'));
+    await act(async () => {
+      await kernel.installApp({ ...STOPWATCH_MANIFEST, name: 'Stopwatch' } as AppManifest);
+    });
+    await waitFor(() => expect(installedVersion()).toBe('2.1.0'));
+    expect(requests.filter((url) => url.includes('payload/'))).toEqual(downloads);
   });
 });

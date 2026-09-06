@@ -77,13 +77,33 @@ export function networkStatus(network: Settings['network']): string {
   return `Connected to ${network.ssid || 'network'}`;
 }
 
-export function updateStatus(
-  lastChecked: number | null,
-  version: string,
-  relative: (t: number) => string,
-): string {
-  if (lastChecked === null) return `Lumen OS ${version} · not checked yet`;
-  return `Lumen OS ${version} is up to date · checked ${relative(lastChecked)}`;
+export interface UpdateState {
+  /** True while a check is in flight. */
+  checking: boolean;
+  /** When the last check finished; null if there has never been one. */
+  lastChecked: number | null;
+  /** How many installed packages the store has a newer version of. */
+  available: number;
+  /** The sentence the store client gave for a failed check, if it failed. */
+  error: string | null;
+}
+
+/**
+ * What the Software update row says.
+ *
+ * It used to say "is up to date" after a timer, which was true of nothing:
+ * nothing was fetched and nothing was compared. Every branch here comes from
+ * a real check against the store catalogue, and "not checked yet" stays until
+ * one has actually run.
+ */
+export function updateStatus(state: UpdateState, relative: (t: number) => string): string {
+  if (state.checking) return 'Checking the store…';
+  if (state.error) return state.error;
+  if (state.lastChecked === null) return 'The store has not been checked yet';
+  const when = `checked ${relative(state.lastChecked)}`;
+  if (state.available === 0) return `Everything installed is up to date · ${when}`;
+  const n = state.available;
+  return `${n === 1 ? '1 update' : `${n} updates`} available · ${when}`;
 }
 
 export function viewportLabel(width: number, height: number, dpr: number): string {

@@ -3,6 +3,7 @@ import { PackageSearch } from 'lucide-react';
 import { DetailsPane } from './DetailsPane';
 import { EntryIcon } from './EntryIcon';
 import { KIND_LABELS, type LibraryEntry } from './library';
+import { type AvailableUpdate, updateCountLabel } from './updates';
 
 function EntryRow({
   entry,
@@ -53,11 +54,50 @@ function EntryRow({
   );
 }
 
+/**
+ * The line above the list when the store has newer versions of things on the
+ * system. It appears only when there is something to say — a bar reading "no
+ * updates" on every visit is a bar nobody reads — and under Automatic updates
+ * it reports rather than asks, because the installs are already running.
+ */
+function UpdatesBar({
+  updates,
+  automatic,
+  onUpdateAll,
+}: {
+  updates: readonly AvailableUpdate[];
+  automatic: boolean;
+  onUpdateAll: () => void;
+}) {
+  if (updates.length === 0) return null;
+  const names = updates.map((u) => `${u.name} ${u.from} → ${u.to}`).join(', ');
+  return (
+    <div className="flex items-center gap-3 border-rule border-b bg-surface-2 px-3 py-2">
+      <span className="min-w-0 flex-1">
+        <span className="block text-base text-ink">{updateCountLabel(updates.length)}</span>
+        <span className="mono truncate-1 block text-2xs text-ink-2 tabular-nums">{names}</span>
+      </span>
+      {automatic ? (
+        <span className="shrink-0 text-sm text-ink-2">Installing automatically</span>
+      ) : (
+        <Button size="sm" onClick={onUpdateAll}>
+          Update All
+        </Button>
+      )}
+    </div>
+  );
+}
+
 export interface InstalledSectionProps {
   entries: readonly LibraryEntry[];
   selected: LibraryEntry | null;
   /** False below ~640px: one pane at a time. */
   wide: boolean;
+  /** Installed packages the store has a newer version of. */
+  updates: readonly AvailableUpdate[];
+  /** Settings > General > Automatic updates. */
+  automatic: boolean;
+  onUpdateAll: () => void;
   onSelect: (id: string | null) => void;
   onOpen: (entry: LibraryEntry) => void;
   onRemove: (entry: LibraryEntry) => void;
@@ -67,6 +107,9 @@ export function InstalledSection({
   entries,
   selected,
   wide,
+  updates,
+  automatic,
+  onUpdateAll,
   onSelect,
   onOpen,
   onRemove,
@@ -84,37 +127,40 @@ export function InstalledSection({
   }
 
   return (
-    <div className="flex min-h-0 flex-1">
-      {entries.length === 0 ? (
-        <EmptyState
-          icon={<PackageSearch />}
-          title="No apps match"
-          description="Try another search, or choose a different category."
-        />
-      ) : (
-        <ul
-          className="lumen-scroll flex min-w-0 flex-1 flex-col gap-px p-2"
-          aria-label="Installed apps"
-        >
-          {entries.map((entry) => (
-            <EntryRow
-              key={entry.id}
-              entry={entry}
-              selected={selected?.id === entry.id}
-              onSelect={() => onSelect(entry.id)}
-              onOpen={() => onOpen(entry)}
-            />
-          ))}
-        </ul>
-      )}
-      {wide && selected && (
-        <DetailsPane
-          entry={selected}
-          className="w-72 shrink-0 border-l border-rule"
-          onOpen={() => onOpen(selected)}
-          onRemove={() => onRemove(selected)}
-        />
-      )}
+    <div className="flex min-h-0 flex-1 flex-col">
+      <UpdatesBar updates={updates} automatic={automatic} onUpdateAll={onUpdateAll} />
+      <div className="flex min-h-0 flex-1">
+        {entries.length === 0 ? (
+          <EmptyState
+            icon={<PackageSearch />}
+            title="No apps match"
+            description="Try another search, or choose a different category."
+          />
+        ) : (
+          <ul
+            className="lumen-scroll flex min-w-0 flex-1 flex-col gap-px p-2"
+            aria-label="Installed apps"
+          >
+            {entries.map((entry) => (
+              <EntryRow
+                key={entry.id}
+                entry={entry}
+                selected={selected?.id === entry.id}
+                onSelect={() => onSelect(entry.id)}
+                onOpen={() => onOpen(entry)}
+              />
+            ))}
+          </ul>
+        )}
+        {wide && selected && (
+          <DetailsPane
+            entry={selected}
+            className="w-72 shrink-0 border-l border-rule"
+            onOpen={() => onOpen(selected)}
+            onRemove={() => onRemove(selected)}
+          />
+        )}
+      </div>
     </div>
   );
 }

@@ -187,9 +187,16 @@ export interface Settings {
     /** Keep the session log. */
     logging: boolean;
   };
+  /**
+   * Updates for packages installed from the store. There is no channel here
+   * because there is one catalogue: a Stable/Beta control with nothing behind
+   * it was a choice the system could not honour. The system's own version is
+   * whichever build it is running.
+   */
   updates: {
-    channel: 'stable' | 'beta';
+    /** Install a newer version as soon as a check finds one. */
     automatic: boolean;
+    /** When the store was last checked, in epoch milliseconds. */
     lastChecked: number | null;
   };
   /**
@@ -335,7 +342,7 @@ export function defaultSettings(): Settings {
     network: { wifi: true, bluetooth: false, airplane: false, ssid: 'Lumen Wi-Fi' },
     power: { sleepAfterMinutes: 0, lowPowerMode: false },
     privacy: { recents: true, logging: true },
-    updates: { channel: 'stable', automatic: true, lastChecked: null },
+    updates: { automatic: true, lastChecked: null },
     store: { origin: DEFAULT_STORE_ORIGIN, autoSync: true, syncMinutes: 360, lastSync: null },
     setup: { completed: false, version: '0.1.0', completedAt: null },
   };
