@@ -34,9 +34,16 @@ export function firstPoint(path: string): Hotspot {
 export const ARROW_HOTSPOT = firstPoint(ARROW_PATH);
 export const ARROW_CLASSIC_HOTSPOT = firstPoint(ARROW_CLASSIC_PATH);
 
-/** The CSS that moves a glyph so its point sits on the pointer. */
-export function hotspotTransform({ x, y }: Hotspot): string {
-  const percent = (value: number) => `${((-value / VIEWBOX) * 100).toFixed(3)}%`;
+/**
+ * The CSS that moves a glyph so its point sits on the pointer.
+ *
+ * `box` is the width of the coordinate system the point was measured in — 24
+ * for the shapes drawn in this file, 32 for the drawings in `set/`. The
+ * percentage is of the rendered size, so the same transform is right at any
+ * cursor size.
+ */
+export function hotspotTransform({ x, y }: Hotspot, box: number = VIEWBOX): string {
+  const percent = (value: number) => `${((-value / box) * 100).toFixed(3)}%`;
   return `translate(${percent(x)}, ${percent(y)})`;
 }
 
@@ -45,8 +52,8 @@ export function hotspotTransform({ x, y }: Hotspot): string {
  * drawn at whatever size the cursor setting asks for, and a pixel origin would
  * only be right at 24 px.
  */
-export function hotspotOrigin({ x, y }: Hotspot): string {
-  const percent = (value: number) => `${((value / VIEWBOX) * 100).toFixed(3)}%`;
+export function hotspotOrigin({ x, y }: Hotspot, box: number = VIEWBOX): string {
+  const percent = (value: number) => `${((value / box) * 100).toFixed(3)}%`;
   return `${percent(x)} ${percent(y)}`;
 }
 

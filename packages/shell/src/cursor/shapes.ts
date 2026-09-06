@@ -11,6 +11,7 @@ export type Shape =
   | 'arrow'
   | 'pointer'
   | 'text'
+  | 'text-vertical'
   | 'grab'
   | 'grabbing'
   | 'ew'
@@ -19,8 +20,25 @@ export type Shape =
   | 'row'
   | 'nesw'
   | 'nwse'
+  | 'n'
+  | 's'
+  | 'e'
+  | 'w'
+  | 'ne'
+  | 'nw'
+  | 'se'
+  | 'sw'
   | 'move'
   | 'not-allowed'
+  | 'no-drop'
+  | 'copy'
+  | 'alias'
+  | 'context-menu'
+  | 'cell'
+  | 'help'
+  | 'zoom-in'
+  | 'zoom-out'
+  | 'progress'
   | 'wait'
   | 'crosshair'
   | 'none';
@@ -30,28 +48,42 @@ export const CURSOR_TO_SHAPE: Record<string, Shape> = {
   default: 'arrow',
   pointer: 'pointer',
   text: 'text',
-  'vertical-text': 'text',
+  'vertical-text': 'text-vertical',
   grab: 'grab',
   grabbing: 'grabbing',
   'col-resize': 'col',
-  'e-resize': 'ew',
-  'w-resize': 'ew',
-  'ew-resize': 'ew',
   'row-resize': 'row',
-  'n-resize': 'ns',
-  's-resize': 'ns',
+  'ew-resize': 'ew',
   'ns-resize': 'ns',
-  'ne-resize': 'nesw',
-  'sw-resize': 'nesw',
   'nesw-resize': 'nesw',
-  'nw-resize': 'nwse',
-  'se-resize': 'nwse',
   'nwse-resize': 'nwse',
+  // A single direction gets a single arrow. The web habit of drawing the
+  // two-headed one for `e-resize` is a shrug where the drawing knows the
+  // answer: the edge under the pointer moves, and only that edge.
+  'n-resize': 'n',
+  's-resize': 's',
+  'e-resize': 'e',
+  'w-resize': 'w',
+  'ne-resize': 'ne',
+  'nw-resize': 'nw',
+  'se-resize': 'se',
+  'sw-resize': 'sw',
   move: 'move',
   'all-scroll': 'move',
   'not-allowed': 'not-allowed',
+  'no-drop': 'no-drop',
+  copy: 'copy',
+  alias: 'alias',
+  'context-menu': 'context-menu',
+  cell: 'cell',
+  help: 'help',
+  'zoom-in': 'zoom-in',
+  'zoom-out': 'zoom-out',
+  // `wait` has stopped answering; `progress` is still working and still
+  // takes a click. Drawing one for the other tells the person the wrong
+  // thing about whether the OS is listening.
   wait: 'wait',
-  progress: 'wait',
+  progress: 'progress',
   crosshair: 'crosshair',
   none: 'none',
 };

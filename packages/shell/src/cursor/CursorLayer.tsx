@@ -13,6 +13,7 @@ import {
   POINTER_HOTSPOT,
 } from './hotspots';
 import { onScrollbar } from './scrollbar';
+import { ART_BOX, CURSOR_ART } from './set';
 import { type Shape, shapeForCursor } from './shapes';
 
 /**
@@ -30,12 +31,14 @@ export function CursorLayer() {
   const color = settings.cursor.color;
   const trail = settings.cursor.trail;
   const ref = useRef<HTMLDivElement>(null);
+  const artRef = useRef<HTMLDivElement>(null);
   const trailRefs = useRef<Array<HTMLDivElement | null>>([]);
 
   useEffect(() => {
     if (!enabled) return;
     const el = ref.current;
     if (!el) return;
+    const art = artRef.current;
     let x = -100;
     let y = -100;
     let shape: Shape = 'arrow';
@@ -71,6 +74,21 @@ export function CursorLayer() {
         shape = shapeFor(target);
       }
       el.style.transform = `translate3d(${x}px, ${y}px, 0)`;
+      if (art && shape !== el.dataset.shape) {
+        // The drawings are markup, and only one is ever on screen, so the
+        // layer swaps the one it needs instead of holding all thirty-three
+        // in the document. A shape change is a handful a minute; this is not
+        // the pointer-rate path.
+        const drawing = shape === 'none' ? null : CURSOR_ART[shape];
+        art.innerHTML = drawing?.svg ?? '';
+        // The point goes in a custom property so the press rule below can
+        // compose a scale on top of it without knowing which shape is up.
+        art.style.setProperty(
+          '--lumen-cursor-hotspot',
+          drawing ? hotspotTransform(drawing.hotspot, ART_BOX) : 'none',
+        );
+        art.style.transformOrigin = drawing ? hotspotOrigin(drawing.hotspot, ART_BOX) : '';
+      }
       el.dataset.shape = shape;
       el.dataset.pressed = pressed ? 'true' : 'false';
       el.style.opacity = visible ? '1' : '0';
@@ -165,7 +183,7 @@ export function CursorLayer() {
       window.removeEventListener('blur', onBlur);
       if (raf) cancelAnimationFrame(raf);
     };
-  }, [enabled, trail]);
+  }, [enabled, trail, style]);
 
   if (!enabled) return null;
   const light = color === 'light' || (color === 'auto' && false);
@@ -198,7 +216,28 @@ export function CursorLayer() {
           transition: 'opacity 80ms linear',
         }}
       >
-        <CursorGlyphs fill={fill} stroke={stroke} classic={style === 'classic'} />
+        {style === 'classic' ? (
+          <CursorGlyphs fill={fill} stroke={stroke} classic />
+        ) : (
+          /*
+           * The drawn set. Its markup goes in from the frame rather than from
+           * React: the shape follows the pointer, and re-rendering the tree to
+           * change a picture would put React back on a path that has to stay
+           * off it.
+           */
+          <>
+            <style>{`
+              [data-testid='os-cursor'] [data-art] {
+                transform: var(--lumen-cursor-hotspot, none);
+                transition: transform 90ms var(--ease-out);
+              }
+              :root[data-anim-press='on'] [data-testid='os-cursor'][data-pressed='true'] [data-art] {
+                transform: var(--lumen-cursor-hotspot, none) scale(0.92);
+              }
+            `}</style>
+            <div ref={artRef} data-art className="size-full [&_svg]:block [&_svg]:size-full" />
+          </>
+        )}
       </div>
     </>
   );

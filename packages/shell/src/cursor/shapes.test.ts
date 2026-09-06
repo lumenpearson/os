@@ -12,17 +12,28 @@ describe('the shape a CSS cursor asks for', () => {
     expect(shapeForCursor('ns-resize')).toBe('ns');
   });
 
-  it('folds the eight edge directions onto the four arrows that show them', () => {
-    for (const value of ['e-resize', 'w-resize', 'ew-resize']) {
-      expect(shapeForCursor(value)).toBe('ew');
-    }
-    for (const value of ['ne-resize', 'sw-resize', 'nesw-resize']) {
-      expect(shapeForCursor(value)).toBe('nesw');
-    }
+  it('gives a single direction a single arrow', () => {
+    // These used to fold onto the two-headed arrow, which is a shrug where
+    // the drawing knows the answer: dragging the east edge moves that edge,
+    // and the cursor can say so.
+    expect(shapeForCursor('e-resize')).toBe('e');
+    expect(shapeForCursor('w-resize')).toBe('w');
+    expect(shapeForCursor('ne-resize')).toBe('ne');
+    expect(shapeForCursor('sw-resize')).toBe('sw');
+    // The two-headed ones stay two-headed: both edges move together.
+    expect(shapeForCursor('ew-resize')).toBe('ew');
+    expect(shapeForCursor('nesw-resize')).toBe('nesw');
+  });
+
+  it('tells waiting apart from working', () => {
+    // A beachball says the OS has stopped answering; the arrow with a spinner
+    // says it is busy and still takes the click.
+    expect(shapeForCursor('wait')).toBe('wait');
+    expect(shapeForCursor('progress')).toBe('progress');
   });
 
   it('falls back to the arrow for a value it does not draw, and for none at all', () => {
-    expect(shapeForCursor('zoom-in')).toBe('arrow');
+    expect(shapeForCursor('grabbing-nonsense')).toBe('arrow');
     expect(shapeForCursor(undefined)).toBe('arrow');
     expect(shapeForCursor('')).toBe('arrow');
   });
@@ -43,6 +54,18 @@ describe('the shape a CSS cursor asks for', () => {
       'none',
       'col-resize',
       'row-resize',
+      'text',
+      'move',
+      'not-allowed',
+      'help',
+      'cell',
+      'copy',
+      'alias',
+      'context-menu',
+      'zoom-in',
+      'zoom-out',
+      'progress',
+      'wait',
     ];
     for (const value of used) expect(CURSOR_TO_SHAPE[value]).toBeDefined();
   });

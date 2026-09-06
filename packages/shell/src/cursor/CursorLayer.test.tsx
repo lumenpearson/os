@@ -111,6 +111,35 @@ describe('the shape under the pointer', () => {
     expect(cursor().style.transform).toBe('translate3d(7px, 9px, 0)');
   });
 
+  it('draws the shape it is on, and only that one', () => {
+    const { frames, target } = mount('grab');
+    fireEvent.pointerMove(target, { clientX: 5, clientY: 5 });
+    frames.run();
+
+    const art = cursor().querySelector('[data-art]');
+    // One drawing in the document rather than thirty-three: the layer swaps
+    // the markup it needs when the shape changes, which is a handful of times
+    // a minute and not on the pointer's path.
+    expect(art?.querySelectorAll('svg')).toHaveLength(1);
+    expect(art?.innerHTML).toContain('viewBox="0 0 32 32"');
+    // The hand's palm is its point, and it is not the middle of the box.
+    expect((art as HTMLElement).style.getPropertyValue('--lumen-cursor-hotspot')).toBe(
+      'translate(-46.563%, -44.063%)',
+    );
+  });
+
+  it('moves the drawing so its own point sits on the pointer', () => {
+    const { frames, target } = mount();
+    fireEvent.pointerMove(target, { clientX: 5, clientY: 5 });
+    frames.run();
+    const art = cursor().querySelector('[data-art]') as HTMLElement;
+    // The arrow's tip is at (10, 7.5) of 32 — measured off the drawing, and
+    // the same point the path it is drawn from starts at.
+    expect(art.style.getPropertyValue('--lumen-cursor-hotspot')).toBe(
+      'translate(-31.250%, -23.438%)',
+    );
+  });
+
   it('holds its last shape through a press, which reads nothing new', () => {
     const { frames, target } = mount('grab');
     fireEvent.pointerMove(target, { clientX: 5, clientY: 5 });
