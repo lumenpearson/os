@@ -59,6 +59,9 @@ export function fileGlyph(entry: Pick<DirEntry, 'kind' | 'path'>): {
   }
 }
 
+/** The token a folder's glyph is drawn in, and what a selected row overrides. */
+const ACCENT = 'var(--lumen-accent)';
+
 export interface FileTypeIconProps {
   entry: Pick<DirEntry, 'kind' | 'path'>;
   size?: number;
@@ -76,6 +79,14 @@ export function FileTypeIcon({ entry, size = 16, open, className }: FileTypeIcon
       height={size}
       strokeWidth={size >= 32 ? 1.25 : 1.75}
       className={className}
+      /*
+       * A folder is drawn in the accent, and a selected row in a list is
+       * painted with the accent too, so the two cancelled out and the icon
+       * vanished into its own row. Marking the ones that use the accent lets
+       * the row take them back to the accent's ink; see `.lumen-list-row` in
+       * the UI stylesheet.
+       */
+      data-icon-tone={color === ACCENT ? 'accent' : undefined}
       style={{ color, flexShrink: 0 }}
       fill={
         entry.kind === 'directory' ? 'color-mix(in srgb, currentColor 22%, transparent)' : 'none'

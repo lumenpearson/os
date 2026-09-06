@@ -121,8 +121,14 @@ export function MonthGrid({
         className="grid shrink-0 border-b border-rule"
         style={{ gridTemplateColumns: columns }}
       >
+        {/* The same rule between the columns that the cells below carry, so the
+            six hairlines run the whole height instead of stopping at the band.
+            A border sits inside its track and costs no width. */}
         {weekNumbers && (
-          <div role="columnheader" className="mono py-1 text-center text-2xs text-ink-3">
+          <div
+            role="columnheader"
+            className="mono border-r border-rule py-1 text-center text-2xs text-ink-3"
+          >
             Wk
           </div>
         )}
@@ -131,7 +137,7 @@ export function MonthGrid({
             // Weekday names repeat in the narrow form (T for Tuesday and Thursday).
             key={`${label}-${i}`}
             role="columnheader"
-            className="truncate-1 py-1 text-center text-xs font-medium text-ink-2"
+            className="truncate-1 border-r border-rule py-1 text-center text-xs font-medium text-ink-2 last:border-r-0"
           >
             {label}
           </div>

@@ -141,6 +141,16 @@
   --lumen-cursor-size: 20px;
 }
 
+/*
+ * Reduce Transparency. The panels stop being see-through rather than merely
+ * losing their blur: translucent with nothing blurring behind it is not a
+ * quieter effect, it is a window you can see through, which is what this
+ * setting exists to switch off.
+ */
+:root[data-transparency="reduced"] {
+  --lumen-chrome-base: #f6f6f7;
+}
+
 :root[data-theme="dark"] {
   color-scheme: dark;
   --lumen-accent-l: 62%;
@@ -193,4 +203,8 @@
     --duration-slow: 0ms;
     --duration-window: 0ms;
   }
+}
+
+:root[data-theme="dark"][data-transparency="reduced"] {
+  --lumen-chrome-base: #1e1f23;
 }

@@ -794,6 +794,9 @@ export default function Files({ args }: AppProps) {
       entries={sorted}
       axis={own.cardAxis}
       iconSize={own.iconSize}
+      sort={sort}
+      onSortChange={actions.setSort}
+      width={contentSize.width}
       emptyState={emptyState}
       {...viewState}
       {...handlers}

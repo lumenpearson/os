@@ -390,3 +390,47 @@ export function firstWithLetter(
 ): string | null {
   return entries.find((e) => indexLetter(e.name) === letter)?.path ?? null;
 }
+
+/** A box along one axis, in the scroll content's own coordinates. */
+export interface Span {
+  start: number;
+  size: number;
+}
+
+/** A scroll port along one axis. */
+export interface Port {
+  scroll: number;
+  size: number;
+  content: number;
+}
+
+/**
+ * Where a scroll port should be so that an item is visible in it.
+ *
+ * This exists instead of `Element.scrollIntoView`, which scrolls *every*
+ * scrollable ancestor of the element — the lane, then the window body, then
+ * whatever is above that. Moving the cursor along a row of cards therefore
+ * dragged the whole of Files around, which is the sort of thing that reads as
+ * the application being broken rather than the list being scrolled. A port
+ * that scrolls itself and nothing else cannot do that.
+ *
+ * `center` puts the item in the middle where there is room; `nearest` moves
+ * by the least it can, and not at all when the item is already whole.
+ */
+export function revealOffset(item: Span, port: Port, align: 'nearest' | 'center'): number {
+  const furthest = Math.max(0, port.content - port.size);
+  if (align === 'center') {
+    return clampScroll(item.start + item.size / 2 - port.size / 2, furthest);
+  }
+  // An item bigger than the port cannot be shown whole; show its start,
+  // which is where its name and its icon are.
+  if (item.size >= port.size) return clampScroll(item.start, furthest);
+  if (item.start < port.scroll) return clampScroll(item.start, furthest);
+  const overshoot = item.start + item.size - (port.scroll + port.size);
+  if (overshoot > 0) return clampScroll(port.scroll + overshoot, furthest);
+  return port.scroll;
+}
+
+function clampScroll(value: number, furthest: number): number {
+  return Math.max(0, Math.min(furthest, value));
+}

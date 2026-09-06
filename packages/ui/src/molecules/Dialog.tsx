@@ -76,7 +76,7 @@ export function Dialog({
       // against that box and not against the viewport. Its padding is the
       // margin the sheet may never cross, at any window size.
       className={cx(
-        'absolute inset-0 z-[1400] flex items-center justify-center bg-scrim p-4 lumen-fade-enter',
+        'lumen-scrim absolute inset-0 z-[1400] flex items-center justify-center p-4 lumen-fade-enter',
         !container && 'fixed',
       )}
       onPointerDown={(e) => {

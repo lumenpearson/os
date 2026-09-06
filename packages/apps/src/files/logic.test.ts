@@ -26,6 +26,7 @@ import {
   pushHistory,
   railLetters,
   rankMap,
+  revealOffset,
   selectAll,
   selectClick,
   selectOnly,
@@ -331,5 +332,45 @@ describe('the A–Z rail', () => {
     expect(firstWithLetter(items, 'A')).toBe('/d/Archive');
     expect(firstWithLetter(items, 'B')).toBe('/d/beta.md');
     expect(firstWithLetter(items, 'Z')).toBeNull();
+  });
+});
+
+describe('revealOffset', () => {
+  const port = { scroll: 0, size: 100, content: 500 };
+
+  it('leaves a port alone when the item is already whole in it', () => {
+    expect(revealOffset({ start: 10, size: 40 }, port, 'nearest')).toBe(0);
+  });
+
+  it('moves by the least it can to bring an item in from the right', () => {
+    expect(revealOffset({ start: 120, size: 40 }, port, 'nearest')).toBe(60);
+  });
+
+  it('moves by the least it can to bring an item in from the left', () => {
+    expect(revealOffset({ start: 20, size: 40 }, { ...port, scroll: 80 }, 'nearest')).toBe(20);
+  });
+
+  it('centres an item when asked to', () => {
+    expect(revealOffset({ start: 200, size: 40 }, port, 'center')).toBe(170);
+  });
+
+  it('never scrolls before the beginning', () => {
+    expect(revealOffset({ start: 0, size: 40 }, port, 'center')).toBe(0);
+    expect(revealOffset({ start: -50, size: 40 }, port, 'nearest')).toBe(0);
+  });
+
+  it('never scrolls past the end', () => {
+    expect(revealOffset({ start: 480, size: 20 }, port, 'center')).toBe(400);
+    expect(revealOffset({ start: 480, size: 20 }, port, 'nearest')).toBe(400);
+  });
+
+  it('has nowhere to go when the content fits the port', () => {
+    const small = { scroll: 0, size: 500, content: 400 };
+    expect(revealOffset({ start: 100, size: 40 }, small, 'center')).toBe(0);
+    expect(revealOffset({ start: 100, size: 40 }, small, 'nearest')).toBe(0);
+  });
+
+  it('shows the start of an item too large to fit', () => {
+    expect(revealOffset({ start: 50, size: 300 }, port, 'nearest')).toBe(50);
   });
 });

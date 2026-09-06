@@ -133,11 +133,16 @@ export default function Calendar(_props: AppProps) {
   const title = viewTitle(view, cursor, firstDay, o);
   useTitle(`Calendar — ${title}`);
 
-  // The hour grid opens on the working day rather than at midnight.
+  // The hour grid opens on the working day rather than at midnight. The day
+  // headings share the scroll port with the columns — they are sticky inside
+  // it — so the offset is measured from the columns, not from the port's top.
   useEffect(() => {
     if (view !== 'week' && view !== 'day') return;
     const scroller = gridRef.current?.querySelector('.lumen-scroll');
-    if (scroller instanceof HTMLElement) scroller.scrollTop = DEFAULT_SCROLL_TOP;
+    if (!(scroller instanceof HTMLElement)) return;
+    const columns = scroller.querySelector('[data-day-columns]');
+    const top = columns instanceof HTMLElement ? columns.offsetTop : 0;
+    scroller.scrollTop = top + DEFAULT_SCROLL_TOP;
   }, [view]);
 
   const setPrefs = useCallback(

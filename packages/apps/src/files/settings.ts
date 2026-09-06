@@ -42,6 +42,14 @@ export const ICON_PIXELS: Record<IconSize, number> = { small: 32, medium: 48, la
 export const CARD_EXTENT: Record<IconSize, number> = { small: 120, medium: 156, large: 208 };
 export const CARD_GROWTH = 40;
 
+/**
+ * How tall the card lane is, by icon size, when it runs across the window.
+ * The table underneath takes everything left, so on a short window the lane
+ * is capped at a third and the table keeps the two thirds it needs to be a
+ * table rather than a strip.
+ */
+export const CARD_LANE: Record<IconSize, number> = { small: 148, medium: 188, large: 244 };
+
 export const LANE_AXES: ReadonlyArray<{ id: LaneAxis; label: string }> = [
   { id: 'horizontal', label: 'Horizontal' },
   { id: 'vertical', label: 'Vertical' },

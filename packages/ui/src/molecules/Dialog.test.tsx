@@ -350,7 +350,7 @@ describe('a confirmation answers with its buttons, and with Escape', () => {
     );
     await user.click(screen.getByRole('button', { name: 'Ask' }));
     await screen.findByText('Delete the file?');
-    const scrim = container.ownerDocument.querySelector('.bg-scrim') as HTMLElement;
+    const scrim = container.ownerDocument.querySelector('.lumen-scrim') as HTMLElement;
     fireEvent.pointerDown(scrim);
     expect(seen).toEqual([]);
     expect(screen.getByText('Delete the file?')).toBeInTheDocument();

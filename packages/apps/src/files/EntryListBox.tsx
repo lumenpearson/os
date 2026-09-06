@@ -18,6 +18,7 @@ import {
   gridStep,
   isEditableTarget,
   moveSelection,
+  revealOffset,
   type Selection,
   selectAll,
   selectClick,
@@ -26,7 +27,15 @@ import {
 
 export interface ItemState {
   selected: boolean;
+  /** The item the keyboard would act on, and the list has the keyboard. */
   cursor: boolean;
+  /**
+   * The item the keyboard would act on whether or not the list has the
+   * keyboard. A list that marks nothing until it is focused leaves a person
+   * guessing where an arrow key would take them, so views draw this too —
+   * quietly, so the focused cursor is still the louder of the two.
+   */
+  atCursor: boolean;
   index: number;
 }
 
@@ -50,8 +59,11 @@ export interface EntryListBoxProps {
   orientation?: 'horizontal' | 'vertical';
   /** Runs before the built-in keys; call preventDefault to claim a key. */
   onKeyDown?: (e: KeyboardEvent<HTMLDivElement>) => void;
-  /** How the cursor is brought into view when it moves. */
-  reveal?: ScrollIntoViewOptions;
+  /**
+   * How the cursor is brought into view when it moves. The scrolling is done
+   * to the list's own container and to nothing above it — see `revealOffset`.
+   */
+  reveal?: { align?: 'nearest' | 'center'; smooth?: boolean };
   /** The scrolling element, for views that drive it themselves (the card lane). */
   containerRef?: RefObject<HTMLDivElement | null>;
   onFocusChange?: (focused: boolean) => void;
@@ -89,7 +101,7 @@ export function EntryListBox({
   itemStyle,
   orientation,
   onKeyDown,
-  reveal = { block: 'nearest', inline: 'nearest' },
+  reveal = { align: 'nearest' },
   containerRef,
   onFocusChange,
   marquee = false,
@@ -122,10 +134,28 @@ export function EntryListBox({
   revealRef.current = reveal;
   useEffect(() => {
     if (cursorIndex < 0) return;
-    ref.current
-      ?.querySelector<HTMLElement>(`[data-index="${cursorIndex}"]`)
-      ?.scrollIntoView(revealRef.current);
-  }, [cursorIndex]);
+    const port = containerRef?.current ?? ref.current;
+    const item = ref.current?.querySelector<HTMLElement>(`[data-index="${cursorIndex}"]`);
+    if (!port || !item) return;
+    const { align = 'nearest', smooth = false } = revealRef.current;
+    const portBox = port.getBoundingClientRect();
+    const itemBox = item.getBoundingClientRect();
+    // Item coordinates in the port's own scrolled content, which is what
+    // `revealOffset` reasons about. Reading the boxes rather than `offsetLeft`
+    // keeps it right whatever the offset parent turns out to be.
+    const left = revealOffset(
+      { start: itemBox.left - portBox.left + port.scrollLeft, size: itemBox.width },
+      { scroll: port.scrollLeft, size: port.clientWidth, content: port.scrollWidth },
+      align,
+    );
+    const top = revealOffset(
+      { start: itemBox.top - portBox.top + port.scrollTop, size: itemBox.height },
+      { scroll: port.scrollTop, size: port.clientHeight, content: port.scrollHeight },
+      align,
+    );
+    if (left === port.scrollLeft && top === port.scrollTop) return;
+    port.scrollTo({ left, top, behavior: smooth ? 'smooth' : 'auto' });
+  }, [cursorIndex, containerRef]);
 
   const columnCount = () => {
     const el = ref.current;
@@ -173,13 +203,20 @@ export function EntryListBox({
       aria-activedescendant={cursorIndex >= 0 ? idFor(cursorIndex) : undefined}
       tabIndex={0}
       onKeyDown={handleKey}
-      onFocus={(e) => {
-        if (e.target !== e.currentTarget) return;
+      // Focus anywhere inside the list is the list having focus. Insisting
+      // that the container itself be the target meant a click on a card —
+      // which focuses the card, since every item is programmatically
+      // focusable — left the list believing it was unfocused, so the cursor
+      // never took the accent and the selection stayed in its grey state.
+      onFocus={() => {
+        if (hasFocus) return;
         setHasFocus(true);
         onFocusChange?.(true);
       }}
       onBlur={(e) => {
-        if (e.target !== e.currentTarget) return;
+        // `relatedTarget` is where focus is going; still inside means the
+        // list has not lost it, it has only moved within.
+        if (e.relatedTarget instanceof Node && e.currentTarget.contains(e.relatedTarget)) return;
         setHasFocus(false);
         onFocusChange?.(false);
       }}
@@ -202,6 +239,7 @@ export function EntryListBox({
         const state: ItemState = {
           selected: selection.keys.has(entry.path),
           cursor: hasFocus && index === cursorIndex,
+          atCursor: index === cursorIndex,
           index,
         };
         return (
@@ -213,6 +251,10 @@ export function EntryListBox({
             tabIndex={-1}
             data-index={index}
             data-path={entry.path}
+            // The one item the keyboard will act on, named in the DOM so a
+            // stylesheet and a test can both find it.
+            data-cursor={state.cursor || undefined}
+            data-at-cursor={state.atCursor || undefined}
             draggable
             onDragStart={(e) => onDragStart(entry, e)}
             onDragOver={(e) => onDragOver(entry, e)}

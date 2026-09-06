@@ -26,6 +26,19 @@ export const DEFAULT_SCROLL_TOP = 7 * HOUR_HEIGHT;
 /** The gutter is this wide; the ghost needs the same number to place itself. */
 const GUTTER = '4rem';
 
+/**
+ * The horizontal inset shared by the day headings, the all-day band and the
+ * day columns.
+ *
+ * The three are separate CSS grids that share one track list, and nothing
+ * makes their tracks agree except being laid out in boxes of the same width
+ * and taking the same inset. A padding on one and not the others is taken out
+ * of the flexible tracks and redistributed, so Monday drifts a little and
+ * every day after it drifts more. Zero here, and zero in all three places —
+ * vertical padding is free, since it changes no lane.
+ */
+export const LANE_INSET = 'px-0';
+
 const HOURS = Array.from({ length: 24 }, (_, hour) => hour);
 const BAND_ROW = 19;
 
@@ -53,6 +66,12 @@ interface Span {
   end: number;
 }
 
+/** The day-column grid's box, and how much of its left edge the gutter takes. */
+interface Box {
+  rect: DOMRect;
+  gutter: number;
+}
+
 export function TimeGrid({
   days,
   today,
@@ -67,7 +86,7 @@ export function TimeGrid({
   onCreateRange,
   onMoveOccurrence,
 }: TimeGridProps) {
-  const scroller = useRef<HTMLDivElement>(null);
+  const body = useRef<HTMLDivElement>(null);
   const ghost = useRef<HTMLDivElement>(null);
   const [dragging, setDragging] = useState<Span | null>(null);
 
@@ -81,10 +100,30 @@ export function TimeGrid({
   );
   const bandRows = bands.reduce((most, list) => Math.max(most, list.length), 0);
 
-  /** The column and the snapped minute under a client point. */
-  const locate = (rect: DOMRect, x: number, y: number) => ({
-    column: columnAt(x - rect.left, rect.width, days.length),
-    minutes: minutesAt(y - rect.top, DAY_HEIGHT, MIN_SLOT_MINUTES),
+  /**
+   * The day-column grid, with the width its hour gutter takes off the left.
+   * The gutter is the grid's first cell, so it is measured rather than assumed
+   * to be `GUTTER` at whatever the root font size happens to be.
+   */
+  const measure = (): Box | null => {
+    const grid = body.current;
+    if (!grid) return null;
+    return {
+      rect: grid.getBoundingClientRect(),
+      gutter: grid.firstElementChild?.getBoundingClientRect().width ?? 0,
+    };
+  };
+
+  /**
+   * The column and the snapped minute under a client point. `columnAt` divides
+   * the width of the *day area* by the number of days; the hour gutter is
+   * neither a day nor part of their width, so it comes off both the offset and
+   * the span. Leave it in and every boundary lands early, which drops a press
+   * near the right edge of a day onto the day after it.
+   */
+  const locate = (box: Box, x: number, y: number) => ({
+    column: columnAt(x - box.rect.left - box.gutter, box.rect.width - box.gutter, days.length),
+    minutes: minutesAt(y - box.rect.top, DAY_HEIGHT, MIN_SLOT_MINUTES),
   });
 
   /**
@@ -93,14 +132,13 @@ export function TimeGrid({
    */
   const drag = (
     event: ReactPointerEvent<HTMLElement>,
+    box: Box,
     first: Span,
     track: (at: { column: number; minutes: number }) => Span,
     commit: (span: Span) => void,
   ) => {
-    const grid = scroller.current?.firstElementChild;
-    if (!(grid instanceof HTMLElement) || event.button !== 0) return;
+    if (event.button !== 0) return;
     event.preventDefault();
-    const rect = grid.getBoundingClientRect();
     let latest = first;
     let frame = 0;
     setDragging(first);
@@ -115,7 +153,7 @@ export function TimeGrid({
     };
 
     const onMove = (move: PointerEvent) => {
-      latest = track(locate(rect, move.clientX, move.clientY));
+      latest = track(locate(box, move.clientX, move.clientY));
       if (!frame) frame = requestAnimationFrame(paint);
     };
     const onUp = () => {
@@ -134,12 +172,13 @@ export function TimeGrid({
   const startDraw = (event: ReactPointerEvent<HTMLDivElement>) => {
     // Only bare grid draws; a block underneath handles its own pointer.
     if (event.target !== event.currentTarget) return;
-    const grid = scroller.current?.firstElementChild;
-    if (!(grid instanceof HTMLElement)) return;
-    const anchor = locate(grid.getBoundingClientRect(), event.clientX, event.clientY);
+    const box = measure();
+    if (!box) return;
+    const anchor = locate(box, event.clientX, event.clientY);
     const first = { column: anchor.column, ...dragRange(anchor.minutes, anchor.minutes) };
     drag(
       event,
+      box,
       first,
       (at) => ({ column: first.column, ...dragRange(anchor.minutes, at.minutes) }),
       (span) => {
@@ -151,13 +190,14 @@ export function TimeGrid({
 
   const startMove = (event: ReactPointerEvent<HTMLButtonElement>, occurrence: Occurrence) => {
     const column = days.indexOf(occurrence.date);
-    const grid = scroller.current?.firstElementChild;
-    if (column < 0 || !(grid instanceof HTMLElement)) return;
+    const box = measure();
+    if (column < 0 || !box) return;
     const length = occurrence.end - occurrence.start;
-    const grabbed = locate(grid.getBoundingClientRect(), event.clientX, event.clientY).minutes;
+    const grabbed = locate(box, event.clientX, event.clientY).minutes;
     const first = { column, start: occurrence.start, end: occurrence.end };
     drag(
       event,
+      box,
       first,
       (at) => {
         const shifted = snapTo(occurrence.start + (at.minutes - grabbed), MIN_SLOT_MINUTES);
@@ -178,60 +218,76 @@ export function TimeGrid({
 
   return (
     <div className="flex min-h-0 min-w-0 flex-1 flex-col bg-surface">
-      <div className="grid shrink-0 border-b border-rule" style={{ gridTemplateColumns: columns }}>
-        <div />
-        {days.map((date) => (
-          <button
-            key={date}
-            type="button"
-            onClick={() => onOpenDay(date)}
-            className="flex flex-col items-center gap-px border-l border-rule py-1 lumen-focus"
+      {/* The day headings, the all-day band and the day columns are three
+          grids on one track list, so all three live in this port: a scrollbar
+          then takes its width from all of them, and none is inset past the
+          others. The first two stay put at the top while the hours scroll. */}
+      <div className="lumen-scroll relative min-h-0 flex-1">
+        <div className="sticky top-0 z-10 bg-surface">
+          <div
+            className={cx('grid border-b border-rule', LANE_INSET)}
+            style={{ gridTemplateColumns: columns }}
           >
-            {!narrowDays && (
-              <span className="truncate-1 text-xs text-ink-2">{formatWeekdayLong(date, o)}</span>
-            )}
-            <span
-              className={cx(
-                'mono rounded-xs px-1.5 text-md tabular-nums leading-5',
-                date === today ? 'bg-accent font-medium text-accent-ink' : 'text-ink',
-              )}
-            >
-              {formatDayNumber(date, o)}
-            </span>
-          </button>
-        ))}
-      </div>
+            <div />
+            {days.map((date) => (
+              <button
+                key={date}
+                type="button"
+                onClick={() => onOpenDay(date)}
+                className="flex flex-col items-center gap-px border-l border-rule py-1 lumen-focus"
+              >
+                {!narrowDays && (
+                  <span className="truncate-1 text-xs text-ink-2">
+                    {formatWeekdayLong(date, o)}
+                  </span>
+                )}
+                <span
+                  className={cx(
+                    'mono rounded-xs px-1.5 text-md tabular-nums leading-5',
+                    date === today ? 'bg-accent font-medium text-accent-ink' : 'text-ink',
+                  )}
+                >
+                  {formatDayNumber(date, o)}
+                </span>
+              </button>
+            ))}
+          </div>
 
-      {bandRows > 0 && (
-        <div
-          className="grid shrink-0 border-b border-rule"
-          style={{ gridTemplateColumns: columns }}
-        >
-          <span className="mono self-center px-2 text-right text-2xs text-ink-3">All day</span>
-          {bands.map((list, index) => (
+          {bandRows > 0 && (
             <div
-              key={days[index]}
-              className="flex min-w-0 flex-col gap-px border-l border-rule p-px"
-              style={{ minHeight: bandRows * BAND_ROW + 2 }}
+              className={cx('grid border-b border-rule', LANE_INSET)}
+              style={{ gridTemplateColumns: columns }}
             >
-              {list.map((occurrence) => (
-                <EventChip
-                  key={occurrence.id}
-                  occurrence={occurrence}
-                  selected={occurrence.id === selectedEventId}
-                  o={o}
-                  dense
-                  onSelect={() => onSelectEvent(occurrence)}
-                  onOpen={() => onOpenEvent(occurrence)}
-                />
+              <span className="mono self-center px-2 text-right text-2xs text-ink-3">All day</span>
+              {bands.map((list, index) => (
+                <div
+                  key={days[index]}
+                  className="flex min-w-0 flex-col gap-px border-l border-rule p-px"
+                  style={{ minHeight: bandRows * BAND_ROW + 2 }}
+                >
+                  {list.map((occurrence) => (
+                    <EventChip
+                      key={occurrence.id}
+                      occurrence={occurrence}
+                      selected={occurrence.id === selectedEventId}
+                      o={o}
+                      dense
+                      onSelect={() => onSelectEvent(occurrence)}
+                      onOpen={() => onOpenEvent(occurrence)}
+                    />
+                  ))}
+                </div>
               ))}
             </div>
-          ))}
+          )}
         </div>
-      )}
 
-      <div ref={scroller} className="lumen-scroll relative min-h-0 flex-1 overflow-y-auto">
-        <div className="relative grid" style={{ gridTemplateColumns: columns, height: DAY_HEIGHT }}>
+        <div
+          ref={body}
+          data-day-columns
+          className={cx('relative grid', LANE_INSET)}
+          style={{ gridTemplateColumns: columns, height: DAY_HEIGHT }}
+        >
           <div className="relative">
             {HOURS.slice(1).map((hour) => (
               <span
