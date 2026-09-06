@@ -11,7 +11,14 @@ import {
 interface UsersStore {
   users: UserAccount[];
   currentUserId: string | null;
-  hydrate: (users: UserAccount[]) => void;
+  /**
+   * `signedIn` is who the machine was left signed in as, read back from the
+   * state file. With one account it made no difference; with several, coming
+   * back to whoever the first account happens to be is the wrong answer, and
+   * an id that no longer names an account has to fall back rather than leave
+   * the system with nobody to unlock as.
+   */
+  hydrate: (users: UserAccount[], signedIn?: string | null) => void;
   setCurrent: (id: string | null) => void;
   upsert: (user: UserAccount) => void;
   remove: (id: string) => void;
@@ -20,7 +27,13 @@ interface UsersStore {
 export const useUsersStore = create<UsersStore>((set) => ({
   users: [],
   currentUserId: null,
-  hydrate: (users) => set({ users, currentUserId: users[0]?.id ?? null }),
+  hydrate: (users, signedIn) =>
+    set({
+      users,
+      currentUserId: users.some((u) => u.id === signedIn)
+        ? (signedIn ?? null)
+        : (users[0]?.id ?? null),
+    }),
   setCurrent: (id) => set({ currentUserId: id }),
   upsert: (user) =>
     set((s) => {
@@ -30,10 +43,14 @@ export const useUsersStore = create<UsersStore>((set) => ({
       return { users };
     }),
   remove: (id) =>
-    set((s) => ({
-      users: s.users.filter((u) => u.id !== id),
-      currentUserId: s.currentUserId === id ? null : s.currentUserId,
-    })),
+    set((s) => {
+      const users = s.users.filter((u) => u.id !== id);
+      // Leaving `currentUserId` null would leave the lock screen with no
+      // account to ask about, which reads as a broken system rather than as
+      // one account fewer.
+      const currentUserId = s.currentUserId === id ? (users[0]?.id ?? null) : s.currentUserId;
+      return { users, currentUserId };
+    }),
 }));
 
 export const currentUser = (): UserAccount | undefined => {
@@ -47,6 +64,8 @@ export interface CreateUserInput {
   password: string;
   hint?: string;
   avatar?: string;
+  /** Usernames already in use, so the new one gets a home of its own. */
+  taken?: readonly string[];
 }
 
 /** Build a user record and its one-time recovery key. */
@@ -55,7 +74,7 @@ export async function createUserAccount(
 ): Promise<{ user: UserAccount; recoveryKey: string }> {
   const salt = randomSalt();
   const recoveryKey = generateRecoveryKey();
-  const username = (input.username ?? slugify(input.name)) || 'user';
+  const username = uniqueUsername(input.username ?? slugify(input.name), input.taken ?? []);
   const user: UserAccount = {
     id: `u_${randomSalt(6)}`,
     name: input.name.trim(),
@@ -96,6 +115,23 @@ export async function resetCredentials(
     hint: hint ?? user.hint,
   };
   return { user: next, recoveryKey };
+}
+
+/**
+ * A username nobody else has. The username is the name of the home directory,
+ * so two people called Ada Lovelace sharing one would be two people sharing a
+ * Documents folder — which is not a naming problem, it is a privacy one.
+ */
+export function uniqueUsername(base: string, taken: readonly string[]): string {
+  const root = (base || 'user').slice(0, 24);
+  const used = new Set(taken);
+  if (!used.has(root)) return root;
+  for (let n = 2; n < 1000; n++) {
+    const candidate = `${root.slice(0, 24 - String(n).length)}${n}`;
+    if (!used.has(candidate)) return candidate;
+  }
+  // A thousand Adas. Fall back to something that cannot collide at all.
+  return `${root.slice(0, 16)}${randomSalt(4)}`;
 }
 
 export function slugify(name: string): string {

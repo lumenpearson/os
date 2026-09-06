@@ -71,7 +71,16 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
   {
     id: 'security',
     label: 'Lock Screen & Security',
-    keywords: ['password', 'lock', 'screensaver', 'recovery key', 'sign in'],
+    keywords: [
+      'password',
+      'lock',
+      'screensaver',
+      'recovery key',
+      'sign in',
+      'user',
+      'account',
+      'profile',
+    ],
   },
   {
     id: 'notifications',
@@ -248,6 +257,7 @@ export const SETTINGS_ROWS: SettingsRowIndex[] = [
   row('security', 'password', 'Change password', ['passcode']),
   row('security', 'recovery', 'Recovery key', ['forgot password', 'reset']),
   row('security', 'lockNow', 'Lock now', ['lock screen']),
+  row('security', 'addProfile', 'Add a profile', ['user', 'account', 'people', 'switch user']),
   row('notifications', 'dnd', 'Do Not Disturb', ['focus', 'silence', 'quiet']),
   row('notifications', 'previews', 'Show previews', ['content']),
   row('notifications', 'sound', 'Play sound', ['alert sound']),

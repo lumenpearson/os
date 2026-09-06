@@ -1,7 +1,7 @@
-import { useSessionStore } from '@lumen/kernel';
+import { useSessionStore, useUsersStore } from '@lumen/kernel';
 import { useClock, useCurrentUser, useKernel, useSettings } from '@lumen/kernel/react';
 import { AnchoredMenu, Avatar, Button, cx, Input } from '@lumen/ui';
-import { ArrowRight, Power } from 'lucide-react';
+import { ArrowRight, Power, Users } from 'lucide-react';
 import { type FormEvent, useEffect, useRef, useState } from 'react';
 import { Wallpaper } from '../desktop/Wallpaper';
 import { RecoveryFlow } from './RecoveryFlow';
@@ -21,7 +21,10 @@ export default function LockScreen() {
   const [powerOpen, setPowerOpen] = useState(false);
   const [shake, setShake] = useState(false);
   const powerRef = useRef<HTMLButtonElement>(null);
+  const usersRef = useRef<HTMLButtonElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const accounts = useUsersStore((s) => s.users);
+  const [usersOpen, setUsersOpen] = useState(false);
   const lockoutMs = lockedUntil ? Math.max(0, lockedUntil - now.getTime()) : 0;
 
   useEffect(() => {
@@ -156,6 +159,41 @@ export default function LockScreen() {
             >
               Forgot password?
             </button>
+          )}
+          {/* One account is not a choice, so the machine does not offer one. */}
+          {accounts.length > 1 && (
+            <>
+              <Button
+                ref={usersRef}
+                type="button"
+                variant="ghost"
+                size="sm"
+                icon={<Users className="size-4" />}
+                onClick={() => setUsersOpen(true)}
+                // deslop-ignore-next-line 19 — hover feedback for a control drawn over the wallpaper.
+                className="text-white/85 hover:bg-white/10 hover:text-white"
+                aria-haspopup="menu"
+              >
+                Switch User
+              </Button>
+              <AnchoredMenu
+                open={usersOpen}
+                onClose={() => setUsersOpen(false)}
+                anchor={usersRef.current}
+                align="start"
+                items={accounts.map((account) => ({
+                  label: account.name,
+                  // Choosing the account you are already looking at is a no-op,
+                  // and a menu that says so is clearer than one that pretends.
+                  checked: account.id === user?.id,
+                  onSelect: () => {
+                    setPassword('');
+                    setError(null);
+                    void kernel.switchUser(account.id);
+                  },
+                }))}
+              />
+            </>
           )}
         </form>
 

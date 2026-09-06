@@ -22,6 +22,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useApp } from '../../_sdk';
 import { MINUTE_OPTIONS, parseMinutes, rotateCredentials } from '../logic';
 import { Row } from '../Row';
+import { ProfilesGroup } from './Profiles';
 
 const SCREENSAVERS: SelectOption<ScreensaverId>[] = SCREENSAVER_PRESETS.map((preset) => ({
   value: preset.id,
@@ -343,6 +344,8 @@ export function SecurityPage() {
           </Button>
         </Row>
       </SettingsGroup>
+
+      <ProfilesGroup />
 
       {dialog && (
         <CredentialsDialog key={dialog} mode={dialog} open onClose={() => setDialog(null)} />

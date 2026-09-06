@@ -51,6 +51,12 @@ export interface PersistedState {
   /** Files pinned in the Files sidebar. */
   favorites: string[];
   lastLoginAt: number | null;
+  /**
+   * The account the machine was left signed in as. With one account this was
+   * always the only one; with several, coming back to whichever happens to be
+   * first in the file is not the account the person left open.
+   */
+  signedInUserId: string | null;
   /** Total OS uptime across sessions, for About. */
   totalUptimeMs: number;
 }
@@ -63,6 +69,7 @@ export function defaultState(): PersistedState {
     recents: [],
     favorites: [],
     lastLoginAt: null,
+    signedInUserId: null,
     totalUptimeMs: 0,
   };
 }

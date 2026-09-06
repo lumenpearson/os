@@ -101,8 +101,10 @@ export class Kernel {
     useProcessStore.getState().reset();
     await seedSystem(this.vfs);
     await this.loadSettings();
-    await this.loadUsers();
+    // The state file holds the account the machine was left signed in as, so
+    // it has to be read before the accounts are hydrated against it.
     await this.loadState();
+    await this.loadUsers();
     await this.refreshInstalledApps();
     await seedApplications(
       this.vfs,
@@ -151,6 +153,7 @@ export class Kernel {
     user.lastLoginAt = Date.now();
     useUsersStore.getState().upsert(user);
     useUsersStore.getState().setCurrent(user.id);
+    this.updateState((state) => ({ ...state, signedInUserId: user.id }));
     await this.saveUsers();
     await seedHome(this.vfs, user.username, user.name);
     useSettingsStore.getState().patch('setup', { completed: true, completedAt: Date.now() });
@@ -220,6 +223,62 @@ export class Kernel {
     if (s.state !== 'desktop') return;
     s.transition('locked');
     log.info('session', 'locked');
+  }
+
+  /**
+   * Add a second person to this machine.
+   *
+   * The account is created and its home is seeded, and that is all: the
+   * session stays with whoever asked for it, because creating an account for
+   * someone else should not sign you out of your own. The recovery key is
+   * returned once and never stored in the clear, exactly as at first run.
+   */
+  async createProfile(input: {
+    name: string;
+    password: string;
+    hint?: string;
+    avatar?: string;
+  }): Promise<{ user: UserAccount; recoveryKey: string }> {
+    const taken = useUsersStore.getState().users.map((u) => u.username);
+    const { user, recoveryKey } = await createUserAccount({ ...input, taken });
+    useUsersStore.getState().upsert(user);
+    await this.saveUsers();
+    await seedHome(this.vfs, user.username, user.name);
+    log.info('kernel', `profile created: ${user.username}`);
+    return { user, recoveryKey };
+  }
+
+  /**
+   * Hand the machine to another account: end this session the way signing out
+   * does, then make them current so the lock screen asks for their password.
+   * It does not sign them in — only their password does that.
+   */
+  async switchUser(userId: string): Promise<boolean> {
+    const target = useUsersStore.getState().users.find((u) => u.id === userId);
+    if (!target || target.id === useUsersStore.getState().currentUserId) return false;
+    await this.endSession(`switching to ${target.username}`);
+    useUsersStore.getState().setCurrent(target.id);
+    // The home directory is a setting, and it belongs to whoever is signed in.
+    useSettingsStore.getState().patch('files', { home: homeDir(target.username) });
+    this.updateState((state) => ({ ...state, signedInUserId: target.id }));
+    await this.saveSettings();
+    log.info('session', `switched to ${target.username}`);
+    return true;
+  }
+
+  /**
+   * Remove an account. The files stay: deleting somebody's documents is a
+   * separate decision from taking away their way in, and one the person doing
+   * the removing may not be entitled to make.
+   */
+  async removeProfile(userId: string): Promise<{ ok: boolean; reason?: 'current' | 'last' }> {
+    const { users, currentUserId } = useUsersStore.getState();
+    if (users.length <= 1) return { ok: false, reason: 'last' };
+    if (userId === currentUserId) return { ok: false, reason: 'current' };
+    useUsersStore.getState().remove(userId);
+    await this.saveUsers();
+    log.info('kernel', `profile removed: ${userId}`);
+    return { ok: true };
   }
 
   sleep(): void {
@@ -593,11 +652,12 @@ export class Kernel {
   }
 
   private async loadUsers() {
+    const signedIn = this.stateFile.signedInUserId;
     try {
       const users = await this.vfs.readJson<UserAccount[]>(USERS_FILE);
-      useUsersStore.getState().hydrate(Array.isArray(users) ? users : []);
+      useUsersStore.getState().hydrate(Array.isArray(users) ? users : [], signedIn);
     } catch {
-      useUsersStore.getState().hydrate([]);
+      useUsersStore.getState().hydrate([], signedIn);
     }
   }
 
