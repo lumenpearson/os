@@ -45,3 +45,42 @@ test.describe('settings only a browser can answer', () => {
     expect(Math.round(box.x)).toBe(16);
   });
 });
+
+/**
+ * LU-402: a dialog is sized by the window it belongs to, and only its content
+ * scrolls. The acceptance is a small window, because that is where a sheet
+ * with a fixed height escapes its frame — and the failure is invisible on a
+ * large screen, which is why it needs a test rather than a look.
+ */
+test.describe('a dialog inside a small window', () => {
+  test('stays inside the window body, and only its content scrolls', async ({ page }) => {
+    await page.setViewportSize({ width: 420, height: 560 });
+    await setupAndUnlock(page);
+    await launch(page, 'Settings');
+    // At this width Settings folds its sidebar into a section picker.
+    await page.getByLabel('Section').selectOption('power');
+    await page.getByRole('button', { name: 'Restart' }).click();
+
+    // A window carries role="dialog" too, so name the sheet.
+    const dialog = page.getByRole('dialog', { name: 'Restart now?' });
+    await expect(dialog).toBeVisible();
+    const body = page.getByTestId('window-body').first();
+
+    const [sheet, host] = await Promise.all([dialog.boundingBox(), body.boundingBox()]);
+    if (!sheet || !host) throw new Error('no boxes to compare');
+    expect(sheet.x).toBeGreaterThanOrEqual(host.x - 1);
+    expect(sheet.y).toBeGreaterThanOrEqual(host.y - 1);
+    expect(sheet.x + sheet.width).toBeLessThanOrEqual(host.x + host.width + 1);
+    expect(sheet.y + sheet.height).toBeLessThanOrEqual(host.y + host.height + 1);
+
+    // The frame itself never scrolls: overflow belongs to the body alone.
+    const frame = await dialog.evaluate((el) => ({
+      scroll: el.scrollHeight,
+      client: el.clientHeight,
+    }));
+    expect(frame.scroll).toBeLessThanOrEqual(frame.client + 1);
+
+    await page.keyboard.press('Escape');
+    await expect(dialog).toBeHidden();
+  });
+});

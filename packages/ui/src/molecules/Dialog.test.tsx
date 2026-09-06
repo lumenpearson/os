@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useState } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -311,3 +311,63 @@ describe('useDialogs', () => {
     expect(screen.queryByRole('dialog')).toBeNull();
   });
 });
+
+describe('a confirmation answers with its buttons, and with Escape', () => {
+  it('cancels on Escape rather than trapping a keyboard user', async () => {
+    const user = userEvent.setup();
+    const seen: unknown[] = [];
+    render(
+      <DialogProvider>
+        <Asker onAnswer={(v) => seen.push(v)} />
+      </DialogProvider>,
+    );
+    await user.click(screen.getByRole('button', { name: 'Ask' }));
+    expect(await screen.findByText('Delete the file?')).toBeInTheDocument();
+    await user.keyboard('{Escape}');
+    await waitFor(() => expect(seen).toEqual([false]));
+  });
+
+  it('offers no close button: Cancel is already the way to say no', async () => {
+    const user = userEvent.setup();
+    render(
+      <DialogProvider>
+        <Asker onAnswer={() => {}} />
+      </DialogProvider>,
+    );
+    await user.click(screen.getByRole('button', { name: 'Ask' }));
+    await screen.findByText('Delete the file?');
+    expect(screen.queryByRole('button', { name: 'Close' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Cancel' })).toBeInTheDocument();
+  });
+
+  it('is not answered by a stray click on the scrim', async () => {
+    const user = userEvent.setup();
+    const seen: unknown[] = [];
+    const { container } = render(
+      <DialogProvider>
+        <Asker onAnswer={(v) => seen.push(v)} />
+      </DialogProvider>,
+    );
+    await user.click(screen.getByRole('button', { name: 'Ask' }));
+    await screen.findByText('Delete the file?');
+    const scrim = container.ownerDocument.querySelector('.bg-scrim') as HTMLElement;
+    fireEvent.pointerDown(scrim);
+    expect(seen).toEqual([]);
+    expect(screen.getByText('Delete the file?')).toBeInTheDocument();
+  });
+});
+
+/** A button that raises the confirm, so the test drives the real API. */
+function Asker({ onAnswer }: { onAnswer: (value: boolean) => void }) {
+  const dialogs = useDialogs();
+  return (
+    <button
+      type="button"
+      onClick={async () => {
+        onAnswer(await dialogs.confirm({ title: 'Delete the file?', confirmLabel: 'Delete' }));
+      }}
+    >
+      Ask
+    </button>
+  );
+}

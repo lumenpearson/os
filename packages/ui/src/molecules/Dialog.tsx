@@ -25,12 +25,30 @@ export interface DialogProps {
   width?: number;
   /** Render inside a container instead of the document body (app-modal sheets). */
   container?: HTMLElement | null;
-  /** Hide the close button. */
+  /**
+   * Nothing dismisses this sheet: no close button, no Escape, no click on the
+   * scrim. For work already in flight, where cancelling is not one of the
+   * answers — an account being erased, a password being changed.
+   */
   persistent?: boolean;
+  /**
+   * No close button and no dismissal by clicking away, but Escape still
+   * cancels. A confirmation asks a question its own buttons answer, so an ×
+   * beside them is a third button meaning the same as Cancel; a stray click
+   * on the scrim should not answer a question either. Escape is different:
+   * it is how every system lets a keyboard user say no, and taking it away
+   * leaves them reaching for the mouse.
+   */
+  hideClose?: boolean;
   className?: string;
 }
 
-/** A modal sheet. Focus is trapped, Escape closes unless persistent. */
+/**
+ * A modal sheet, sized by the box it is portalled into rather than by the
+ * screen: inside an app window that is the window's body, so a dialog can
+ * never grow past the window it belongs to. Focus is trapped, and Escape
+ * closes unless the sheet is persistent.
+ */
 export function Dialog({
   open,
   onClose,
@@ -40,6 +58,7 @@ export function Dialog({
   width = 420,
   container,
   persistent,
+  hideClose,
   className,
 }: DialogProps) {
   const ref = useRef<HTMLDivElement>(null);
@@ -47,6 +66,7 @@ export function Dialog({
   useEscape(() => {
     if (!persistent) onClose();
   }, open);
+  const showClose = !persistent && !hideClose;
   if (!open || typeof document === 'undefined') return null;
   const target = container ?? document.body;
   return createPortal(
@@ -60,7 +80,7 @@ export function Dialog({
         !container && 'fixed',
       )}
       onPointerDown={(e) => {
-        if (e.target === e.currentTarget && !persistent) onClose();
+        if (e.target === e.currentTarget && !persistent && !hideClose) onClose();
       }}
     >
       <div
@@ -85,14 +105,14 @@ export function Dialog({
         }}
         tabIndex={-1}
       >
-        {(title || !persistent) && (
+        {(title || showClose) && (
           <div className="flex shrink-0 items-center gap-2 px-4 pt-3.5 pb-1">
             {title && (
               <h2 id="lumen-dialog-title" className="text-md font-semibold text-ink">
                 {title}
               </h2>
             )}
-            {!persistent && (
+            {showClose && (
               <IconButton label="Close" size="sm" className="ml-auto" onClick={onClose}>
                 <X />
               </IconButton>
@@ -270,7 +290,7 @@ function ConfirmDialog({
       onClose={() => finish(false)}
       title={o.title}
       container={container}
-      persistent
+      hideClose
       actions={
         <>
           <Button onClick={() => finish(false)}>{o.cancelLabel ?? 'Cancel'}</Button>
@@ -311,7 +331,7 @@ function PromptDialog({
       onClose={() => finish(null)}
       title={o.title}
       container={container}
-      persistent
+      hideClose
       actions={
         <>
           <Button onClick={() => finish(null)}>Cancel</Button>
