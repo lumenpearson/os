@@ -1,12 +1,13 @@
-import type { Rect } from '@lumen/kernel';
+import type { Rect } from '../types';
 
 /**
- * Geometry for the desktop selection rectangle.
+ * Geometry for a selection rectangle, wherever one is dragged.
  *
- * The drag is measured in the coordinates of the icon layer, so the same
- * numbers describe the rectangle that is drawn and the icon boxes it is tested
- * against. Nothing here touches the DOM: the component measures the boxes once
- * when the drag starts and asks these functions on every frame.
+ * The drag is measured in the coordinates of the layer it happens in, so the
+ * same numbers describe the rectangle that is drawn and the boxes it is tested
+ * against — icons on the desktop, rows and tiles in a file listing. Nothing
+ * here touches the DOM: the component measures the boxes once when the drag
+ * starts and asks these functions on every frame.
  */
 
 export interface Point {
@@ -14,7 +15,7 @@ export interface Point {
   y: number;
 }
 
-/** An icon and the box it occupies in the icon layer. */
+/** Something selectable and the box it occupies in the layer being dragged in. */
 export interface IconBox {
   path: string;
   box: Rect;

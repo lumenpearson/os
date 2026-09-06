@@ -22,6 +22,9 @@ import type { AppDefinition, AppId, Pid, WindowId, WindowState } from '../types'
 import { useUsersStore } from '../users/store';
 import { selectFocusedWindow, useWindowStore } from '../window/store';
 
+// Dragging a rectangle to select, shared by the desktop and the file views.
+export { boxesByPath, DRAG_THRESHOLD, type Marquee, useMarquee } from '../selection/useMarquee';
+
 const KernelContext = createContext<Kernel | null>(null);
 
 export function KernelProvider({ kernel, children }: { kernel: Kernel; children: ReactNode }) {

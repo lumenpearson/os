@@ -33,6 +33,7 @@ export function SearchResults({
 }: SearchResultsProps) {
   return (
     <EntryListBox
+      marquee
       entries={entries}
       selection={selection}
       layout="rows"

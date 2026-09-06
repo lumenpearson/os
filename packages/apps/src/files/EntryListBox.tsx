@@ -1,3 +1,4 @@
+import { boxesByPath, useMarquee } from '@lumen/kernel/react';
 import { cx } from '@lumen/ui';
 import type { DirEntry } from '@lumen/vfs';
 import {
@@ -54,6 +55,12 @@ export interface EntryListBoxProps {
   /** The scrolling element, for views that drive it themselves (the card lane). */
   containerRef?: RefObject<HTMLDivElement | null>;
   onFocusChange?: (focused: boolean) => void;
+  /**
+   * Dragging over empty space in the list draws a selection rectangle. Off
+   * where the list is not the thing being selected in — a column that only
+   * picks one entry, or a lane that scrolls under the pointer.
+   */
+  marquee?: boolean;
   className?: string;
   children?: ReactNode;
 }
@@ -85,6 +92,7 @@ export function EntryListBox({
   reveal = { block: 'nearest', inline: 'nearest' },
   containerRef,
   onFocusChange,
+  marquee = false,
   className,
   children,
 }: EntryListBoxProps) {
@@ -94,6 +102,20 @@ export function EntryListBox({
   const order = useMemo(() => entries.map((e) => e.path), [entries]);
   const cursorIndex = selection.cursor !== null ? order.indexOf(selection.cursor) : -1;
   const idFor = (i: number) => `${base}-${i}`;
+
+  const bandRef = useRef<HTMLDivElement>(null);
+  /**
+   * The rectangle keeps the anchor and the cursor the selection already had:
+   * a band picks a set, it does not say where a Shift range should start from
+   * next, and the entries it covers are in the list's own order anyway.
+   */
+  const band = useMarquee({
+    layer: ref,
+    band: bandRef,
+    boxes: () => (ref.current ? boxesByPath(ref.current) : []),
+    current: () => selection.keys,
+    onChange: (keys) => onSelectionChange({ ...selection, keys: new Set(keys) }),
+  });
 
   // `reveal` is a fresh object every render; only a cursor move should scroll.
   const revealRef = useRef(reveal);
@@ -161,8 +183,21 @@ export function EntryListBox({
         setHasFocus(false);
         onFocusChange?.(false);
       }}
-      className={cx('outline-none', className)}
+      onPointerDown={(e) => {
+        if (!marquee || e.target !== e.currentTarget) return;
+        band.start(e);
+      }}
+      className={cx('outline-none', marquee && 'relative', className)}
     >
+      {marquee && (
+        <div
+          ref={bandRef}
+          hidden
+          aria-hidden
+          data-testid="entry-marquee"
+          className="pointer-events-none absolute top-0 left-0 z-10 origin-top-left border border-accent bg-accent/15"
+        />
+      )}
       {entries.map((entry, index) => {
         const state: ItemState = {
           selected: selection.keys.has(entry.path),

@@ -41,6 +41,7 @@ export function GridView({
 }: GridViewProps) {
   return (
     <EntryListBox
+      marquee
       entries={entries}
       selection={selection}
       layout="grid"

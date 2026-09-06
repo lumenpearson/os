@@ -27,6 +27,7 @@ export { selectUnreadCount, useNotificationStore } from './notifications/store';
 export type { LoadReading, LoadSubject } from './process/load';
 export { stepLoad, systemLoad, targetCpu, targetMemory } from './process/load';
 export { useProcessStore } from './process/store';
+export * from './selection/marquee';
 export {
   autostartServices,
   SERVICES,
