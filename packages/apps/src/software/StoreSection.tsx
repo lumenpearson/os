@@ -384,7 +384,12 @@ function ShelfRow({
           compact
         />
       ) : (
-        <div className="lumen-scroll -mx-1 flex gap-3 px-1 pb-1">
+        // The padding is room for a tile's focus ring, which a scroll port
+        // would otherwise clip at its ends. It used to be cancelled by a
+        // negative margin so the row lined up with the heading, but the
+        // section above clips too, so the bleed only pushed four pixels out
+        // of the window at its narrowest.
+        <div className="lumen-scroll flex gap-3 px-1 pb-1">
           {shelf.listings.map((listing) => (
             <PackageTile
               key={listing.id}

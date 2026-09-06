@@ -329,7 +329,14 @@ describe('when the store cannot be reached', () => {
     offline = true;
     await mount();
     expect(await screen.findByText('The store could not be reached')).toBeInTheDocument();
-    expect(screen.getByText(new RegExp(DEFAULT_STORE_ORIGIN))).toBeInTheDocument();
+    // Matched as text, not as a pattern. A URL compiled into a regular
+    // expression has unescaped dots, so it would also match addresses nobody
+    // meant; the assertion is that this exact one is on screen.
+    const showing = screen.getAllByText(
+      (_, node) => node?.textContent?.includes(DEFAULT_STORE_ORIGIN) === true,
+      { selector: 'p, span, code' },
+    );
+    expect(showing.length).toBeGreaterThan(0);
     const shelf = screen.getByRole('region', { name: 'Ships with Lumen OS' });
     expect(within(shelf).getByText('Pomodoro Timer')).toBeInTheDocument();
   });
