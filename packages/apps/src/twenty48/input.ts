@@ -17,9 +17,27 @@ const KEYS: Record<string, Direction> = {
   s: 'down',
 };
 
-/** The direction a key means, or null if it means nothing here. */
-export function directionForKey(key: string): Direction | null {
-  return KEYS[key] ?? KEYS[key.toLowerCase()] ?? null;
+/** What a key press carries that decides whether the board should have it. */
+export interface KeyPress {
+  key: string;
+  ctrlKey?: boolean;
+  metaKey?: boolean;
+  altKey?: boolean;
+}
+
+/**
+ * The direction a key press means, or null if it means nothing here.
+ *
+ * A modifier means the press belongs to somebody else. W, A, S and D are the
+ * second way to play, and they are also the second half of Ctrl+W, Ctrl+A,
+ * Ctrl+S and Ctrl+D — close, select all, save, duplicate. Reading the letter
+ * without looking at the modifier made the board answer all four and call
+ * `preventDefault`, so a game of 2048 was a window that could not be closed
+ * from the keyboard at all.
+ */
+export function directionForKey(press: KeyPress): Direction | null {
+  if (press.ctrlKey || press.metaKey || press.altKey) return null;
+  return KEYS[press.key] ?? KEYS[press.key.toLowerCase()] ?? null;
 }
 
 /** A drag shorter than this is a click, not a swipe. */

@@ -3,29 +3,29 @@ import { directionForKey, SWIPE_THRESHOLD, swipeDirection } from './input';
 
 describe('directionForKey', () => {
   it('reads the arrow keys', () => {
-    expect(directionForKey('ArrowLeft')).toBe('left');
-    expect(directionForKey('ArrowRight')).toBe('right');
-    expect(directionForKey('ArrowUp')).toBe('up');
-    expect(directionForKey('ArrowDown')).toBe('down');
+    expect(directionForKey({ key: 'ArrowLeft' })).toBe('left');
+    expect(directionForKey({ key: 'ArrowRight' })).toBe('right');
+    expect(directionForKey({ key: 'ArrowUp' })).toBe('up');
+    expect(directionForKey({ key: 'ArrowDown' })).toBe('down');
   });
 
   it('reads WASD, in either case', () => {
-    expect(directionForKey('w')).toBe('up');
-    expect(directionForKey('a')).toBe('left');
-    expect(directionForKey('s')).toBe('down');
-    expect(directionForKey('d')).toBe('right');
-    expect(directionForKey('W')).toBe('up');
-    expect(directionForKey('D')).toBe('right');
+    expect(directionForKey({ key: 'w' })).toBe('up');
+    expect(directionForKey({ key: 'a' })).toBe('left');
+    expect(directionForKey({ key: 's' })).toBe('down');
+    expect(directionForKey({ key: 'd' })).toBe('right');
+    expect(directionForKey({ key: 'W' })).toBe('up');
+    expect(directionForKey({ key: 'D' })).toBe('right');
   });
 
   it('ignores everything else', () => {
     for (const key of ['Enter', ' ', 'Tab', 'z', 'Escape', 'ArrowLeftRight', '']) {
-      expect(directionForKey(key)).toBeNull();
+      expect(directionForKey({ key })).toBeNull();
     }
   });
 
   it('does not lowercase an arrow into a letter', () => {
-    expect(directionForKey('arrowleft')).toBeNull();
+    expect(directionForKey({ key: 'arrowleft' })).toBeNull();
   });
 });
 
@@ -63,5 +63,28 @@ describe('swipeDirection', () => {
   it('refuses coordinates that are not numbers', () => {
     expect(swipeDirection(Number.NaN, 100)).toBeNull();
     expect(swipeDirection(100, Number.POSITIVE_INFINITY)).toBeNull();
+  });
+});
+
+describe('a key that belongs to somebody else', () => {
+  it('leaves Ctrl+W alone, so the window can still be closed', () => {
+    expect(directionForKey({ key: 'w', ctrlKey: true })).toBeNull();
+  });
+
+  it('leaves the other three letters that carry a system shortcut', () => {
+    expect(directionForKey({ key: 'a', ctrlKey: true })).toBeNull();
+    expect(directionForKey({ key: 's', ctrlKey: true })).toBeNull();
+    expect(directionForKey({ key: 'd', ctrlKey: true })).toBeNull();
+  });
+
+  it('answers to no modifier, whichever one it is', () => {
+    for (const modifier of ['ctrlKey', 'metaKey', 'altKey'] as const) {
+      expect(directionForKey({ key: 'ArrowUp', [modifier]: true })).toBeNull();
+      expect(directionForKey({ key: 'w', [modifier]: true })).toBeNull();
+    }
+  });
+
+  it('still plays on Shift, which no window shortcut uses here', () => {
+    expect(directionForKey({ key: 'W' })).toBe('up');
   });
 });

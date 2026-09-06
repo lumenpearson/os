@@ -25,7 +25,7 @@
     "build:desktop": "pnpm --filter @lumen/desktop tauri build",
     "lint": "turbo run lint",
     "check:portability": "node scripts/check-case-collisions.mjs",
-    "check:apps": "node scripts/check-app-list.mjs",
+    "check:apps": "node scripts/check-app-list.mjs && node scripts/check-e2e-app-list.mjs",
     "store": "node scripts/build-store.mjs",
     "lint:fix": "biome check --write .",
     "format": "biome format --write .",

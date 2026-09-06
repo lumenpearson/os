@@ -94,7 +94,7 @@ export function Twenty48Board({ state, layout, animate, onSlide }: Twenty48Board
   }, []);
 
   const onKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
-    const direction = directionForKey(event.key);
+    const direction = directionForKey(event);
     if (!direction) return;
     event.preventDefault();
     onSlide(direction);

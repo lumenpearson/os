@@ -1,5 +1,5 @@
 import { expect, type Page, test } from '@playwright/test';
-import { launch, setupAndUnlock } from './helpers';
+import { BUILT_IN_APPS, launch, setupAndUnlock } from './helpers';
 
 /**
  * The newest applications at both ends of the size range the OS claims to
@@ -139,30 +139,6 @@ test.describe('the newest apps at both ends of the range', () => {
  * toolbar squeezing a button to 16 px, or a breadcrumb collapsing to nothing,
  * is a promise the app has broken.
  */
-const APPS = [
-  'Files',
-  'Browser',
-  'Terminal',
-  'Text Editor',
-  'Notes',
-  'Writer',
-  'Sheets',
-  'Slides',
-  'Preview',
-  'Media Player',
-  'Paint',
-  'Calculator',
-  'Calendar',
-  'Clock',
-  'Settings',
-  'Task Manager',
-  'System Information',
-  'Storage',
-  'Console',
-  'Software Center',
-  'Minesweeper',
-  'Chess',
-];
 
 /**
  * Widest spill of an in-flow child past the right edge of its parent, in px.
@@ -236,7 +212,7 @@ test.describe('every app at its declared minimum size', () => {
     await setupAndUnlock(page);
 
     const spills: string[] = [];
-    for (const name of APPS) {
+    for (const name of BUILT_IN_APPS) {
       await launch(page, name);
       await expect(page.getByTestId('window').first()).toBeVisible();
       await shrinkToMinimum(page);

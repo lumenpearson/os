@@ -44,6 +44,9 @@ export interface TransportProps {
    */
   showVolumeSlider?: boolean;
   showRate?: boolean;
+  /** Shuffle and repeat, with the rule that separates them from transport. */
+  showOrder?: boolean;
+  showFullscreen?: boolean;
   onToggle: () => void;
   onNext: () => void;
   onPrevious: () => void;
@@ -71,6 +74,8 @@ export function Transport({
   showPlaylist,
   showVolumeSlider,
   showRate,
+  showOrder = true,
+  showFullscreen = true,
   onToggle,
   onNext,
   onPrevious,
@@ -102,14 +107,17 @@ export function Transport({
         <SkipForward />
       </IconButton>
 
-      <span className="mx-1 h-4 w-px shrink-0 bg-rule" />
-
-      <IconButton label="Shuffle" active={shuffle} onClick={onShuffle} disabled={!hasTracks}>
-        <Shuffle />
-      </IconButton>
-      <IconButton label={LOOP_LABEL[loop]} active={loop !== 'off'} onClick={onLoop}>
-        {loop === 'one' ? <Repeat1 /> : <Repeat />}
-      </IconButton>
+      {showOrder && (
+        <>
+          <span className="mx-1 h-4 w-px shrink-0 bg-rule" />
+          <IconButton label="Shuffle" active={shuffle} onClick={onShuffle} disabled={!hasTracks}>
+            <Shuffle />
+          </IconButton>
+          <IconButton label={LOOP_LABEL[loop]} active={loop !== 'off'} onClick={onLoop}>
+            {loop === 'one' ? <Repeat1 /> : <Repeat />}
+          </IconButton>
+        </>
+      )}
 
       <span className="flex-1" />
 
@@ -142,13 +150,15 @@ export function Transport({
       <IconButton label="Show playlist" active={showPlaylist} onClick={onPlaylist}>
         <ListMusic />
       </IconButton>
-      <IconButton
-        label={fullscreen ? 'Leave full screen' : 'Full screen'}
-        active={fullscreen}
-        onClick={onFullscreen}
-      >
-        {fullscreen ? <Minimize2 /> : <Maximize2 />}
-      </IconButton>
+      {showFullscreen && (
+        <IconButton
+          label={fullscreen ? 'Leave full screen' : 'Full screen'}
+          active={fullscreen}
+          onClick={onFullscreen}
+        >
+          {fullscreen ? <Minimize2 /> : <Maximize2 />}
+        </IconButton>
+      )}
     </div>
   );
 }

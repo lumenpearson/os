@@ -44,6 +44,14 @@ const NARROW_WIDTH = 560;
 const VOLUME_SLIDER_WIDTH = 760;
 /** And this much to hold the rate select next to it. */
 const RATE_SELECT_WIDTH = 640;
+/**
+ * Below these the row would not fit, and a control that does not fit does not
+ * quietly hang out of the window — it goes. Shuffle and repeat are the first
+ * to go because they change what plays next rather than what is playing, and
+ * full screen is next because the window is already as small as it goes.
+ */
+const ORDER_WIDTH = 460;
+const FULLSCREEN_WIDTH = 380;
 
 /** Paths the window was launched with, in the order they should queue. */
 function launchPaths(args: LaunchArgs): string[] {
@@ -537,6 +545,8 @@ export default function MediaPlayer({ args: initialArgs }: AppProps) {
         showPlaylist={config.showPlaylist}
         showVolumeSlider={width >= VOLUME_SLIDER_WIDTH}
         showRate={width >= RATE_SELECT_WIDTH}
+        showOrder={width >= ORDER_WIDTH}
+        showFullscreen={width >= FULLSCREEN_WIDTH}
         onToggle={toggle}
         onNext={actions.next}
         onPrevious={actions.previous}

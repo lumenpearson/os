@@ -25,3 +25,54 @@ export async function launch(page: Page, name: string) {
   await page.keyboard.press('Enter');
   await expect(page.getByTestId('spotlight')).toBeHidden();
 }
+
+/**
+ * Every app a person can launch, by the name the launcher shows.
+ *
+ * One list, used by both sweeps — the minimum-size sweep in `apps.spec.ts`
+ * and the table-lane sweep in `tables.spec.ts` — because two lists drift and
+ * the one that gets forgotten is the one that stops covering new apps. It is
+ * kept in step with `packages/apps/src/registry.ts` by
+ * `scripts/check-e2e-app-list.mjs`, which fails the build when an app is
+ * added to the OS and not to this list.
+ *
+ * Web App is not here: it is the host that runs installed HTML programs and
+ * no launcher shows it.
+ */
+export const BUILT_IN_APPS = [
+  'Files',
+  'Mail',
+  'Browser',
+  'Terminal',
+  'Text Editor',
+  'Notes',
+  'Writer',
+  'Sheets',
+  'Slides',
+  'Contacts',
+  'Reminders',
+  'Preview',
+  'Photos',
+  'Media Player',
+  'Paint',
+  'Calculator',
+  'Units',
+  'Colour',
+  'Character Map',
+  'Clipboard',
+  'Calendar',
+  'Clock',
+  'Settings',
+  'Task Manager',
+  'System Information',
+  'Storage',
+  'Console',
+  'Workbench',
+  'Archive Utility',
+  'Software Center',
+  'Minesweeper',
+  'Chess',
+  'Sudoku',
+  '2048',
+  'Solitaire',
+] as const;
