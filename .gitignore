@@ -46,3 +46,9 @@ pnpm-debug.log*
 # Scratch probes that review agents write to inspect real output. They import
 # node:fs and hardcode a scratchpad path, so they are never part of the suite.
 **/__probe.test.*
+
+# Throwaway end-to-end probes. Diagnosing a defect in this repo means opening
+# a real browser and measuring, and the spec that does the measuring is
+# written to be deleted — `zz-` marks one so it never reaches a commit and
+# never sorts above a real spec in the runner's output.
+apps/web/e2e/zz-*.spec.ts
