@@ -3,13 +3,15 @@ import { createKernel, type Kernel, type SessionState, useSessionStore } from '@
 import { KernelProvider } from '@lumen/kernel/react';
 import { createPlatform } from '@lumen/platform';
 import { DialogProvider } from '@lumen/ui';
-import { lazy, Suspense, useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { BootScreen } from './boot/BootScreen';
 import { CursorLayer } from './cursor/CursorLayer';
 import { useHostFocus } from './hooks/useHostFocus';
 import { useIdleWatch } from './hooks/useIdleWatch';
+import { PerformanceOverlay } from './perf/PerformanceOverlay';
 import { PowerScreen } from './power/PowerScreen';
 import { ScreensaverLayer } from './screensaver/ScreensaverLayer';
+import { playSound } from './sounds';
 
 const Desktop = lazy(() => import('./desktop/Desktop'));
 const LockScreen = lazy(() => import('./lock/LockScreen'));
@@ -70,11 +72,28 @@ function Session() {
   const state = useSessionStore((s) => s.state);
   useIdleWatch();
   useHostFocus();
+  useStartupSound(state);
   return (
     <Suspense fallback={<BootScreen />}>
       <SessionView state={state} />
+      <PerformanceOverlay />
     </Suspense>
   );
+}
+
+/**
+ * The chime, once, the first time the desktop appears in this session.
+ * Locking and unlocking again is not a start, so it does not sound twice;
+ * `playSound` is silent anyway until the browser has had a gesture, which
+ * unlocking provides.
+ */
+function useStartupSound(state: SessionState): void {
+  const sounded = useRef(false);
+  useEffect(() => {
+    if (state !== 'desktop' || sounded.current) return;
+    sounded.current = true;
+    playSound('startup');
+  }, [state]);
 }
 
 function SessionView({ state }: { state: SessionState }) {

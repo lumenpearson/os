@@ -36,6 +36,10 @@ const PATTERNS: Record<SoundName, Array<[frequency: number, start: number, durat
 export function playSound(name: SoundName): void {
   const s = getSettings().sound;
   if (s.muted || !s.uiSounds) return;
+  // The chime at sign-in has a switch of its own: someone who wants the
+  // interface to answer them may still not want the room to hear the machine
+  // start.
+  if (name === 'startup' && !s.startupSound) return;
   const ac = context();
   if (!ac) return;
   const gainLevel = 0.06 * s.volume;
