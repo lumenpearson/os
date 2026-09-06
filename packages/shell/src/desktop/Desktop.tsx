@@ -1,6 +1,6 @@
 import { formatShortcut, useWindowStore } from '@lumen/kernel';
 import { useSettings } from '@lumen/kernel/react';
-import { AnchoredMenu, cx, useTextFieldMenu } from '@lumen/ui';
+import { AnchoredMenu, useTextFieldMenu } from '@lumen/ui';
 import { useCallback, useEffect, useLayoutEffect, useRef } from 'react';
 import { ControlCenter } from '../controlcenter/ControlCenter';
 import { useGlobalShortcuts } from '../hooks/useGlobalShortcuts';
@@ -9,7 +9,6 @@ import { Banners } from '../notifications/Banners';
 import { NotificationCenter } from '../notifications/NotificationCenter';
 import { MissionControl } from '../overview/MissionControl';
 import { WindowSwitcher } from '../overview/WindowSwitcher';
-import { useShellStore } from '../shellStore';
 import { Spotlight } from '../spotlight/Spotlight';
 import { StartMenu } from '../start/StartMenu';
 import { Taskbar } from '../taskbar/Taskbar';
@@ -25,7 +24,6 @@ import { Wallpaper } from './Wallpaper';
 export default function Desktop() {
   const settings = useSettings();
   const rootRef = useRef<HTMLDivElement>(null);
-  const missionControl = useShellStore((s) => s.missionControl);
   useGlobalShortcuts();
 
   const taskbarPos = settings.taskbar.position;
@@ -90,10 +88,7 @@ export default function Desktop() {
   return (
     <div
       ref={rootRef}
-      className={cx(
-        'fixed inset-0 overflow-hidden select-none text-ink',
-        missionControl && 'is-overview',
-      )}
+      className="fixed inset-0 overflow-hidden select-none text-ink"
       data-testid="desktop"
     >
       <Wallpaper />

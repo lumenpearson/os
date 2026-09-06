@@ -1,6 +1,7 @@
 import { defaultSettings, useSettingsStore, useWindowStore, type WindowState } from '@lumen/kernel';
 import { renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it } from 'vitest';
+import { useShellStore } from '../shellStore';
 import { useImmersive } from './useImmersive';
 
 function windowState(over: Partial<WindowState>): WindowState {
@@ -20,6 +21,7 @@ function screenState(over: Partial<WindowState>) {
 beforeEach(() => {
   useSettingsStore.setState({ settings: defaultSettings() });
   useWindowStore.setState({ windows: {}, order: [], focusedId: null });
+  useShellStore.setState({ missionControl: false });
 });
 
 describe('useImmersive', () => {
@@ -60,5 +62,38 @@ describe('useImmersive', () => {
   it('ignores a minimised full-screen window', () => {
     screenState({ fullscreen: true, minimized: true });
     expect(renderHook(() => useImmersive()).result.current.systemBar).toBe(false);
+  });
+});
+
+describe('the window overview', () => {
+  it('takes both panels away while it is open', () => {
+    useShellStore.setState({ missionControl: true });
+    screenState({ fullscreen: false });
+    expect(renderHook(() => useImmersive()).result.current).toEqual({
+      systemBar: true,
+      taskbar: true,
+    });
+  });
+
+  it('asks whatever Settings says, because the overview is not full screen', () => {
+    useSettingsStore
+      .getState()
+      .patch('windows', { immersiveSystemBar: false, immersiveTaskbar: false });
+    useShellStore.setState({ missionControl: true });
+    screenState({ fullscreen: false });
+    expect(renderHook(() => useImmersive()).result.current).toEqual({
+      systemBar: true,
+      taskbar: true,
+    });
+  });
+
+  it('gives them back when it closes', () => {
+    useShellStore.setState({ missionControl: true });
+    screenState({ fullscreen: false });
+    useShellStore.setState({ missionControl: false });
+    expect(renderHook(() => useImmersive()).result.current).toEqual({
+      systemBar: false,
+      taskbar: false,
+    });
   });
 });

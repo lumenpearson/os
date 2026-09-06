@@ -84,3 +84,47 @@ test.describe('a dialog inside a small window', () => {
     await expect(dialog).toBeHidden();
   });
 });
+
+/**
+ * LU-307: the overview shows every window grouped by the app it belongs to,
+ * with the panels out of the way. The grouping is unit-tested as geometry;
+ * what needs a browser is that the headings are drawn where the layout says
+ * and that the taskbar really does leave.
+ */
+test.describe('the window overview', () => {
+  test('groups the windows by app and takes the panels away', async ({ page }) => {
+    await setupAndUnlock(page);
+    await launch(page, 'Files');
+    await launch(page, 'Terminal');
+    await expect(page.getByTestId('window')).toHaveCount(2);
+
+    const taskbar = page.getByTestId('taskbar');
+    const before = await taskbar.boundingBox();
+    if (!before) throw new Error('no taskbar');
+
+    await page.keyboard.press('Control+Alt+ArrowUp');
+    const overview = page.getByTestId('mission-control');
+    await expect(overview).toBeVisible();
+
+    // One heading per app, naming the app rather than the window.
+    await expect(overview.getByRole('heading', { name: /Files/ })).toBeVisible();
+    await expect(overview.getByRole('heading', { name: /Terminal/ })).toBeVisible();
+
+    // The taskbar slides off its edge rather than sitting under the scrim.
+    await expect
+      .poll(async () => {
+        const box = await taskbar.boundingBox();
+        return box ? Math.round(box.y) : -1;
+      })
+      .toBeGreaterThan(Math.round(before.y));
+
+    await page.keyboard.press('Escape');
+    await expect(overview).toBeHidden();
+    await expect
+      .poll(async () => {
+        const box = await taskbar.boundingBox();
+        return box ? Math.round(box.y) : -1;
+      })
+      .toBe(Math.round(before.y));
+  });
+});

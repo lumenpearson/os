@@ -3,11 +3,14 @@ import { useWindows, useWorkArea } from '@lumen/kernel/react';
 import { cx, useEscape } from '@lumen/ui';
 import { useEffect, useMemo, useRef } from 'react';
 import { useShellStore } from '../shellStore';
+import { overviewLayout } from './layout';
 
 /**
- * Mission Control: every open window laid out in a grid, scaled down, live.
- * Real window elements are transformed into place through CSS variables,
- * so the previews are the windows themselves.
+ * Mission Control: every open window, live, grouped under the name of the app
+ * it belongs to. The previews are the real window elements moved and scaled
+ * into place, not pictures of them — which is why the geometry has to fit
+ * everything at once and why it lives in `layout.ts`, where it can be tested
+ * without a screen.
  */
 export function MissionControl() {
   const open = useShellStore((s) => s.missionControl);
@@ -17,25 +20,24 @@ export function MissionControl() {
   const apps = useRegistryStore((s) => s.apps);
   useEscape(() => toggle('missionControl', false), open);
 
-  const layout = useMemo(() => {
-    const list = windows.filter((w) => !w.minimized);
-    if (list.length === 0) return [];
-    const cols = Math.ceil(Math.sqrt(list.length * (area.width / Math.max(1, area.height))));
-    const rows = Math.ceil(list.length / cols);
-    const pad = 24;
-    const cellW = (area.width - pad * (cols + 1)) / cols;
-    const cellH = (area.height - 40 - pad * (rows + 1)) / rows;
-    return list.map((w, i) => {
-      const col = i % cols;
-      const row = Math.floor(i / cols);
-      const scale = Math.min(cellW / w.bounds.width, cellH / w.bounds.height, 0.9);
-      const width = w.bounds.width * scale;
-      const height = w.bounds.height * scale;
-      const x = area.x + pad + col * (cellW + pad) + (cellW - width) / 2;
-      const y = area.y + pad + row * (cellH + pad) + (cellH - height) / 2;
-      return { id: w.id, title: w.title, appId: w.appId, x, y, scale, width, height };
-    });
-  }, [windows, area]);
+  const groups = useMemo(
+    () =>
+      overviewLayout(
+        windows
+          .filter((w) => !w.minimized)
+          .map((w) => ({
+            id: w.id,
+            title: w.title,
+            appId: w.appId,
+            width: w.bounds.width,
+            height: w.bounds.height,
+          })),
+        area,
+        (appId) => apps[appId]?.name ?? appId,
+      ),
+    [windows, area, apps],
+  );
+  const layout = useMemo(() => groups.flatMap((g) => g.items), [groups]);
 
   /**
    * Whether the overlay was open on the previous run, so the effect can tell a
@@ -95,6 +97,18 @@ export function MissionControl() {
         <p className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-md text-white/80">
           No open windows
         </p>
+      )}
+      {groups.map((group) =>
+        group.showLabel ? (
+          <h2
+            key={`label-${group.appId}`}
+            className="absolute flex items-center gap-1.5 text-sm text-white/80"
+            style={{ left: group.labelX, top: group.labelY }}
+          >
+            <span className="truncate-1">{group.name}</span>
+            <span className="mono text-2xs text-white/50 tabular-nums">{group.items.length}</span>
+          </h2>
+        ) : null,
       )}
       {layout.map((item) => {
         const Icon = apps[item.appId]?.icon;
