@@ -13,53 +13,7 @@ import {
   POINTER_HOTSPOT,
 } from './hotspots';
 import { onScrollbar } from './scrollbar';
-
-type Shape =
-  | 'arrow'
-  | 'pointer'
-  | 'text'
-  | 'grab'
-  | 'grabbing'
-  | 'ew'
-  | 'ns'
-  | 'nesw'
-  | 'nwse'
-  | 'move'
-  | 'not-allowed'
-  | 'wait'
-  | 'crosshair'
-  | 'none';
-
-const CURSOR_TO_SHAPE: Record<string, Shape> = {
-  auto: 'arrow',
-  default: 'arrow',
-  pointer: 'pointer',
-  text: 'text',
-  'vertical-text': 'text',
-  grab: 'grab',
-  grabbing: 'grabbing',
-  'col-resize': 'ew',
-  'e-resize': 'ew',
-  'w-resize': 'ew',
-  'ew-resize': 'ew',
-  'row-resize': 'ns',
-  'n-resize': 'ns',
-  's-resize': 'ns',
-  'ns-resize': 'ns',
-  'ne-resize': 'nesw',
-  'sw-resize': 'nesw',
-  'nesw-resize': 'nesw',
-  'nw-resize': 'nwse',
-  'se-resize': 'nwse',
-  'nwse-resize': 'nwse',
-  move: 'move',
-  'all-scroll': 'move',
-  'not-allowed': 'not-allowed',
-  wait: 'wait',
-  progress: 'wait',
-  crosshair: 'crosshair',
-  none: 'none',
-};
+import { type Shape, shapeForCursor } from './shapes';
 
 /**
  * The OS cursor. The native cursor is hidden through `[data-lumen-cursor=custom]`
@@ -117,12 +71,12 @@ export function CursorLayer() {
       let node: Element | null = target;
       while (node && node !== document.body) {
         const hinted = (node as HTMLElement).dataset?.cursor;
-        if (hinted) return CURSOR_TO_SHAPE[hinted] ?? 'arrow';
+        if (hinted) return shapeForCursor(hinted) ?? 'arrow';
         node = node.parentElement;
       }
       if (!target) return 'arrow';
       const computed = getComputedStyle(target).cursor;
-      if (computed && computed !== 'none') return CURSOR_TO_SHAPE[computed] ?? 'arrow';
+      if (computed && computed !== 'none') return shapeForCursor(computed) ?? 'arrow';
       return 'arrow';
     };
 
@@ -256,6 +210,8 @@ function CursorGlyphs({
         [data-testid='os-cursor'][data-shape='grabbing'] svg[data-g='grabbing'],
         [data-testid='os-cursor'][data-shape='ew'] svg[data-g='ew'],
         [data-testid='os-cursor'][data-shape='ns'] svg[data-g='ns'],
+        [data-testid='os-cursor'][data-shape='col'] svg[data-g='col'],
+        [data-testid='os-cursor'][data-shape='row'] svg[data-g='row'],
         [data-testid='os-cursor'][data-shape='nesw'] svg[data-g='nesw'],
         [data-testid='os-cursor'][data-shape='nwse'] svg[data-g='nwse'],
         [data-testid='os-cursor'][data-shape='move'] svg[data-g='move'],
@@ -265,6 +221,7 @@ function CursorGlyphs({
         [data-testid='os-cursor'][data-shape='none'] { opacity: 0 !important; }
         :root[data-anim-press='on'] [data-testid='os-cursor'][data-pressed='true'] svg[data-g='arrow'] { transform: ${hotspotTransform(classic ? ARROW_CLASSIC_HOTSPOT : ARROW_HOTSPOT)} scale(0.92); transform-origin: ${hotspotOrigin(classic ? ARROW_CLASSIC_HOTSPOT : ARROW_HOTSPOT)}; }
         [data-testid='os-cursor'] svg[data-g='text'], [data-testid='os-cursor'] svg[data-g='ew'], [data-testid='os-cursor'] svg[data-g='ns'],
+        [data-testid='os-cursor'] svg[data-g='col'], [data-testid='os-cursor'] svg[data-g='row'],
         [data-testid='os-cursor'] svg[data-g='nesw'], [data-testid='os-cursor'] svg[data-g='nwse'], [data-testid='os-cursor'] svg[data-g='move'],
         [data-testid='os-cursor'] svg[data-g='grab'], [data-testid='os-cursor'] svg[data-g='grabbing'], [data-testid='os-cursor'] svg[data-g='not-allowed'],
         [data-testid='os-cursor'] svg[data-g='wait'], [data-testid='os-cursor'] svg[data-g='crosshair'] { transform: ${CENTRED_TRANSFORM}; }
@@ -319,6 +276,26 @@ function CursorGlyphs({
           stroke={stroke}
         />
         <path d="M3 12h18M7 8l-4 4 4 4M17 8l4 4-4 4" {...common} fill="none" />
+      </svg>
+      <svg aria-hidden data-g="col" viewBox="0 0 24 24">
+        <path
+          d="M12 3v18M8 8l-4 4 4 4M16 8l4 4-4 4"
+          {...common}
+          fill="none"
+          strokeWidth="3.5"
+          stroke={stroke}
+        />
+        <path d="M12 3v18M8 8l-4 4 4 4M16 8l4 4-4 4" {...common} fill="none" />
+      </svg>
+      <svg aria-hidden data-g="row" viewBox="0 0 24 24">
+        <path
+          d="M3 12h18M8 8l4-4 4 4M8 16l4 4 4-4"
+          {...common}
+          fill="none"
+          strokeWidth="3.5"
+          stroke={stroke}
+        />
+        <path d="M3 12h18M8 8l4-4 4 4M8 16l4 4 4-4" {...common} fill="none" />
       </svg>
       <svg aria-hidden data-g="ns" viewBox="0 0 24 24">
         <path
