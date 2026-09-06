@@ -1,6 +1,8 @@
 // deslop-ignore-file 09 13 — <Mark> is the product wordmark; the scanner matches the substring 'mark'.
 import {
   formatShortcut,
+  GLOBAL_SHORTCUTS,
+  type GlobalShortcutId,
   type MenuItemTemplate,
   type MenuTemplate,
   useMenuStore,
@@ -16,7 +18,16 @@ import {
   useSettings,
   useUnreadCount,
 } from '@lumen/kernel/react';
-import { cx, type MenuEntry, MenuList, Popover, useClickOutside } from '@lumen/ui';
+import {
+  AnchoredMenu,
+  cx,
+  isContextMenuKey,
+  type MenuEntry,
+  MenuList,
+  Popover,
+  useClickOutside,
+  useContextMenu,
+} from '@lumen/ui';
 import {
   Bell,
   BluetoothOff,
@@ -35,6 +46,7 @@ import { useImmersive } from '../hooks/useImmersive';
 import { useShellStore } from '../shellStore';
 import { BatteryStatus } from './BatteryStatus';
 import { ClockPopover } from './ClockPopover';
+import { systemBarMenuItems } from './systemBarMenu';
 
 /**
  * The top bar: the Lumen menu, the focused app's menus, and status items.
@@ -143,6 +155,26 @@ export function MenuBar() {
   const immersive = useImmersive().systemBar;
   const revealed = useEdgeReveal('top', immersive);
 
+  // ── the bar's own menu ──────────────────────────────────────────────────
+  const barMenu = useContextMenu();
+  const unread = useUnreadCount();
+  const toggle = useShellStore((s) => s.toggle);
+  const shortcutFor = (shortcutId: GlobalShortcutId) =>
+    formatShortcut(
+      settings.keyboard.shortcuts[shortcutId] ?? GLOBAL_SHORTCUTS[shortcutId].keys,
+      settings.keyboard.modifier,
+    );
+  const barMenuItems = systemBarMenuItems(
+    { unread },
+    {
+      controlCenter: () => toggle('controlCenter'),
+      notifications: () => toggle('notificationCenter'),
+      search: () => toggle('spotlight'),
+      settings: () => void kernel.launch('lumen.settings', { section: 'taskbar' }),
+    },
+    shortcutFor,
+  );
+
   return (
     <div
       ref={barRef}
@@ -157,7 +189,19 @@ export function MenuBar() {
         // reaches the top of it, or whenever a menu is open on it.
         immersive && !revealed && open === null && '-translate-y-full',
       )}
+      onContextMenu={(e) => {
+        if (e.defaultPrevented) return;
+        setOpen(null);
+        barMenu.openAt(e);
+      }}
       onKeyDown={(e) => {
+        if (isContextMenuKey(e)) {
+          e.preventDefault();
+          setOpen(null);
+          const rect = e.currentTarget.getBoundingClientRect();
+          barMenu.openAtPoint(rect.left + 8, rect.bottom - 2);
+          return;
+        }
         if (open === null) return;
         const idx = menus.findIndex((m) => m.id === open);
         if (e.key === 'ArrowRight') setOpen(menus[(idx + 1) % menus.length]?.id ?? null);
@@ -190,6 +234,12 @@ export function MenuBar() {
       </div>
       <div className="flex-1" />
       <StatusItems />
+      <AnchoredMenu
+        open={barMenu.open}
+        at={barMenu.at}
+        items={barMenuItems}
+        onClose={barMenu.close}
+      />
     </div>
   );
 }
@@ -226,6 +276,8 @@ function MenuBarItem({
         aria-expanded={open}
         data-menu-id={id}
         onPointerDown={(e) => {
+          // The right button asks the bar for its own menu, not this one.
+          if (e.button !== 0) return;
           e.preventDefault();
           if (open) onClose();
           else onOpen();

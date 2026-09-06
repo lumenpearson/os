@@ -1,7 +1,7 @@
-import { useWindowStore } from '@lumen/kernel';
+import { formatShortcut, useWindowStore } from '@lumen/kernel';
 import { useSettings } from '@lumen/kernel/react';
-import { cx } from '@lumen/ui';
-import { useLayoutEffect, useRef } from 'react';
+import { AnchoredMenu, cx, useTextFieldMenu } from '@lumen/ui';
+import { useCallback, useEffect, useLayoutEffect, useRef } from 'react';
 import { ControlCenter } from '../controlcenter/ControlCenter';
 import { useGlobalShortcuts } from '../hooks/useGlobalShortcuts';
 import { MenuBar } from '../menubar/MenuBar';
@@ -30,6 +30,31 @@ export default function Desktop() {
 
   const taskbarPos = settings.taskbar.position;
   const taskbarHidden = settings.taskbar.autoHide;
+  const modifier = settings.keyboard.modifier;
+
+  const shortcut = useCallback((keys: string) => formatShortcut(keys, modifier), [modifier]);
+  const fieldMenu = useTextFieldMenu({ shortcut });
+  const openField = fieldMenu.openAt;
+
+  /**
+   * The one rule for right-clicks. Every surface with something to offer —
+   * an icon, a title bar, the system bar, a tab — draws its own menu and
+   * stops the event on its way up; a text field that reached here without
+   * one gets the editing menu, wherever in the session it was drawn. What is
+   * left is a click on scenery: nothing to show, and still no reason to hand
+   * the person the host browser's menu, which knows nothing about any of
+   * this. The listener sits on the document rather than on the desktop node
+   * so that menus, dialogs and everything else portalled to the body are
+   * covered by the same rule.
+   */
+  useEffect(() => {
+    const onContextMenu = (e: MouseEvent) => {
+      if (!e.defaultPrevented) openField(e);
+      e.preventDefault();
+    };
+    document.addEventListener('contextmenu', onContextMenu);
+    return () => document.removeEventListener('contextmenu', onContextMenu);
+  }, [openField]);
 
   useLayoutEffect(() => {
     const el = rootRef.current;
@@ -70,10 +95,6 @@ export default function Desktop() {
         missionControl && 'is-overview',
       )}
       data-testid="desktop"
-      onContextMenu={(e) => {
-        // the desktop and windows draw their own menus; the host menu never shows
-        if (!(e.target as HTMLElement).closest('[data-native-menu]')) e.preventDefault();
-      }}
     >
       <Wallpaper />
       <DesktopIcons />
@@ -87,6 +108,12 @@ export default function Desktop() {
       <Banners />
       <MissionControl />
       <WindowSwitcher />
+      <AnchoredMenu
+        open={fieldMenu.open}
+        at={fieldMenu.at}
+        items={fieldMenu.items}
+        onClose={fieldMenu.close}
+      />
     </div>
   );
 }

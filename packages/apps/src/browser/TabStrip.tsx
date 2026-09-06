@@ -1,7 +1,15 @@
-import { cx, IconButton, Spinner } from '@lumen/ui';
+import {
+  AnchoredMenu,
+  cx,
+  IconButton,
+  isContextMenuKey,
+  type MenuEntry,
+  Spinner,
+  useContextMenu,
+} from '@lumen/ui';
 import { Bookmark, Clock, Cog, File, Plus, Sparkle, X } from 'lucide-react';
 import type { KeyboardEvent, MouseEvent } from 'react';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { Tab } from './tabs';
 import { internalPage, tabInitial } from './url';
 
@@ -11,6 +19,58 @@ export interface TabStripProps {
   onSelect: (id: string) => void;
   onClose: (id: string) => void;
   onNew: () => void;
+  /**
+   * Open a second tab on the same address. Optional: without it the strip
+   * offers no Duplicate rather than one that quietly opens the start page.
+   */
+  onDuplicate?: (id: string) => void;
+}
+
+export interface TabMenuActions {
+  newTab: () => void;
+  duplicate?: (id: string) => void;
+  close: (id: string) => void;
+}
+
+/**
+ * The menu behind a right-click on a tab. Closing several tabs is closing one
+ * tab several times — the reducer in `tabs.ts` decides what that means for
+ * the selection and for the last tab in the window — so all this works out is
+ * which tabs are involved.
+ */
+export function tabMenuItems(
+  tabs: readonly Tab[],
+  id: string,
+  actions: TabMenuActions,
+): MenuEntry[] {
+  const index = tabs.findIndex((t) => t.id === id);
+  const others = tabs.filter((t) => t.id !== id).map((t) => t.id);
+  const toTheRight = index < 0 ? [] : tabs.slice(index + 1).map((t) => t.id);
+  const closeEach = (ids: string[]) => () => {
+    for (const each of ids) actions.close(each);
+  };
+  const items: MenuEntry[] = [{ id: 'new-tab', label: 'New Tab', onSelect: actions.newTab }];
+  if (actions.duplicate) {
+    const duplicate = actions.duplicate;
+    items.push({ id: 'duplicate', label: 'Duplicate Tab', onSelect: () => duplicate(id) });
+  }
+  items.push(
+    { id: 'tab-sep', type: 'separator' },
+    { id: 'close', label: 'Close Tab', onSelect: () => actions.close(id) },
+    {
+      id: 'close-others',
+      label: 'Close Other Tabs',
+      enabled: others.length > 0,
+      onSelect: closeEach(others),
+    },
+    {
+      id: 'close-right',
+      label: 'Close Tabs to the Right',
+      enabled: toTheRight.length > 0,
+      onSelect: closeEach(toTheRight),
+    },
+  );
+  return items;
 }
 
 const PAGE_GLYPHS = {
@@ -26,8 +86,13 @@ const PAGE_GLYPHS = {
  * Tabs are a tablist — one tab stop, arrows move between them — and each
  * carries its own close button so the mouse and the keyboard agree.
  */
-export function TabStrip({ tabs, activeId, onSelect, onClose, onNew }: TabStripProps) {
+export function TabStrip({ tabs, activeId, onSelect, onClose, onNew, onDuplicate }: TabStripProps) {
   const strip = useRef<HTMLDivElement>(null);
+  const menu = useContextMenu();
+  const [menuTab, setMenuTab] = useState<string | null>(null);
+  const items = menuTab
+    ? tabMenuItems(tabs, menuTab, { newTab: onNew, duplicate: onDuplicate, close: onClose })
+    : [];
 
   // Keep the active tab in view when the strip is crowded enough to scroll.
   // biome-ignore lint/correctness/useExhaustiveDependencies: the selected tab is read from the DOM, so activeId is the trigger
@@ -37,6 +102,14 @@ export function TabStrip({ tabs, activeId, onSelect, onClose, onNew }: TabStripP
   }, [activeId]);
 
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>, index: number) => {
+    const tab = tabs[index];
+    if (tab && isContextMenuKey(e)) {
+      e.preventDefault();
+      const rect = e.currentTarget.getBoundingClientRect();
+      setMenuTab(tab.id);
+      menu.openAtPoint(rect.left + 8, rect.bottom - 2);
+      return;
+    }
     const step = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
     if (step !== 0) {
       e.preventDefault();
@@ -52,7 +125,6 @@ export function TabStrip({ tabs, activeId, onSelect, onClose, onNew }: TabStripP
     }
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
-      const tab = tabs[index];
       if (tab) onSelect(tab.id);
     }
   };
@@ -87,6 +159,10 @@ export function TabStrip({ tabs, activeId, onSelect, onClose, onNew }: TabStripP
               }}
               onAuxClick={(e: MouseEvent) => {
                 if (e.button === 1) onClose(tab.id);
+              }}
+              onContextMenu={(e) => {
+                setMenuTab(tab.id);
+                menu.openAt(e);
               }}
               className={cx(
                 'group flex h-7 w-44 min-w-24 shrink cursor-default items-center gap-1.5 rounded-sm px-2 lumen-focus select-none',
@@ -132,6 +208,7 @@ export function TabStrip({ tabs, activeId, onSelect, onClose, onNew }: TabStripP
       <IconButton label="New tab" size="sm" onClick={onNew}>
         <Plus />
       </IconButton>
+      <AnchoredMenu open={menu.open} at={menu.at} items={items} onClose={menu.close} />
     </div>
   );
 }

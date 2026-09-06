@@ -10,6 +10,12 @@ export interface MenuEntry {
   label?: string;
   /** Pre-formatted shortcut text ("Ctrl+S" / "⌘S"). */
   shortcut?: string;
+  /**
+   * A short reason beside the label, for an item that is off for a cause
+   * worth stating — a disabled Paste that says why beats one that leaves a
+   * person clicking at nothing.
+   */
+  hint?: string;
   icon?: ReactNode;
   enabled?: boolean;
   checked?: boolean;
@@ -178,6 +184,11 @@ export function MenuList({
               </span>
             )}
             <span className="truncate-1">{item.label}</span>
+            {item.hint && (
+              // A hint is prose, so it keeps the UI face; a count in one still
+              // has to hold its width as it changes.
+              <span className="truncate-1 text-xs tabular-nums text-ink-3">{item.hint}</span>
+            )}
             {item.shortcut && <span className="lumen-menu-shortcut">{item.shortcut}</span>}
             {hasSub && <ChevronRight aria-hidden className="ml-auto size-3.5 text-ink-3" />}
             {hasSub && openSub === i && item.submenu && (
@@ -306,6 +317,26 @@ export function useContextMenu() {
     },
     [],
   );
+  /** Open at a point: the keyboard asks for a menu without a pointer to use. */
+  const openAtPoint = useCallback((x: number, y: number) => setAt({ x, y }), []);
   const close = useCallback(() => setAt(null), []);
-  return { at, open: at !== null, openAt, close };
+  return { at, open: at !== null, openAt, openAtPoint, close };
+}
+
+/** The shape `isContextMenuKey` reads: a keyboard event, native or React's. */
+export interface ContextMenuKeyEvent {
+  key: string;
+  shiftKey: boolean;
+  ctrlKey: boolean;
+  altKey: boolean;
+  metaKey: boolean;
+}
+
+/**
+ * The two keys that ask for a context menu without a pointer: the Menu key
+ * that sits by the right Ctrl, and Shift+F10 for the keyboards without one.
+ */
+export function isContextMenuKey(event: ContextMenuKeyEvent): boolean {
+  if (event.ctrlKey || event.altKey || event.metaKey) return false;
+  return event.key === 'ContextMenu' || (event.key === 'F10' && event.shiftKey);
 }

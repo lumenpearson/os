@@ -1,5 +1,8 @@
 import { AppHost, FileTypeIcon } from '@lumen/apps';
 import {
+  formatShortcut,
+  GLOBAL_SHORTCUTS,
+  type GlobalShortcutId,
   getSettings,
   keepTitleVisible,
   type Rect,
@@ -13,12 +16,13 @@ import {
   type WindowId,
 } from '@lumen/kernel';
 import { useKernel } from '@lumen/kernel/react';
-import { cx } from '@lumen/ui';
+import { AnchoredMenu, cx, isContextMenuKey, useContextMenu } from '@lumen/ui';
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { useShellStore } from '../shellStore';
 import { isDragSurface, titleBarHeight } from './drag';
 import { useSnapPreview } from './SnapPreview';
 import { WindowControls } from './WindowControls';
+import { windowMenuItems } from './windowMenu';
 
 const HANDLES: ResizeHandle[] = ['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw'];
 const HANDLE_CURSOR: Record<ResizeHandle, string> = {
@@ -56,9 +60,12 @@ export const WindowFrame = memo(function WindowFrame({ id }: { id: WindowId }) {
   const focused = inFront && hostFocused;
   const app = useRegistryStore((s) => (win ? s.apps[win.appId] : undefined));
   const process = useProcessStore((s) => (win ? s.processes[win.pid] : undefined));
-  const shadows = getSettings().display.shadows;
+  const settings = getSettings();
+  const shadows = settings.display.shadows;
   const frameRef = useRef<HTMLDivElement>(null);
+  const headerRef = useRef<HTMLElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
+  const titleMenu = useContextMenu();
   const [container, setContainer] = useState<HTMLDivElement | null>(null);
   /**
    * Stable, and it has to be: React detaches and re-attaches a ref callback
@@ -95,6 +102,30 @@ export const WindowFrame = memo(function WindowFrame({ id }: { id: WindowId }) {
         getComputedStyle(document.documentElement).getPropertyValue('--duration-window'),
       ) || 0;
     setTimeout(after, duration);
+  };
+
+  const closeWindow = () =>
+    animateThen('close', () => void requestClose().then(() => setClosing(false)));
+  const minimizeWindow = () =>
+    animateThen('minimize', () => {
+      useWindowStore.getState().minimize(id);
+      setMinimizing(false);
+    });
+
+  /**
+   * Whether an event landed on the title bar rather than on the app. The same
+   * question the drag asks, answered the same way, so the menu appears on
+   * exactly the strip that a person can drag the window by — including the
+   * inset bar, where the app draws its own toolbar in the same place.
+   */
+  const onTitleBar = (target: EventTarget | null, clientY: number) => {
+    const frame = frameRef.current;
+    return isDragSurface({
+      offsetY: clientY - (frame?.getBoundingClientRect().top ?? 0),
+      titleBarHeight: titleBarHeight(frame),
+      target: target instanceof Element ? target : null,
+      frame,
+    });
   };
 
   // ── drag ──────────────────────────────────────────────────────────────
@@ -262,6 +293,31 @@ export const WindowFrame = memo(function WindowFrame({ id }: { id: WindowId }) {
   const Icon = app.icon;
   const showChrome = titleBar !== 'hidden' && !fullscreen;
 
+  const shortcutFor = (shortcutId: GlobalShortcutId) =>
+    formatShortcut(
+      settings.keyboard.shortcuts[shortcutId] ?? GLOBAL_SHORTCUTS[shortcutId].keys,
+      settings.keyboard.modifier,
+    );
+
+  const menuItems = windowMenuItems(
+    {
+      minimizable: win.options.minimizable !== false,
+      maximizable: win.options.maximizable !== false,
+      closable: win.options.closable !== false,
+      snapping: settings.display.snapping,
+      snap: win.snap,
+      fullscreen: Boolean(fullscreen),
+    },
+    {
+      minimize: minimizeWindow,
+      zoom: () => useWindowStore.getState().toggleMaximize(id),
+      snapLeft: () => useWindowStore.getState().snap(id, 'left'),
+      snapRight: () => useWindowStore.getState().snap(id, 'right'),
+      close: closeWindow,
+    },
+    shortcutFor,
+  );
+
   return (
     <section
       ref={frameRef}
@@ -281,6 +337,28 @@ export const WindowFrame = memo(function WindowFrame({ id }: { id: WindowId }) {
       // own toolbar there, so the frame decides what starts a drag.
       onPointerDown={onTitlePointerDown}
       onDoubleClick={onTitleDoubleClick}
+      onContextMenu={(e) => {
+        // Something inside drew its own menu — a tab, a toolbar — and one
+        // menu is the answer to one click.
+        if (e.defaultPrevented) return;
+        // Not the title bar: the app below decides, and failing that the
+        // session's own rule for a right-click with nothing to offer.
+        if (!showChrome || !onTitleBar(e.target, e.clientY)) return;
+        titleMenu.openAt(e);
+      }}
+      onKeyDown={(e) => {
+        if (!showChrome || !isContextMenuKey(e)) return;
+        // Only when the window itself, or something in its title bar, has the
+        // keyboard: anything inside the app answers for its own content.
+        const header = headerRef.current;
+        const own =
+          e.target === e.currentTarget ||
+          (e.target instanceof Node && header !== null && header.contains(e.target));
+        if (!own) return;
+        e.preventDefault();
+        const rect = (header ?? e.currentTarget).getBoundingClientRect();
+        titleMenu.openAtPoint(rect.left + 12, rect.bottom - 2);
+      }}
       className={cx(
         'absolute left-0 top-0 flex flex-col overflow-hidden bg-surface text-ink outline-none will-change-transform',
         fullscreen ? 'rounded-none' : 'rounded-lg border border-rule',
@@ -295,6 +373,7 @@ export const WindowFrame = memo(function WindowFrame({ id }: { id: WindowId }) {
     >
       {showChrome && (
         <header
+          ref={headerRef}
           className={cx(
             'relative flex shrink-0 items-center select-none',
             titleBar === 'default'
@@ -315,15 +394,8 @@ export const WindowFrame = memo(function WindowFrame({ id }: { id: WindowId }) {
               minimizable={win.options.minimizable !== false}
               maximizable={win.options.maximizable !== false}
               dirty={win.dirty}
-              onClose={() =>
-                animateThen('close', () => void requestClose().then(() => setClosing(false)))
-              }
-              onMinimize={() =>
-                animateThen('minimize', () => {
-                  useWindowStore.getState().minimize(id);
-                  setMinimizing(false);
-                })
-              }
+              onClose={closeWindow}
+              onMinimize={minimizeWindow}
               onMaximize={() => useWindowStore.getState().toggleMaximize(id)}
             />
           </div>
@@ -374,6 +446,12 @@ export const WindowFrame = memo(function WindowFrame({ id }: { id: WindowId }) {
             style={{ cursor: HANDLE_CURSOR[h] }}
           />
         ))}
+      <AnchoredMenu
+        open={titleMenu.open}
+        at={titleMenu.at}
+        items={menuItems}
+        onClose={titleMenu.close}
+      />
     </section>
   );
 });
