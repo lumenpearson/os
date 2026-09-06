@@ -37,6 +37,14 @@ export interface EntryTableProps {
 
 const INDENT = 14;
 
+/**
+ * The lane rule, on the left of every child but the first. The header and the
+ * rows carry the same string, which is the whole reason one hairline appears
+ * per boundary instead of two of different weights — `DataTable` keeps the
+ * same arrangement, and the two components have to agree to look like one OS.
+ */
+const LANES = '[&>*+*]:border-l [&>*+*]:border-rule/40';
+
 function cellValue(row: ArchiveRow, column: SortColumn, exactBytes: boolean): string {
   const { node } = row;
   switch (column) {
@@ -177,7 +185,13 @@ export function EntryTable({
         <div style={{ minWidth }}>
           <div
             role="row"
-            className="sticky top-0 z-10 grid shrink-0 border-b border-rule bg-canvas text-sm text-ink-2 select-none"
+            // The lane rule is drawn on the left of every child but the first,
+            // at the same weight as the rows below, so header and body paint
+            // one hairline per boundary between them rather than two.
+            className={cx(
+              'sticky top-0 z-10 grid shrink-0 border-b border-rule bg-canvas text-sm text-ink-2 select-none',
+              LANES,
+            )}
             style={{ gridTemplateColumns: template }}
           >
             {columns.map((column) => {
@@ -192,7 +206,7 @@ export function EntryTable({
                   }
                   onClick={() => onSort(column)}
                   className={cx(
-                    'flex h-6 items-center gap-1 border-r border-rule px-2 text-left last:border-r-0 lumen-focus hover:bg-surface-2',
+                    'flex h-6 items-center gap-1 px-2 text-left lumen-focus hover:bg-surface-2',
                     column !== 'name' && 'justify-end',
                     active && 'text-ink',
                   )}
@@ -231,8 +245,9 @@ export function EntryTable({
                     'lumen-list-row cursor-default px-0',
                     // Every other row takes a faint wash. Selection and the
                     // cursor are stronger and paint over it.
-                    index % 2 === 1 && !isSelected && 'bg-surface-2/40',
+                    index % 2 === 1 && !isSelected && 'bg-stripe',
                     node.id === cursor && !isSelected && 'bg-surface-2',
+                    LANES,
                   )}
                   style={{ gridTemplateColumns: template }}
                 >

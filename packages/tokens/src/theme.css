@@ -63,6 +63,7 @@
   --color-canvas: var(--lumen-canvas);
   --color-surface: var(--lumen-surface);
   --color-surface-2: var(--lumen-surface-2);
+  --color-stripe: var(--lumen-stripe);
   --color-surface-3: var(--lumen-surface-3);
   --color-chrome: var(--lumen-chrome);
   --color-ink: var(--lumen-ink);
@@ -105,6 +106,14 @@
   --lumen-canvas: #f4f4f5;
   --lumen-surface: #ffffff;
   --lumen-surface-2: #ececee;
+  /*
+   * The wash on every other row of a table. An overlay rather than a colour:
+   * a solid tone lands at a different strength depending on whether the table
+   * sits on the canvas or on a surface, and the stripe was half as strong in
+   * Files as in Task Manager for exactly that reason. One just-perceptible
+   * step — enough to follow a row across, invisible looking at one cell.
+   */
+  --lumen-stripe: rgb(0 0 0 / 0.028);
   --lumen-surface-3: #e1e2e5;
   /* The panel background, in two parts so the shell can tint it without
      knowing what it is: Settings > Wallpaper > Dynamic chrome overrides
@@ -157,6 +166,7 @@
   --lumen-canvas: #1b1c1f;
   --lumen-surface: #232428;
   --lumen-surface-2: #2b2c31;
+  --lumen-stripe: rgb(255 255 255 / 0.032);
   --lumen-surface-3: #35363c;
   --lumen-chrome-base: rgb(30 31 35 / 0.78);
   --lumen-chrome: var(--lumen-chrome-base);

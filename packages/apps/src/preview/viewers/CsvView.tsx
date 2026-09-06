@@ -48,7 +48,7 @@ export function CsvView({ text, name }: CsvViewProps) {
           </thead>
           <tbody>
             {table.rows.map((row, index) => (
-              <tr key={index} className="even:bg-canvas">
+              <tr key={index} className="even:bg-stripe">
                 <th
                   scope="row"
                   className="sticky left-0 border-r border-rule bg-inherit px-2 py-1 text-right font-normal tabular-nums text-ink-3"

@@ -30,7 +30,7 @@ const PROSE = [
   '[&_td]:border [&_td]:border-rule [&_td]:px-2 [&_td]:py-1 [&_td]:tabular-nums',
   // Every other body row takes a faint wash, so the eye can carry a value
   // across a wide table without losing its line.
-  '[&_tbody_tr:nth-child(even)]:bg-surface-2/40',
+  '[&_tbody_tr:nth-child(even)]:bg-stripe',
 ].join(' ');
 
 export interface MarkdownViewProps {

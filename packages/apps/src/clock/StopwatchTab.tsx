@@ -112,7 +112,7 @@ export function StopwatchTab({ state, onToggle, onLap, onReset }: StopwatchTabPr
                       'border-t border-rule text-ink',
                       // Every other lap takes a faint wash, so a long list of
                       // near-identical times stays readable across its columns.
-                      index % 2 === 1 && 'bg-surface-2/40',
+                      index % 2 === 1 && 'bg-stripe',
                     )}
                   >
                     <th scope="row" className="px-3 py-1.5 text-left text-base font-normal">

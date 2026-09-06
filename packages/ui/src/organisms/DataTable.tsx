@@ -183,7 +183,11 @@ export function DataTable<T>({
         // own padding repeated here; see the note on the component.
         className={cx(
           'sticky top-0 z-10 grid border-b border-rule bg-canvas text-sm text-ink-2 select-none',
-          '[&>*+*]:border-l [&>*+*]:border-rule/60',
+          // The same weight and the same side as the body's lane below, so the
+          // two hairlines stack into one. Drawn on the left of every child but
+          // the first; a right border here as well would paint the boundary
+          // twice, a pixel wide and a pixel to the left of the body's.
+          '[&>*+*]:border-l [&>*+*]:border-rule/40',
           LANE_INSET,
         )}
         style={{ gridTemplateColumns: template }}
@@ -205,7 +209,7 @@ export function DataTable<T>({
                 )
               }
               className={cx(
-                'flex h-6 items-center gap-1 px-2 text-left lumen-focus border-r border-rule last:border-r-0',
+                'flex h-6 items-center gap-1 px-2 text-left lumen-focus',
                 c.align === 'right' && 'justify-end',
                 c.sortable && 'hover:bg-surface-2',
                 active && 'text-ink',
@@ -248,7 +252,10 @@ export function DataTable<T>({
               className={cx(
                 'lumen-list-row',
                 // Alternating rows, and the same lanes as the header above.
-                i % 2 === 1 && !isSelected && 'bg-surface-2/40',
+                // The stripe is a utility and would out-layer the selection
+                // painted by `.lumen-list-row[aria-selected]`, so a selected
+                // row opts out and keeps the accent it has earned.
+                i % 2 === 1 && !isSelected && 'bg-stripe',
                 '[&>*+*]:border-l [&>*+*]:border-rule/40',
                 rowClassName?.(row),
               )}
