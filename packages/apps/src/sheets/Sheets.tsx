@@ -868,27 +868,40 @@ export default function Sheets({ args: initialArgs }: AppProps) {
           currency={currency}
         />
       </div>
+      {/*
+       * The tabs scroll; the two buttons do not. They used to share one row
+       * with nothing that could shrink or scroll, so a workbook of seven
+       * sheets pushed Add and Delete past the window edge — and since the
+       * Sheet menu can add, rename and delete but not *switch*, a tab past
+       * the edge had no route to it at all. Tabbing to one then scrolled the
+       * window frame's clipping box and dragged the whole grid sideways.
+       */}
       <div className="flex h-8 shrink-0 items-center gap-1 border-t border-rule bg-canvas px-2">
-        {workbook.sheets.map((tab, index) => (
-          <button
-            key={`${tab.name}-${index}`}
-            type="button"
-            aria-current={index === active}
-            onClick={() => {
-              setActive(index);
-              setEditor(null);
-              setSelection({ anchor: ORIGIN, focus: ORIGIN });
-            }}
-            onDoubleClick={() => void renameSheetAt(index)}
-            className={cx(
-              'h-6 rounded-sm px-2.5 text-sm lumen-focus select-none',
-              'transition-colors duration-(--duration-fast) ease-(--ease-standard)',
-              index === active ? 'bg-surface text-ink shadow-sm' : 'text-ink-2 hover:text-ink',
-            )}
-          >
-            {tab.name}
-          </button>
-        ))}
+        <div
+          className="lumen-scroll flex min-w-0 flex-1 items-center gap-1 overflow-x-auto overflow-y-hidden"
+          data-testid="sheet-tabs"
+        >
+          {workbook.sheets.map((tab, index) => (
+            <button
+              key={`${tab.name}-${index}`}
+              type="button"
+              aria-current={index === active}
+              onClick={() => {
+                setActive(index);
+                setEditor(null);
+                setSelection({ anchor: ORIGIN, focus: ORIGIN });
+              }}
+              onDoubleClick={() => void renameSheetAt(index)}
+              className={cx(
+                'h-6 shrink-0 rounded-sm px-2.5 text-sm lumen-focus select-none',
+                'transition-colors duration-(--duration-fast) ease-(--ease-standard)',
+                index === active ? 'bg-surface text-ink shadow-sm' : 'text-ink-2 hover:text-ink',
+              )}
+            >
+              {tab.name}
+            </button>
+          ))}
+        </div>
         <IconButton label="Add sheet" size="sm" onClick={addNewSheet}>
           <Plus />
         </IconButton>
