@@ -81,7 +81,16 @@ export function applyThemeToDocument(stored: Settings): void {
   const scale = clamp(settings.display.scale, 0.75, 1.75);
   root.style.setProperty('--lumen-scale', String(scale));
   const fontScale = clamp(settings.appearance.fontScale, 0.9, 1.3);
-  root.style.fontSize = `${13 * fontScale * scale}px`;
+  /*
+   * The root every rem in the system is measured against. 16 rather than 13
+   * because the tokens are written as sixteenths of a pixel size — 0.8125rem
+   * is the 13px body text — which keeps them readable against the design.
+   *
+   * Font size moves type and the spacing that goes with it; Scale moves those
+   * and the chrome heights below as well. The chrome is written in px and
+   * multiplied here, so it takes `scale` once and does not double-count.
+   */
+  root.style.fontSize = `${16 * fontScale * scale}px`;
   root.style.setProperty('--lumen-menubar-h', `${Math.round(26 * scale)}px`);
   root.style.setProperty(
     '--lumen-taskbar-h',

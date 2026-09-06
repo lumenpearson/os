@@ -209,6 +209,14 @@ export function Toolbar({ dense, windowControls, className, children, ...rest }:
       role="toolbar"
       className={cx(
         'flex shrink-0 items-center gap-1 border-b border-rule bg-canvas px-2',
+        /*
+         * The row scrolls rather than spilling. Its groups are `shrink-0`, so
+         * a toolbar wider than its window used to push its right-hand buttons
+         * past the frame with no way to reach them — Archive Utility lost
+         * 55 px of controls at Scale 130 %, Calculator 9 px. `shrink-0` above
+         * is about the column it sits in and stays; this is the other axis.
+         */
+        'lumen-scroll overflow-x-auto overflow-y-hidden',
         dense ? 'h-9' : 'h-11',
         windowControls && 'ps-(--lumen-window-controls-w)',
         className,

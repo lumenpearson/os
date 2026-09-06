@@ -153,8 +153,16 @@ async function worstSpill(page: Page): Promise<{ px: number; where: string }> {
     let where = '';
     for (const parent of frame.querySelectorAll<HTMLElement>('*')) {
       if (parent.clientWidth === 0) continue;
-      if (getComputedStyle(parent).overflowX !== 'visible') continue;
-      const edge = parent.getBoundingClientRect().left + parent.clientWidth;
+      const style = getComputedStyle(parent);
+      if (style.overflowX !== 'visible') continue;
+      // `clientWidth` is the content box, and the rect's left edge is outside
+      // the border, so the two only meet once the border is added back. Left
+      // out, a child that exactly fills its parent reads as spilling by the
+      // width of that border.
+      const edge =
+        parent.getBoundingClientRect().left +
+        Number.parseFloat(style.borderLeftWidth || '0') +
+        parent.clientWidth;
       for (const child of parent.children) {
         if (!(child instanceof HTMLElement)) continue;
         const position = getComputedStyle(child).position;

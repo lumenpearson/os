@@ -184,6 +184,55 @@ describe('low power mode', () => {
     expect(root().dataset.shadows).toBe('on');
   });
 
+  /**
+   * LU-1302 asks for 90 %, 100 % and 130 %. The root font-size is where the
+   * whole scale lives — every type and spacing token is a rem against it — so
+   * these are the numbers the rest of the interface is measured in.
+   */
+  describe('scale', () => {
+    const rootFontSize = (patch: (s: ReturnType<typeof defaultSettings>) => void) => {
+      const s = defaultSettings();
+      patch(s);
+      applyThemeToDocument(s);
+      return root().style.fontSize;
+    };
+
+    it('moves the root the rem tokens are measured against', () => {
+      expect(rootFontSize(() => {})).toBe('16px');
+      expect(rootFontSize((s) => (s.display.scale = 0.9))).toBe('14.4px');
+      expect(rootFontSize((s) => (s.display.scale = 1.3))).toBe('20.8px');
+    });
+
+    it('lets Font size move type without moving the chrome', () => {
+      const s = defaultSettings();
+      s.appearance.fontScale = 1.3;
+      applyThemeToDocument(s);
+      expect(root().style.fontSize).toBe('20.8px');
+      // Scale is still 1, so the bands the windows sit between do not move:
+      // someone who wants larger text is not asking for a taller menu bar.
+      expect(root().style.getPropertyValue('--lumen-menubar-h')).toBe('26px');
+      expect(root().style.getPropertyValue('--lumen-window-titlebar-h')).toBe('36px');
+    });
+
+    it('lets Scale move the chrome as well, once', () => {
+      const s = defaultSettings();
+      s.display.scale = 1.3;
+      applyThemeToDocument(s);
+      expect(root().style.getPropertyValue('--lumen-menubar-h')).toBe('34px');
+      expect(root().style.getPropertyValue('--lumen-window-titlebar-h')).toBe('47px');
+      expect(root().style.getPropertyValue('--lumen-scale')).toBe('1.3');
+    });
+
+    it('holds both sliders inside the range Settings offers', () => {
+      // Beyond these the menu bar stops fitting its own line box, so the
+      // clamp is the layout's guarantee and not a formality.
+      expect(rootFontSize((s) => (s.display.scale = 9))).toBe('28px');
+      expect(rootFontSize((s) => (s.display.scale = 0.1))).toBe('12px');
+      expect(rootFontSize((s) => (s.appearance.fontScale = 4))).toBe('20.8px');
+      expect(rootFontSize((s) => (s.appearance.fontScale = 0.1))).toBe('14.4px');
+    });
+  });
+
   it('survives an OS theme flip: the replay applies it too', () => {
     const s = defaultSettings();
     s.appearance.theme = 'auto';

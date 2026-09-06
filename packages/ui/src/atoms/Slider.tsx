@@ -14,13 +14,35 @@ export interface SliderProps
   showValue?: boolean | ((v: number) => string);
 }
 
+/**
+ * Does the caller say how wide this is?
+ *
+ * `cx` concatenates class names; it does not resolve conflicts between them.
+ * So a caller's `w-32` and this component's `w-full` both landed in the list
+ * and the stylesheet decided — `w-full` won, and six callers across Paint,
+ * Preview and Media Player were sizing a slider that ignored them. Media
+ * Player's took the full width of its row and pushed the playlist and
+ * full-screen buttons 385 px past the window edge.
+ *
+ * So the component yields: it fills its box only when nobody said otherwise.
+ */
+function callerSizedIt(className: string | undefined): boolean {
+  return /(?:^|\s)(?:w-|min-w-|max-w-|size-|basis-|flex-1|flex-auto)/.test(className ?? '');
+}
+
 export const Slider = forwardRef<HTMLInputElement, SliderProps>(function Slider(
   { value, onChange, min = 0, max = 100, step = 1, showValue, className, ...rest },
   ref,
 ) {
   const pct = ((value - min) / (max - min || 1)) * 100;
   return (
-    <span className={cx('inline-flex items-center gap-3 w-full', className)}>
+    <span
+      className={cx(
+        'inline-flex items-center gap-3',
+        !callerSizedIt(className) && 'w-full',
+        className,
+      )}
+    >
       <input
         ref={ref}
         type="range"

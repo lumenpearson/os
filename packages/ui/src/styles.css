@@ -5,14 +5,16 @@
  */
 @layer components {
   .lumen-control {
-    height: 28px;
+    /* In rem, so the control grows with the text it holds: at Font size 130 %
+       a 28px box around a 17px line clipped its own placeholder. */
+    height: 1.75rem;
     border-radius: var(--radius-sm);
     border: 1px solid var(--lumen-rule-strong);
     background: var(--lumen-surface);
     color: var(--lumen-ink);
     padding: 0 8px;
     font-size: var(--text-base);
-    line-height: 26px;
+    line-height: 1.625rem;
     transition:
       border-color var(--duration-fast) var(--ease-standard),
       background-color var(--duration-fast) var(--ease-standard),
@@ -41,7 +43,7 @@
   }
 
   .lumen-menu {
-    min-width: 200px;
+    min-width: 12.5rem;
     padding: 4px;
     border-radius: var(--radius-md);
     border: 1px solid var(--lumen-rule);
@@ -83,7 +85,7 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    height: 26px;
+    height: 1.625rem;
     padding: 0 8px 0 24px;
     border-radius: var(--radius-sm);
     font-size: var(--text-base);
@@ -129,7 +131,7 @@
   .lumen-list-row {
     display: grid;
     align-items: center;
-    height: 24px;
+    height: 1.5rem;
     padding: 0 8px;
     border-radius: var(--radius-xs);
     font-size: var(--text-base);

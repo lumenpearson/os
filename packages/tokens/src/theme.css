@@ -15,28 +15,36 @@
   --font-mono:
     "JetBrains Mono Variable", "JetBrains Mono", "Cascadia Mono", Consolas, ui-monospace, monospace;
 
-  /* type scale: few steps, real jumps */
-  --text-2xs: 10px;
-  --text-2xs--line-height: 14px;
-  --text-xs: 11px;
-  --text-xs--line-height: 15px;
-  --text-sm: 12px;
-  --text-sm--line-height: 16px;
-  --text-base: 13px;
-  --text-base--line-height: 18px;
-  --text-md: 15px;
-  --text-md--line-height: 20px;
-  --text-lg: 20px;
-  --text-lg--line-height: 26px;
-  --text-xl: 28px;
-  --text-xl--line-height: 34px;
-  --text-2xl: 40px;
-  --text-2xl--line-height: 46px;
-  --text-3xl: 64px;
-  --text-3xl--line-height: 68px;
+  /*
+   * Type scale: few steps, real jumps — in rem, against a root the theme sets
+   * to 16px times the scale. They were px, and px is why Settings shipped a
+   * Font size slider that moved nothing: the root font-size the theme writes
+   * had nothing relative to it to move. Tailwind derives every sizing and
+   * spacing utility from `--spacing`, so that one line carries some eighteen
+   * hundred utility uses with it. The values are exact sixteenths of the
+   * pixel sizes they replace: 0.8125rem is 13px, 0.25rem is 4px.
+   */
+  --text-2xs: 0.625rem;
+  --text-2xs--line-height: 0.875rem;
+  --text-xs: 0.6875rem;
+  --text-xs--line-height: 0.9375rem;
+  --text-sm: 0.75rem;
+  --text-sm--line-height: 1rem;
+  --text-base: 0.8125rem;
+  --text-base--line-height: 1.125rem;
+  --text-md: 0.9375rem;
+  --text-md--line-height: 1.25rem;
+  --text-lg: 1.25rem;
+  --text-lg--line-height: 1.625rem;
+  --text-xl: 1.75rem;
+  --text-xl--line-height: 2.125rem;
+  --text-2xl: 2.5rem;
+  --text-2xl--line-height: 2.875rem;
+  --text-3xl: 4rem;
+  --text-3xl--line-height: 4.25rem;
 
   /* spacing scale with real jumps */
-  --spacing: 4px;
+  --spacing: 0.25rem;
 
   /* radii: one scale; nested radius = outer − padding */
   --radius-xs: 3px;

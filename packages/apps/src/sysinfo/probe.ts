@@ -529,39 +529,49 @@ export async function readUaHints(): Promise<UaHints | null> {
   }
 }
 
+/**
+ * Do something with a throwaway WebGL context and give it back.
+ *
+ * Giving it back matters: a browser keeps only a handful of live contexts —
+ * around sixteen — and drops the oldest to make room, which is a real
+ * teardown of somebody else's canvas. System Information used to take three
+ * per visit and return one, so opening it a few times cost the OS every
+ * canvas it had. `WEBGL_lose_context` is the release; Firefox writes "WebGL
+ * context was lost" to the console when it happens, which is the cleanup
+ * reporting itself rather than a fault.
+ */
+function withGl<T>(use: (gl: GlLike | null) => T): T {
+  if (typeof document === 'undefined') return use(null);
+  let gl: GlLike | null = null;
+  try {
+    const canvas = document.createElement('canvas');
+    gl = (canvas.getContext('webgl2') ?? canvas.getContext('webgl')) as GlLike | null;
+    return use(gl);
+  } catch {
+    return use(null);
+  } finally {
+    try {
+      const lose = gl?.getExtension('WEBGL_lose_context');
+      if (lose && typeof (lose as { loseContext?: () => void }).loseContext === 'function') {
+        (lose as { loseContext: () => void }).loseContext();
+      }
+    } catch {
+      // A context that cannot be released is already gone.
+    }
+  }
+}
+
 /** Create a throwaway WebGL context, read the GPU strings, release it. */
 export function readGpu(): GpuReading {
-  if (typeof document === 'undefined') return gpuFromContext(null);
-  let canvas: HTMLCanvasElement | null = null;
-  try {
-    canvas = document.createElement('canvas');
-    const gl = (canvas.getContext('webgl2') ?? canvas.getContext('webgl')) as GlLike | null;
-    const reading = gpuFromContext(gl);
-    const lose = gl?.getExtension('WEBGL_lose_context');
-    if (lose && typeof (lose as { loseContext?: () => void }).loseContext === 'function') {
-      (lose as { loseContext: () => void }).loseContext();
-    }
-    return reading;
-  } catch {
-    return gpuFromContext(null);
-  }
+  return withGl(gpuFromContext);
 }
 
 /** Probe each capability by looking for the API itself, not by sniffing. */
 export function readFeatures(): FeatureSupport[] {
   const nav = currentNavigator();
   const storage = nav?.storage as { getDirectory?: unknown } | undefined;
-  let webgl = false;
-  try {
-    webgl =
-      typeof document !== 'undefined' &&
-      Boolean(
-        document.createElement('canvas').getContext('webgl2') ??
-          document.createElement('canvas').getContext('webgl'),
-      );
-  } catch {
-    webgl = false;
-  }
+  // One context, asked one question, given back — not two left open.
+  const webgl = withGl((gl) => gl !== null);
   return [
     {
       id: 'opfs',
