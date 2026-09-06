@@ -1,17 +1,18 @@
 /**
  * The menubar for the Software Center window. The install commands take the
  * window to the Install section first, so a menu choice and a click on the
- * same control end in the same place.
+ * same control end in the same place, and Refresh takes it to the Store,
+ * because that is the thing being refreshed.
  */
 
 import type { MenuTemplate } from '@lumen/kernel';
 
-export type SectionId = 'installed' | 'install' | 'catalogue';
+export type SectionId = 'store' | 'installed' | 'install';
 
 export const SECTIONS: ReadonlyArray<{ id: SectionId; label: string }> = [
+  { id: 'store', label: 'Store' },
   { id: 'installed', label: 'Installed' },
   { id: 'install', label: 'Install' },
-  { id: 'catalogue', label: 'Catalogue' },
 ];
 
 export interface SoftwareMenuState {
@@ -21,6 +22,7 @@ export interface SoftwareMenuState {
 export interface SoftwareActions {
   installFromFile: () => void;
   pasteManifest: () => void;
+  refresh: () => void;
   find: () => void;
   show: (section: SectionId) => void;
   close: () => void;
@@ -67,14 +69,23 @@ export function buildSoftwareMenus(
     {
       id: 'view',
       label: 'View',
-      items: SECTIONS.map((s, index) => ({
-        id: `view.${s.id}`,
-        type: 'radio' as const,
-        label: s.label,
-        shortcut: `Mod+${index + 1}`,
-        checked: state.section === s.id,
-        onSelect: () => actions.show(s.id),
-      })),
+      items: [
+        ...SECTIONS.map((s, index) => ({
+          id: `view.${s.id}`,
+          type: 'radio' as const,
+          label: s.label,
+          shortcut: `Mod+${index + 1}`,
+          checked: state.section === s.id,
+          onSelect: () => actions.show(s.id),
+        })),
+        { type: 'separator' },
+        {
+          id: 'view.refresh',
+          label: 'Refresh Catalogue',
+          shortcut: 'Mod+R',
+          onSelect: actions.refresh,
+        },
+      ],
     },
   ];
 }

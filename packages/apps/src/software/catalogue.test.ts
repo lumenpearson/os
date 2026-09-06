@@ -1,13 +1,6 @@
 import { parseManifest } from '@lumen/kernel';
 import { describe, expect, it } from 'vitest';
-import {
-  availableFromCatalogue,
-  CATALOGUE,
-  catalogueById,
-  catalogueStatus,
-  searchCatalogue,
-} from './catalogue';
-import { buildLibrary } from './library';
+import { CATALOGUE } from './catalogue';
 import { errorsOf, formatManifest, validateManifest } from './manifest';
 
 describe('the bundled catalogue', () => {
@@ -57,54 +50,5 @@ describe('the bundled catalogue', () => {
       expect(errorsOf(validateManifest(m).issues), m.id).toEqual([]);
       expect(m.html ?? '', m.id).not.toMatch(/https?:\/\//);
     }
-  });
-});
-
-describe('lookup', () => {
-  it('finds a program by id', () => {
-    expect(catalogueById('user.pomodoro')?.name).toBe('Pomodoro Timer');
-    expect(catalogueById('user.nothing')).toBeUndefined();
-  });
-
-  it('searches name, id, description and keywords', () => {
-    expect(searchCatalogue('colour').map((m) => m.id)).toEqual(['user.colour']);
-    expect(searchCatalogue('JSON').map((m) => m.id)).toEqual(['user.json']);
-    expect(searchCatalogue('minify').map((m) => m.id)).toEqual(['user.json']);
-    expect(searchCatalogue('user.').map((m) => m.id)).toHaveLength(5);
-    expect(searchCatalogue('   ')).toHaveLength(5);
-    expect(searchCatalogue('spreadsheet')).toEqual([]);
-  });
-});
-
-describe('catalogueStatus', () => {
-  const converter = CATALOGUE[0];
-  if (!converter) throw new Error('empty catalogue');
-
-  it('is available when nothing on the system claims the id', () => {
-    expect(catalogueStatus(converter, [])).toBe('available');
-  });
-
-  it('is installed once the manifest is under /Applications', () => {
-    const entries = buildLibrary([], [{ manifest: converter, path: '/Applications/x.app' }]);
-    expect(catalogueStatus(converter, entries)).toBe('installed');
-    expect(availableFromCatalogue(entries)).toHaveLength(4);
-  });
-
-  it('is shadowed when a built-in app owns the id', () => {
-    const entries = buildLibrary(
-      [
-        {
-          id: converter.id,
-          name: 'Converter',
-          description: '',
-          category: 'utilities',
-          icon: () => null,
-          component: () => null,
-          window: { width: 100, height: 100 },
-        },
-      ],
-      [],
-    );
-    expect(catalogueStatus(converter, entries)).toBe('shadowed');
   });
 });

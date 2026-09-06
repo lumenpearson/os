@@ -2,6 +2,7 @@ import {
   type AppDefinition,
   type AppManifest,
   createKernel,
+  DEFAULT_STORE_ORIGIN,
   type Kernel,
   useMenuStore,
   useProcessStore,
@@ -16,6 +17,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { AppProvider, FileDialogProvider } from '../_sdk';
 import { CATALOGUE } from './catalogue';
 import { LUMEN_PATHS_MIME } from './drop';
+import { buildStore, DESK, SEVEN, STOPWATCH, type StoreFiles } from './fixture';
 import definition from './index';
 import Software from './Software';
 
@@ -42,8 +44,27 @@ const TIMER: AppManifest = {
 
 let kernel: Kernel;
 let windowId: string;
+let files: StoreFiles = new Map();
+let offline = false;
+let requests: string[] = [];
+const encoder = new TextEncoder();
 
-async function mount(preinstall: AppManifest[] = []) {
+/** The store as a set of files at a base URL; anything else is a 404. */
+function serve() {
+  globalThis.fetch = (async (input: RequestInfo | URL) => {
+    const url = String(input);
+    requests.push(url);
+    if (offline) throw new TypeError('Failed to fetch');
+    const body = files.get(url);
+    if (body === undefined) return new Response('missing', { status: 404 });
+    return new Response(body, {
+      status: 200,
+      headers: { 'content-length': String(encoder.encode(body).byteLength) },
+    });
+  }) as typeof fetch;
+}
+
+async function boot(preinstall: AppManifest[] = []) {
   const platform = createWebPlatform();
   kernel = createKernel({
     platform: { ...platform, adapter: new MemoryAdapter() },
@@ -52,6 +73,9 @@ async function mount(preinstall: AppManifest[] = []) {
   });
   await kernel.boot();
   for (const manifest of preinstall) await kernel.installApp(manifest);
+}
+
+async function openWindow() {
   const process = kernel.launch('lumen.software');
   if (!process) throw new Error('failed to launch');
   windowId = process.windowIds[0] as string;
@@ -69,7 +93,18 @@ async function mount(preinstall: AppManifest[] = []) {
   await screen.findByRole('radio', { name: 'Installed' });
 }
 
+async function mount(preinstall: AppManifest[] = []) {
+  await boot(preinstall);
+  await openWindow();
+}
+
 const list = () => screen.getByRole('list', { name: 'Installed apps' });
+/**
+ * The running installs. A finished job and the package's own page both state
+ * the outcome — the row is the log of what happened, the page is what is true
+ * now — so an assertion about the install itself says which it means.
+ */
+const jobs = () => within(screen.getByRole('list', { name: 'Installs' }));
 const rowNames = () =>
   within(list())
     .getAllByRole('button', { name: /.*/ })
@@ -84,11 +119,277 @@ async function paste(json: string) {
   fireEvent.change(screen.getByLabelText('Manifest JSON'), { target: { value: json } });
 }
 
+/** The store tile for a package, which is the button carrying its name. */
+function tile(name: string): HTMLElement {
+  const found = screen
+    .getAllByRole('button')
+    .find((button) => button.textContent?.includes(name) && button.textContent?.includes('·'));
+  if (!found) throw new Error(`no tile for ${name}`);
+  return found;
+}
+
+beforeEach(async () => {
+  requests = [];
+  offline = false;
+  files = (await buildStore(DEFAULT_STORE_ORIGIN)).files;
+  serve();
+});
+
 afterEach(cleanup);
+
+describe('the store', () => {
+  beforeEach(async () => {
+    await mount();
+    await screen.findByRole('heading', { name: 'Recently updated' });
+  });
+
+  it('opens on the store and draws the catalogue it fetched', () => {
+    expect(screen.getByRole('radio', { name: 'Store' })).toHaveAttribute('aria-checked', 'true');
+    expect(screen.getByText('Two programs to start with')).toBeInTheDocument();
+    // A collection is a card you press, so its title is the button's own
+    // label rather than a heading inside it.
+    expect(screen.getByRole('heading', { name: 'Collections' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Quiet tools/ })).toBeInTheDocument();
+    expect(screen.getByText('Fetched moments ago.')).toBeInTheDocument();
+  });
+
+  it('shows name, publisher, tagline, size and price on a tile', () => {
+    const stopwatch = tile('Stopwatch');
+    expect(stopwatch.textContent).toContain('Lumen');
+    expect(stopwatch.textContent).toContain('Laps, splits');
+    expect(stopwatch.textContent).toContain('App');
+    expect(stopwatch.textContent).toContain('Free');
+    expect(stopwatch.textContent).toMatch(/\d+ B/);
+  });
+
+  it('folds the programs that ship with the OS into the same shelves', () => {
+    const shelf = screen.getByRole('region', { name: 'Ships with Lumen OS' });
+    for (const manifest of CATALOGUE) {
+      expect(within(shelf).getByText(manifest.name)).toBeInTheDocument();
+    }
+    expect(screen.getByText(`${3 + CATALOGUE.length} in the catalogue`)).toBeInTheDocument();
+  });
+
+  it('opens a package on its own page, with what it needs and what it changed', async () => {
+    await userEvent.click(tile('Stopwatch'));
+    expect(await screen.findByRole('heading', { name: 'Stopwatch' })).toBeInTheDocument();
+    expect(screen.getByText('It keeps counting when the window is closed.')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'New in 2.1.0' })).toBeInTheDocument();
+    expect(screen.getByText('Laps now survive a reload.')).toBeInTheDocument();
+    expect(
+      screen.getByText('Saves data of its own under your home directory.'),
+    ).toBeInTheDocument();
+    expect(screen.getByText('Lumen OS >=0.1.0')).toBeInTheDocument();
+    expect(screen.getByText(STOPWATCH)).toBeInTheDocument();
+  });
+
+  it('shows a bundle as the packages it installs', async () => {
+    await userEvent.click(tile('Desk Kit'));
+    expect(await screen.findByRole('heading', { name: 'Installs 2 packages' })).toBeInTheDocument();
+    expect(screen.getByText('Seven Segment')).toBeInTheDocument();
+  });
+
+  it('opens a collection from its card', async () => {
+    await userEvent.click(screen.getByRole('button', { name: /Quiet tools/ }));
+    expect(await screen.findByRole('button', { name: 'All shelves' })).toBeInTheDocument();
+    expect(screen.getByText('Programs that stay out of the way.')).toBeInTheDocument();
+  });
+
+  it('searches the store and the system programs together', async () => {
+    await userEvent.type(screen.getByLabelText('Search the store'), 'seven');
+    expect(await screen.findByRole('heading', { name: '1 package' })).toBeInTheDocument();
+    await userEvent.clear(screen.getByLabelText('Search the store'));
+    await userEvent.type(screen.getByLabelText('Search the store'), 'pomodoro');
+    expect(await screen.findByRole('heading', { name: '1 package' })).toBeInTheDocument();
+  });
+
+  it('says so when nothing matches', async () => {
+    await userEvent.type(screen.getByLabelText('Search the store'), 'zzz');
+    expect(await screen.findByText('No package matches')).toBeInTheDocument();
+  });
+
+  it('narrows by kind', async () => {
+    await userEvent.selectOptions(screen.getByLabelText('Kind'), 'font');
+    expect(await screen.findByRole('heading', { name: '1 package' })).toBeInTheDocument();
+    expect(screen.getByText('Seven Segment')).toBeInTheDocument();
+  });
+
+  it('refreshes from the toolbar', async () => {
+    requests = [];
+    await userEvent.click(screen.getByRole('button', { name: 'Refresh catalogue' }));
+    await waitFor(() => expect(requests).toContain(`${DEFAULT_STORE_ORIGIN}index.json`));
+  });
+});
+
+describe('installing from the store', () => {
+  beforeEach(async () => {
+    await mount();
+    await screen.findByRole('heading', { name: 'Recently updated' });
+  });
+
+  async function get(name: string) {
+    await userEvent.click(tile(name));
+    await userEvent.click(await screen.findByRole('button', { name: 'Get' }));
+  }
+
+  it('downloads, verifies and installs an app through the same path as a file', async () => {
+    await get('Stopwatch');
+    await waitFor(async () =>
+      expect(await kernel.vfs.exists('/Applications/Stopwatch.app')).toBe(true),
+    );
+    expect(
+      await jobs().findByText(/Written to \/Applications\/Stopwatch\.app/),
+    ).toBeInTheDocument();
+    const written = JSON.parse(await kernel.vfs.readText('/Applications/Stopwatch.app')) as {
+      id: string;
+    };
+    expect(written.id).toBe(STOPWATCH);
+    await show('Installed');
+    expect(await within(list()).findByText('Stopwatch')).toBeInTheDocument();
+  });
+
+  it('writes a typeface under the home directory and records it', async () => {
+    await get('Seven Segment');
+    const path = `${kernel.home}/.store/fonts/${SEVEN}.json`;
+    await waitFor(async () => expect(await kernel.vfs.exists(path)).toBe(true));
+    expect(await screen.findByText(new RegExp(`Typeface written to ${path}`))).toBeInTheDocument();
+    const record = await kernel.vfs.readJson<{ resources: Array<{ id: string }> }>(
+      `${kernel.home}/.store/resources.json`,
+    );
+    expect(record.resources.map((r) => r.id)).toEqual([SEVEN]);
+  });
+
+  it('installs a bundle member by member, one row each, in order', async () => {
+    await get('Desk Kit');
+    const installs = await screen.findByRole('list', { name: 'Installs' });
+    await waitFor(async () =>
+      expect(await kernel.vfs.exists(`${kernel.home}/.store/fonts/${SEVEN}.json`)).toBe(true),
+    );
+    const rows = within(installs).getAllByRole('listitem');
+    const text = rows.map((r) => r.textContent ?? '').join(' | ');
+    expect(text).toContain('Stopwatch');
+    expect(text).toContain('Seven Segment');
+    expect(text.indexOf('Stopwatch')).toBeLessThan(text.indexOf('Seven Segment'));
+    expect(await screen.findByText(/2 packages: com\.lumen\.stopwatch and/)).toBeInTheDocument();
+  });
+
+  it('refuses a payload whose checksum is not the one the catalogue named', async () => {
+    // Same number of bytes, different bytes. The length is checked first and
+    // would otherwise be what refuses this, and the length is not what this
+    // test is about.
+    const payloadUrl = `${DEFAULT_STORE_ORIGIN}payload/${STOPWATCH}-2.1.0.json`;
+    const honest = files.get(payloadUrl) as string;
+    files.set(payloadUrl, honest.replace('Stopwatch', 'Stopwatcz'));
+    await get('Stopwatch');
+    expect(await jobs().findByText(/its checksum is/)).toBeInTheDocument();
+    expect(await kernel.vfs.exists('/Applications/Stopwatch.app')).toBe(false);
+  });
+
+  it('says the connection failed when the payload cannot be fetched', async () => {
+    await userEvent.click(tile('Stopwatch'));
+    const button = await screen.findByRole('button', { name: 'Get' });
+    offline = true;
+    await userEvent.click(button);
+    expect(await jobs().findByText(/could not be reached/)).toBeInTheDocument();
+    expect(await kernel.vfs.exists('/Applications/Stopwatch.app')).toBe(false);
+  });
+
+  it('names the member a bundle asks for that the catalogue does not list', async () => {
+    const document = JSON.parse(
+      files.get(`${DEFAULT_STORE_ORIGIN}packages/${DESK}.json`) as string,
+    ) as {
+      members: string[];
+    };
+    document.members = [STOPWATCH, 'com.lumen.ghost'];
+    files.set(`${DEFAULT_STORE_ORIGIN}packages/${DESK}.json`, JSON.stringify(document));
+    await get('Desk Kit');
+    expect(
+      await screen.findByText(
+        /needs com\.lumen\.ghost, which this store's catalogue does not list/,
+      ),
+    ).toBeInTheDocument();
+    expect(await kernel.vfs.exists('/Applications/Stopwatch.app')).toBe(false);
+  });
+
+  it('installs a program that ships with the OS with no download at all', async () => {
+    requests = [];
+    const bundled = CATALOGUE[0];
+    if (!bundled) throw new Error('empty catalogue');
+    await userEvent.click(tile(bundled.name));
+    await userEvent.click(await screen.findByRole('button', { name: 'Get' }));
+    await waitFor(async () =>
+      expect(await kernel.vfs.exists(`/Applications/${bundled.name}.app`)).toBe(true),
+    );
+    expect(requests).toEqual([]);
+  });
+});
+
+describe('when the store cannot be reached', () => {
+  it('says which address it tried, and still shows what ships with the OS', async () => {
+    offline = true;
+    await mount();
+    expect(await screen.findByText('The store could not be reached')).toBeInTheDocument();
+    expect(screen.getByText(new RegExp(DEFAULT_STORE_ORIGIN))).toBeInTheDocument();
+    const shelf = screen.getByRole('region', { name: 'Ships with Lumen OS' });
+    expect(within(shelf).getByText('Pomodoro Timer')).toBeInTheDocument();
+  });
+
+  it('refuses a catalogue it cannot read, whole', async () => {
+    files.set(`${DEFAULT_STORE_ORIGIN}index.json`, '{ "format": 1, "packages": ');
+    await mount();
+    expect(await screen.findByText('The catalogue could not be read')).toBeInTheDocument();
+  });
+
+  it('falls back to the copy that ships beside the OS', async () => {
+    const bundled = new URL('/store/', globalThis.location.href).href;
+    const copy = await buildStore(bundled);
+    for (const [url, body] of copy.files) files.set(url, body);
+    files.delete(`${DEFAULT_STORE_ORIGIN}index.json`);
+    await mount();
+    expect(
+      await screen.findByText(/Showing the catalogue that ships with Lumen OS/),
+    ).toBeInTheDocument();
+    expect(screen.getByText('Seven Segment')).toBeInTheDocument();
+  });
+
+  /** Open once with the store reachable, so a catalogue is kept, then go dark. */
+  async function reopenOffline() {
+    await mount();
+    await screen.findByRole('heading', { name: 'Recently updated' });
+    await waitFor(async () =>
+      expect(await kernel.vfs.exists(`${kernel.home}/.store/catalogue.json`)).toBe(true),
+    );
+    cleanup();
+    offline = true;
+    await openWindow();
+  }
+
+  it('draws the catalogue it kept last time, and says how old it is', async () => {
+    await reopenOffline();
+    // A cache this fresh is not worth a request, so the store is never asked
+    // and there is no failure to report — only how old what is drawn is.
+    expect(
+      await screen.findByText('Kept from a previous session, fetched moments ago.'),
+    ).toBeInTheDocument();
+    expect(screen.getByText('Seven Segment')).toBeInTheDocument();
+  });
+
+  it('says the store could not be reached when a refresh fails, and keeps what it had', async () => {
+    await reopenOffline();
+    await screen.findByText('Kept from a previous session, fetched moments ago.');
+    await userEvent.click(screen.getByRole('button', { name: 'Refresh' }));
+    expect(
+      await screen.findByText(/The store could not be reached\. Showing the catalogue fetched/),
+    ).toBeInTheDocument();
+    // The failure does not take the shelves down with it.
+    expect(screen.getByText('Seven Segment')).toBeInTheDocument();
+  });
+});
 
 describe('the installed list', () => {
   beforeEach(async () => {
     await mount([TIMER]);
+    await show('Installed');
   });
 
   it('shows built-in apps and installed programs together', () => {
@@ -134,6 +435,7 @@ describe('the installed list', () => {
 describe('the details pane', () => {
   beforeEach(async () => {
     await mount([TIMER]);
+    await show('Installed');
   });
 
   it('prints the identifier, window defaults and file associations of a built-in', async () => {
@@ -160,13 +462,14 @@ describe('the details pane', () => {
     // "Installed" is also the name of a section button, so this has to ask for
     // the term in the details list specifically, and read the value beside it.
     const installedAt = screen.getByText('Installed', { selector: 'dt' }).nextElementSibling;
-    expect(installedAt?.textContent).not.toContain('\u2014');
+    expect(installedAt?.textContent).not.toContain('—');
   });
 });
 
 describe('removing an app', () => {
   beforeEach(async () => {
     await mount([TIMER]);
+    await show('Installed');
     await userEvent.click(screen.getByText('Timer'));
     await userEvent.click(await screen.findByRole('button', { name: 'Remove' }));
   });
@@ -304,38 +607,6 @@ describe('installing from a file', () => {
   });
 });
 
-describe('the catalogue', () => {
-  beforeEach(async () => {
-    await mount();
-    await show('Catalogue');
-  });
-
-  it('lists every bundled program', () => {
-    for (const manifest of CATALOGUE) {
-      expect(screen.getByRole('heading', { name: manifest.name })).toBeInTheDocument();
-    }
-  });
-
-  it('narrows the cards with the search field', async () => {
-    await userEvent.type(screen.getByLabelText('Search apps'), 'pomodoro');
-    await waitFor(() =>
-      expect(screen.queryByRole('heading', { name: 'JSON Formatter' })).not.toBeInTheDocument(),
-    );
-    expect(screen.getByRole('heading', { name: 'Pomodoro Timer' })).toBeInTheDocument();
-  });
-
-  it('installs a program in one press and shows it among the installed apps', async () => {
-    const cards = screen.getAllByRole('button', { name: 'Install' });
-    const first = cards[0];
-    if (!first) throw new Error('nothing to install');
-    await userEvent.click(first);
-    await waitFor(async () =>
-      expect(await kernel.vfs.exists('/Applications/Unit Converter.app')).toBe(true),
-    );
-    expect(await within(list()).findByText('Unit Converter')).toBeInTheDocument();
-  });
-});
-
 describe('the menubar', () => {
   beforeEach(async () => {
     await mount();
@@ -354,12 +625,22 @@ describe('the menubar', () => {
   it('moves between sections from the View menu', async () => {
     const view = useMenuStore.getState().byWindow[windowId]?.[2];
     await act(async () => {
-      view?.items[2]?.onSelect?.();
+      view?.items[1]?.onSelect?.();
     });
-    expect(screen.getByRole('radio', { name: 'Catalogue' })).toHaveAttribute(
+    expect(screen.getByRole('radio', { name: 'Installed' })).toHaveAttribute(
       'aria-checked',
       'true',
     );
+  });
+
+  it('refreshes the catalogue from the View menu', async () => {
+    await screen.findByRole('heading', { name: 'Recently updated' });
+    requests = [];
+    const view = useMenuStore.getState().byWindow[windowId]?.[2];
+    await act(async () => {
+      view?.items[4]?.onSelect?.();
+    });
+    await waitFor(() => expect(requests).toContain(`${DEFAULT_STORE_ORIGIN}index.json`));
   });
 
   it('takes the window to the Install section to paste a manifest', async () => {

@@ -1,19 +1,25 @@
 /**
- * Software Center: what is installed, how to install more, and what the OS
- * ships with.
+ * Software Center: the store, what is installed, and installing from a file.
  *
  * A pseudo-program is a `.app` manifest — one JSON file under /Applications
- * that the kernel reads at boot and whenever the folder changes. This window
- * is a front end for that: `Kernel.installApp` writes the file,
- * `Kernel.uninstallApp` moves it to the Trash, and `Kernel.launch` runs it,
- * through the built-in app it aliases, the Terminal, or the sandboxed frame
- * in `lumen.webapp`. Nothing here talks to a network.
+ * that the kernel reads at boot and whenever the folder changes. Everything
+ * here ends at that file: `Kernel.installApp` writes it, `Kernel.uninstallApp`
+ * moves it to the Trash, `Kernel.launch` runs it. A package downloaded from a
+ * store takes exactly the same road, through the same `planInstall`, once its
+ * payload has been checked against the length and the digest its catalogue
+ * promised — so a store install and a file install cannot end up different.
+ *
+ * The address of the store is one setting (Settings → Updates), the catalogue
+ * is cached under the user's home, and the five programs that ship inside the
+ * OS are folded into the same shelves, so the window has something to show
+ * with no network at all.
  */
 
 import type { AppManifest } from '@lumen/kernel';
-import { useApps, useInstalledApps, useKernel, useVfs } from '@lumen/kernel/react';
+import { useApps, useInstalledApps, useKernel, useSetting, useVfs } from '@lumen/kernel/react';
 import {
   AppFrame,
+  IconButton,
   SearchField,
   SegmentedControl,
   Select,
@@ -22,6 +28,7 @@ import {
   useDialogs,
   useElementSize,
 } from '@lumen/ui';
+import { RefreshCw } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   type AppProps,
@@ -33,8 +40,6 @@ import {
   useTitle,
   useWindowControls,
 } from '../_sdk';
-import { CatalogueSection } from './CatalogueSection';
-import { searchCatalogue } from './catalogue';
 import { InstalledSection } from './InstalledSection';
 import { InstallSection } from './InstallSection';
 import { planInstall, planUninstall } from './install';
@@ -48,12 +53,27 @@ import {
 } from './library';
 import { parseManifestText } from './manifest';
 import { buildSoftwareMenus, SECTIONS, type SectionId } from './menus';
+import type { PackageDocument } from './remote';
+import { resourceIds } from './resources';
+import { COMPACT_AT, type StoreRoute, StoreSection } from './StoreSection';
+import {
+  kindOptions,
+  type Listing,
+  listingStatus,
+  mergeListings,
+  categoryOptions as storeCategoryOptions,
+} from './storefront';
+import { useCatalogue } from './useCatalogue';
+import { useInstalls } from './useInstalls';
 
 /** Below this the details pane takes the whole window instead of a column. */
 const TWO_PANE_AT = 640;
 
-function isSection(value: unknown): value is SectionId {
-  return SECTIONS.some((s) => s.id === value);
+function toSection(value: unknown): SectionId | null {
+  if (SECTIONS.some((s) => s.id === value)) return value as SectionId;
+  // The Catalogue section became the Store, and a launch argument written
+  // against the old name should still land somewhere sensible.
+  return value === 'catalogue' ? 'store' : null;
 }
 
 export default function Software(props: AppProps) {
@@ -67,13 +87,15 @@ export default function Software(props: AppProps) {
   const { launch } = useLauncher();
   const { close } = useWindowControls();
   const args = useArgs<{ section?: string }>(props.args);
+  const [storeSettings] = useSetting('store');
   useTitle('Software Center');
 
-  const [section, setSection] = useState<SectionId>(() =>
-    isSection(args.section) ? args.section : 'installed',
-  );
+  const [section, setSection] = useState<SectionId>(() => toSection(args.section) ?? 'store');
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('all');
+  const [storeKind, setStoreKind] = useState('all');
+  const [storeCategory, setStoreCategory] = useState('all');
+  const [route, setRoute] = useState<StoreRoute>({ kind: 'browse' });
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [draft, setDraft] = useState('');
   const [origin, setOrigin] = useState<string | null>(null);
@@ -82,10 +104,17 @@ export default function Software(props: AppProps) {
   const textRef = useRef<HTMLTextAreaElement>(null);
   const [bodyRef, size] = useElementSize<HTMLDivElement>();
   const wide = size.width === 0 || size.width >= TWO_PANE_AT;
+  const compact = size.width > 0 && size.width < COMPACT_AT;
 
   useEffect(() => {
-    if (isSection(args.section)) setSection(args.section);
+    const next = toSection(args.section);
+    if (next) setSection(next);
   }, [args.section]);
+
+  const { view, refresh } = useCatalogue();
+  const storeBase = view.base ?? storeSettings.origin;
+  const catalogue = useMemo(() => view.catalogue?.packages ?? [], [view.catalogue]);
+  const installs = useInstalls({ base: storeBase, catalogue });
 
   const entries = useMemo(
     () =>
@@ -102,7 +131,15 @@ export default function Software(props: AppProps) {
   const categories = useMemo(() => categoryOptions(entries), [entries]);
   const counts = useMemo(() => countBySource(entries), [entries]);
   const selected = findEntry(visible, selectedId) ?? null;
-  const cards = useMemo(() => searchCatalogue(query), [query]);
+
+  const listings = useMemo(() => mergeListings(view.catalogue), [view.catalogue]);
+  const storeKinds = useMemo(() => kindOptions(listings), [listings]);
+  const storeCategories = useMemo(() => storeCategoryOptions(listings), [listings]);
+  const installedResourceIds = useMemo(() => resourceIds(installs.resources), [installs.resources]);
+  const statusOf = useCallback(
+    (listing: Listing) => listingStatus(listing, { entries, resourceIds: installedResourceIds }),
+    [entries, installedResourceIds],
+  );
 
   const builtInIds = useMemo(() => registered.map((a) => a.id), [registered]);
   const report = useMemo(
@@ -117,7 +154,7 @@ export default function Software(props: AppProps) {
   const open = useCallback((id: string) => launch(id), [launch]);
 
   const install = useCallback(
-    async (manifest: AppManifest) => {
+    async (manifest: AppManifest, options: { reveal?: boolean } = {}) => {
       const decision = planInstall(manifest, { builtInIds, installed });
       if (decision.action === 'blocked') {
         await dialogs.alert({
@@ -130,12 +167,14 @@ export default function Software(props: AppProps) {
       try {
         for (const path of decision.removePaths) await vfs.trash(path);
         await kernel.installApp(manifest);
-        setDraft('');
-        setOrigin(null);
-        setQuery('');
-        setCategory('all');
-        setSelectedId(manifest.id);
-        setSection('installed');
+        if (options.reveal) {
+          setDraft('');
+          setOrigin(null);
+          setQuery('');
+          setCategory('all');
+          setSelectedId(manifest.id);
+          setSection('installed');
+        }
       } catch (e) {
         notify('Install failed', e instanceof Error ? e.message : String(e));
       } finally {
@@ -187,6 +226,17 @@ export default function Software(props: AppProps) {
     setOrigin(from);
   }, []);
 
+  const refreshStore = useCallback(() => {
+    setSection('store');
+    refresh();
+  }, [refresh]);
+
+  const onQuery = useCallback((next: string) => {
+    setQuery(next);
+    // A search is about the shelves, so it takes the window back to them.
+    setRoute((current) => (current.kind === 'browse' ? current : { kind: 'browse' }));
+  }, []);
+
   const actions = useMemo(
     () => ({
       installFromFile: () => void chooseFile(),
@@ -194,13 +244,19 @@ export default function Software(props: AppProps) {
         setSection('install');
         setTimeout(() => textRef.current?.focus(), 0);
       },
+      refresh: refreshStore,
       find: () => searchRef.current?.focus(),
       show: (next: SectionId) => setSection(next),
       close: () => void close(),
     }),
-    [chooseFile, close],
+    [chooseFile, close, refreshStore],
   );
   useAppMenus(buildSoftwareMenus({ section }, actions), [section, actions]);
+
+  const startInstall = useCallback(
+    (document: PackageDocument) => installs.start(document),
+    [installs],
+  );
 
   return (
     <AppFrame
@@ -219,10 +275,10 @@ export default function Software(props: AppProps) {
               ref={searchRef}
               size="sm"
               className="min-w-16 max-w-52"
-              placeholder="Search apps"
-              aria-label="Search apps"
+              placeholder={section === 'store' ? 'Search the store' : 'Search apps'}
+              aria-label={section === 'store' ? 'Search the store' : 'Search apps'}
               value={query}
-              onChange={setQuery}
+              onChange={onQuery}
             />
           )}
           {section === 'installed' && (
@@ -234,6 +290,29 @@ export default function Software(props: AppProps) {
               onChange={setCategory}
             />
           )}
+          {section === 'store' && !compact && (
+            <>
+              <Select
+                size="sm"
+                aria-label="Kind"
+                options={storeKinds.map((k) => ({ value: k.value, label: k.label }))}
+                value={storeKind}
+                onChange={setStoreKind}
+              />
+              <Select
+                size="sm"
+                aria-label="Category"
+                options={storeCategories.map((c) => ({ value: c.value, label: c.label }))}
+                value={storeCategory}
+                onChange={setStoreCategory}
+              />
+            </>
+          )}
+          {section === 'store' && (
+            <IconButton size="sm" label="Refresh catalogue" onClick={refresh}>
+              <RefreshCw />
+            </IconButton>
+          )}
         </Toolbar>
       }
       statusBar={
@@ -241,10 +320,35 @@ export default function Software(props: AppProps) {
           <span>{counts['built-in']} built-in</span>
           <span>{counts.installed} installed</span>
           {section === 'installed' && <span>{visible.length} shown</span>}
+          {section === 'store' && <span>{listings.length} in the catalogue</span>}
         </>
       }
     >
       <div ref={bodyRef} className="flex min-h-0 flex-1 flex-col">
+        {section === 'store' && (
+          <StoreSection
+            view={view}
+            base={storeBase}
+            listings={listings}
+            filter={{ query, kind: storeKind, category: storeCategory }}
+            statusOf={statusOf}
+            jobs={installs.jobs}
+            subscribe={installs.subscribe}
+            compact={compact}
+            kinds={storeKinds}
+            categories={storeCategories}
+            route={route}
+            onRoute={setRoute}
+            onKind={setStoreKind}
+            onCategory={setStoreCategory}
+            onRefresh={refresh}
+            onStop={installs.stop}
+            onDismiss={installs.dismiss}
+            onInstall={startInstall}
+            onInstallSystem={(manifest) => void install(manifest)}
+            onOpenApp={open}
+          />
+        )}
         {section === 'installed' && (
           <InstalledSection
             entries={visible}
@@ -265,17 +369,8 @@ export default function Software(props: AppProps) {
             textRef={textRef}
             onDraft={onDraft}
             onChooseFile={() => void chooseFile()}
-            onInstall={() => report.manifest && void install(report.manifest)}
+            onInstall={() => report.manifest && void install(report.manifest, { reveal: true })}
             onError={(message) => notify('Could not read that file', message)}
-          />
-        )}
-        {section === 'catalogue' && (
-          <CatalogueSection
-            manifests={cards}
-            entries={entries}
-            busy={busy}
-            onInstall={(manifest) => void install(manifest)}
-            onOpen={(manifest) => open(manifest.id)}
           />
         )}
       </div>
