@@ -35,35 +35,19 @@ const CONTENT_TYPES: Record<string, string> = {
  */
 /**
  * Serve `/api/page` in dev and preview, so the browser app behaves the same
- * here as it does on the deployment, where Vercel runs `api/page.ts`.
+ * here as it does on the deployment, where the host runs `api/page.ts`.
  *
- * The handler is the same module either way; only the plumbing differs.
+ * It is the same function, not an equivalent one: both are handed a Node
+ * request and response, so there is nothing left for the two to disagree
+ * about. They used to be two copies of the guard and the headers, and the
+ * deployed copy was the broken one.
  */
 function pageProxy(): Plugin {
   const handle = async (req: IncomingMessage, res: ServerResponse, next: () => void) => {
     const asked = new URL(req.url ?? '/', 'http://localhost');
     if (asked.pathname !== '/api/page') return next();
-    const { fromThisApp, loadPage } = await import('./server/page');
-    const send = (status: number, body: string, type = 'text/plain; charset=utf-8') => {
-      res.statusCode = status;
-      res.setHeader('Content-Type', type);
-      res.setHeader('X-Robots-Tag', 'noindex, nofollow');
-      res.setHeader('Referrer-Policy', 'no-referrer');
-      res.end(body);
-    };
-    const target = asked.searchParams.get('url');
-    if (!target) return send(400, 'No address given.');
-    if (
-      !fromThisApp({
-        secFetchSite: (req.headers['sec-fetch-site'] as string) ?? null,
-        referer: req.headers.referer ?? null,
-        host: req.headers.host ?? null,
-      })
-    ) {
-      return send(403, 'This address answers the Lumen browser, not the internet.');
-    }
-    const page = await loadPage(target);
-    send(page.status, page.body, page.contentType);
+    const { servePage } = await import('./server/page.js');
+    await servePage(req, res);
   };
   return {
     name: 'lumen-page-proxy',

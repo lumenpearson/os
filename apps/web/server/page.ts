@@ -32,6 +32,7 @@
  */
 
 import { lookup } from 'node:dns/promises';
+import type { IncomingMessage, ServerResponse } from 'node:http';
 import { isIP } from 'node:net';
 
 /** Ten seconds is longer than a page a person is waiting for should take. */
@@ -260,4 +261,52 @@ export async function loadPage(raw: string, doFetch = fetch): Promise<PageResult
     };
   }
   return refuse(508, 'That site redirected too many times.');
+}
+
+/** One header, whatever shape the server handed it over in. */
+function header(req: IncomingMessage, name: string): string | null {
+  const value = req.headers[name];
+  return Array.isArray(value) ? (value[0] ?? null) : (value ?? null);
+}
+
+/**
+ * The endpoint itself, over a Node request and response.
+ *
+ * This is the shape the host calls a function in — `req.url` is a path and
+ * `req.headers` is a plain object, not a `Request` with a `Headers` — and it
+ * is also what a Vite middleware is handed, so the deployment and the dev
+ * server run this same function rather than two copies of it that can drift.
+ * They drifted: the deployed copy crashed on three separate counts before
+ * anyone saw a page, and none of them could happen locally.
+ */
+export async function servePage(req: IncomingMessage, res: ServerResponse): Promise<void> {
+  const send = (status: number, body: string, type = 'text/plain; charset=utf-8') => {
+    res.statusCode = status;
+    res.setHeader('Content-Type', type);
+    // Never indexed, never held in a shared cache, and never carrying a
+    // referrer onward: this is someone else's page passing through.
+    res.setHeader('X-Robots-Tag', 'noindex, nofollow');
+    res.setHeader('Cache-Control', 'private, max-age=0, must-revalidate');
+    res.setHeader('Referrer-Policy', 'no-referrer');
+    res.end(body);
+  };
+
+  if (req.method !== 'GET') return send(405, 'Only GET.');
+  // A base only to make the parse legal: `req.url` is a path, and nothing
+  // below reads the host back out of it.
+  const asked = new URL(req.url ?? '/', 'http://lumen.invalid');
+  const target = asked.searchParams.get('url');
+  if (!target) return send(400, 'No address given.');
+  if (
+    !fromThisApp({
+      secFetchSite: header(req, 'sec-fetch-site'),
+      referer: header(req, 'referer'),
+      host: header(req, 'host'),
+    })
+  ) {
+    return send(403, 'This address answers the Lumen browser, not the internet.');
+  }
+
+  const page = await loadPage(target);
+  send(page.status, page.body, page.contentType);
 }
