@@ -12,6 +12,11 @@ const TITLE: CSSProperties = { fontSize: 44, lineHeight: 1.15, fontWeight: 600 }
 const BODY: CSSProperties = { fontSize: 24, lineHeight: 1.45 };
 const EMPTY_BULLETS: readonly string[] = [];
 
+/** A px box, multiplied by the interface scale when it is chrome. */
+function box(px: number, chrome: boolean | undefined): string | number {
+  return chrome ? `calc(${Math.round(px)}px * var(--lumen-rem-scale, 1))` : Math.round(px);
+}
+
 export interface SlideCanvasProps {
   slide: Slide;
   theme: DeckTheme;
@@ -22,6 +27,14 @@ export interface SlideCanvasProps {
   onChooseImage?: () => void;
   /** Draw the hairline, radius and shadow of a page. Off for the player. */
   framed?: boolean;
+  /**
+   * This canvas is part of the interface rather than the document: a
+   * filmstrip thumbnail, the presenter's next card. Its `scale` is a
+   * constant, so its box has to be multiplied by the interface scale to move
+   * with the rem-sized panels beside it. A canvas whose scale was measured
+   * from a container is already in the right pixels and must not be.
+   */
+  chrome?: boolean;
   className?: string;
 }
 
@@ -50,6 +63,7 @@ export function SlideCanvas({
   onPatch,
   onChooseImage,
   framed = true,
+  chrome = false,
   className,
 }: SlideCanvasProps) {
   const dark = theme === 'dark';
@@ -177,7 +191,7 @@ export function SlideCanvas({
         framed && 'rounded-md border border-rule shadow-sm',
         className,
       )}
-      style={{ width: Math.round(SLIDE_WIDTH * scale), height: Math.round(SLIDE_HEIGHT * scale) }}
+      style={{ width: box(SLIDE_WIDTH * scale, chrome), height: box(SLIDE_HEIGHT * scale, chrome) }}
     >
       <div
         className={cx('absolute top-0 left-0 flex flex-col', dark ? 'text-surface' : 'text-ink')}
@@ -185,7 +199,9 @@ export function SlideCanvas({
           width: SLIDE_WIDTH,
           height: SLIDE_HEIGHT,
           padding: PAD,
-          transform: `scale(${scale})`,
+          transform: chrome
+            ? `scale(calc(${scale} * var(--lumen-rem-scale, 1)))`
+            : `scale(${scale})`,
           transformOrigin: 'top left',
         }}
       >

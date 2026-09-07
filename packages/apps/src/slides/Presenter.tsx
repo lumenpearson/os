@@ -186,7 +186,7 @@ export function Presenter({ deck, index, onIndex, onExit }: PresenterProps) {
           <div className="flex shrink-0 flex-col items-end gap-1">
             <span className="mono text-xs text-ink-3">Next</span>
             {next ? (
-              <SlideCanvas slide={next} theme={theme} scale={NEXT_SCALE} />
+              <SlideCanvas slide={next} theme={theme} scale={NEXT_SCALE} chrome />
             ) : (
               <span className="text-sm text-ink-3">End of deck</span>
             )}

@@ -91,6 +91,14 @@ export function applyThemeToDocument(stored: Settings): void {
    * multiplied here, so it takes `scale` once and does not double-count.
    */
   root.style.fontSize = `${16 * fontScale * scale}px`;
+  /*
+   * The same factor, unitless, for the few boxes that are drawn in px and
+   * still have to move with the interface — a slide thumbnail beside a
+   * rem-sized panel keeps its pixels while the panel shrinks, and spills
+   * out of the row holding it. Multiplying by this in a `calc` is how such
+   * a box tracks the rest without measuring anything.
+   */
+  root.style.setProperty('--lumen-rem-scale', String(fontScale * scale));
   root.style.setProperty('--lumen-menubar-h', `${Math.round(26 * scale)}px`);
   root.style.setProperty(
     '--lumen-taskbar-h',

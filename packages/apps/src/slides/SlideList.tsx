@@ -179,6 +179,7 @@ export function SlideList({
               slide={slide}
               theme={theme}
               scale={THUMB_SCALE}
+              chrome
               className="pointer-events-none"
             />
           </li>
