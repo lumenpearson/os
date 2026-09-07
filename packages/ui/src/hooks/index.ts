@@ -1,4 +1,5 @@
 import { type RefObject, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { scrollEdges } from '../scrollEdges';
 
 export const useIsomorphicLayoutEffect =
   typeof window === 'undefined' ? useEffect : useLayoutEffect;
@@ -163,4 +164,50 @@ export function useLatest<T>(value: T): RefObject<T> {
   const ref = useRef(value);
   ref.current = value;
   return ref;
+}
+
+/**
+ * Marks a scroller's edges with `data-edge-*` so the stylesheet can draw a
+ * shadow where content continues past one.
+ *
+ * The writes go straight to the element inside a frame rather than through
+ * React state: this fires on every scroll event, and a list re-rendering per
+ * scroll frame is the thing the engineering rules exist to prevent. The
+ * attributes are what `.lumen-scroll` reads; the arithmetic behind them is
+ * `scrollEdges`, which is pure and tested next door.
+ *
+ * A ResizeObserver comes with it because a scroller can stop overflowing
+ * without anybody scrolling — a window widened, a filter applied, a sidebar
+ * folded away — and a shadow left under content that now fits is a claim that
+ * there is more of it.
+ */
+export function useScrollEdges<T extends HTMLElement>(ref: RefObject<T | null>) {
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    let frame = 0;
+    const apply = () => {
+      frame = 0;
+      const edges = scrollEdges(el);
+      for (const [edge, past] of Object.entries(edges)) {
+        if (past) el.dataset[`edge${edge[0]?.toUpperCase()}${edge.slice(1)}`] = 'true';
+        else delete el.dataset[`edge${edge[0]?.toUpperCase()}${edge.slice(1)}`];
+      }
+    };
+    const schedule = () => {
+      if (!frame) frame = requestAnimationFrame(apply);
+    };
+    apply();
+    el.addEventListener('scroll', schedule, { passive: true });
+    const observer = new ResizeObserver(schedule);
+    observer.observe(el);
+    // The content's own size matters as much as the port's: a list that grows
+    // by a row overflows a box that never changed.
+    for (const child of el.children) observer.observe(child);
+    return () => {
+      el.removeEventListener('scroll', schedule);
+      observer.disconnect();
+      if (frame) cancelAnimationFrame(frame);
+    };
+  }, [ref]);
 }

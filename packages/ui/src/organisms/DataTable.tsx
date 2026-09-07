@@ -1,7 +1,8 @@
 // biome-ignore-all lint/a11y/useFocusableInteractive: the grid container is the tab stop and moves selection with the arrow keys; rows and cells are not focusable
 import { ChevronDown, ChevronUp } from 'lucide-react';
-import { type ReactNode, useMemo, useState } from 'react';
+import { type ReactNode, useMemo, useRef, useState } from 'react';
 import { cx } from '../cx';
+import { useScrollEdges } from '../hooks';
 
 /**
  * The inset shared by the header and by `.lumen-list-row`, which is where the
@@ -79,6 +80,13 @@ export function DataTable<T>({
   rowClassName,
 }: DataTableProps<T>) {
   const [anchor, setAnchor] = useState<string | null>(null);
+  /*
+   * The scroll port, so its edges can say when a table carries on past them.
+   * Every table in the OS is this component, so wiring it here is the whole of
+   * the change; a scroller elsewhere calls `useScrollEdges` for itself.
+   */
+  const port = useRef<HTMLDivElement>(null);
+  useScrollEdges(port);
   const template = columns.map((c) => c.width ?? '1fr').join(' ');
 
   const sorted = useMemo(() => {
@@ -170,6 +178,7 @@ export function DataTable<T>({
 
   return (
     <div
+      ref={port}
       role="grid"
       aria-multiselectable={Boolean(onSelect)}
       tabIndex={0}

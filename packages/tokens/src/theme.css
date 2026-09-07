@@ -134,6 +134,10 @@
      runs along: darker than the surface around it, so the selected segment
      reads as raised out of it rather than painted on. */
   --lumen-track: rgb(0 0 0 / 0.06);
+  /* The shadow a scroller casts inward where content carries on past its
+     edge. Stronger than a rule, because it has to read over content rather
+     than over a surface, and colourless like every other shadow here. */
+  --lumen-scroll-edge: rgb(0 0 0 / 0.16);
   /* The panel background, in two parts so the shell can tint it without
      knowing what it is: Settings > Wallpaper > Dynamic chrome overrides
      --lumen-chrome with a mix of the wallpaper's colour and this base, and
@@ -193,6 +197,7 @@
   --lumen-stripe: rgb(255 255 255 / 0.032);
   --lumen-surface-3: #35363c;
   --lumen-track: rgb(255 255 255 / 0.07);
+  --lumen-scroll-edge: rgb(0 0 0 / 0.5);
   --lumen-chrome-base: rgb(30 31 35 / 0.78);
   --lumen-chrome: var(--lumen-chrome-base);
   --lumen-ink: #ececee;

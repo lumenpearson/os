@@ -131,6 +131,53 @@
     overflow: auto;
     overscroll-behavior: contain;
   }
+  /*
+   * Content continues past this edge, and the edge says so.
+   *
+   * An inset shadow rather than a gradient: design rule 4 makes depth a
+   * hairline plus a small colourless shadow, and this is the same idea turned
+   * inward — the content is under the edge rather than beside it. The spread
+   * is negative by the whole blur so nothing bleeds along the other three
+   * sides, which is what lets the four stack when a table is scrolled into a
+   * corner.
+   *
+   * `useScrollEdges` sets the attributes, inside a frame; a scroller that
+   * never gets the hook simply never gets a shadow, which is the right way
+   * round for something that is information rather than decoration.
+   */
+  .lumen-scroll[data-edge-top] {
+    box-shadow: inset 0 7px 6px -7px var(--lumen-scroll-edge);
+  }
+  .lumen-scroll[data-edge-bottom] {
+    box-shadow: inset 0 -7px 6px -7px var(--lumen-scroll-edge);
+  }
+  .lumen-scroll[data-edge-top][data-edge-bottom] {
+    box-shadow:
+      inset 0 7px 6px -7px var(--lumen-scroll-edge),
+      inset 0 -7px 6px -7px var(--lumen-scroll-edge);
+  }
+  .lumen-scroll[data-edge-left] {
+    box-shadow: inset 7px 0 6px -7px var(--lumen-scroll-edge);
+  }
+  .lumen-scroll[data-edge-right] {
+    box-shadow: inset -7px 0 6px -7px var(--lumen-scroll-edge);
+  }
+  .lumen-scroll[data-edge-left][data-edge-right] {
+    box-shadow:
+      inset 7px 0 6px -7px var(--lumen-scroll-edge),
+      inset -7px 0 6px -7px var(--lumen-scroll-edge);
+  }
+  /* Both axes at once: a wide table scrolled into the middle of itself. */
+  .lumen-scroll[data-edge-top][data-edge-left],
+  .lumen-scroll[data-edge-top][data-edge-right],
+  .lumen-scroll[data-edge-bottom][data-edge-left],
+  .lumen-scroll[data-edge-bottom][data-edge-right] {
+    box-shadow:
+      inset 0 7px 6px -7px var(--lumen-scroll-edge),
+      inset 0 -7px 6px -7px var(--lumen-scroll-edge),
+      inset 7px 0 6px -7px var(--lumen-scroll-edge),
+      inset -7px 0 6px -7px var(--lumen-scroll-edge);
+  }
 
   .lumen-list-row {
     display: grid;
