@@ -16,7 +16,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppProvider, FileDialogProvider } from '../_sdk';
 import Browser from './Browser';
-import { type BrowserData, DEFAULT_BOOKMARKS } from './data';
+import { type BrowserData, DEFAULT_BOOKMARKS, DEFAULT_DATA } from './data';
 import definition from './index';
 
 const Dummy = () => null;
@@ -355,7 +355,23 @@ describe('settings', () => {
 });
 
 describe('a site that will not be embedded', () => {
+  /**
+   * Settings > Browser > through Lumen, off. On — which is the default, and
+   * has its own tests below — a site that refuses to be framed is fetched
+   * through Lumen instead of being refused, so the panel these tests are
+   * about only appears when the person has asked for the site to be tried
+   * directly or not at all.
+   */
+  async function askTheSiteDirectly() {
+    await kernel.vfs.writeJson(
+      dataFile(),
+      { ...DEFAULT_DATA, settings: { ...DEFAULT_DATA.settings, throughLumen: false } },
+      { recursive: true },
+    );
+  }
+
   it('says which header turned it away, without waiting for a timeout', async () => {
+    await askTheSiteDirectly();
     const user = userEvent.setup();
     mount();
     await goTo(user, 'https://www.google.com/');
@@ -370,7 +386,36 @@ describe('a site that will not be embedded', () => {
     expect(document.querySelector('iframe')).toBeNull();
   });
 
+  it('fetches the page through Lumen instead, when it is allowed to', async () => {
+    /*
+     * The whole point of the setting: google.com is on the known-refusal
+     * list, so a frame pointed at it is a wall. Pointed at Lumen's own
+     * endpoint it is a page — same address, fetched on the other side.
+     */
+    const user = userEvent.setup();
+    mount();
+    await goTo(user, 'https://www.google.com/');
+
+    const frame = await waitFor(() => {
+      const el = document.querySelector('iframe');
+      if (!el) throw new Error('no frame yet');
+      return el;
+    });
+    expect(frame.getAttribute('src')).toBe(
+      `/api/page?url=${encodeURIComponent('https://www.google.com/')}`,
+    );
+    expect(screen.queryByText('This site refused to be embedded')).not.toBeInTheDocument();
+  });
+
+  it('says so on the page, rather than passing it off as the site itself', async () => {
+    const user = userEvent.setup();
+    mount();
+    await goTo(user, 'https://www.google.com/');
+    expect(await screen.findByText(/Lumen fetched the page/)).toBeInTheDocument();
+  });
+
   it('offers a way out, and a way to make it the default', async () => {
+    await askTheSiteDirectly();
     const user = userEvent.setup();
     const opened = vi.spyOn(window, 'open').mockReturnValue(null);
     mount();
@@ -390,6 +435,7 @@ describe('a site that will not be embedded', () => {
   });
 
   it('takes a site off the list again from the panel', async () => {
+    await askTheSiteDirectly();
     const user = userEvent.setup();
     const opened = vi.spyOn(window, 'open').mockReturnValue(null);
     mount();

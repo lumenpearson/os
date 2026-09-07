@@ -6,6 +6,7 @@ import {
   hostPattern,
   internalPage,
   isInternalUrl,
+  isThroughLumen,
   looksLikeUrl,
   matchesHost,
   normalizeInternalUrl,
@@ -18,6 +19,7 @@ import {
   searchUrl,
   securityOf,
   tabInitial,
+  throughLumen,
   titleFor,
 } from './url';
 
@@ -275,5 +277,24 @@ describe('tabInitial', () => {
 
   it('falls back to a question mark', () => {
     expect(tabInitial('lumen://start')).toBe('?');
+  });
+});
+
+describe('throughLumen', () => {
+  it('hands the address to Lumen whole, encoded, so a query survives', () => {
+    const asked = throughLumen('https://example.com/a?b=1&c=2#d');
+    expect(asked).toBe('/api/page?url=https%3A%2F%2Fexample.com%2Fa%3Fb%3D1%26c%3D2%23d');
+    expect(new URL(asked, 'https://lumen.example').searchParams.get('url')).toBe(
+      'https://example.com/a?b=1&c=2#d',
+    );
+  });
+
+  it('is relative, because the frame has to stay on Lumen’s own origin', () => {
+    expect(throughLumen('https://example.com/')).toMatch(/^\//);
+  });
+
+  it('knows one of its own', () => {
+    expect(isThroughLumen(throughLumen('https://example.com/'))).toBe(true);
+    expect(isThroughLumen('https://example.com/api/page?url=x')).toBe(false);
   });
 });

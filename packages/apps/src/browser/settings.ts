@@ -61,6 +61,18 @@ export interface BrowserSettings {
   frameTimeoutMs: number;
   /** Hosts that open in the real browser instead of a frame. */
   externalHosts: string[];
+  /**
+   * Fetch a page through Lumen when the site refuses to be framed.
+   *
+   * `X-Frame-Options` and `frame-ancestors` are how a site says "not inside
+   * someone else's page", and Lumen has no top level to open into — it is a
+   * page. Fetching the document on the server and serving it from Lumen's own
+   * origin is the only way to show one of those sites here. It is on by
+   * default because the alternative is a wall where a page should be, and it
+   * can be turned off by anyone who would rather the site was asked directly
+   * or not at all.
+   */
+  throughLumen: boolean;
 }
 
 export const HOME_PREFIX = '~/';
@@ -95,6 +107,7 @@ export const DEFAULT_SETTINGS: BrowserSettings = {
   showBookmarksBar: true,
   frameTimeoutMs: DEFAULT_FRAME_TIMEOUT_MS,
   externalHosts: [],
+  throughLumen: true,
 };
 
 // ── reading the file ──────────────────────────────────────────────────────
@@ -169,6 +182,7 @@ export function normalizeSettings(raw: unknown): BrowserSettings {
     showBookmarksBar: bool(raw.showBookmarksBar, DEFAULT_SETTINGS.showBookmarksBar),
     frameTimeoutMs: clampFrameTimeout(raw.frameTimeoutMs),
     externalHosts: normalizeHosts(raw.externalHosts),
+    throughLumen: bool(raw.throughLumen, DEFAULT_SETTINGS.throughLumen),
   };
 }
 

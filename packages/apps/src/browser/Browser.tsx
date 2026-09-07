@@ -525,6 +525,7 @@ export default function Browser({ args }: AppProps) {
               active={t.id === state.activeId}
               sandbox={sandbox}
               timeoutMs={settings.frameTimeoutMs}
+              viaLumen={settings.throughLumen}
               onLoaded={onLoaded}
               onBlocked={onBlocked}
               onReload={onReloadTab}

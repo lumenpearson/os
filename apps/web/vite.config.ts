@@ -1,4 +1,5 @@
 import { cpSync, readFileSync } from 'node:fs';
+import type { IncomingMessage, ServerResponse } from 'node:http';
 import { join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import tailwindcss from '@tailwindcss/vite';
@@ -32,6 +33,49 @@ const CONTENT_TYPES: Record<string, string> = {
  * a build error: the storefront reports an unreachable store the same way it
  * reports being offline.
  */
+/**
+ * Serve `/api/page` in dev and preview, so the browser app behaves the same
+ * here as it does on the deployment, where Vercel runs `api/page.ts`.
+ *
+ * The handler is the same module either way; only the plumbing differs.
+ */
+function pageProxy(): Plugin {
+  const handle = async (req: IncomingMessage, res: ServerResponse, next: () => void) => {
+    const asked = new URL(req.url ?? '/', 'http://localhost');
+    if (asked.pathname !== '/api/page') return next();
+    const { fromThisApp, loadPage } = await import('./server/page');
+    const send = (status: number, body: string, type = 'text/plain; charset=utf-8') => {
+      res.statusCode = status;
+      res.setHeader('Content-Type', type);
+      res.setHeader('X-Robots-Tag', 'noindex, nofollow');
+      res.setHeader('Referrer-Policy', 'no-referrer');
+      res.end(body);
+    };
+    const target = asked.searchParams.get('url');
+    if (!target) return send(400, 'No address given.');
+    if (
+      !fromThisApp({
+        secFetchSite: (req.headers['sec-fetch-site'] as string) ?? null,
+        referer: req.headers.referer ?? null,
+        host: req.headers.host ?? null,
+      })
+    ) {
+      return send(403, 'This address answers the Lumen browser, not the internet.');
+    }
+    const page = await loadPage(target);
+    send(page.status, page.body, page.contentType);
+  };
+  return {
+    name: 'lumen-page-proxy',
+    configureServer(server) {
+      server.middlewares.use(handle);
+    },
+    configurePreviewServer(server) {
+      server.middlewares.use(handle);
+    },
+  };
+}
+
 function storeCatalogue(): Plugin {
   return {
     name: 'lumen-store-catalogue',
@@ -81,6 +125,7 @@ export default defineConfig({
     react(),
     tailwindcss(),
     storeCatalogue(),
+    pageProxy(),
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'icons/*.png'],

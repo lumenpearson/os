@@ -237,3 +237,22 @@ export function tabInitial(url: string): string {
   const letter = /[a-z0-9]/i.exec(host)?.[0];
   return (letter ?? '?').toUpperCase();
 }
+
+/**
+ * The address that asks Lumen to fetch a page rather than framing it.
+ *
+ * One place, because the browser builds it and a test has to recognise it.
+ * Relative on purpose: the endpoint belongs to whatever host is serving
+ * Lumen, and the frame it is loaded into must stay same-origin for the whole
+ * point of it — the site's frame rules apply to the site's origin, not ours.
+ */
+export const PAGE_ENDPOINT = '/api/page';
+
+export function throughLumen(url: string): string {
+  return `${PAGE_ENDPOINT}?url=${encodeURIComponent(url)}`;
+}
+
+/** Whether an address is one of ours standing in for a page. */
+export function isThroughLumen(url: string): boolean {
+  return url.startsWith(`${PAGE_ENDPOINT}?`);
+}

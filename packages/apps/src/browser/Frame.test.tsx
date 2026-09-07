@@ -13,7 +13,7 @@ import { createTab, type Tab, type TabDefaults } from './tabs';
 
 const outside: TabDefaults = { zoom: 1, externalHosts: ['ada.example'] };
 
-function show(tab: Tab, timeoutMs = 20) {
+function show(tab: Tab, timeoutMs = 20, viaLumen = false) {
   const handlers = {
     onLoaded: vi.fn(),
     onBlocked: vi.fn(),
@@ -28,6 +28,7 @@ function show(tab: Tab, timeoutMs = 20) {
       active
       sandbox="allow-scripts allow-forms"
       timeoutMs={timeoutMs}
+      viaLumen={viaLumen}
       {...handlers}
     />,
   );

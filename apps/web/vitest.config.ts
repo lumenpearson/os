@@ -1,7 +1,13 @@
 import { defineVitestConfig } from '@lumen/config-vitest';
 import { defineConfig } from 'vitest/config';
 
-const base = defineVitestConfig({ dom: true });
+const base = defineVitestConfig({
+  dom: true,
+  // `server/` is the page endpoint, which the deployment runs as a function
+  // and the dev server runs through a plugin. It is the one piece of logic
+  // this package owns rather than mounts, so it is collected here.
+  include: ['src/**/*.test.{ts,tsx}', 'server/**/*.test.ts'],
+});
 
 /**
  * Without this file Vitest ran on its own defaults, which glob every
