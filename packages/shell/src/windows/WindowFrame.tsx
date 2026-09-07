@@ -18,7 +18,7 @@ import {
   type WindowId,
 } from '@lumen/kernel';
 import { useKernel, useRuntimeSettings } from '@lumen/kernel/react';
-import { AnchoredMenu, cx, isContextMenuKey, useContextMenu } from '@lumen/ui';
+import { AnchoredMenu, cx, isContextMenuKey, motionDuration, useContextMenu } from '@lumen/ui';
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { useShellStore } from '../shellStore';
 import { isDragSurface, titleBarHeight } from './drag';
@@ -63,8 +63,22 @@ export const WindowFrame = memo(function WindowFrame({ id }: { id: WindowId }) {
   const inFront = useWindowStore((s) => s.focusedId === id);
   const hostFocused = useShellStore((s) => s.hostFocused);
   const focused = inFront && hostFocused;
+  const interacting = useShellStore((s) => s.interacting);
   const app = useRegistryStore((s) => (win ? s.apps[win.appId] : undefined));
-  const process = useProcessStore((s) => (win ? s.processes[win.pid] : undefined));
+  /*
+   * The launch arguments, and whether there is still a process to draw — not
+   * the process itself.
+   *
+   * The load model steps every two seconds and hands back a new object for
+   * every process whose figures moved, so subscribing to the process put the
+   * whole app subtree downstream of that tick: an open dialog re-rendered
+   * twice a minute for nothing, React re-applied `name` and `type` on every
+   * input inside it, and that is what a person sees as a dialog that flickers.
+   * `args` keeps its identity across a tick, because the tick only replaces
+   * `cpu` and `memory`.
+   */
+  const args = useProcessStore((s) => (win ? s.processes[win.pid]?.args : undefined));
+  const running = useProcessStore((s) => (win ? win.pid in s.processes : false));
   // Subscribed, not sampled: Settings > Windows changes what a full-screen
   // window covers and whether it keeps its title bar, and a switch that only
   // takes effect the next time something else re-rendered the frame is a
@@ -341,6 +355,20 @@ export const WindowFrame = memo(function WindowFrame({ id }: { id: WindowId }) {
     target.addEventListener('pointercancel', onUp);
   };
 
+  /**
+   * What decides where the window is: a command, or the person moving it.
+   * Above the early return, because a hook has to run on every render — and
+   * `win` is gone for the render after the window closes.
+   */
+  const geometry = !win
+    ? 'none'
+    : win.fullscreen
+      ? 'full'
+      : win.maximized
+        ? 'max'
+        : (win.snap ?? 'free');
+  const settling = useSettling(geometry, interacting);
+
   if (!win || !app) return null;
 
   const { bounds } = win;
@@ -367,6 +395,19 @@ export const WindowFrame = memo(function WindowFrame({ id }: { id: WindowId }) {
         height: bounds.height,
         zIndex: win.zIndex,
       };
+
+  /*
+   * The geometry animates when a command moves the window — maximise, snap,
+   * restore, full screen — and not otherwise. A drag writes `transform`
+   * through a ref at pointer rate, and a transition on that property would
+   * leave the window trailing the hand; a resize is the same. So the
+   * transition is added for the length of one window animation after the
+   * thing that decides the geometry changes, and never while a pointer has
+   * hold of it. Inline, because it has to beat the utility on the class list.
+   */
+  if (settling) {
+    style.transitionProperty = 'opacity, scale, box-shadow, transform, width, height';
+  }
 
   const Icon = app.icon;
   // macOS hides the title bar in full screen and gives it back on approach;
@@ -510,14 +551,8 @@ export const WindowFrame = memo(function WindowFrame({ id }: { id: WindowId }) {
         className={cx('relative min-h-0 flex-1', !focused && 'lumen-window-inactive')}
         data-testid="window-body"
       >
-        {process && (
-          <AppHost
-            app={app}
-            pid={win.pid}
-            windowId={id}
-            args={process.args}
-            container={container}
-          />
+        {running && (
+          <AppHost app={app} pid={win.pid} windowId={id} args={args ?? {}} container={container} />
         )}
       </div>
       {!fullscreen &&
@@ -542,3 +577,26 @@ export const WindowFrame = memo(function WindowFrame({ id }: { id: WindowId }) {
     </section>
   );
 });
+
+/**
+ * True for the length of one window animation after `key` changes, and never
+ * while `blocked` — a pointer having hold of the window — is true.
+ *
+ * The duration comes from the token, so the Windows switch in Personalisation
+ * and Reduce Motion both turn this off by making it zero.
+ */
+function useSettling(key: string, blocked: boolean): boolean {
+  const [settling, setSettling] = useState(false);
+  const previous = useRef(key);
+  useEffect(() => {
+    if (previous.current === key) return;
+    previous.current = key;
+    if (blocked) return;
+    const ms = motionDuration('--duration-window');
+    if (ms <= 0) return;
+    setSettling(true);
+    const timer = setTimeout(() => setSettling(false), ms);
+    return () => clearTimeout(timer);
+  }, [key, blocked]);
+  return settling;
+}

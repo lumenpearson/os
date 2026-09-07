@@ -1,7 +1,7 @@
 import type { AppDefinition, AppId, LaunchArgs, Pid, WindowId } from '@lumen/kernel';
 import { getKernel, log } from '@lumen/kernel';
 import { Button, DialogProvider, Spinner } from '@lumen/ui';
-import { Component, type ErrorInfo, type ReactNode, Suspense, useMemo } from 'react';
+import { Component, type ErrorInfo, memo, type ReactNode, Suspense, useMemo } from 'react';
 import { AppProvider } from './context';
 import { FileDialogProvider } from './FileDialog';
 
@@ -18,8 +18,20 @@ export interface AppHostProps {
  * Mounts an app inside a window: identity context, window-modal dialogs,
  * file pickers, lazy loading, and a crash boundary. The shell renders one
  * per window; apps never touch this.
+ *
+ * Memoised, because this is the seam between the shell and an app and the
+ * shell has plenty of reasons to redraw a frame that are no business of the
+ * app inside it — focus moving, bounds settling, a setting changing. Every
+ * prop here is stable for the life of the window, so the app redraws when its
+ * own state says to and not when its frame does.
  */
-export function AppHost({ app, pid, windowId, args, container }: AppHostProps) {
+export const AppHost = memo(function AppHost({
+  app,
+  pid,
+  windowId,
+  args,
+  container,
+}: AppHostProps) {
   const value = useMemo(
     () => ({ pid, windowId, appId: app.id, container }),
     [pid, windowId, app.id, container],
@@ -44,7 +56,7 @@ export function AppHost({ app, pid, windowId, args, container }: AppHostProps) {
       </DialogProvider>
     </AppProvider>
   );
-}
+});
 
 interface CrashBoundaryProps {
   appId: AppId;

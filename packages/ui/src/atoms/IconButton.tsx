@@ -29,7 +29,7 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(functio
       aria-pressed={active}
       className={cx(
         'inline-flex shrink-0 items-center justify-center text-ink-2 hover:text-ink select-none',
-        'transition-[background-color,color] duration-(--duration-fast) ease-(--ease-standard)',
+        'lumen-press transition-[background-color,color,transform] duration-(--duration-fast) ease-(--ease-standard)',
         'hover:bg-surface-2 active:bg-surface-3 disabled:opacity-40 disabled:pointer-events-none lumen-focus',
         variant === 'outline' && 'border border-rule-strong bg-surface',
         active && 'bg-surface-3 text-ink',

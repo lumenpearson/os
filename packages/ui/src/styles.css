@@ -238,6 +238,21 @@
   .lumen-fade-exit {
     animation: lumen-fade var(--duration-base) var(--ease-in) reverse forwards;
   }
+  /*
+   * A press, felt rather than seen: the control gives by two per cent under
+   * the finger and comes back. Design rule 5 forbids scaling on *hover*, and
+   * this is not hover — it is the moment of the click, the same feedback the
+   * cursor already gives itself, and it answers to the same Animation switch.
+   *
+   * Only the scale lives here. The easing and the duration come from the
+   * control's own transition list, which already names `transform`, because a
+   * `transition` written in this layer would lose to the utility that sets
+   * `transition-property` on the element.
+   */
+  :root[data-anim-press="on"] .lumen-press:active:not(:disabled):not([aria-disabled="true"]) {
+    transform: scale(0.98);
+  }
+
   /* On the way out it is a picture of a panel, not the panel: the click that
      dismissed it must reach whatever is underneath, and the next one must not
      land on a menu item that is already gone. */

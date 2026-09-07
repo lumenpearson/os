@@ -55,7 +55,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
         // shrink-0: a button squeezed narrower than its label is unreadable,
         // so a row that cannot fit its buttons has to give up something else.
         'inline-flex shrink-0 items-center justify-center font-medium select-none whitespace-nowrap',
-        'transition-[background-color,border-color,filter] duration-(--duration-fast) ease-(--ease-standard)',
+        'lumen-press transition-[background-color,border-color,filter,transform] duration-(--duration-fast) ease-(--ease-standard)',
         'disabled:opacity-50 disabled:pointer-events-none lumen-focus',
         variants[variant],
         sizes[size],
