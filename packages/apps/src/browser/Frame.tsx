@@ -1,3 +1,4 @@
+import { isTauri } from '@lumen/platform';
 import { Button, cx, Spinner } from '@lumen/ui';
 import { ExternalLink, ListPlus, RotateCw, ShieldOff } from 'lucide-react';
 import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
@@ -70,7 +71,14 @@ export function Frame({
    * there is the end of it rather than a loop between the two.
    */
   const [relayed, setRelayed] = useState(false);
-  const canRelay = viaLumen && (known === null || known.cause === 'known-refusal');
+  /*
+   * `pageEndpoint()` is served by the host that serves Lumen, which is a
+   * thing only the web build has: the desktop app is a bundle of files behind
+   * a Tauri protocol and there is nothing there to answer. Relaying into a
+   * 404 would be worse than the wall it replaced, so on the desktop the site
+   * is asked directly and refused honestly, as before.
+   */
+  const canRelay = viaLumen && !isTauri() && (known === null || known.cause === 'known-refusal');
 
   // A new address, or the same one asked for again, starts over from direct.
   // biome-ignore lint/correctness/useExhaustiveDependencies: the address and the generation are the intended triggers
