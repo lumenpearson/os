@@ -94,8 +94,5 @@
         "recommends": ["xdg-utils"]
       }
     }
-  },
-  "plugins": {
-    "window-state": {}
   }
 }

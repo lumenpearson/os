@@ -79,6 +79,9 @@ pub fn run() {
 /// Open the configured home directory, creating it if needed. If it cannot
 /// be opened (removed drive, permissions) fall back to the default location
 /// and persist that so the next start does not repeat the detour.
+///
+/// See also the configuration test at the end of this file: a plugin entry of
+/// the wrong shape stops the host before any of this runs.
 fn open_home(config: &mut HostConfig) -> Result<Sandbox, KernelError> {
     match Sandbox::new(config.home_path()) {
         Ok(sandbox) => Ok(sandbox),
@@ -94,6 +97,50 @@ fn open_home(config: &mut HostConfig) -> Result<Sandbox, KernelError> {
                 eprintln!("lumen: cannot save configuration: {err}");
             }
             Ok(sandbox)
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use serde_json::Value;
+
+    /// The configuration file, as the build reads it.
+    fn config() -> Value {
+        let raw = include_str!("../tauri.conf.json");
+        serde_json::from_str(raw).expect("tauri.conf.json is not valid JSON")
+    }
+
+    /// A plugin's entry under `plugins` is deserialised into that plugin's own
+    /// configuration type, and a plugin that takes no configuration declares
+    /// that type as the unit — for which the only valid JSON is `null`.
+    ///
+    /// `"window-state": {}` looks like the harmless way to say "on". It is
+    /// not: an empty map is a map, the plugin refuses it, `Builder::run`
+    /// returns before a window is ever created, and the host exits. Under
+    /// `windows_subsystem = "windows"` there is no console for the message to
+    /// reach either, so the whole failure is an application that starts and
+    /// disappears without so much as an entry in the task manager.
+    ///
+    /// The settings this plugin does take — the file it saves to, which
+    /// properties it restores — are given to its builder in `run`, in Rust.
+    #[test]
+    fn no_plugin_is_configured_with_a_map_it_cannot_read() {
+        let config = config();
+        let Some(plugins) = config.get("plugins") else {
+            return;
+        };
+        let plugins = plugins.as_object().expect("`plugins` must be an object");
+        for name in ["window-state", "process", "dialog", "opener"] {
+            match plugins.get(name) {
+                None => {}
+                Some(Value::Null) => {}
+                Some(other) => panic!(
+                    "plugins.{name} is {other}; this plugin takes no configuration, so the \
+                     only value it can read is null. Anything else stops the host before it \
+                     opens a window."
+                ),
+            }
         }
     }
 }
