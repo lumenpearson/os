@@ -83,7 +83,15 @@ export default function SetupAssistant() {
           </span>
         </div>
 
-        <div className="lumen-scroll flex-1">
+        {/*
+          `overflow: auto` clips whatever a child paints outside itself, and a
+          selected swatch or a focused control paints a ring four pixels out.
+          The chosen accent lost the left quarter of its ring against the edge
+          of this box. Bleeding the scroller out by that four and padding it
+          back in gives the ring room without moving anything: the heading
+          still lines up with the mark above it.
+        */}
+        <div className="lumen-scroll -mx-1 flex-1 px-1">
           {step === 'welcome' && (
             <section className="flex flex-col gap-4">
               <h1 className="text-xl font-semibold tracking-tight">Welcome to Lumen OS</h1>
