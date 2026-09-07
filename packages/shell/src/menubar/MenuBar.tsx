@@ -42,6 +42,7 @@ import {
   WifiOff,
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Mark } from '../desktop/Wordmark';
 import { useEdgeReveal } from '../hooks/useEdgeReveal';
 import { useImmersive } from '../hooks/useImmersive';
@@ -307,17 +308,37 @@ function MenuBarItem({
       >
         {children}
       </button>
-      {open && ref.current && (
-        <div
-          className="fixed z-[1100]"
-          style={{
-            left: ref.current.getBoundingClientRect().left,
-            top: ref.current.getBoundingClientRect().bottom + 2,
-          }}
-        >
-          <MenuList items={items} onClose={onClose} />
-        </div>
-      )}
+      {open &&
+        ref.current &&
+        typeof document !== 'undefined' &&
+        /*
+         * Portalled to the body, and that is not a detail.
+         *
+         * The bar is translucent and blurred, and `backdrop-filter` on an
+         * element makes it a backdrop root: anything inside it filters only
+         * what is inside it, which below the bar is nothing. Rendered as a
+         * child of the bar, this menu therefore came out translucent with no
+         * blur at all — the desktop showing through it sharp and legible —
+         * while every other menu in the system, which `AnchoredMenu` portals,
+         * looked right. Out here its backdrop is the screen.
+         *
+         * Keyboard and click-outside both still work through it: a React
+         * portal keeps the React tree, so the arrow keys still reach the bar's
+         * own handler, and `useClickOutside` is given MENU_SURFACE, so a press
+         * on a row is inside the menu wherever the portal put it.
+         */
+        createPortal(
+          <div
+            className="fixed z-[1100]"
+            style={{
+              left: ref.current.getBoundingClientRect().left,
+              top: ref.current.getBoundingClientRect().bottom + 2,
+            }}
+          >
+            <MenuList items={items} onClose={onClose} />
+          </div>,
+          document.body,
+        )}
     </>
   );
 }

@@ -185,7 +185,7 @@ export function Frame({
 
       {framed && relayed && status !== 'blocked' && (
         <div className="pointer-events-none absolute inset-x-0 top-0 flex justify-center p-1.5">
-          <p className="pointer-events-auto rounded-full border border-rule bg-surface/95 px-2.5 py-1 text-xs text-ink-2 shadow-sm">
+          <p className="pointer-events-auto rounded-sm border border-rule bg-surface px-2.5 py-1 text-xs text-ink-2 shadow-sm">
             {hostOf(url)} refuses to be framed, so Lumen fetched the page. Signing in and anything
             the site loads from script will not work.
           </p>
