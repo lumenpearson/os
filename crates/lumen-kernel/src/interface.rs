@@ -131,6 +131,64 @@ impl InterfaceStore {
         full.is_file().then_some(full)
     }
 
+    /// A marker file per version, rather than a field in the pointer: the
+    /// pointer is rewritten by a rollback, and the fact that a version once
+    /// worked has to survive that.
+    fn booted_marker(&self, version: &str) -> PathBuf {
+        self.root.join(format!(".booted-{version}"))
+    }
+
+    pub fn has_booted(&self, version: &str) -> bool {
+        self.booted_marker(version).is_file()
+    }
+
+    /// The interface reporting that it got as far as drawing itself.
+    pub fn mark_booted(&self, version: &str) -> Result<()> {
+        std::fs::create_dir_all(&self.root)
+            .map_err(|e| KernelError::io(&e, Some(&self.root.display().to_string())))?;
+        let path = self.booted_marker(version);
+        std::fs::write(&path, b"")
+            .map_err(|e| KernelError::io(&e, Some(&path.display().to_string())))
+    }
+
+    /// Remove the pointer, which puts the embedded bundle back in charge.
+    fn clear_pointer(&self) -> Result<()> {
+        let path = self.root.join(POINTER);
+        match std::fs::remove_file(&path) {
+            Ok(()) => Ok(()),
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(()),
+            Err(e) => Err(KernelError::io(&e, Some(&path.display().to_string()))),
+        }
+    }
+
+    /// Called once at start, before anything is served, and the reason a bad
+    /// patch cannot brick an installation.
+    ///
+    /// A live version that has never reported reaching the interface did not
+    /// work, so far as anything here can tell, and the pointer goes back to
+    /// what it replaced — or away entirely, which serves the bundle inside the
+    /// binary. Returns the version that was given up, for the interface to
+    /// say so once it is up.
+    pub fn settle(&self) -> Result<Option<String>> {
+        let Some(pointer) = self.pointer()? else {
+            return Ok(None);
+        };
+        if self.has_booted(&pointer.version) {
+            return Ok(None);
+        }
+        match &pointer.previous {
+            Some(previous) if self.version_dir(previous).is_dir() => {
+                self.write_pointer(&Pointer {
+                    version: previous.clone(),
+                    applied_at: pointer.applied_at,
+                    previous: None,
+                })?;
+            }
+            _ => self.clear_pointer()?,
+        }
+        Ok(Some(pointer.version))
+    }
+
     pub fn write_pointer(&self, pointer: &Pointer) -> Result<()> {
         std::fs::create_dir_all(&self.root)
             .map_err(|e| KernelError::io(&e, Some(&self.root.display().to_string())))?;
@@ -211,6 +269,87 @@ mod tests {
     fn a_version_that_was_never_applied_resolves_to_nothing() {
         let (_dir, store) = store();
         assert_eq!(store.resolve("9.9.9", "/index.html"), None);
+    }
+
+    fn pointer(version: &str, previous: Option<&str>) -> Pointer {
+        Pointer {
+            version: version.into(),
+            applied_at: 1,
+            previous: previous.map(Into::into),
+        }
+    }
+
+    #[test]
+    fn a_version_that_reported_once_is_trusted_from_then_on() {
+        let (_dir, store) = store();
+        assert!(!store.has_booted("0.2.0"));
+        store.mark_booted("0.2.0").expect("mark");
+        assert!(store.has_booted("0.2.0"));
+    }
+
+    #[test]
+    fn settle_reverts_when_the_live_version_never_reported() {
+        let (dir, store) = store();
+        std::fs::create_dir_all(dir.path().join("0.1.0")).expect("mkdir");
+        store
+            .write_pointer(&pointer("0.2.0", Some("0.1.0")))
+            .expect("write");
+
+        assert_eq!(store.settle().expect("settle"), Some("0.2.0".into()));
+        let now = store.pointer().expect("read").expect("pointer");
+        assert_eq!(now.version, "0.1.0");
+        assert_eq!(now.previous, None);
+    }
+
+    #[test]
+    fn settle_leaves_a_version_that_has_booted_alone() {
+        let (_dir, store) = store();
+        store.write_pointer(&pointer("0.2.0", None)).expect("write");
+        store.mark_booted("0.2.0").expect("mark");
+        assert_eq!(store.settle().expect("settle"), None);
+        assert_eq!(store.pointer().expect("read").expect("p").version, "0.2.0");
+    }
+
+    #[test]
+    fn settle_falls_to_the_embedded_bundle_when_there_is_nothing_to_revert_to() {
+        let (_dir, store) = store();
+        store.write_pointer(&pointer("0.2.0", None)).expect("write");
+        assert_eq!(store.settle().expect("settle"), Some("0.2.0".into()));
+        assert!(store.pointer().expect("read").is_none());
+    }
+
+    #[test]
+    fn settle_falls_to_the_embedded_bundle_when_the_previous_version_is_gone() {
+        // The directory was swept, or removed by hand. Reverting to a version
+        // that is not there would serve nothing at all.
+        let (_dir, store) = store();
+        store
+            .write_pointer(&pointer("0.2.0", Some("0.1.0")))
+            .expect("write");
+        assert_eq!(store.settle().expect("settle"), Some("0.2.0".into()));
+        assert!(store.pointer().expect("read").is_none());
+    }
+
+    #[test]
+    fn settle_does_nothing_when_the_embedded_bundle_is_already_live() {
+        let (_dir, store) = store();
+        assert_eq!(store.settle().expect("settle"), None);
+    }
+
+    #[test]
+    fn a_version_that_booted_stays_trusted_across_a_rollback() {
+        // The marker is a file per version rather than a field in the
+        // pointer, because a rollback rewrites the pointer and the fact that
+        // a version once worked has to survive that.
+        let (dir, store) = store();
+        std::fs::create_dir_all(dir.path().join("0.1.0")).expect("mkdir");
+        store.mark_booted("0.1.0").expect("mark");
+        store
+            .write_pointer(&pointer("0.2.0", Some("0.1.0")))
+            .expect("write");
+        store.settle().expect("settle");
+        assert!(store.has_booted("0.1.0"));
+        assert_eq!(store.settle().expect("second settle"), None);
     }
 
     #[test]
