@@ -43,7 +43,12 @@ export function StartItem({
         </button>
       </Tooltip>
       {separator && (
-        <span aria-hidden className={cx('bg-rule', vertical ? 'my-1 h-px w-6' : 'mx-1 h-6 w-px')} />
+        <span
+          aria-hidden
+          // Half strength: the bar's separators group the icons, they do not
+          // divide the bar, and a full hairline reads as an edge.
+          className={cx('bg-rule/50', vertical ? 'my-1 h-px w-6' : 'mx-1 h-6 w-px')}
+        />
       )}
     </div>
   );

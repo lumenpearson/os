@@ -222,7 +222,9 @@ function ShowDesktop({
         className={cx(
           'lumen-focus hover:bg-ink/8 dark:hover:bg-white/8',
           'transition-colors duration-(--duration-fast) ease-(--ease-standard)',
-          vertical ? 'h-4 border-t border-rule' : 'w-3 border-l border-rule',
+          // The same half-strength hairline the start separator uses: this
+          // marks off the show-desktop strip, it does not close the bar.
+          vertical ? 'h-4 border-t border-rule/50' : 'w-3 border-l border-rule/50',
           // A floating bar is only as tall as its contents, so the strip takes
           // its height from the flex line rather than from a percentage of it.
           floating && 'self-stretch',
