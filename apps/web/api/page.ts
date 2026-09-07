@@ -18,8 +18,16 @@ import { fromThisApp, loadPage } from '../server/page.js';
 export const config = { runtime: 'nodejs' };
 
 export default async function handler(request: Request): Promise<Response> {
-  const url = new URL(request.url).searchParams.get('url');
   const headers = (name: string) => request.headers.get(name);
+  /*
+   * `request.url` is a path here — `/api/page?url=…` — not the absolute URL
+   * a `Request` normally carries, so parsing it without a base throws and
+   * the whole function 500s before any of the page logic runs. The base is
+   * only ever used to make the parse legal; nothing below reads the host
+   * from it. An absolute url ignores the base, so this holds either way.
+   */
+  const asked = new URL(request.url, `https://${headers('host') ?? 'lumen.invalid'}`);
+  const url = asked.searchParams.get('url');
   const deny = (status: number, text: string) =>
     new Response(text, {
       status,
