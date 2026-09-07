@@ -30,7 +30,10 @@ export function Field({ label, hint, error, children, inline, className, htmlFor
     <div
       className={cx(
         inline
-          ? 'grid grid-cols-[minmax(120px,1fr)_2fr] items-center gap-x-4 gap-y-1'
+          ? // The label track is in rem, not px: at 90 per cent a px track keeps
+            // its width while the panel around it shrinks, so it takes a larger
+            // share of a smaller row and squeezes the control out of its cell.
+            'grid grid-cols-[minmax(7.5rem,1fr)_2fr] items-center gap-x-4 gap-y-1'
           : 'flex flex-col gap-1',
         className,
       )}

@@ -38,7 +38,11 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select
         value={value}
         onChange={(e) => onChange(e.target.value)}
         className={cx(
-          'lumen-control appearance-none pr-7 min-w-24',
+          // A floor that yields. A plain `min-w-24` is 6rem whatever the box
+          // it is in, so a select in a narrower cell overflows it rather than
+          // fitting; `min()` says at least 6rem, or all of the room there is,
+          // whichever is less.
+          'lumen-control appearance-none pr-7 min-w-[min(6rem,100%)]',
           size === 'sm' && 'h-6 text-sm leading-[22px]',
           mono && 'mono',
         )}
