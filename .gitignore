@@ -52,3 +52,4 @@ pnpm-debug.log*
 # written to be deleted — `zz-` marks one so it never reaches a commit and
 # never sorts above a real spec in the runner's output.
 apps/web/e2e/zz-*.spec.ts
+apps/web/zz-*.pw.config.ts
