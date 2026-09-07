@@ -357,13 +357,36 @@ export function preflight(url: string, pageProtocol: string): BlockedReason | nu
 }
 
 /**
+ * The refusal the site itself stated, when it has been asked.
+ *
+ * This is the same fact `KNOWN_REFUSALS` holds, except read from the site
+ * today rather than from a list checked by hand, so it names the header the
+ * site is actually sending. Null when the site did not refuse, or when nobody
+ * could ask it.
+ */
+export function refusalFromProbe(url: string, header: string | null): BlockedReason | null {
+  if (!header) return null;
+  const host = hostOf(url) || 'The site';
+  return {
+    cause: 'known-refusal',
+    title: REFUSED_TITLE,
+    text: `${host} sends ${header}, so it may not be embedded in a page served from anywhere else.`,
+  };
+}
+
+/**
  * Why a page is not on screen. Everything that can be told apart is told
  * apart; the rest says plainly that it cannot be, because a cross-origin
  * frame hides its response headers from the page that embeds it.
  */
-export function blockedReason(url: string, pageProtocol: string): BlockedReason {
+export function blockedReason(
+  url: string,
+  pageProtocol: string,
+  probeHeader: string | null = null,
+): BlockedReason {
   return (
-    preflight(url, pageProtocol) ?? {
+    preflight(url, pageProtocol) ??
+    refusalFromProbe(url, probeHeader) ?? {
       cause: 'unknown',
       title: REFUSED_TITLE,
       text: 'The frame never reported a load, and a cross-origin frame hides its headers, so Lumen cannot tell whether X-Frame-Options or a Content-Security-Policy frame-ancestors rule turned it away.',

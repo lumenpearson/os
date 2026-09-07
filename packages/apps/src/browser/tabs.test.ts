@@ -299,11 +299,19 @@ describe('loading status', () => {
     expect(activeTab(state)?.status).toBe('idle');
   });
 
-  it('blocked only applies while loading', () => {
+  it('blocked applies to a page that reported a load, because a refusal does', () => {
+    // A frame the site turned away fires `load` exactly as one that arrived
+    // does, so a tab can be told a page loaded and then be shown by the
+    // site's own headers that what loaded was the refusal. LU-1609.
     const loading = createTabsState('t1', A);
     expect(tabsReducer(loading, { type: 'blocked', id: 't1' }).tabs[0]?.status).toBe('blocked');
     const idle = tabsReducer(loading, { type: 'loaded', id: 't1' });
-    expect(tabsReducer(idle, { type: 'blocked', id: 't1' })).toBe(idle);
+    expect(tabsReducer(idle, { type: 'blocked', id: 't1' }).tabs[0]?.status).toBe('blocked');
+  });
+
+  it('leaves a tab that opens outside Lumen alone, having no frame to block', () => {
+    const outside = createTabsState('t1', A, { zoom: 1, externalHosts: ['a.example'] });
+    expect(tabsReducer(outside, { type: 'blocked', id: 't1' })).toBe(outside);
   });
 
   it('a late load clears the blocked panel', () => {

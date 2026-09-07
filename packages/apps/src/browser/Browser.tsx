@@ -139,16 +139,18 @@ export default function Browser({ args }: AppProps) {
 
   // ── the visit log ───────────────────────────────────────────────────────
 
-  // One entry per load, keyed by the generation the tab was on when it was
-  // written, so a reload updates the entry instead of stacking duplicates.
-  const logged = useRef(new Map<string, number>());
+  // One entry per load, keyed by the generation and the address the tab was
+  // on when it was written, so a reload updates the entry instead of stacking
+  // duplicates.
+  const logged = useRef(new Map<string, string>());
   useEffect(() => {
     const live = new Set(state.tabs.map((t) => t.id));
     for (const id of logged.current.keys()) if (!live.has(id)) logged.current.delete(id);
     if (!settings.keepHistory) return;
     for (const t of state.tabs) {
-      if (isInternalUrl(t.url) || logged.current.get(t.id) === t.generation) continue;
-      logged.current.set(t.id, t.generation);
+      const visited = `${t.generation}:${t.url}`;
+      if (isInternalUrl(t.url) || logged.current.get(t.id) === visited) continue;
+      logged.current.set(t.id, visited);
       const visit = { id: nextId('visit'), url: t.url, title: t.title, visitedAt: Date.now() };
       update((d) => ({ ...d, history: recordVisit(d.history, visit) }));
     }
@@ -179,6 +181,16 @@ export default function Browser({ args }: AppProps) {
   const onLoaded = useCallback((id: string) => dispatch({ type: 'loaded', id }), []);
   const onBlocked = useCallback((id: string) => dispatch({ type: 'blocked', id }), []);
   const onReloadTab = useCallback((id: string) => dispatch({ type: 'reload', id }), []);
+  /*
+   * A relayed page asking to follow one of its own links. The browser goes
+   * there exactly as it would if the address had been typed, so the tab's
+   * history, its address bar and its Back button all follow, and the next
+   * page is judged on its own headers rather than inheriting this one's.
+   */
+  const onMoved = useCallback(
+    (id: string, target: string) => dispatch({ type: 'navigate', id, url: target }),
+    [],
+  );
 
   const alwaysOutside = useCallback(
     (target: string) =>
@@ -529,6 +541,7 @@ export default function Browser({ args }: AppProps) {
               onLoaded={onLoaded}
               onBlocked={onBlocked}
               onReload={onReloadTab}
+              onMoved={onMoved}
               onOpenOutside={openOutside}
               onAlwaysOutside={alwaysOutside}
               onStopOutside={stopOutside}

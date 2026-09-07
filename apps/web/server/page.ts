@@ -51,6 +51,19 @@ export interface PageResult {
   problem?: string;
 }
 
+/** What a site says about being put in a frame by the origin that asked. */
+export type FrameVerdict = 'allowed' | 'refused' | 'unknown';
+
+export interface PageProbe {
+  frame: FrameVerdict;
+  /** The header that refused, as the site wrote it; null when none did. */
+  header: string | null;
+  /** Where the address ended up after redirects. */
+  url: string;
+  /** Why the site could not be asked, for `unknown`. */
+  problem?: string;
+}
+
 function refuse(status: number, problem: string): PageResult {
   return { status, contentType: 'text/plain; charset=utf-8', body: problem, problem };
 }
@@ -135,6 +148,116 @@ export function fromThisApp(headers: {
   }
 }
 
+// ── would the site let Lumen frame it? ────────────────────────────────────
+
+/**
+ * A frame that a site refuses fires `load` on the iframe exactly as one that
+ * succeeded does, and never fires `error`. Measured in Chromium against both
+ * `X-Frame-Options: DENY` and `frame-ancestors 'self'`: `load` fired, `error`
+ * did not. So the page doing the embedding cannot tell a page that arrived
+ * from a page that was turned away — it can only see the headers, and a
+ * cross-origin frame hides those from it.
+ *
+ * The server has no such problem: it made the request and it holds the
+ * response. So it reads the two headers that decide the question and the
+ * browser asks it before choosing between a frame and the relay.
+ */
+
+/** The `frame-ancestors` source list of every policy in a CSP header. */
+export function frameAncestors(csp: string): string[][] {
+  const found: string[][] = [];
+  // One header may carry several policies, separated by commas, and a
+  // browser enforces all of them; each is a list of `;`-separated directives.
+  for (const policy of csp.split(',')) {
+    for (const directive of policy.split(';')) {
+      const parts = directive.trim().split(/\s+/).filter(Boolean);
+      if (parts.shift()?.toLowerCase() === 'frame-ancestors') found.push(parts);
+    }
+  }
+  return found;
+}
+
+/** The port a URL uses, written out even when it is the scheme's default. */
+function portOf(origin: URL): string {
+  return origin.port || (origin.protocol === 'https:' ? '443' : '80');
+}
+
+function defaultPort(origin: URL): string {
+  return origin.protocol === 'https:' ? '443' : '80';
+}
+
+/** Whether one `frame-ancestors` source covers the origin doing the asking. */
+export function matchesOrigin(source: string, origin: URL): boolean {
+  const value = source.trim().toLowerCase();
+  if (!value) return false;
+  if (value === '*') return true;
+  // `'self'` is the site itself and `'none'` is nobody: neither is ever us.
+  if (value.startsWith("'")) return false;
+  // A scheme on its own. `http:` covers https too, as the grammar has it.
+  if (/^[a-z][a-z0-9+.-]*:$/.test(value)) {
+    if (value === 'http:') return origin.protocol === 'http:' || origin.protocol === 'https:';
+    return value === origin.protocol;
+  }
+  const match = /^(?:([a-z][a-z0-9+.-]*):\/\/)?(\*\.)?([^/:]+)(?::(\*|\d+))?/.exec(value);
+  if (!match) return false;
+  const [, scheme, wildcard, host, port] = match;
+  if (!host) return false;
+  if (scheme && `${scheme}:` !== origin.protocol) {
+    // Same upgrade rule: a source written http:// also covers https.
+    if (!(scheme === 'http' && origin.protocol === 'https:')) return false;
+  }
+  const theirs = origin.hostname.toLowerCase();
+  if (wildcard ? !theirs.endsWith(`.${host}`) : theirs !== host) return false;
+  // A source with no port means the scheme's default port and no other.
+  if (port === undefined) return portOf(origin) === defaultPort(origin);
+  return port === '*' || port === portOf(origin);
+}
+
+/**
+ * Whether `asking` may frame a document that came back with these headers.
+ *
+ * Anything that cannot be read as permission is read as refusal: being wrong
+ * that way costs a page fetched through Lumen that need not have been, and
+ * being wrong the other way costs a blank frame with no way to tell why.
+ */
+export function frameRule(
+  headers: { frameOptions?: string | null; policy?: string | null },
+  asking: string,
+): { framable: boolean; header: string | null } {
+  let origin: URL;
+  try {
+    origin = new URL(asking);
+  } catch {
+    return { framable: false, header: null };
+  }
+
+  const lists = frameAncestors(headers.policy ?? '');
+  if (lists.length > 0) {
+    // Where both are sent, `frame-ancestors` is the one browsers obey.
+    const allowed = lists.every((sources) => sources.some((s) => matchesOrigin(s, origin)));
+    const written = lists.map((sources) => sources.join(' ')).join(', ');
+    return {
+      framable: allowed,
+      header: allowed ? null : `Content-Security-Policy: frame-ancestors ${written}`,
+    };
+  }
+
+  const xfo = (headers.frameOptions ?? '').trim();
+  if (!xfo) return { framable: true, header: null };
+  const value = xfo.toLowerCase();
+  if (value === 'allowall') return { framable: true, header: null };
+  if (value.startsWith('allow-from')) {
+    let allowed = false;
+    try {
+      allowed = new URL(xfo.slice('allow-from'.length).trim()).origin === origin.origin;
+    } catch {
+      allowed = false;
+    }
+    return { framable: allowed, header: allowed ? null : `X-Frame-Options: ${xfo}` };
+  }
+  return { framable: false, header: `X-Frame-Options: ${xfo}` };
+}
+
 /** Read a response body up to the cap, and say if it ran over. */
 async function readCapped(response: Response): Promise<{ text: string; tooLarge: boolean }> {
   const declared = Number(response.headers.get('content-length') ?? '');
@@ -164,33 +287,92 @@ async function readCapped(response: Response): Promise<{ text: string; tooLarge:
 }
 
 /**
- * One line of script, so the frame can say it arrived.
+ * The script the served document carries. Two jobs, both of which only the
+ * document itself can do.
  *
- * The frame is sandboxed without `allow-same-origin` — a page fetched from
- * anywhere must not get Lumen's origin, its storage or its cookies — which
- * means the browser cannot read the document to see whether it loaded. The
- * `load` event is no answer either: it waits for every image and script the
- * page asks for, and one slow asset would leave a page that is on screen and
- * readable being reported as blocked.
+ * **It says it arrived.** The frame is sandboxed without `allow-same-origin`
+ * — a page fetched from anywhere must not get Lumen's origin, its storage or
+ * its cookies — so the browser cannot read the document to see whether it
+ * loaded. `load` is no answer either: it waits for every image and script the
+ * page asks for, so one slow asset would have a readable page reported as
+ * blocked, and it fires just the same for a frame that was refused.
  *
- * So the document says so itself. It sends one message, carries no data, and
- * changes nothing else about the page.
+ * **It keeps the browsing inside the browser.** The `<base>` points every
+ * relative address at the site, which is what makes the page's own images and
+ * stylesheets load — and it points the page's links there too, so a link
+ * followed from a relayed page went straight back to the site, into a frame
+ * the site refuses, and the page went blank. That is the second half of the
+ * defect and it is why a search could be typed but never run.
+ *
+ * So a plain left click on a link, and a GET form's submission, are stopped
+ * and handed to Lumen instead, which goes there exactly as it would if the
+ * address had been typed: the tab's history, its address bar and its Back
+ * button all follow, and the next page is judged on its own headers rather
+ * than inheriting this one's.
+ *
+ * Handing it up rather than going there directly is also the only thing that
+ * works. This document is sandboxed to an opaque origin, so a request it
+ * makes for itself arrives with `Sec-Fetch-Site: cross-site` and is turned
+ * away by the guard that keeps this endpoint from being an open proxy. Asked
+ * for by Lumen, the request is same-origin, like any other.
+ *
+ * A POST is left alone. This endpoint fetches with GET and nothing else, and
+ * a form that submits to the site is more honest than one quietly turned into
+ * a different request.
  */
-const READY_SIGNAL =
-  '<script>try{parent.postMessage({lumen:"page-ready"},"*");' +
-  'addEventListener("DOMContentLoaded",function(){' +
-  'try{parent.postMessage({lumen:"page-ready"},"*")}catch(e){}})}catch(e){}</script>';
+export function relayScript(): string {
+  return `<script>(function(){
+function tell(kind,url){try{parent.postMessage({lumen:kind,url:url},"*")}catch(e){}}
+function absolute(raw){try{var u=new URL(raw,document.baseURI);
+return u.protocol==="http:"||u.protocol==="https:"?u:null}catch(e){return null}}
+function goTo(raw){if(parent===window)return false;
+var u=absolute(raw);if(!u)return false;tell("page-moved",u.href);return true}
+tell("page-ready");
+addEventListener("DOMContentLoaded",function(){tell("page-ready")});
+addEventListener("click",function(e){
+if(e.defaultPrevented||e.button!==0||e.metaKey||e.ctrlKey||e.shiftKey||e.altKey)return;
+var el=e.target,a=el&&el.closest?el.closest("a[href]"):null;if(!a)return;
+var href=a.getAttribute("href");if(!href||href.charAt(0)==="#")return;
+if(goTo(href))e.preventDefault()},true);
+addEventListener("submit",function(e){var form=e.target;
+if(e.defaultPrevented||!form||(form.method||"get").toLowerCase()!=="get")return;
+var action=absolute(form.getAttribute("action")||"");if(!action)return;
+var params=new URLSearchParams(),data;
+try{data=new FormData(form,e.submitter)}catch(err){try{data=new FormData(form)}catch(err2){return}}
+data.forEach(function(value,name){if(typeof value==="string")params.append(name,value)});
+action.search=params.toString();
+if(goTo(action.href))e.preventDefault()},true)})()</script>`;
+}
+
+const BASE_TAG = /<base\b[^>]*\bhref\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))[^>]*>/i;
 
 /**
  * Give the document a `<base>`, so every relative link and asset in it
- * resolves against the site it came from rather than against Lumen.
+ * resolves against the site it came from rather than against Lumen, and the
+ * script above, so it can report itself and keep its links in the relay.
  *
- * A document that already has one is left alone: the site has said where its
- * relative URLs point and it knows better than this does.
+ * A `<base>` the site wrote itself is kept but made absolute against the
+ * address it came from. The site wrote it expecting to be served from its own
+ * origin; served from Lumen's, a relative one such as `/assets/` would point
+ * every stylesheet and image at Lumen, and the page would arrive unstyled.
  */
 export function withBase(html: string, url: string): string {
-  if (/<base\b/i.test(html)) return html;
-  const tag = `<base href="${url.replace(/"/g, '&quot;')}">${READY_SIGNAL}`;
+  const existing = BASE_TAG.exec(html);
+  const written = existing ? (existing[1] ?? existing[2] ?? existing[3] ?? '') : '';
+  let href = url;
+  if (existing) {
+    try {
+      href = new URL(written, url).href;
+    } catch {
+      href = url;
+    }
+  }
+  const base = `<base href="${href.replace(/"/g, '&quot;')}">`;
+  if (existing) {
+    const at = existing.index;
+    return html.slice(0, at) + base + relayScript() + html.slice(at + existing[0].length);
+  }
+  const tag = base + relayScript();
   const head = html.match(/<head\b[^>]*>/i);
   if (head?.index !== undefined) {
     const at = head.index + head[0].length;
@@ -211,11 +393,14 @@ export function withBase(html: string, url: string): string {
  * have been looked at — which is exactly the hole a redirect to an internal
  * address is meant to go through.
  */
-export async function loadPage(raw: string, doFetch = fetch): Promise<PageResult> {
-  let target = await acceptableTarget(raw);
-  if (!target) return refuse(400, 'That address cannot be fetched from here.');
+type Walk = { ok: true; response: Response; target: URL } | { ok: false; refusal: PageResult };
 
-  const deadline = AbortSignal.timeout(PAGE_TIMEOUT_MS);
+async function walk(raw: string, doFetch: typeof fetch, deadline: AbortSignal): Promise<Walk> {
+  let target = await acceptableTarget(raw);
+  if (!target) {
+    return { ok: false, refusal: refuse(400, 'That address cannot be fetched from here.') };
+  }
+
   for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
     let response: Response;
     try {
@@ -234,39 +419,107 @@ export async function loadPage(raw: string, doFetch = fetch): Promise<PageResult
       });
     } catch (e) {
       const timedOut = deadline.aborted;
-      return refuse(
-        timedOut ? 504 : 502,
-        timedOut ? 'The site did not answer in time.' : `The site could not be reached: ${e}`,
-      );
+      return {
+        ok: false,
+        refusal: refuse(
+          timedOut ? 504 : 502,
+          timedOut ? 'The site did not answer in time.' : `The site could not be reached: ${e}`,
+        ),
+      };
     }
 
     const location = response.headers.get('location');
     if (response.status >= 300 && response.status < 400 && location) {
       const next = await acceptableTarget(new URL(location, target).href);
-      if (!next) return refuse(400, 'That site redirected somewhere this will not follow.');
+      if (!next) {
+        return {
+          ok: false,
+          refusal: refuse(400, 'That site redirected somewhere this will not follow.'),
+        };
+      }
+      await response.body?.cancel().catch(() => {});
       target = next;
       continue;
     }
-
-    const type = response.headers.get('content-type') ?? 'text/html; charset=utf-8';
-    if (!/^text\/html|^application\/xhtml/i.test(type)) {
-      return refuse(415, 'That address is a file rather than a page.');
-    }
-    const { text, tooLarge } = await readCapped(response);
-    if (tooLarge) return refuse(413, 'That page is too large to show here.');
-    return {
-      status: response.status,
-      contentType: 'text/html; charset=utf-8',
-      body: withBase(text, target.href),
-    };
+    return { ok: true, response, target };
   }
-  return refuse(508, 'That site redirected too many times.');
+  return { ok: false, refusal: refuse(508, 'That site redirected too many times.') };
+}
+
+export async function loadPage(raw: string, doFetch = fetch): Promise<PageResult> {
+  const walked = await walk(raw, doFetch, AbortSignal.timeout(PAGE_TIMEOUT_MS));
+  if (!walked.ok) return walked.refusal;
+  const { response, target } = walked;
+
+  const type = response.headers.get('content-type') ?? 'text/html; charset=utf-8';
+  if (!/^text\/html|^application\/xhtml/i.test(type)) {
+    return refuse(415, 'That address is a file rather than a page.');
+  }
+  const { text, tooLarge } = await readCapped(response);
+  if (tooLarge) return refuse(413, 'That page is too large to show here.');
+  return {
+    status: response.status,
+    contentType: 'text/html; charset=utf-8',
+    body: withBase(text, target.href),
+  };
+}
+
+/**
+ * Ask the site whether `asking` may put it in a frame, without reading a
+ * page. Only the headers matter, so the body is dropped as soon as they have
+ * arrived: one round trip, and none of the page's bytes.
+ *
+ * A site that cannot be reached from here is `unknown` rather than refused.
+ * The relay runs on the same server as this, so "we could not reach it"
+ * cannot be answered by relaying it, and the browser is better off asking the
+ * site directly and saying plainly if that comes to nothing.
+ */
+export async function probePage(raw: string, asking: string, doFetch = fetch): Promise<PageProbe> {
+  const walked = await walk(raw, doFetch, AbortSignal.timeout(PAGE_TIMEOUT_MS));
+  if (!walked.ok) {
+    return { frame: 'unknown', header: null, url: raw, problem: walked.refusal.problem };
+  }
+  const { response, target } = walked;
+  await response.body?.cancel().catch(() => {});
+  const rule = frameRule(
+    {
+      frameOptions: response.headers.get('x-frame-options'),
+      policy: response.headers.get('content-security-policy'),
+    },
+    asking,
+  );
+  return {
+    frame: rule.framable ? 'allowed' : 'refused',
+    header: rule.header,
+    url: target.href,
+  };
 }
 
 /** One header, whatever shape the server handed it over in. */
 function header(req: IncomingMessage, name: string): string | null {
   const value = req.headers[name];
   return Array.isArray(value) ? (value[0] ?? null) : (value ?? null);
+}
+
+/**
+ * The origin this is being served from, as the browser would write it.
+ *
+ * The frame rule is a question about a particular origin — may *this* page
+ * frame that site — so the answer is only as good as knowing which one is
+ * asking, and the request is the only place that says.
+ *
+ * `x-forwarded-proto` is what a host in front of this sets; behind nothing at
+ * all, the socket says whether it is a TLS one.
+ */
+export function originOf(req: IncomingMessage): string {
+  const host = header(req, 'host');
+  if (!host) return '';
+  const forwarded = header(req, 'x-forwarded-proto')?.split(',')[0]?.trim();
+  // A socket is not guaranteed: the host may hand over a request that never
+  // had one, and a test certainly does.
+  const socket = req.socket as { encrypted?: boolean } | undefined;
+  const secure = forwarded ? forwarded === 'https' : socket?.encrypted === true;
+  return `${secure ? 'https' : 'http'}://${host}`;
 }
 
 /**
@@ -305,6 +558,16 @@ export async function servePage(req: IncomingMessage, res: ServerResponse): Prom
     })
   ) {
     return send(403, 'This address answers the Lumen browser, not the internet.');
+  }
+
+  const origin = originOf(req);
+
+  // The browser asks this before it decides between a frame and the relay: a
+  // refused frame fires `load` like any other, so the answer cannot be had on
+  // its side of the network.
+  if (asked.searchParams.has('probe')) {
+    const probe = await probePage(target, origin);
+    return send(200, JSON.stringify(probe), 'application/json; charset=utf-8');
   }
 
   const page = await loadPage(target);
