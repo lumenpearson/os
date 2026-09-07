@@ -7,6 +7,17 @@ import {
 import { cx } from '../cx';
 import { useControlId } from '../fieldId';
 
+/**
+ * The types that put a caret in the field.
+ *
+ * The OS hides the native cursor and draws its own, so the I-beam a text
+ * field would get from the browser never reaches the drawn layer: it reads
+ * `data-cursor`, and computed style says `none` for everything. A `date` or
+ * `time` field is stepped segments rather than text and keeps the arrow, and
+ * so does any type nobody here has thought about.
+ */
+const CARET_TYPES = new Set(['text', 'search', 'password', 'email', 'url', 'tel', 'number']);
+
 export interface InputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'size'> {
   /** Use the monospace face (paths, values, codes). */
   mono?: boolean;
@@ -22,11 +33,17 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
 ) {
   const h = size === 'sm' ? 'h-6 text-sm' : size === 'lg' ? 'h-9 text-md' : 'h-7';
   const inputId = useControlId(id);
+  const cursor = rest.disabled
+    ? 'not-allowed'
+    : CARET_TYPES.has(rest.type ?? 'text')
+      ? 'text'
+      : undefined;
   const input = (
     <input
       ref={ref}
       id={inputId}
       aria-invalid={invalid || undefined}
+      data-cursor={cursor}
       className={cx(
         'lumen-control w-full',
         h,
@@ -72,6 +89,7 @@ export const TextArea = forwardRef<HTMLTextAreaElement, TextAreaProps>(function 
       ref={ref}
       id={textAreaId}
       aria-invalid={invalid || undefined}
+      data-cursor={rest.disabled ? 'not-allowed' : 'text'}
       className={cx(
         'lumen-control h-auto min-h-20 resize-y py-1.5 leading-normal',
         mono && 'mono',

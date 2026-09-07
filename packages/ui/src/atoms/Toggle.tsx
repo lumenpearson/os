@@ -19,9 +19,13 @@ export const Switch = forwardRef<HTMLInputElement, SwitchProps>(function Switch(
   return (
     <label
       htmlFor={inputId}
+      // The claim goes on the label, not on the input: the whole control is
+      // off, the text beside the switch included, and a disabled input is not
+      // what the pointer reports as its target.
+      data-cursor={disabled ? 'not-allowed' : undefined}
       className={cx(
         'inline-flex items-center gap-3 select-none',
-        disabled && 'opacity-50',
+        disabled && 'cursor-not-allowed opacity-50',
         className,
       )}
     >
@@ -32,7 +36,7 @@ export const Switch = forwardRef<HTMLInputElement, SwitchProps>(function Switch(
           type="checkbox"
           // biome-ignore lint/a11y/useAriaPropsForRole: a native checkbox maps its checked state to aria-checked
           role="switch"
-          className="peer absolute inset-0 z-10 m-0 cursor-pointer opacity-0 disabled:cursor-default"
+          className="peer absolute inset-0 z-10 m-0 cursor-pointer opacity-0 disabled:cursor-not-allowed"
           checked={checked}
           disabled={disabled}
           {...rest}
@@ -75,9 +79,10 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(function Che
   return (
     <label
       htmlFor={inputId}
+      data-cursor={disabled ? 'not-allowed' : undefined}
       className={cx(
         'inline-flex items-center gap-2 select-none',
-        disabled && 'opacity-50',
+        disabled && 'cursor-not-allowed opacity-50',
         className,
       )}
     >
@@ -86,7 +91,7 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(function Che
           ref={ref}
           id={inputId}
           type="checkbox"
-          className="peer absolute inset-0 z-10 m-0 cursor-pointer opacity-0 disabled:cursor-default"
+          className="peer absolute inset-0 z-10 m-0 cursor-pointer opacity-0 disabled:cursor-not-allowed"
           disabled={disabled}
           aria-checked={indeterminate ? 'mixed' : undefined}
           {...rest}
@@ -128,9 +133,10 @@ export const Radio = forwardRef<HTMLInputElement, RadioProps>(function Radio(
   return (
     <label
       htmlFor={inputId}
+      data-cursor={disabled ? 'not-allowed' : undefined}
       className={cx(
         'inline-flex items-start gap-2 select-none',
-        disabled && 'opacity-50',
+        disabled && 'cursor-not-allowed opacity-50',
         className,
       )}
     >
@@ -139,7 +145,7 @@ export const Radio = forwardRef<HTMLInputElement, RadioProps>(function Radio(
           ref={ref}
           id={inputId}
           type="radio"
-          className="peer absolute inset-0 z-10 m-0 cursor-pointer opacity-0 disabled:cursor-default"
+          className="peer absolute inset-0 z-10 m-0 cursor-pointer opacity-0 disabled:cursor-not-allowed"
           disabled={disabled}
           {...rest}
         />

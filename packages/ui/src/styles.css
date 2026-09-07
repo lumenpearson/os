@@ -29,9 +29,12 @@
     border-color: var(--lumen-accent);
     box-shadow: 0 0 0 3px var(--lumen-accent-soft);
   }
+  /* The click will do nothing, and the cursor says so. This is for the native
+     cursor; the drawn one reads `data-cursor` on the control itself. */
   .lumen-control:disabled,
   .lumen-control[aria-disabled="true"] {
     opacity: 0.5;
+    cursor: not-allowed;
   }
   .lumen-control::placeholder {
     color: var(--lumen-ink-3);
@@ -99,6 +102,7 @@
   }
   .lumen-menu-item[aria-disabled="true"] {
     color: var(--lumen-ink-3);
+    cursor: not-allowed;
   }
   .lumen-menu-item[data-danger="true"]:not([data-active="true"]) {
     color: var(--lumen-danger);

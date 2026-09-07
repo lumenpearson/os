@@ -22,7 +22,7 @@
  * up when the gesture lands.
  */
 
-import { cx } from '@lumen/ui';
+import { cx, useLatest } from '@lumen/ui';
 import {
   type PointerEvent as ReactPointerEvent,
   type WheelEvent as ReactWheelEvent,
@@ -126,6 +126,12 @@ export function Surface({
   const gesture = useRef<Gesture | null>(null);
   /** The marquee while it is being dragged, before it becomes the selection. */
   const marquee = useRef<Rect | null>(null);
+  /**
+   * What the surface should say once a pan lets go. A tool letter still
+   * chooses a tool while the middle button is held, so the answer is the one
+   * at the end of the hold rather than the one captured at its start.
+   */
+  const toolCursor = useLatest(toolSpec(tool).cursor);
   /**
    * The view on screen. Between the first wheel notch and the settle it is
    * ahead of the `view` prop, so everything that converts screen to image —
@@ -307,7 +313,7 @@ export function Surface({
       window.removeEventListener('pointerup', up);
       window.removeEventListener('pointercancel', up);
       if (pending) cancelAnimationFrame(pending);
-      if (surface) surface.dataset.cursor = toolSpec(tool).cursor;
+      if (surface) surface.dataset.cursor = toolCursor.current;
       liveView.current = latest;
       onView(latest);
     };

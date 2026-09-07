@@ -25,7 +25,13 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select
 ) {
   const selectId = useControlId(id);
   return (
-    <span className={cx('relative inline-flex shrink-0', className)}>
+    <span
+      // The claim goes on the wrapper, not on the `select`: a disabled form
+      // control is not what a pointer event reports as its target, and the
+      // chevron beside it is just as dead.
+      data-cursor={rest.disabled ? 'not-allowed' : undefined}
+      className={cx('relative inline-flex shrink-0', className)}
+    >
       <select
         ref={ref}
         id={selectId}

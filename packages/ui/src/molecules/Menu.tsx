@@ -162,6 +162,7 @@ export function MenuList({
               item.type === 'checkbox' || item.type === 'radio' ? Boolean(checked) : undefined
             }
             aria-disabled={disabled || undefined}
+            data-cursor={disabled ? 'not-allowed' : undefined}
             aria-haspopup={hasSub ? 'menu' : undefined}
             aria-expanded={hasSub ? openSub === i : undefined}
             data-active={active === i}

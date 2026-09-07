@@ -12,6 +12,7 @@ import { act, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DEFAULT_PREFS } from './prefs';
 import { Surface } from './Surface';
+import type { ToolId } from './tools';
 import { panBy, type View } from './transform';
 
 /** Bigger than the viewport in both axes, so a pan has somewhere to go. */
@@ -20,25 +21,29 @@ const VIEWPORT = { width: 800, height: 600 };
 const START: View = { scale: 1, x: -100, y: -100 };
 
 function mount(onView: (view: View) => void) {
-  render(
-    <Surface
-      document={null}
-      size={SIZE}
-      view={START}
-      viewport={VIEWPORT}
-      tool="pencil"
-      prefs={DEFAULT_PREFS}
-      selection={null}
-      revision={0}
-      onView={onView}
-      onSelection={() => {}}
-      onCommit={() => {}}
-      onPickColour={() => {}}
-      onPlaceText={() => {}}
-    />,
-  );
+  const props = {
+    document: null,
+    size: SIZE,
+    view: START,
+    viewport: VIEWPORT,
+    tool: 'pencil' as ToolId,
+    prefs: DEFAULT_PREFS,
+    selection: null,
+    revision: 0,
+    onView,
+    onSelection: () => {},
+    onCommit: () => {},
+    onPickColour: () => {},
+    onPlaceText: () => {},
+  };
+  const { rerender } = render(<Surface {...props} />);
   const host = screen.getByTestId('paint-surface');
-  return { host, stage: host.firstElementChild as HTMLElement };
+  return {
+    host,
+    stage: host.firstElementChild as HTMLElement,
+    /** Choose another tool, which a letter key can do mid-gesture. */
+    retool: (tool: ToolId) => rerender(<Surface {...props} tool={tool} />),
+  };
 }
 
 /** Run the frame the wheel asked for. */
@@ -121,5 +126,15 @@ describe('a middle-button pan', () => {
 
     fireEvent.pointerUp(window);
     expect(host.dataset.cursor).toBe('crosshair');
+  });
+
+  it('gives back the tool chosen during the hold, not the one it began with', () => {
+    const { host, retool } = mount(() => {});
+
+    fireEvent.pointerDown(host, { button: 1, clientX: 10, clientY: 10 });
+    retool('fill');
+    fireEvent.pointerUp(window);
+
+    expect(host.dataset.cursor).toBe('cell');
   });
 });
