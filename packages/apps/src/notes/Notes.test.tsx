@@ -115,7 +115,9 @@ describe('opening', () => {
     ]);
     await waitFor(() => expect(area().value).toContain('# Tasks'));
     expect(area().value).not.toContain('---');
-    expect(useWindowStore.getState().windows[windowId]?.title).toBe('Tasks');
+    // The title follows the note in an effect of its own, so it can arrive a
+    // tick after the text does; asserting it flat raced on a loaded machine.
+    await waitFor(() => expect(useWindowStore.getState().windows[windowId]?.title).toBe('Tasks'));
   });
 
   it('opens the note it was launched with', async () => {

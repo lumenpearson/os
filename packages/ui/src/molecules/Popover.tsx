@@ -1,7 +1,7 @@
 import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { cx } from '../cx';
-import { useClickOutside, useEscape } from '../hooks';
+import { useClickOutside, useEscape, usePresence } from '../hooks';
 
 export interface PopoverProps {
   open: boolean;
@@ -31,16 +31,22 @@ export function Popover({
   zIndex = 1200,
 }: PopoverProps) {
   const ref = useRef<HTMLDivElement>(null);
-  const [pos, setPos] = useState<{ left: number; top: number } | null>(null);
+  const [pos, setPos] = useState<{ anchor: HTMLElement; left: number; top: number } | null>(null);
   const refs = useMemo(() => [ref], []);
   useClickOutside(refs, onClose, open);
   useEscape(onClose, open);
 
+  const { mounted, leaving, anim } = usePresence(open, 'menu');
+
+  /*
+   * The placement outlives `open`, because the panel is still on screen for
+   * the length of its exit and a popover that jumped off-screen to be
+   * measured again would be a worse ending than none. It is remembered
+   * against the anchor it was measured from, so a popover reopened under a
+   * different one waits to be placed rather than flashing at the old spot.
+   */
   useEffect(() => {
-    if (!open || !anchor) {
-      setPos(null);
-      return;
-    }
+    if (!open || !anchor) return;
     const place = () => {
       const r = anchor.getBoundingClientRect();
       const el = ref.current;
@@ -51,7 +57,7 @@ export function Popover({
       let top = side === 'bottom' ? r.bottom + offset : r.top - offset - h;
       left = Math.max(6, Math.min(left, window.innerWidth - w - 6));
       top = Math.max(6, Math.min(top, window.innerHeight - h - 6));
-      setPos({ left, top });
+      setPos({ anchor, left, top });
     };
     place();
     const raf = requestAnimationFrame(place);
@@ -66,22 +72,25 @@ export function Popover({
     if (open) ref.current?.focus({ preventScroll: true });
   }, [open]);
 
-  if (!open || typeof document === 'undefined') return null;
+  if (!mounted || typeof document === 'undefined') return null;
+  const placed = leaving ? pos : pos?.anchor === anchor ? pos : null;
   return createPortal(
     <div
       ref={ref}
+      {...anim}
       role="dialog"
       tabIndex={-1}
       className={cx(
-        'fixed outline-none rounded-lg border border-rule bg-surface shadow-lg lumen-pop-enter',
+        'fixed outline-none rounded-lg border border-rule bg-surface shadow-lg',
+        leaving ? 'lumen-pop-exit' : 'lumen-pop-enter',
         className,
       )}
       style={{
-        left: pos?.left ?? -9999,
-        top: pos?.top ?? -9999,
+        left: placed?.left ?? -9999,
+        top: placed?.top ?? -9999,
         width,
         zIndex,
-        visibility: pos ? 'visible' : 'hidden',
+        visibility: placed ? 'visible' : 'hidden',
         ['--lumen-pop-origin' as string]: `${side === 'bottom' ? 'top' : 'bottom'} ${align === 'end' ? 'right' : align === 'center' ? 'center' : 'left'}`,
       }}
     >

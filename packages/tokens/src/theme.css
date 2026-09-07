@@ -241,6 +241,27 @@
   --lumen-shadow-card: 0 0 0 1px rgb(255 255 255 / 0.3), 0 2px 8px rgb(0 0 0 / 0.4);
 }
 
+/*
+ * The same duration, named per animation category.
+ *
+ * An exit has to be timed in script — something must hold the node on screen
+ * for as long as its animation runs — and script can only read a token, not a
+ * `data-anim-*` rule. These follow `--duration-base`, so the speed setting and
+ * reduced motion carry through, and each goes to zero when its category is
+ * switched off: a menu with its motion off leaves on the tick it closes
+ * rather than sitting there for 180 ms doing nothing.
+ *
+ * Outside `@theme` on purpose. Tailwind emits only the theme variables it can
+ * see used, and a name assembled in script — `--duration-${category}` — is
+ * not a use it can see: two of these three survived only because a test file
+ * happened to spell them out.
+ */
+:root {
+  --duration-menu: var(--duration-base);
+  --duration-dialog: var(--duration-base);
+  --duration-panel: var(--duration-base);
+}
+
 :root[data-motion="reduced"] {
   --duration-fast: 0ms;
   --duration-base: 0ms;
@@ -254,6 +275,19 @@
     --duration-slow: 0ms;
     --duration-window: 0ms;
   }
+}
+
+/* Personalisation > Animation, switched off one category at a time. The
+   stylesheet in @lumen/ui stops the animation itself; zeroing the duration
+   here is what tells the script side there is nothing to wait for. */
+:root[data-anim-menus="off"] {
+  --duration-menu: 0ms;
+}
+:root[data-anim-dialogs="off"] {
+  --duration-dialog: 0ms;
+}
+:root[data-anim-panels="off"] {
+  --duration-panel: 0ms;
 }
 
 :root[data-theme="dark"][data-transparency="reduced"] {

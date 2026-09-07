@@ -238,6 +238,13 @@
   .lumen-fade-exit {
     animation: lumen-fade var(--duration-base) var(--ease-in) reverse forwards;
   }
+  /* On the way out it is a picture of a panel, not the panel: the click that
+     dismissed it must reach whatever is underneath, and the next one must not
+     land on a menu item that is already gone. */
+  .lumen-pop-exit,
+  .lumen-fade-exit {
+    pointer-events: none;
+  }
   @keyframes lumen-fade {
     from {
       opacity: 0;
@@ -246,13 +253,19 @@
       opacity: 1;
     }
   }
-  /* Personalisation > Animation switches each of these off by category. The
-     element still appears; it simply appears at once. */
-  :root[data-anim-menus="off"] .lumen-pop-enter,
-  :root[data-anim-menus="off"] .lumen-pop-exit,
-  :root[data-anim-dialogs="off"] .lumen-fade-exit:has([role="dialog"]),
-  :root[data-anim-dialogs="off"] .lumen-fade-enter:has([role="dialog"]),
-  :root[data-anim-panels="off"] [data-panel],
+  /*
+   * Personalisation > Animation switches each of these off by category. The
+   * element still appears; it simply appears at once.
+   *
+   * Which category a thing belongs to is stated on the element as
+   * `data-anim`, because it cannot be read off the animation class: a dialog
+   * and a menu both pop, and a dialog's scrim and its sheet are two elements
+   * of one thing. The same attribute names the token `usePresence` waits on,
+   * so the switch and the script agree by construction.
+   */
+  :root[data-anim-menus="off"] [data-anim="menu"],
+  :root[data-anim-dialogs="off"] [data-anim="dialog"],
+  :root[data-anim-panels="off"] [data-anim="panel"],
   :root[data-anim-pages="off"] [data-page-enter] {
     animation: none;
   }

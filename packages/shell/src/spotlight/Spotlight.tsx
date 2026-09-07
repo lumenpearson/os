@@ -1,7 +1,7 @@
 import { FileTypeIcon, ManifestIcon } from '@lumen/apps';
 import { type AppDefinition, getSettings, searchApps, useRegistryStore } from '@lumen/kernel';
 import { useKernel, useVfs } from '@lumen/kernel/react';
-import { cx, Kbd, useClickOutside, useDebounced, useEscape } from '@lumen/ui';
+import { cx, Kbd, useClickOutside, useDebounced, useEscape, usePresence } from '@lumen/ui';
 import { basename, type DirEntry, dirname } from '@lumen/vfs';
 import { Calculator, Lock, Moon, Search, Trash2 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -38,6 +38,7 @@ export function Spotlight() {
   const refs = useMemo(() => [ref], []);
   useClickOutside(refs, () => toggle('spotlight', false), open);
   useEscape(() => toggle('spotlight', false), open);
+  const { mounted, leaving, anim } = usePresence(open, 'panel');
 
   useEffect(() => {
     if (open) {
@@ -120,7 +121,7 @@ export function Spotlight() {
     setActive(0);
   }, [results.length]);
 
-  if (!open) return null;
+  if (!mounted) return null;
 
   const run = (r: Result) => {
     toggle('spotlight', false);
@@ -145,17 +146,24 @@ export function Spotlight() {
 
   return (
     <div
-      className="absolute inset-0 z-[1250] flex items-start justify-center pt-[16vh]"
+      className={cx(
+        'absolute inset-0 z-[1250] flex items-start justify-center pt-[16vh]',
+        leaving && 'pointer-events-none',
+      )}
       data-testid="spotlight"
     >
       <div
         ref={ref}
         role="dialog"
         aria-label="Search"
+        {...anim}
         // border and radius are on this same element, so the stroke wraps the arc;
         // overflow-hidden only clips the result list, which has no border of its own.
-        // deslop-ignore-next-line 22
-        className="w-[min(600px,calc(100vw-32px))] overflow-hidden rounded-lg border border-rule bg-surface shadow-lg lumen-pop-enter"
+        className={cx(
+          // deslop-ignore-next-line 22
+          'w-[min(600px,calc(100vw-32px))] overflow-hidden rounded-lg border border-rule bg-surface shadow-lg',
+          leaving ? 'lumen-pop-exit' : 'lumen-pop-enter',
+        )}
         style={{ ['--lumen-pop-origin' as string]: 'top center' }}
         onKeyDown={(e) => {
           if (e.key === 'ArrowDown') {

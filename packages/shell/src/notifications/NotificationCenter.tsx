@@ -1,7 +1,7 @@
 import { formatRelative } from '@lumen/apps';
 import { type Notification, useNotificationStore, useRegistryStore } from '@lumen/kernel';
 import { useNotifications, useRuntimeSettings, useSetting } from '@lumen/kernel/react';
-import { Button, cx, IconButton, Switch, useClickOutside, useEscape } from '@lumen/ui';
+import { Button, cx, IconButton, Switch, useClickOutside, useEscape, usePresence } from '@lumen/ui';
 import { X } from 'lucide-react';
 import { useEffect, useMemo, useRef } from 'react';
 import { useShellStore } from '../shellStore';
@@ -22,6 +22,7 @@ export function NotificationCenter() {
   const refs = useMemo(() => [ref], []);
   useClickOutside(refs, () => toggle('notificationCenter', false), open);
   useEscape(() => toggle('notificationCenter', false), open);
+  const { mounted, leaving, anim } = usePresence(open, 'panel');
 
   useEffect(() => {
     if (open) markAllRead();
@@ -37,15 +38,17 @@ export function NotificationCenter() {
     return [...map.entries()];
   }, [items]);
 
-  if (!open) return null;
+  if (!mounted) return null;
   return (
     <div
       ref={ref}
+      {...anim}
       role="dialog"
       aria-label="Notifications"
       data-testid="notification-center"
       className={cx(
-        'absolute right-2 top-[calc(var(--lumen-menubar-h)+6px)] z-[1200] flex max-h-[calc(100vh-var(--lumen-menubar-h)-var(--lumen-taskbar-h)-20px)] w-[min(360px,calc(100vw-16px))] flex-col rounded-lg border border-rule bg-chrome text-ink shadow-lg lumen-pop-enter',
+        'absolute right-2 top-[calc(var(--lumen-menubar-h)+6px)] z-[1200] flex max-h-[calc(100vh-var(--lumen-menubar-h)-var(--lumen-taskbar-h)-20px)] w-[min(360px,calc(100vw-16px))] flex-col rounded-lg border border-rule bg-chrome text-ink shadow-lg',
+        leaving ? 'lumen-pop-exit' : 'lumen-pop-enter',
         !settings.appearance.reduceTransparency && 'surface-blur',
       )}
       style={{ ['--lumen-pop-origin' as string]: 'top right' }}

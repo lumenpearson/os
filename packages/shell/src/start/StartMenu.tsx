@@ -7,7 +7,15 @@ import {
   useKernel,
   useRuntimeSettings,
 } from '@lumen/kernel/react';
-import { AnchoredMenu, Avatar, cx, SearchField, useClickOutside, useEscape } from '@lumen/ui';
+import {
+  AnchoredMenu,
+  Avatar,
+  cx,
+  SearchField,
+  useClickOutside,
+  useEscape,
+  usePresence,
+} from '@lumen/ui';
 import { basename } from '@lumen/vfs';
 import { Power, Settings2 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -47,6 +55,7 @@ export function StartMenu() {
     open,
   );
   useEscape(() => toggle('startMenu', false), open);
+  const { mounted, leaving, anim } = usePresence(open, 'panel');
 
   useEffect(() => {
     if (open) {
@@ -77,7 +86,7 @@ export function StartMenu() {
   }, [apps]);
   const recents = kernel.state.recents.slice(0, 6);
 
-  if (!open) return null;
+  if (!mounted) return null;
   const pos = settings.taskbar.position;
   const launch = (id: string) => {
     toggle('startMenu', false);
@@ -90,9 +99,11 @@ export function StartMenu() {
       role="dialog"
       aria-label="Start menu"
       data-testid="start-menu"
+      {...anim}
       className={cx(
         // deslop-ignore-next-line 22 — border and radius are on this element; the clipped children have no border of their own.
-        'absolute z-[1200] flex w-[min(560px,calc(100vw-16px))] flex-col overflow-hidden rounded-lg border border-rule bg-chrome text-ink shadow-lg lumen-pop-enter',
+        'absolute z-[1200] flex w-[min(560px,calc(100vw-16px))] flex-col overflow-hidden rounded-lg border border-rule bg-chrome text-ink shadow-lg',
+        leaving ? 'lumen-pop-exit' : 'lumen-pop-enter',
         !settings.appearance.reduceTransparency && 'surface-blur',
         pos === 'bottom' && 'bottom-[calc(var(--lumen-taskbar-h)+8px)] left-1/2 -translate-x-1/2',
         pos === 'left' &&

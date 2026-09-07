@@ -4,23 +4,43 @@ import { scrollEdges } from '../scrollEdges';
 export const useIsomorphicLayoutEffect =
   typeof window === 'undefined' ? useEffect : useLayoutEffect;
 
-/** Call `handler` when a pointer-down lands outside every ref. */
+/**
+ * Call `handler` when a pointer-down lands outside every ref.
+ *
+ * `within` is for a surface whose parts do not all sit inside it. A submenu is
+ * portalled to the body — it is a child in the React tree and a stranger in
+ * the document — so `contains` says a press on one of its rows is outside the
+ * menu that opened it. It is not, and answering as though it were takes the
+ * menu away on `pointerdown`, before the `pointerup` that would have run the
+ * command: every submenu item in the system was dead for exactly this reason.
+ * A selector says what else counts as inside, wherever it was rendered.
+ */
 export function useClickOutside(
   refs: Array<RefObject<HTMLElement | null>>,
   handler: () => void,
   enabled = true,
+  within?: string,
 ) {
   useEffect(() => {
     if (!enabled) return;
     const onDown = (e: PointerEvent) => {
       const target = e.target as Node;
       if (refs.some((r) => r.current?.contains(target))) return;
+      if (within !== undefined && target instanceof Element && target.closest(within)) return;
       handler();
     };
     document.addEventListener('pointerdown', onDown, true);
     return () => document.removeEventListener('pointerdown', onDown, true);
-  }, [refs, handler, enabled]);
+  }, [refs, handler, enabled, within]);
 }
+
+/**
+ * What a menu and every submenu it opens have in common, wherever the portal
+ * put them. Both the menubar and `AnchoredMenu` hand this to
+ * `useClickOutside`, so a press on a nested row is inside the menu it belongs
+ * to rather than outside the one that owns the listener.
+ */
+export const MENU_SURFACE = '[role="menu"]';
 
 /** Escape key closes a transient surface. */
 export function useEscape(handler: () => void, enabled = true) {
@@ -231,6 +251,23 @@ export function motionDuration(token: string): number {
 }
 
 /**
+ * Which of the Animation settings a piece of motion answers to. The value
+ * goes on the element as `data-anim`, where the stylesheet switches it off,
+ * and it names the duration token this hook waits on — so a category can
+ * never be animated by one and timed by the other.
+ */
+export type MotionCategory = 'menu' | 'dialog' | 'panel';
+
+export interface Presence {
+  /** Whether to render at all. */
+  mounted: boolean;
+  /** True while the exit plays: pick the exit class over the entrance one. */
+  leaving: boolean;
+  /** Spread onto the animated element, so the settings switch can find it. */
+  anim: { 'data-anim': MotionCategory };
+}
+
+/**
  * Keeps something on screen long enough to leave.
  *
  * Everything in the OS arrives with an animation and, until now, vanished
@@ -243,10 +280,7 @@ export function motionDuration(token: string): number {
  * node unmounts immediately. That matters for more than taste: a scrim that
  * lingered invisibly would go on swallowing clicks.
  */
-export function usePresence(
-  open: boolean,
-  token = '--duration-base',
-): { mounted: boolean; leaving: boolean } {
+export function usePresence(open: boolean, category: MotionCategory = 'dialog'): Presence {
   const [mounted, setMounted] = useState(open);
   const [leaving, setLeaving] = useState(false);
 
@@ -257,7 +291,7 @@ export function usePresence(
       return;
     }
     if (!mounted) return;
-    const ms = motionDuration(token);
+    const ms = motionDuration(`--duration-${category}`);
     if (ms <= 0) {
       setMounted(false);
       return;
@@ -268,7 +302,115 @@ export function usePresence(
       setLeaving(false);
     }, ms);
     return () => clearTimeout(timer);
-  }, [open, mounted, token]);
+  }, [open, mounted, category]);
 
-  return { mounted, leaving };
+  return { mounted, leaving, anim: ANIM[category] };
+}
+
+/** Frozen per category, so spreading it never changes a prop identity. */
+const ANIM: Record<MotionCategory, { 'data-anim': MotionCategory }> = {
+  menu: { 'data-anim': 'menu' },
+  dialog: { 'data-anim': 'dialog' },
+  panel: { 'data-anim': 'panel' },
+};
+
+export interface Departing<T> {
+  key: string;
+  item: T;
+  /** False once the item has left the list and is only playing its exit. */
+  present: boolean;
+}
+
+/**
+ * `usePresence` for a list: what to render, given what is still in it.
+ *
+ * A notification banner, a toast, a row being deleted — each leaves a list
+ * rather than a boolean, and React takes it away on the tick it goes. This
+ * returns the live items plus the ones that have just left, each held for the
+ * length of its exit and each still in the place it held, so the list closes
+ * up around it instead of snapping shut.
+ *
+ * With motion off the duration is zero and nothing is held back, which is the
+ * same guarantee `usePresence` makes and for the same reason.
+ */
+export function useDeparting<T>(
+  items: readonly T[],
+  key: (item: T) => string,
+  category: MotionCategory = 'panel',
+): Array<Departing<T>> {
+  const [departed, setDeparted] = useState<Array<Departing<T> & { index: number }>>([]);
+  const previous = useRef<Array<{ key: string; item: T }>>([]);
+  const timers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
+
+  const current = items.map((item) => ({ key: key(item), item }));
+  const alive = new Set(current.map((c) => c.key));
+
+  /*
+   * What has gone since the last render, worked out during this one rather
+   * than in the effect below. An effect runs after the paint, so leaving it
+   * to state would take the item away for a frame and then put it back — a
+   * blink, which is worse than the disappearance it was meant to soften.
+   *
+   * Each one remembers the place it held, so it can be put back into the list
+   * where it was rather than at the end of it.
+   */
+  const justGone = previous.current
+    .map((p, index) => ({ ...p, index, present: false }))
+    .filter((p) => !alive.has(p.key));
+  const holding =
+    justGone.length > 0 && motionDuration(`--duration-${category}`) > 0 ? justGone : [];
+
+  /*
+   * No dependency array: the diff is against the previous render, so it has
+   * to see every one. It sets state only when the membership actually
+   * changed, and the timers live in a ref rather than in a cleanup — a
+   * cleanup here would restart every exit on every unrelated re-render.
+   */
+  useEffect(() => {
+    previous.current = current;
+    // Anything that came back has stopped leaving.
+    for (const [k, timer] of timers.current) {
+      if (!alive.has(k)) continue;
+      clearTimeout(timer);
+      timers.current.delete(k);
+    }
+    for (const gone of holding) {
+      if (timers.current.has(gone.key)) continue;
+      timers.current.set(
+        gone.key,
+        setTimeout(
+          () => {
+            timers.current.delete(gone.key);
+            setDeparted((d) => d.filter((x) => x.key !== gone.key));
+          },
+          motionDuration(`--duration-${category}`),
+        ),
+      );
+    }
+    setDeparted((d) => {
+      const kept = d.filter((x) => !alive.has(x.key));
+      const added = holding.filter((g) => !kept.some((x) => x.key === g.key));
+      return kept.length === d.length && added.length === 0 ? d : [...kept, ...added];
+    });
+  });
+
+  useEffect(() => {
+    const running = timers.current;
+    return () => {
+      for (const timer of running.values()) clearTimeout(timer);
+      running.clear();
+    };
+  }, []);
+
+  const held = [...departed, ...holding.filter((g) => !departed.some((d) => d.key === g.key))];
+  if (held.length === 0) return current.map((c) => ({ ...c, present: true }));
+  const result: Array<Departing<T>> = current.map((c) => ({ ...c, present: true }));
+  for (const leaving of [...held].sort((a, b) => a.index - b.index)) {
+    result.splice(Math.min(leaving.index, result.length), 0, {
+      key: leaving.key,
+      item: leaving.item,
+      present: false,
+    });
+  }
+  return result;
 }

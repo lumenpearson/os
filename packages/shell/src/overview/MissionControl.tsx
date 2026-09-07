@@ -1,6 +1,6 @@
 import { useRegistryStore, useWindowStore } from '@lumen/kernel';
 import { useWindows, useWorkArea } from '@lumen/kernel/react';
-import { cx, useEscape } from '@lumen/ui';
+import { cx, useEscape, usePresence } from '@lumen/ui';
 import { useEffect, useMemo, useRef } from 'react';
 import { useShellStore } from '../shellStore';
 import { overviewLayout } from './layout';
@@ -19,6 +19,7 @@ export function MissionControl() {
   const area = useWorkArea();
   const apps = useRegistryStore((s) => s.apps);
   useEscape(() => toggle('missionControl', false), open);
+  const { mounted, leaving, anim } = usePresence(open, 'panel');
 
   const groups = useMemo(
     () =>
@@ -84,10 +85,14 @@ export function MissionControl() {
     }
   }, [open, layout, windows]);
 
-  if (!open) return null;
+  if (!mounted) return null;
   return (
     <div
-      className="absolute inset-0 z-[1300] bg-scrim lumen-fade-enter"
+      {...anim}
+      className={cx(
+        'absolute inset-0 z-[1300] bg-scrim',
+        leaving ? 'lumen-fade-exit' : 'lumen-fade-enter',
+      )}
       data-testid="mission-control"
       onPointerDown={(e) => {
         if (e.target === e.currentTarget) toggle('missionControl', false);

@@ -32,7 +32,18 @@ describe('LumenOS', () => {
 
     // autoSetup creates a passwordless account: a click unlocks it
     await userEvent.click(screen.getByTestId('lock-clock'));
-    await waitFor(() => expect(screen.getByTestId('desktop')).toBeInTheDocument());
+    /*
+     * The same fifteen seconds the boot above gets, and for the same reason:
+     * `Desktop` is a lazy import, so unlocking suspends while the chunk
+     * loads. React 19 hides the lock screen with an inline
+     * `display: none !important` while it waits, which is what this looked
+     * like when the default one second ran out under a loaded machine — a
+     * flake that only ever appeared when the whole workspace was building
+     * beside it.
+     */
+    await waitFor(() => expect(screen.getByTestId('desktop')).toBeInTheDocument(), {
+      timeout: 15_000,
+    });
     expect(screen.getByTestId('menubar')).toBeInTheDocument();
     expect(screen.getByTestId('taskbar')).toBeInTheDocument();
     expect(screen.getByTestId('start-button')).toBeInTheDocument();

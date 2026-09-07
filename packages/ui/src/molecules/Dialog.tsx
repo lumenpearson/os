@@ -73,7 +73,7 @@ export function Dialog({
    * unmounts on the same tick as before — which matters for more than taste,
    * since a scrim lingering invisibly would go on swallowing clicks.
    */
-  const { mounted, leaving } = usePresence(open);
+  const { mounted, leaving, anim } = usePresence(open, 'dialog');
   if (!mounted || typeof document === 'undefined') return null;
   const target = container ?? document.body;
   return createPortal(
@@ -82,6 +82,7 @@ export function Dialog({
       // the dialog was portalled into, so every size below is measured
       // against that box and not against the viewport. Its padding is the
       // margin the sheet may never cross, at any window size.
+      {...anim}
       className={cx(
         'lumen-scrim absolute inset-0 z-[1400] flex items-center justify-center p-4',
         leaving ? 'lumen-fade-exit' : 'lumen-fade-enter',
@@ -93,6 +94,7 @@ export function Dialog({
     >
       <div
         ref={ref}
+        {...anim}
         role="dialog"
         aria-modal="true"
         aria-labelledby={title ? 'lumen-dialog-title' : undefined}

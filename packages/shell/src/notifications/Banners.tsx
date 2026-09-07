@@ -1,6 +1,6 @@
 import { type Notification, useNotificationStore, useRegistryStore } from '@lumen/kernel';
 import { useNotifications, useSettings } from '@lumen/kernel/react';
-import { Button, cx, IconButton } from '@lumen/ui';
+import { Button, cx, IconButton, useDeparting } from '@lumen/ui';
 import { X } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import { playSound } from '../sounds';
@@ -9,10 +9,14 @@ import { playSound } from '../sounds';
 export function Banners() {
   const { items, banners } = useNotifications();
   const settings = useSettings();
-  const visible = banners
+  const live = banners
     .map((id) => items.find((n) => n.id === id))
     .filter((n): n is Notification => Boolean(n))
     .slice(-4);
+  // Dismissed banners keep their place for the length of their exit; see
+  // `useDeparting`. This is the one list in the shell that empties itself, so
+  // it is the one a person watches things leave most often.
+  const visible = useDeparting(live, (n) => n.id);
   if (settings.notifications.doNotDisturb) return null;
   return (
     <div
@@ -20,10 +24,11 @@ export function Banners() {
       aria-live="polite"
       data-testid="banners"
     >
-      {visible.map((n) => (
+      {visible.map(({ key, item, present }) => (
         <Banner
-          key={n.id}
-          notification={n}
+          key={key}
+          notification={item}
+          leaving={!present}
           showPreview={settings.notifications.showPreviews}
           sound={settings.notifications.sound && settings.sound.uiSounds && !settings.sound.muted}
         />
@@ -36,10 +41,13 @@ function Banner({
   notification: n,
   showPreview,
   sound,
+  leaving,
 }: {
   notification: Notification;
   showPreview: boolean;
   sound: boolean;
+  /** True once dismissed: still drawn, on its way out, and no longer timed. */
+  leaving: boolean;
 }) {
   const app = useRegistryStore((s) => s.apps[n.appId]);
   const dismiss = useNotificationStore((s) => s.dismissBanner);
@@ -51,7 +59,7 @@ function Banner({
   }, [sound]);
 
   useEffect(() => {
-    if (timeout <= 0) return;
+    if (timeout <= 0 || leaving) return;
     const start = () => {
       timer.current = setTimeout(() => dismiss(n.id), timeout);
     };
@@ -59,14 +67,16 @@ function Banner({
     return () => {
       if (timer.current) clearTimeout(timer.current);
     };
-  }, [n.id, timeout, dismiss]);
+  }, [n.id, timeout, dismiss, leaving]);
 
   const Icon = app?.icon;
   return (
     <div
       role="status"
+      data-anim="panel"
       className={cx(
-        'pointer-events-auto flex gap-3 rounded-lg border border-rule bg-surface p-3 text-ink shadow-lg lumen-pop-enter',
+        'pointer-events-auto flex gap-3 rounded-lg border border-rule bg-surface p-3 text-ink shadow-lg',
+        leaving ? 'lumen-pop-exit' : 'lumen-pop-enter',
       )}
       style={{ ['--lumen-pop-origin' as string]: 'top right' }}
       onPointerEnter={() => timer.current && clearTimeout(timer.current)}

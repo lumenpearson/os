@@ -1,5 +1,5 @@
 import { useKernel, useRuntimeSettings, useSetting } from '@lumen/kernel/react';
-import { Button, cx, Slider, useClickOutside, useEscape } from '@lumen/ui';
+import { Button, cx, Slider, useClickOutside, useEscape, usePresence } from '@lumen/ui';
 import {
   Bluetooth,
   Lock,
@@ -31,6 +31,7 @@ export function ControlCenter() {
   const refs = useMemo(() => [ref], []);
   useClickOutside(refs, () => toggle('controlCenter', false), open);
   useEscape(() => toggle('controlCenter', false), open);
+  const { mounted, leaving, anim } = usePresence(open, 'panel');
 
   useEffect(() => {
     if (open)
@@ -46,14 +47,16 @@ export function ControlCenter() {
           style={{ opacity: 1 - brightness }}
         />
       )}
-      {open && (
+      {mounted && (
         <div
           ref={ref}
+          {...anim}
           role="dialog"
           aria-label="Control Center"
           data-testid="control-center"
           className={cx(
-            'absolute right-2 top-[calc(var(--lumen-menubar-h)+6px)] z-[1200] flex w-[min(320px,calc(100vw-16px))] flex-col gap-3 rounded-lg border border-rule bg-chrome p-3 text-ink shadow-lg lumen-pop-enter',
+            'absolute right-2 top-[calc(var(--lumen-menubar-h)+6px)] z-[1200] flex w-[min(320px,calc(100vw-16px))] flex-col gap-3 rounded-lg border border-rule bg-chrome p-3 text-ink shadow-lg',
+            leaving ? 'lumen-pop-exit' : 'lumen-pop-enter',
             !settings.appearance.reduceTransparency && 'surface-blur',
           )}
           style={{ ['--lumen-pop-origin' as string]: 'top right' }}
