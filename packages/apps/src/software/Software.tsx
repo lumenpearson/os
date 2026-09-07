@@ -40,6 +40,9 @@ import {
   useTitle,
   useWindowControls,
 } from '../_sdk';
+import { AccountSection } from './AccountSection';
+import { CategoriesSection } from './CategoriesSection';
+import { CollectionsSection } from './CollectionsSection';
 import { InstalledSection } from './InstalledSection';
 import { InstallSection } from './InstallSection';
 import { planInstall, planUninstall } from './install';
@@ -53,10 +56,12 @@ import {
 } from './library';
 import { parseManifestText } from './manifest';
 import { buildSoftwareMenus, SECTIONS, type SectionId } from './menus';
+import { PurchasesSection } from './PurchasesSection';
 import { fetchPackage, type PackageDocument } from './remote';
 import { resourceIds } from './resources';
 import { COMPACT_AT, type StoreRoute, StoreSection } from './StoreSection';
 import { StoreSidebar } from './StoreSidebar';
+import { SubscriptionSection } from './SubscriptionSection';
 import {
   kindOptions,
   type Listing,
@@ -65,6 +70,7 @@ import {
   categoryOptions as storeCategoryOptions,
 } from './storefront';
 import { type AvailableUpdate, availableUpdates } from './updates';
+import { useAccount } from './useAccount';
 import { useCatalogue } from './useCatalogue';
 import { useInstalls } from './useInstalls';
 
@@ -127,6 +133,7 @@ export default function Software(props: AppProps) {
   }, [args.section]);
 
   const { view, refresh } = useCatalogue();
+  const account = useAccount();
   const storeBase = view.base ?? storeSettings.origin;
   const catalogue = useMemo(() => view.catalogue?.packages ?? [], [view.catalogue]);
   const installs = useInstalls({ base: storeBase, catalogue });
@@ -419,6 +426,49 @@ export default function Software(props: AppProps) {
               onRemove={(entry) => void remove(entry)}
             />
           )}
+          {section === 'categories' && (
+            <CategoriesSection
+              view={view}
+              listings={listings}
+              compact={compact}
+              onCategory={(chosen) => {
+                setStoreCategory(chosen);
+                setRoute({ kind: 'browse' });
+                setSection('discover');
+              }}
+              onRefresh={refresh}
+            />
+          )}
+          {section === 'collections' && (
+            <CollectionsSection
+              view={view}
+              listings={listings}
+              statusOf={statusOf}
+              jobs={installs.jobs}
+              onOpen={(id) => {
+                setRoute({ kind: 'package', id });
+                setSection('discover');
+              }}
+              onRefresh={refresh}
+            />
+          )}
+          {section === 'account' && (
+            <AccountSection
+              state={account.state}
+              now={Date.now()}
+              onSignIn={(identity) => account.signIn(identity, Date.now())}
+              onSignOut={account.signOut}
+            />
+          )}
+          {section === 'subscription' && (
+            <SubscriptionSection
+              state={account.state}
+              now={Date.now()}
+              onSubscribe={(planId) => account.subscribe(planId, Date.now())}
+              onCancel={() => account.cancel(Date.now())}
+            />
+          )}
+          {section === 'purchases' && <PurchasesSection receipts={account.state.receipts} />}
           {section === 'install' && (
             <InstallSection
               draft={draft}

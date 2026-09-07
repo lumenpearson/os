@@ -38,16 +38,19 @@ export interface SectionMeta {
  */
 export const SECTIONS: ReadonlyArray<SectionMeta> = [
   { id: 'discover', label: 'Discover', group: 'store' },
+  { id: 'categories', label: 'Categories', group: 'store' },
+  { id: 'collections', label: 'Collections', group: 'store' },
   { id: 'installed', label: 'Installed', group: 'library' },
+  { id: 'account', label: 'Account', group: 'account' },
+  { id: 'subscription', label: 'Subscription', group: 'account' },
+  { id: 'purchases', label: 'Purchases', group: 'account' },
   { id: 'install', label: 'Add Package', group: 'system' },
 ];
 
 /*
  * The list above is what the store HAS, and a section joins it in the commit
  * that builds its view — a sidebar entry that leads nowhere is a worse store
- * than a short sidebar. The remaining ids in `SectionId` are the ones being
- * built: categories, collections, deals, updates, account, subscription,
- * purchases and settings.
+ * than a short sidebar. Still to come: `deals`, `updates` and `settings`.
  */
 
 /** The sidebar's bands, in order, with the heading each one carries. */
