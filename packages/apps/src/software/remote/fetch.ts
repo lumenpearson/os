@@ -40,6 +40,11 @@ export interface FetchProgress {
 
 export interface FetchOptions {
   signal?: AbortSignal;
+  /**
+   * How long the request may go unanswered, in milliseconds. Zero or less
+   * waits forever, which is only ever right in a test.
+   */
+  timeoutMs?: number;
   onProgress?: (progress: FetchProgress) => void;
   /** The fetch to use. Defaults to the host's, bound to the global. */
   fetch?: typeof globalThis.fetch;
@@ -51,6 +56,7 @@ export type StoreError =
   | { reason: 'url'; message: string; base: string; path: string }
   | { reason: 'offline'; message: string; url: string; cause: unknown }
   | { reason: 'aborted'; message: string; url: string }
+  | { reason: 'timeout'; message: string; url: string; ms: number }
   | { reason: 'http'; message: string; url: string; status: number; statusText: string }
   | { reason: 'malformed'; message: string; url: string; problems: ParseProblem[] }
   | { reason: 'size'; message: string; url: string; expected: number; received: number }
@@ -211,10 +217,68 @@ function sizeError(url: string, expected: number, received: number): StoreError 
  * `expectedSize` is the catalogue's figure: reading stops the moment more than
  * that has arrived, so a store cannot hand a tile a stream without an end.
  */
+/**
+ * How long a request may go unanswered before the store gives up on it.
+ *
+ * A fetch with no deadline is not a slow store, it is a stuck one. The
+ * storefront said "Fetching the catalogue…" for as long as the window stayed
+ * open, and the copy that ships beside the OS — which exists precisely for a
+ * store that cannot be reached — never got its turn, because the code that
+ * falls back to it was waiting on a promise that would never settle. A host
+ * that drops packets rather than refusing the connection is the ordinary way
+ * this happens: a captive portal, a blocked domain, a network that went away
+ * mid-request.
+ */
+export const DEFAULT_TIMEOUT_MS = 15_000;
+
+/** `fetchBytes` with the deadline around it, so every exit clears the timer. */
 async function fetchBytes(
   url: string,
   options: FetchOptions,
   expectedSize: number | null,
+): Promise<StoreResult<Uint8Array>> {
+  const ms = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+  if (ms <= 0) return readBytes(url, options, expectedSize, options.signal);
+
+  const deadline = new AbortController();
+  let expired = false;
+  const timer = setTimeout(() => {
+    expired = true;
+    deadline.abort();
+  }, ms);
+  const outer = options.signal;
+  const relay = () => deadline.abort();
+  // An `abort` listener does not fire for a signal that has already aborted,
+  // so a caller who cancelled before asking has to be carried across by hand.
+  if (outer?.aborted) deadline.abort();
+  else outer?.addEventListener('abort', relay);
+  try {
+    const result = await readBytes(url, options, expectedSize, deadline.signal);
+    // Told apart from a cancellation, because they mean different things to
+    // the person reading the message: one is the store, the other is them.
+    if (!result.ok && expired && result.error.reason === 'aborted') {
+      return {
+        ok: false,
+        error: {
+          reason: 'timeout',
+          url,
+          ms,
+          message: `The store did not answer within ${Math.round(ms / 1000)} seconds.`,
+        },
+      };
+    }
+    return result;
+  } finally {
+    clearTimeout(timer);
+    outer?.removeEventListener('abort', relay);
+  }
+}
+
+async function readBytes(
+  url: string,
+  options: FetchOptions,
+  expectedSize: number | null,
+  signal: AbortSignal | undefined,
 ): Promise<StoreResult<Uint8Array>> {
   const doFetch = resolveFetch(options);
   if (doFetch === null) {
@@ -223,7 +287,7 @@ async function fetchBytes(
       error: { reason: 'offline', url, cause: null, message: 'This system cannot make requests.' },
     };
   }
-  const { signal, onProgress } = options;
+  const { onProgress } = options;
   if (signal?.aborted) {
     return { ok: false, error: { reason: 'aborted', url, message: 'The download was stopped.' } };
   }

@@ -1,8 +1,9 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { sha256Hex } from './digest';
 import {
   bannerUrl,
   catalogueUrl,
+  DEFAULT_TIMEOUT_MS,
   type FetchProgress,
   fetchBanner,
   fetchCatalogue,
@@ -473,5 +474,65 @@ describe('fetchPayload', () => {
     const failure = error(await fetchPayload(STORE_BASE, pkg, { fetch: stub.fetch }));
     expect(failure.reason).toBe('url');
     expect(stub.calls).toHaveLength(0);
+  });
+});
+
+describe('the deadline on a request', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  /**
+   * The defect this guards. A host that drops the request rather than
+   * refusing it leaves `fetch` pending forever, and the storefront waited on
+   * it: "Fetching the catalogue…" for as long as the window was open, no
+   * error, and no fall back to the copy that ships beside the OS — because
+   * the code that falls back was awaiting a promise that would never settle.
+   */
+  it('gives up on a store that never answers, and says so', async () => {
+    vi.useFakeTimers();
+    const hung = (_url: string, init?: RequestInit) =>
+      new Promise<Response>((_resolve, reject) => {
+        init?.signal?.addEventListener('abort', () =>
+          reject(Object.assign(new Error('aborted'), { name: 'AbortError' })),
+        );
+      });
+    const pending = fetchCatalogue(STORE_BASE, { fetch: hung as typeof fetch, timeoutMs: 5_000 });
+    await vi.advanceTimersByTimeAsync(5_001);
+    const result = await pending;
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error.reason).toBe('timeout');
+    expect(result.error.message).toContain('5 seconds');
+  });
+
+  it('is not the same as a cancellation, because they mean different things', async () => {
+    const controller = new AbortController();
+    const hung = (_url: string, init?: RequestInit) =>
+      new Promise<Response>((_resolve, reject) => {
+        init?.signal?.addEventListener('abort', () =>
+          reject(Object.assign(new Error('aborted'), { name: 'AbortError' })),
+        );
+      });
+    const pending = fetchCatalogue(STORE_BASE, {
+      fetch: hung as typeof fetch,
+      signal: controller.signal,
+      timeoutMs: 60_000,
+    });
+    controller.abort();
+    const result = await pending;
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error.reason).toBe('aborted');
+  });
+
+  it('leaves a store that answers in time alone', async () => {
+    const stub = stubFetch(() => textResponse(JSON.stringify(catalogueJson())));
+    const result = await fetchCatalogue(STORE_BASE, { fetch: stub.fetch, timeoutMs: 5_000 });
+    expect(result.ok).toBe(true);
+  });
+
+  it('has a deadline even when the caller names none', () => {
+    expect(DEFAULT_TIMEOUT_MS).toBeGreaterThan(0);
   });
 });

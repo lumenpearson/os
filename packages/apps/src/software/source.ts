@@ -64,6 +64,8 @@ export function errorHeadline(error: StoreError): string {
       return 'This connection cannot verify a download';
     case 'aborted':
       return 'The download was stopped';
+    case 'timeout':
+      return 'The store did not answer';
     case 'url':
       return 'That is not a store address';
   }
