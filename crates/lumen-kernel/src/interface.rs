@@ -35,6 +35,48 @@ pub fn interface_dir() -> PathBuf {
         .unwrap_or_else(|| PathBuf::from(APP_DIR).join("interface"))
 }
 
+/// One hex digit, or nothing.
+fn from_hex(byte: u8) -> Option<u8> {
+    match byte {
+        b'0'..=b'9' => Some(byte - b'0'),
+        b'a'..=b'f' => Some(byte - b'a' + 10),
+        b'A'..=b'F' => Some(byte - b'A' + 10),
+        _ => None,
+    }
+}
+
+/// A request arrives percent-encoded, and it is decoded before the path is
+/// walked rather than after: `%2e%2e` is `..`, and a guard that runs on the
+/// undecoded text is a guard against the spelling it happened to see.
+///
+/// Done over bytes rather than over the string, because a `%` may be followed
+/// by the middle of a multi-byte character and slicing a `str` there panics.
+fn percent_decode(raw: &str) -> String {
+    let bytes = raw.as_bytes();
+    let mut out = Vec::with_capacity(bytes.len());
+    let mut at = 0;
+    while at < bytes.len() {
+        let decoded = (bytes[at] == b'%' && at + 2 < bytes.len())
+            .then(|| {
+                let high = from_hex(bytes[at + 1])?;
+                let low = from_hex(bytes[at + 2])?;
+                Some(high * 16 + low)
+            })
+            .flatten();
+        match decoded {
+            Some(byte) => {
+                out.push(byte);
+                at += 3;
+            }
+            None => {
+                out.push(bytes[at]);
+                at += 1;
+            }
+        }
+    }
+    String::from_utf8_lossy(&out).into_owned()
+}
+
 #[derive(Debug, Clone)]
 pub struct InterfaceStore {
     root: PathBuf,
@@ -62,6 +104,31 @@ impl InterfaceStore {
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(None),
             Err(e) => Err(KernelError::io(&e, Some(&path.display().to_string()))),
         }
+    }
+
+    /// The file a request names inside one version, or `None` when there is
+    /// no such file or the request tries to leave the directory.
+    ///
+    /// The check is on the resolved path rather than on the text of the
+    /// request. A rule written against `..` is a rule against one spelling of
+    /// the problem: the request arrives percent-encoded, so `%2e%2e` is the
+    /// same climb wearing a different coat, and on Windows the separator can
+    /// be a backslash. Resolving first and asking afterwards whether the
+    /// answer is still inside the directory holds for every spelling there is.
+    pub fn resolve(&self, version: &str, request: &str) -> Option<PathBuf> {
+        let base = self.version_dir(version).canonicalize().ok()?;
+        let mut path = base.clone();
+        for part in percent_decode(request).split(['/', '\\']) {
+            if part.is_empty() || part == "." {
+                continue;
+            }
+            path.push(part);
+        }
+        let full = path.canonicalize().ok()?;
+        if !full.starts_with(&base) {
+            return None;
+        }
+        full.is_file().then_some(full)
     }
 
     pub fn write_pointer(&self, pointer: &Pointer) -> Result<()> {
@@ -101,6 +168,49 @@ mod tests {
         };
         store.write_pointer(&p).expect("write");
         assert_eq!(store.pointer().expect("read"), Some(p));
+    }
+
+    #[test]
+    fn resolves_a_file_inside_the_version() {
+        let (dir, store) = store();
+        let assets = dir.path().join("0.2.0").join("assets");
+        std::fs::create_dir_all(&assets).expect("mkdir");
+        std::fs::write(assets.join("app.js"), b"x").expect("write");
+        let found = store.resolve("0.2.0", "/assets/app.js").expect("resolved");
+        assert!(found.ends_with("app.js"));
+        assert_eq!(std::fs::read(found).expect("read"), b"x");
+    }
+
+    #[test]
+    fn refuses_a_request_that_climbs_out_of_the_version() {
+        let (dir, store) = store();
+        std::fs::create_dir_all(dir.path().join("0.2.0").join("assets")).expect("mkdir");
+        std::fs::write(dir.path().join("secret"), b"x").expect("write");
+        for request in [
+            "/../secret",
+            "/assets/../../secret",
+            "../secret",
+            "/..%2Fsecret",
+            "/%2e%2e/secret",
+        ] {
+            assert_eq!(store.resolve("0.2.0", request), None, "{request}");
+        }
+    }
+
+    #[test]
+    fn a_file_that_is_not_there_resolves_to_nothing() {
+        let (dir, store) = store();
+        std::fs::create_dir_all(dir.path().join("0.2.0")).expect("mkdir");
+        assert_eq!(store.resolve("0.2.0", "/index.html"), None);
+        // A directory is not a file, and serving one would be a 200 with the
+        // wrong body rather than the 404 the caller is expecting.
+        assert_eq!(store.resolve("0.2.0", "/"), None);
+    }
+
+    #[test]
+    fn a_version_that_was_never_applied_resolves_to_nothing() {
+        let (_dir, store) = store();
+        assert_eq!(store.resolve("9.9.9", "/index.html"), None);
     }
 
     #[test]
