@@ -146,12 +146,17 @@ describe('loadPage', () => {
   });
 
   it('sends no cookies and asks for no credentials', async () => {
-    const doFetch = vi.fn(async () => ok('<html></html>'));
+    // The parameters are declared so the recorded call has them: a mock
+    // written `async () => …` records an empty argument list, and the
+    // options this test is about would be read off the end of it.
+    const doFetch = vi.fn(async (_url: string, _init?: RequestInit) => ok('<html></html>'));
     await loadPage('https://example.com/', doFetch as unknown as typeof fetch);
-    const init = doFetch.mock.calls[0]?.[1] as RequestInit;
-    expect(init.credentials).toBe('omit');
-    expect(init.redirect).toBe('manual');
-    expect((init.headers as Record<string, string>).cookie).toBeUndefined();
+    const init = doFetch.mock.calls[0]?.[1];
+    expect(init, 'the options the fetch was made with').toBeDefined();
+    expect(init?.credentials).toBe('omit');
+    expect(init?.redirect).toBe('manual');
+    const headers = (init?.headers ?? {}) as Record<string, string>;
+    expect(headers.cookie).toBeUndefined();
   });
 
   it('checks every hop of a redirect, not only the address it was given', async () => {

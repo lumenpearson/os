@@ -1,5 +1,5 @@
 {
   "extends": "@lumen/config-typescript/app.json",
-  "include": ["src", "vite.config.ts", "e2e", "playwright.config.ts"],
+  "include": ["src", "api", "server", "vite.config.ts", "e2e", "playwright.config.ts"],
   "exclude": ["e2e/zz-*.spec.ts"]
 }

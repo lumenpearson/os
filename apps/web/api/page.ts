@@ -4,9 +4,16 @@
  * The whole of the work is in `../server/page.ts`, which the dev and preview
  * servers run through a Vite plugin, so what a person sees locally is what
  * the deployment does.
+ *
+ * The `.js` on that import is not a typo and not optional. This package is
+ * `"type": "module"`, and the host compiles each file on its own rather than
+ * bundling them, so the specifier written here is the specifier Node is
+ * handed at runtime — and Node's ESM resolver does not guess extensions.
+ * Vite guessed, which is why an import that worked in dev for a week only
+ * failed once deployed. TypeScript maps the `.js` back to this `.ts`.
  */
 
-import { fromThisApp, loadPage } from '../server/page';
+import { fromThisApp, loadPage } from '../server/page.js';
 
 export const config = { runtime: 'nodejs' };
 
