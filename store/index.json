@@ -242,7 +242,7 @@
       "publisher": "IBM, packaged by Lumen",
       "category": "fonts",
       "size": 67074,
-      "price": "free",
+      "price": "subscription",
       "keywords": [
         "font",
         "italic",
@@ -261,7 +261,7 @@
       "publisher": "JetBrains, packaged by Lumen",
       "category": "fonts",
       "size": 57451,
-      "price": "free",
+      "price": "subscription",
       "keywords": [
         "font",
         "italic",
@@ -375,7 +375,7 @@
       "publisher": "Lumen",
       "category": "bundles",
       "size": 116995,
-      "price": "free",
+      "price": "subscription",
       "keywords": [
         "bundle",
         "developer",
@@ -393,7 +393,7 @@
       "publisher": "Lumen",
       "category": "bundles",
       "size": 100646,
-      "price": "free",
+      "price": "subscription",
       "keywords": [
         "bundle",
         "design",
@@ -412,7 +412,7 @@
       "publisher": "Lumen",
       "category": "bundles",
       "size": 39276,
-      "price": "free",
+      "price": "subscription",
       "keywords": [
         "bundle",
         "time",

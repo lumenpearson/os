@@ -35,7 +35,7 @@ export const PLEX_ITALIC = {
   version: '5.3.0',
   publisher: 'IBM, packaged by Lumen',
   category: 'fonts',
-  price: 'free',
+  price: 'subscription',
   keywords: ['font', 'italic', 'sans', 'plex', 'interface'],
   updated: '2026-07-30T09:00:00Z',
   description:
@@ -73,7 +73,7 @@ export const MONO_ITALIC = {
   version: '5.3.0',
   publisher: 'JetBrains, packaged by Lumen',
   category: 'fonts',
-  price: 'free',
+  price: 'subscription',
   keywords: ['font', 'italic', 'monospace', 'code', 'jetbrains'],
   updated: '2026-07-30T09:00:00Z',
   description:

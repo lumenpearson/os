@@ -14,7 +14,7 @@ export const DEVELOPER_KIT = {
   version: '1.2.0',
   publisher: 'Lumen',
   category: 'bundles',
-  price: 'free',
+  price: 'subscription',
   keywords: ['bundle', 'developer', 'tools', 'terminal'],
   updated: '2026-09-03T09:00:00Z',
   description:
@@ -51,7 +51,7 @@ export const DESIGN_KIT = {
   version: '1.0.0',
   publisher: 'Lumen',
   category: 'bundles',
-  price: 'free',
+  price: 'subscription',
   keywords: ['bundle', 'design', 'colour', 'typography', 'icons'],
   updated: '2026-08-30T09:00:00Z',
   description:
@@ -85,7 +85,7 @@ export const DESK_SET = {
   version: '1.1.0',
   publisher: 'Lumen',
   category: 'bundles',
-  price: 'free',
+  price: 'subscription',
   keywords: ['bundle', 'time', 'metronome', 'stopwatch', 'desk'],
   updated: '2026-08-28T09:00:00Z',
   description:

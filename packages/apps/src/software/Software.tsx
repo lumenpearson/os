@@ -56,9 +56,11 @@ import {
 } from './library';
 import { parseManifestText } from './manifest';
 import { buildSoftwareMenus, SECTIONS, type SectionId } from './menus';
+import { OffersSection } from './OffersSection';
 import { PurchasesSection } from './PurchasesSection';
 import { fetchPackage, type PackageDocument } from './remote';
 import { resourceIds } from './resources';
+import { SettingsSection } from './SettingsSection';
 import { COMPACT_AT, type StoreRoute, StoreSection } from './StoreSection';
 import { StoreSidebar } from './StoreSidebar';
 import { SubscriptionSection } from './SubscriptionSection';
@@ -69,6 +71,7 @@ import {
   mergeListings,
   categoryOptions as storeCategoryOptions,
 } from './storefront';
+import { UpdatesSection } from './UpdatesSection';
 import { type AvailableUpdate, availableUpdates } from './updates';
 import { useAccount } from './useAccount';
 import { useCatalogue } from './useCatalogue';
@@ -137,6 +140,12 @@ export default function Software(props: AppProps) {
   const storeBase = view.base ?? storeSettings.origin;
   const catalogue = useMemo(() => view.catalogue?.packages ?? [], [view.catalogue]);
   const installs = useInstalls({ base: storeBase, catalogue });
+  const [region] = useSetting('region');
+  /** Every package with an install running, so a second press cannot start one twice. */
+  const busyIds = useMemo(
+    () => new Set(installs.jobs.filter((job) => job.state === 'running').map((job) => job.id)),
+    [installs.jobs],
+  );
 
   const entries = useMemo(
     () =>
@@ -469,6 +478,39 @@ export default function Software(props: AppProps) {
             />
           )}
           {section === 'purchases' && <PurchasesSection receipts={account.state.receipts} />}
+          {section === 'deals' && (
+            <OffersSection
+              view={view}
+              listings={listings}
+              state={account.state}
+              now={Date.now()}
+              statusOf={statusOf}
+              busyIds={busyIds}
+              onOpen={(id) => {
+                setRoute({ kind: 'package', id });
+                setSection('discover');
+              }}
+              onSeePlans={() => setSection('subscription')}
+              onRefresh={refresh}
+            />
+          )}
+          {section === 'updates' && (
+            <UpdatesSection
+              updates={updates}
+              checking={view.refreshing || view.loading}
+              lastChecked={storeSettings.lastSync}
+              error={view.error}
+              locale={region.locale}
+              busyIds={busyIds}
+              automatic={updateSettings.automatic}
+              onCheck={refresh}
+              onUpdate={(update) => void updateOne(update)}
+              onUpdateAll={updateAll}
+            />
+          )}
+          {section === 'settings' && (
+            <SettingsSection view={view} locale={region.locale} onRefresh={refresh} />
+          )}
           {section === 'install' && (
             <InstallSection
               draft={draft}
