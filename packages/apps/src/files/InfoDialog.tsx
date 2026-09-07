@@ -1,6 +1,6 @@
-import { type AppManifest, parseManifest } from '@lumen/kernel';
-import { useVfs } from '@lumen/kernel/react';
-import { Dialog } from '@lumen/ui';
+import { type AppManifest, appsThatCanOpen, defaultAppForFile, parseManifest } from '@lumen/kernel';
+import { useSetting, useVfs } from '@lumen/kernel/react';
+import { Dialog, Select } from '@lumen/ui';
 import { basename, dirname, extname, type FileStat, formatBytes, VfsError } from '@lumen/vfs';
 import { useEffect, useState } from 'react';
 import { FileTypeIcon, formatDateTime, useApp } from '../_sdk';
@@ -85,6 +85,46 @@ export function InfoDialog({ path, onClose }: InfoDialogProps) {
           </div>
         ))}
       </dl>
+      {stat?.kind === 'file' && <OpensWith path={path} />}
     </Dialog>
+  );
+}
+
+/**
+ * What this kind of file opens in, and where a person changes it.
+ *
+ * Open With opens one file once; this is the other half of the same idea —
+ * the choice that outlives the window. It is written per extension, because
+ * that is the grain a person thinks in: not "this spreadsheet" but "these
+ * spreadsheets". Files with no extension have no kind to remember, so they
+ * are left to the registry.
+ */
+function OpensWith({ path }: { path: string }) {
+  const [files, patch] = useSetting('files');
+  const ext = extname(path).toLowerCase();
+  const { handlers, others } = appsThatCanOpen(path);
+  const apps = [...handlers, ...others];
+  if (ext.length === 0 || apps.length === 0) return null;
+  const current = defaultAppForFile(path);
+  const chosen = files.defaultApps[ext];
+  return (
+    <div className="flex flex-col gap-1.5 border-t border-rule pt-3">
+      <div className="flex items-center gap-3 text-sm">
+        <span className="w-[88px] shrink-0 text-ink-3">Opens with</span>
+        <Select
+          size="sm"
+          aria-label={`Open ${ext} files with`}
+          className="min-w-0 flex-1"
+          value={current?.id ?? ''}
+          options={apps.map((app) => ({ value: app.id, label: app.name }))}
+          onChange={(id) => patch({ defaultApps: { ...files.defaultApps, [ext]: id } })}
+        />
+      </div>
+      <p className="pl-[100px] text-xs text-ink-3">
+        {chosen === undefined
+          ? `Every ${ext} file, unless one is opened with something else.`
+          : `Every ${ext} file. Chosen here rather than by the system.`}
+      </p>
+    </div>
   );
 }

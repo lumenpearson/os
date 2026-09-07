@@ -175,6 +175,13 @@ export interface Settings {
     singleClickOpen: boolean;
     /** Folders before files, or sorted together. */
     foldersFirst: boolean;
+    /**
+     * What a file of each kind opens in, chosen by the person rather than by
+     * the registry: extension (with the dot, lower case) to app id. Empty
+     * until someone picks something else, and the registry's own ranking is
+     * what answers for every kind not named here.
+     */
+    defaultApps: Record<string, string>;
   };
   network: {
     wifi: boolean;
@@ -345,6 +352,7 @@ export function defaultSettings(): Settings {
       home: '',
       confirmDelete: true,
       singleClickOpen: false,
+      defaultApps: {},
       foldersFirst: true,
     },
     network: { wifi: true, bluetooth: false, airplane: false, ssid: 'Lumen Wi-Fi' },

@@ -1,6 +1,7 @@
 export type { InstalledApp } from './apps/registry';
 export {
   appsForFile,
+  appsThatCanOpen,
   defaultAppForFile,
   getApp,
   listApps,

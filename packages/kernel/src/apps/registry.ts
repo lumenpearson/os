@@ -1,6 +1,7 @@
 import { extname } from '@lumen/vfs';
 import { create } from 'zustand';
 import { events } from '../events';
+import { getSettings } from '../settings/store';
 import type { AppDefinition, AppId, AppManifest } from '../types';
 
 export interface InstalledApp {
@@ -67,8 +68,37 @@ export function appsForFile(path: string): AppDefinition[] {
   return matches.map((m) => m.app);
 }
 
+/**
+ * What a file opens in: the app the person chose for that kind if there is
+ * one, and the registry's own ranking otherwise. A choice for an app that is
+ * no longer installed is ignored rather than obeyed into nothing.
+ */
 export function defaultAppForFile(path: string): AppDefinition | undefined {
-  return appsForFile(path)[0];
+  const chosen = getSettings().files.defaultApps[extname(path).toLowerCase()];
+  return (chosen ? getApp(chosen) : undefined) ?? appsForFile(path)[0];
+}
+
+/**
+ * Everything a person may choose to open a file with, in two groups: the apps
+ * that claim the type, then every other app that opens files at all.
+ *
+ * `appsForFile` answers "what should this open in", which is a question with
+ * one right answer and a ranked list behind it. Open With asks a different
+ * question — "open it in something else" — and offering only the app that
+ * would have opened it anyway is no offer. A spreadsheet read as text in the
+ * editor is a legitimate thing to want, and it is how a person looks inside a
+ * file the system has decided it knows about.
+ */
+export function appsThatCanOpen(path: string): {
+  handlers: AppDefinition[];
+  others: AppDefinition[];
+} {
+  const handlers = appsForFile(path);
+  const claimed = new Set(handlers.map((a) => a.id));
+  const others = listApps()
+    .filter((a) => !claimed.has(a.id) && (a.fileAssociations?.length ?? 0) > 0)
+    .sort((a, b) => a.name.localeCompare(b.name));
+  return { handlers, others };
 }
 
 /** Simple ranked search across name, description and keywords. */

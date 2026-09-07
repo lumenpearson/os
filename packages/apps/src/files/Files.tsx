@@ -1,4 +1,4 @@
-import { appsForFile, TRASH_DIR, useClipboardStore } from '@lumen/kernel';
+import { appsThatCanOpen, TRASH_DIR, useClipboardStore } from '@lumen/kernel';
 import { useKernel, useSetting, useVfs } from '@lumen/kernel/react';
 import {
   AnchoredMenu,
@@ -632,7 +632,10 @@ export default function Files({ args }: AppProps) {
       canForward: canGoForward(history),
       canUp: path !== '/',
       isFavorite: first !== undefined && favorites.includes(first),
-      openWithApps: single && single.kind === 'file' ? appsForFile(single.path) : [],
+      openWithApps:
+        single && single.kind === 'file'
+          ? appsThatCanOpen(single.path)
+          : { handlers: [], others: [] },
       places: [
         { label: 'Home', path: home, shortcut: 'Shift+Mod+H' },
         { label: 'Desktop', path: join(home, 'Desktop') },

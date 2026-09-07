@@ -1,3 +1,4 @@
+import type { AppDefinition } from '@lumen/kernel';
 import type { MenuEntry } from '@lumen/ui';
 import type { DirEntry } from '@lumen/vfs';
 import { describe, expect, it, vi } from 'vitest';
@@ -80,7 +81,7 @@ function state(patch: Partial<MenuState> = {}): MenuState {
     canForward: false,
     canUp: true,
     isFavorite: false,
-    openWithApps: [],
+    openWithApps: { handlers: [], others: [] },
     places: [{ label: 'Home', path: '/home' }],
     ...patch,
   };
@@ -88,6 +89,61 @@ function state(patch: Partial<MenuState> = {}): MenuState {
 
 const labels = (items: Array<{ label?: string }>) => items.map((i) => i.label).filter(Boolean);
 const id = (keys: string) => keys;
+
+/** Two stand-in apps, enough to tell the two groups of Open With apart. */
+const fakeApp = (id: string, name: string) =>
+  ({ id, name, icon: () => null }) as unknown as AppDefinition;
+
+describe('Open With', () => {
+  const entry = { name: 'Budget.lsd', path: '/home/Budget.lsd', kind: 'file' } as DirEntry;
+  const openWith = (patch: Partial<MenuState>) => {
+    const items = contextMenuFor(
+      state({ target: entry, selection: ['/home/Budget.lsd'], ...patch }),
+      actions(),
+      id,
+    );
+    return items.find((i) => i.label === 'Open With');
+  };
+
+  it('offers the apps that claim the type, and everything else that opens files', () => {
+    const item = openWith({
+      openWithApps: {
+        handlers: [fakeApp('lumen.sheets', 'Sheets')],
+        others: [fakeApp('lumen.editor', 'Text Editor')],
+      },
+    });
+    expect(labels(item?.submenu ?? [])).toEqual(['Sheets', 'Text Editor']);
+    // A rule between the two groups: what it would open in, then the rest.
+    expect((item?.submenu ?? []).map((i) => i.type)).toContain('separator');
+  });
+
+  it('draws no rule when there is only one group', () => {
+    const item = openWith({
+      openWithApps: { handlers: [fakeApp('lumen.sheets', 'Sheets')], others: [] },
+    });
+    expect((item?.submenu ?? []).map((i) => i.type)).not.toContain('separator');
+  });
+
+  it('is off when nothing can open the file', () => {
+    expect(openWith({ openWithApps: { handlers: [], others: [] } })?.enabled).toBe(false);
+  });
+
+  it('calls openWith with the app that was chosen', () => {
+    const acts = actions();
+    const items = contextMenuFor(
+      state({
+        target: entry,
+        selection: ['/home/Budget.lsd'],
+        openWithApps: { handlers: [], others: [fakeApp('lumen.editor', 'Text Editor')] },
+      }),
+      acts,
+      id,
+    );
+    const row = items.find((i) => i.label === 'Open With')?.submenu?.[0];
+    row?.onSelect?.();
+    expect(acts.openWith).toHaveBeenCalledWith('lumen.editor');
+  });
+});
 
 describe('contextMenuFor', () => {
   it('offers creation and view commands on empty space', () => {

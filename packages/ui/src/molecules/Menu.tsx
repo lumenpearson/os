@@ -2,7 +2,7 @@ import { Check, ChevronRight } from 'lucide-react';
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { cx } from '../cx';
-import { useClickOutside, useEscape } from '../hooks';
+import { MENU_SURFACE, useClickOutside, useEscape, usePresence } from '../hooks';
 
 export interface MenuEntry {
   id?: string;
@@ -32,6 +32,8 @@ export interface MenuListProps {
   autoFocus?: boolean;
   className?: string;
   minWidth?: number;
+  /** True while the menu plays its exit: it draws, but nothing can hit it. */
+  leaving?: boolean;
 }
 
 /**
@@ -45,6 +47,7 @@ export function MenuList({
   autoFocus = true,
   className,
   minWidth,
+  leaving,
 }: MenuListProps) {
   const [active, setActive] = useState(-1);
   const [openSub, setOpenSub] = useState<number | null>(null);
@@ -102,15 +105,24 @@ export function MenuList({
         e.preventDefault();
         setActive(selectable[selectable.length - 1] ?? -1);
         break;
+      /*
+       * Left and right walk into and out of a submenu. The menubar behind
+       * this menu reads the same two keys to step between its own titles, so
+       * an event that did its work here has to stop: unchecked, ArrowRight on
+       * "Sort By" opened the *next menubar menu* and the submenu never
+       * appeared.
+       */
       case 'ArrowRight':
         if (active >= 0 && items[active]?.submenu) {
           e.preventDefault();
+          e.stopPropagation();
           setOpenSub(active);
         }
         break;
       case 'ArrowLeft':
         if (openSub !== null) {
           e.preventDefault();
+          e.stopPropagation();
           setOpenSub(null);
         }
         break;
@@ -135,7 +147,12 @@ export function MenuList({
       role="menu"
       tabIndex={-1}
       onKeyDown={onKeyDown}
-      className={cx('lumen-menu outline-none lumen-pop-enter', className)}
+      data-anim="menu"
+      className={cx(
+        'lumen-menu outline-none',
+        leaving ? 'lumen-pop-exit' : 'lumen-pop-enter',
+        className,
+      )}
       style={minWidth ? { minWidth } : undefined}
     >
       {items.map((item, i) => {
@@ -262,16 +279,23 @@ export function AnchoredMenu({
   onSelect,
 }: AnchoredMenuProps) {
   const ref = useRef<HTMLDivElement>(null);
-  const [pos, setPos] = useState<{ left: number; top: number } | null>(null);
+  const [pos, setPos] = useState<{ key: string; left: number; top: number } | null>(null);
   const refs = useMemo(() => [ref], []);
-  useClickOutside(refs, onClose, open);
+  // A submenu is portalled out of this wrapper; MENU_SURFACE brings it back in.
+  useClickOutside(refs, onClose, open, MENU_SURFACE);
   useEscape(onClose, open);
+  const { mounted, leaving } = usePresence(open, 'menu');
+  /*
+   * What the menu was placed against, so a placement is never reused for a
+   * different one. A context menu closes by dropping its point, and it is
+   * still on screen at that moment playing its exit — so while it leaves it
+   * keeps the last position, and while it opens it stays hidden until it has
+   * been measured where it was actually asked for.
+   */
+  const placeKey = at ? `at:${at.x},${at.y}` : anchor ? `anchor:${align}` : 'none';
 
   useEffect(() => {
-    if (!open) {
-      setPos(null);
-      return;
-    }
+    if (!open) return;
     const el = ref.current;
     const w = el?.offsetWidth ?? 220;
     const h = el?.offsetHeight ?? 200;
@@ -287,22 +311,29 @@ export function AnchoredMenu({
     }
     left = Math.max(4, Math.min(left, window.innerWidth - w - 4));
     top = Math.max(4, Math.min(top, window.innerHeight - h - 4));
-    setPos({ left, top });
-  }, [open, at, anchor, align]);
+    setPos({ key: placeKey, left, top });
+  }, [open, at, anchor, align, placeKey]);
 
-  if (!open || typeof document === 'undefined') return null;
+  if (!mounted || typeof document === 'undefined') return null;
+  const placed = leaving ? pos : pos?.key === placeKey ? pos : null;
   return createPortal(
     <div
       ref={ref}
-      className="fixed z-[1100]"
+      className={cx('fixed z-[1100]', leaving && 'pointer-events-none')}
       style={{
-        left: pos?.left ?? -9999,
-        top: pos?.top ?? -9999,
-        visibility: pos ? 'visible' : 'hidden',
+        left: placed?.left ?? -9999,
+        top: placed?.top ?? -9999,
+        visibility: placed ? 'visible' : 'hidden',
       }}
       onContextMenu={(e) => e.preventDefault()}
     >
-      <MenuList items={items} onClose={onClose} onSelect={onSelect} />
+      <MenuList
+        items={items}
+        onClose={onClose}
+        onSelect={onSelect}
+        autoFocus={!leaving}
+        leaving={leaving}
+      />
     </div>,
     document.body,
   );

@@ -83,7 +83,8 @@ export interface MenuState {
   canForward: boolean;
   canUp: boolean;
   isFavorite: boolean;
-  openWithApps: readonly AppDefinition[];
+  /** What Open With offers: the apps that claim the type, and the rest. */
+  openWithApps: { handlers: readonly AppDefinition[]; others: readonly AppDefinition[] };
   places: ReadonlyArray<{ label: string; path: string; shortcut?: string }>;
 }
 
@@ -270,17 +271,29 @@ export function newDocumentSubmenu(actions: FilesActions): MenuEntry[] {
 
 function openWithSubmenu(state: MenuState, actions: FilesActions): MenuEntry | null {
   if (state.selection.length !== 1) return null;
-  const apps = state.openWithApps;
+  const { handlers, others } = state.openWithApps;
+  const row = (app: AppDefinition): MenuEntry => ({
+    id: `open-with-${app.id}`,
+    label: app.name,
+    icon: createElement(app.icon, { size: 14 }),
+    onSelect: () => actions.openWith(app.id),
+  });
+  /*
+   * The apps that claim the type, then a rule, then everything else that
+   * opens files. The second group is the point of the menu: opening a
+   * spreadsheet in the text editor is how a person looks inside a file the
+   * system has already decided it knows about.
+   */
+  const submenu: MenuEntry[] = handlers.map(row);
+  if (others.length > 0) {
+    if (submenu.length > 0) submenu.push(separator);
+    submenu.push(...others.map(row));
+  }
   return {
     id: 'open-with',
     label: 'Open With',
-    enabled: apps.length > 0,
-    submenu: apps.map((app) => ({
-      id: `open-with-${app.id}`,
-      label: app.name,
-      icon: createElement(app.icon, { size: 14 }),
-      onSelect: () => actions.openWith(app.id),
-    })),
+    enabled: submenu.length > 0,
+    submenu,
   };
 }
 

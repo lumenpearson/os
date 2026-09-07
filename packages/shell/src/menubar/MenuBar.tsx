@@ -23,6 +23,7 @@ import {
   AnchoredMenu,
   cx,
   isContextMenuKey,
+  MENU_SURFACE,
   type MenuEntry,
   MenuList,
   Popover,
@@ -65,7 +66,10 @@ export function MenuBar() {
   const [open, setOpen] = useState<string | null>(null);
   const barRef = useRef<HTMLDivElement>(null);
   const refs = useMemo(() => [barRef], []);
-  useClickOutside(refs, () => setOpen(null), open !== null);
+  // A submenu is portalled to the body, so it is not inside the bar; without
+  // MENU_SURFACE a press on one of its rows closed the menu on `pointerdown`
+  // and the command never ran.
+  useClickOutside(refs, () => setOpen(null), open !== null, MENU_SURFACE);
 
   const toEntries = useCallback(
     (items: MenuItemTemplate[]): MenuEntry[] =>
@@ -207,6 +211,10 @@ export function MenuBar() {
           return;
         }
         if (open === null) return;
+        // The open menu reads left and right first, to step into and out of a
+        // submenu, and marks the event when it has. Stepping between titles is
+        // what is left over.
+        if (e.defaultPrevented) return;
         const idx = menus.findIndex((m) => m.id === open);
         if (e.key === 'ArrowRight') setOpen(menus[(idx + 1) % menus.length]?.id ?? null);
         if (e.key === 'ArrowLeft')
