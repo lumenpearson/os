@@ -26,7 +26,7 @@
  */
 
 import { readdirSync, readFileSync } from 'node:fs';
-import { dirname, join, relative } from 'node:path';
+import { dirname, isAbsolute, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
 
@@ -222,7 +222,12 @@ function trim(value) {
 }
 
 function parse(path) {
-  const full = path.startsWith('/') ? path : join(root, path);
+  // `isAbsolute` rather than a leading slash: `everySource` hands this whole
+  // paths, and on Windows a whole path begins with a drive letter rather than
+  // a slash, so every one of them was joined onto the root a second time and
+  // then reported as a file that does not exist. The scanner has never run on
+  // Windows.
+  const full = isAbsolute(path) ? path : join(root, path);
   let source;
   try {
     source = readFileSync(full, 'utf8');
