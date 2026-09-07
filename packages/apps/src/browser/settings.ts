@@ -292,7 +292,8 @@ interface KnownRefusal {
 
 /**
  * Hosts known to refuse framing, and the header each one sends. Checked with
- * `curl -sI -L` on 2026-09-05; a site can change its headers at any time, so
+ * `curl -sI -L`, last on 2026-09-07; a site can change its headers at any
+ * time, so
  * this list only ever saves the wait and names the header — it never grants
  * anything, and an address not on it is still tried in the frame.
  */
@@ -304,6 +305,17 @@ export const KNOWN_REFUSALS: readonly KnownRefusal[] = [
     host: 'w3.org',
     header:
       "Content-Security-Policy: frame-ancestors 'self' https://cms.w3.org/ https://cms-dev.w3.org/",
+    scope: 'self',
+  },
+  { host: 'youtube.com', header: 'X-Frame-Options: SAMEORIGIN', scope: 'self' },
+  { host: 'x.com', header: 'X-Frame-Options: SAMEORIGIN', scope: 'self' },
+  { host: 'reddit.com', header: 'X-Frame-Options: SAMEORIGIN', scope: 'self' },
+  { host: 'mail.ru', header: 'X-Frame-Options: SAMEORIGIN', scope: 'self' },
+  { host: 'facebook.com', header: 'X-Frame-Options: DENY', scope: 'none' },
+  { host: 'instagram.com', header: 'X-Frame-Options: DENY', scope: 'none' },
+  {
+    host: 'stackoverflow.com',
+    header: "Content-Security-Policy: frame-ancestors 'self' https://stackexchange.com",
     scope: 'self',
   },
 ];
