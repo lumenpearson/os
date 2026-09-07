@@ -13,7 +13,7 @@ import { Button } from '../atoms/Button';
 import { IconButton } from '../atoms/IconButton';
 import { Input } from '../atoms/Input';
 import { cx } from '../cx';
-import { useEscape, useFocusTrap } from '../hooks';
+import { useEscape, useFocusTrap, usePresence } from '../hooks';
 
 export interface DialogProps {
   open: boolean;
@@ -67,7 +67,14 @@ export function Dialog({
     if (!persistent) onClose();
   }, open);
   const showClose = !persistent && !hideClose;
-  if (!open || typeof document === 'undefined') return null;
+  /*
+   * The sheet stays on screen for the length of its exit. `usePresence`
+   * reads the duration from the token, so with dialog motion switched off it
+   * unmounts on the same tick as before — which matters for more than taste,
+   * since a scrim lingering invisibly would go on swallowing clicks.
+   */
+  const { mounted, leaving } = usePresence(open);
+  if (!mounted || typeof document === 'undefined') return null;
   const target = container ?? document.body;
   return createPortal(
     <div
@@ -76,7 +83,8 @@ export function Dialog({
       // against that box and not against the viewport. Its padding is the
       // margin the sheet may never cross, at any window size.
       className={cx(
-        'lumen-scrim absolute inset-0 z-[1400] flex items-center justify-center p-4 lumen-fade-enter',
+        'lumen-scrim absolute inset-0 z-[1400] flex items-center justify-center p-4',
+        leaving ? 'lumen-fade-exit' : 'lumen-fade-enter',
         !container && 'fixed',
       )}
       onPointerDown={(e) => {
@@ -94,7 +102,8 @@ export function Dialog({
         // itself can never scroll: the body below is the only scroller.
         className={cx(
           // deslop-ignore-next-line 22
-          'flex max-h-full w-full flex-col overflow-hidden rounded-lg border border-rule bg-surface shadow-lg outline-none lumen-pop-enter',
+          'flex max-h-full w-full flex-col overflow-hidden rounded-lg border border-rule bg-surface shadow-lg outline-none',
+          leaving ? 'lumen-pop-exit' : 'lumen-pop-enter',
           className,
         )}
         style={{

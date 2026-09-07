@@ -211,3 +211,64 @@ export function useScrollEdges<T extends HTMLElement>(ref: RefObject<T | null>) 
     };
   }, [ref]);
 }
+
+/**
+ * How long the system says a piece of motion lasts, in ms, read from the
+ * token rather than repeated here.
+ *
+ * The duration tokens are what Personalisation writes to: Reduce Motion and
+ * the per-category switches set them to zero, and `prefers-reduced-motion`
+ * does the same. Reading the live value is therefore how a hook in this
+ * package obeys a setting it is not allowed to import — `packages/ui` sits
+ * below the kernel, so it cannot ask the settings store anything.
+ */
+export function motionDuration(token: string): number {
+  if (typeof document === 'undefined') return 0;
+  const raw = getComputedStyle(document.documentElement).getPropertyValue(token).trim();
+  if (raw.endsWith('ms')) return Number.parseFloat(raw) || 0;
+  if (raw.endsWith('s')) return (Number.parseFloat(raw) || 0) * 1000;
+  return 0;
+}
+
+/**
+ * Keeps something on screen long enough to leave.
+ *
+ * Everything in the OS arrives with an animation and, until now, vanished
+ * between one frame and the next: React unmounts on the same tick the flag
+ * goes false, so there is nothing left to animate. This holds the node for
+ * the length of its exit and reports which way it is going, so the
+ * stylesheet can play the reverse of the entrance.
+ *
+ * The duration comes from the token, so with motion off it is zero and the
+ * node unmounts immediately. That matters for more than taste: a scrim that
+ * lingered invisibly would go on swallowing clicks.
+ */
+export function usePresence(
+  open: boolean,
+  token = '--duration-base',
+): { mounted: boolean; leaving: boolean } {
+  const [mounted, setMounted] = useState(open);
+  const [leaving, setLeaving] = useState(false);
+
+  useEffect(() => {
+    if (open) {
+      setMounted(true);
+      setLeaving(false);
+      return;
+    }
+    if (!mounted) return;
+    const ms = motionDuration(token);
+    if (ms <= 0) {
+      setMounted(false);
+      return;
+    }
+    setLeaving(true);
+    const timer = setTimeout(() => {
+      setMounted(false);
+      setLeaving(false);
+    }, ms);
+    return () => clearTimeout(timer);
+  }, [open, mounted, token]);
+
+  return { mounted, leaving };
+}

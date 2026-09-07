@@ -1,6 +1,15 @@
 import { APPLICATIONS_DIR, TRASH_DIR } from '@lumen/kernel';
 import { useKernel, useVfs } from '@lumen/kernel/react';
-import { Button, cx, Dialog, Input, ListRow, Sidebar, type SidebarSection } from '@lumen/ui';
+import {
+  Button,
+  cx,
+  Dialog,
+  Input,
+  ListRow,
+  Sidebar,
+  type SidebarSection,
+  usePresence,
+} from '@lumen/ui';
 import { basename, type DirEntry, dirname, extname, isValidName, join } from '@lumen/vfs';
 import { ArrowUp, FolderPlus } from 'lucide-react';
 import {
@@ -10,6 +19,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 import { useApp } from './context';
@@ -48,14 +58,35 @@ export function FileDialogProvider({ children }: { children: ReactNode }) {
       new Promise<PickerResult>((resolve) => setPending({ options, resolve })),
     [],
   );
+  /*
+   * The provider owns the presence rather than the sheet.
+   *
+   * `Dialog` can only play an exit for a component that stays mounted while
+   * `open` goes false, and answering the picker used to unmount it on the
+   * same tick — so the sheet vanished between frames however long its
+   * animation was. The provider keeps it for the length of that exit, then
+   * takes it away.
+   *
+   * The picker's own state is its current directory and selection, and it is
+   * meant to start fresh every time it is asked for. `opened` is the key, so
+   * each request gets a new component rather than the last one's folder.
+   */
+  const { mounted } = usePresence(pending !== null);
+  const shown = useRef<{ request: Pending; opened: number } | null>(null);
+  if (pending && pending !== shown.current?.request) {
+    shown.current = { request: pending, opened: (shown.current?.opened ?? 0) + 1 };
+  }
+  const current = mounted ? shown.current : null;
   return (
     <FilePickerContext.Provider value={pick}>
       {children}
-      {pending && (
+      {current && (
         <FilePickerDialog
-          options={pending.options}
+          key={current.opened}
+          open={pending !== null}
+          options={current.request.options}
           onDone={(r) => {
-            pending.resolve(r);
+            current.request.resolve(r);
             setPending(null);
           }}
         />
@@ -75,9 +106,12 @@ export function useFilePicker() {
 }
 
 function FilePickerDialog({
+  open,
   options,
   onDone,
 }: {
+  /** False while the sheet plays its exit, before the provider takes it away. */
+  open: boolean;
   options: FilePickerOptions;
   onDone: (r: PickerResult) => void;
 }) {
@@ -184,7 +218,7 @@ function FilePickerDialog({
 
   return (
     <Dialog
-      open
+      open={open}
       onClose={() => onDone(null)}
       title={title}
       width={720}

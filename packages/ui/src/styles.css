@@ -223,6 +223,21 @@
   .lumen-fade-enter {
     animation: lumen-fade var(--duration-base) var(--ease-out);
   }
+  /*
+   * Leaving, which until now nothing did: a dialog and a menu arrived with an
+   * animation and then vanished between one frame and the next. Each exit is
+   * the reverse of the entrance above it, on `--ease-in` rather than
+   * `--ease-out` — a thing coming towards you decelerates, a thing leaving
+   * gathers speed — and `forwards` holds the last frame so nothing flashes
+   * back into view for the tick before `usePresence` unmounts it.
+   */
+  .lumen-pop-exit {
+    animation: lumen-pop var(--duration-base) var(--ease-in) reverse forwards;
+    transform-origin: var(--lumen-pop-origin, top left);
+  }
+  .lumen-fade-exit {
+    animation: lumen-fade var(--duration-base) var(--ease-in) reverse forwards;
+  }
   @keyframes lumen-fade {
     from {
       opacity: 0;
@@ -234,6 +249,8 @@
   /* Personalisation > Animation switches each of these off by category. The
      element still appears; it simply appears at once. */
   :root[data-anim-menus="off"] .lumen-pop-enter,
+  :root[data-anim-menus="off"] .lumen-pop-exit,
+  :root[data-anim-dialogs="off"] .lumen-fade-exit:has([role="dialog"]),
   :root[data-anim-dialogs="off"] .lumen-fade-enter:has([role="dialog"]),
   :root[data-anim-panels="off"] [data-panel],
   :root[data-anim-pages="off"] [data-page-enter] {
