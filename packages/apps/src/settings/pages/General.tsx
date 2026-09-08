@@ -1,5 +1,5 @@
 import { AVATAR_PRESETS } from '@lumen/kernel';
-import { useClock, useCurrentUser, useKernel, useSetting } from '@lumen/kernel/react';
+import { useClock, useCurrentUser, useKernel, useSetting, useT } from '@lumen/kernel/react';
 import { Avatar, Button, cx, Input, SettingsGroup, SettingsPage, Switch } from '@lumen/ui';
 import { Info, RefreshCw } from 'lucide-react';
 import { useState } from 'react';
@@ -10,6 +10,7 @@ import { updateStatus } from '../logic';
 import { ChoiceGroup, Row, Value } from '../Row';
 
 export function GeneralPage() {
+  const t = useT();
   const kernel = useKernel();
   const user = useCurrentUser();
   const { info } = useSystemInfo();
@@ -30,14 +31,14 @@ export function GeneralPage() {
   const hostLabel = info ? (info.host === 'tauri' ? 'Desktop (Tauri)' : 'Web browser') : '…';
 
   return (
-    <SettingsPage title="General" description="Your account, this computer, and software updates.">
-      <SettingsGroup title="User">
-        <Row id="general.user" label="Name and avatar" stacked>
+    <SettingsPage title={t('settings.general')} description={t('generalPage.intro')}>
+      <SettingsGroup title={t('generalPage.titleUser')}>
+        <Row id="general.user" label={t('generalPage.nameAndAvatar')} stacked>
           <div className="flex w-full flex-col gap-3">
             <div className="flex items-center gap-3">
               <Avatar name={user?.name ?? ''} src={user?.avatar} size={40} />
               <Input
-                aria-label="Name"
+                aria-label={t('generalPage.name')}
                 value={name}
                 onChange={(e) => setDraft(e.target.value)}
                 onBlur={commitName}
@@ -50,7 +51,7 @@ export function GeneralPage() {
               {user && <Value>@{user.username}</Value>}
             </div>
             <ChoiceGroup
-              label="Avatar"
+              label={t('generalPage.avatar')}
               labelHidden
               value={user?.avatar ?? ''}
               onChange={(avatar) => void kernel.updateUser({ avatar })}
@@ -71,17 +72,23 @@ export function GeneralPage() {
         </Row>
       </SettingsGroup>
 
-      <SettingsGroup title="Computer">
-        <Row id="general.computer" label="Computer name" description="Set by the host.">
+      <SettingsGroup title={t('generalPage.titleComputer')}>
+        <Row
+          id="general.computer"
+          label={t('generalPage.computerName')}
+          description={t('generalPage.computerNameHint')}
+        >
           <Value>{info?.hostname ?? '…'}</Value>
         </Row>
-        <Row id="general.about" label="About this computer" stacked>
+        <Row id="general.about" label={t('generalPage.about')} stacked>
           <dl className="mono grid w-full grid-cols-[auto_1fr] gap-x-6 gap-y-1 text-sm tabular-nums">
+            {/* i18n-ignore-next-line the abbreviation labelling the product's own version */}
             <dt className="text-ink-3">OS</dt>
+            {/* i18n-ignore-next-line the product's name, which is the same in every language */}
             <dd className="text-ink-2 select-text">Lumen OS {version}</dd>
-            <dt className="text-ink-3">Kernel</dt>
+            <dt className="text-ink-3">{t('generalPage.kernel')}</dt>
             <dd className="text-ink-2 select-text">{info?.kernel ?? '…'}</dd>
-            <dt className="text-ink-3">Host</dt>
+            <dt className="text-ink-3">{t('generalPage.host')}</dt>
             <dd className="text-ink-2 select-text">{hostLabel}</dd>
           </dl>
           <div>
@@ -90,23 +97,24 @@ export function GeneralPage() {
               icon={<Info className="size-3.5" />}
               onClick={() => launch('lumen.sysinfo')}
             >
-              System Information
+              {t('generalPage.systemInformation')}
             </Button>
           </div>
         </Row>
       </SettingsGroup>
 
-      <SettingsGroup title="Software update">
+      <SettingsGroup title={t('generalPage.titleUpdate')}>
         <Row
           id="general.version"
-          label="This system"
-          description="Lumen OS is updated by replacing the build it runs from; there is no release feed to check."
+          label={t('generalPage.thisSystem')}
+          description={t('generalPage.thisSystemHint')}
         >
+          {/* i18n-ignore-next-line the product's name again */}
           <Value>Lumen OS {version}</Value>
         </Row>
         <Row
           id="general.updates"
-          label="Installed packages"
+          label={t('generalPage.installedPackages')}
           description={updateStatus(
             {
               checking: store.checking,
@@ -123,19 +131,19 @@ export function GeneralPage() {
             icon={<RefreshCw className="size-3.5" />}
             onClick={store.check}
           >
-            Check for updates
+            {t('generalPage.checkForUpdates')}
           </Button>
           {store.updates.length > 0 && (
             <Button size="sm" onClick={() => launch('lumen.software', { section: 'installed' })}>
-              Open Software Center
+              {t('generalPage.openSoftwareCenter')}
             </Button>
           )}
         </Row>
         <Row
           id="general.updates.automatic"
           htmlFor="updates-automatic"
-          label="Automatic updates"
-          description="Install a newer version as soon as Software Center finds one in the store."
+          label={t('generalPage.automaticUpdates')}
+          description={t('generalPage.automaticUpdatesHint')}
         >
           <Switch
             id="updates-automatic"

@@ -4,7 +4,7 @@ import {
   type ScreensaverId,
   screensaverById,
 } from '@lumen/kernel';
-import { useClipboard, useCurrentUser, useKernel, useSetting } from '@lumen/kernel/react';
+import { useClipboard, useCurrentUser, useKernel, useSetting, useT } from '@lumen/kernel/react';
 import {
   Button,
   cx,
@@ -46,6 +46,7 @@ function StrengthMeter({ password }: { password: string }) {
 }
 
 function RecoveryKeyPanel({ recoveryKey }: { recoveryKey: string }) {
+  const t = useT();
   const { copyText } = useClipboard();
   const [copied, setCopied] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -64,14 +65,12 @@ function RecoveryKeyPanel({ recoveryKey }: { recoveryKey: string }) {
   };
   return (
     <div className="flex flex-col gap-3">
-      <p className="text-ink-2">
-        Your new recovery key. It unlocks the account if you forget the password.
-      </p>
+      <p className="text-ink-2">{t('securityPage.keyExplains')}</p>
       <div className="mono select-text rounded-md border border-rule bg-canvas px-3 py-3 text-center text-md tracking-wider text-ink">
         {recoveryKey}
       </div>
       <div className="flex items-center justify-between gap-3">
-        <p className="text-sm text-danger">Shown once. Write it down before closing this dialog.</p>
+        <p className="text-sm text-danger">{t('securityPage.keyShownOnce')}</p>
         <Button
           size="sm"
           icon={copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
@@ -95,6 +94,7 @@ function CredentialsDialog({
   open: boolean;
   onClose: () => void;
 }) {
+  const t = useT();
   const kernel = useKernel();
   const user = useCurrentUser();
   const { container } = useApp();
@@ -159,12 +159,12 @@ function CredentialsDialog({
       actions={
         recoveryKey ? (
           <Button variant="primary" onClick={close}>
-            Done
+            {t('action.done')}
           </Button>
         ) : (
           <>
             <Button onClick={close} disabled={busy}>
-              Cancel
+              {t('action.cancel')}
             </Button>
             <Button
               variant="primary"
@@ -188,14 +188,9 @@ function CredentialsDialog({
             void submit();
           }}
         >
-          {mode === 'recovery' && (
-            <p className="text-ink-2">
-              The current key stops working once a new one is made. Confirm your password to
-              continue.
-            </p>
-          )}
+          {mode === 'recovery' && <p className="text-ink-2">{t('securityPage.keyReplaces')}</p>}
           {hasPassword && (
-            <Field label="Current password">
+            <Field label={t('securityPage.currentPassword')}>
               <Input
                 data-autofocus
                 type="password"
@@ -207,7 +202,7 @@ function CredentialsDialog({
           )}
           {mode === 'change' && (
             <>
-              <Field label="New password">
+              <Field label={t('securityPage.newPassword')}>
                 <Input
                   data-autofocus={!hasPassword || undefined}
                   type="password"
@@ -218,7 +213,7 @@ function CredentialsDialog({
                 <StrengthMeter password={next} />
               </Field>
               <Field
-                label="Confirm new password"
+                label={t('securityPage.confirmPassword')}
                 error={mismatch ? 'Passwords do not match.' : null}
               >
                 <Input
@@ -229,7 +224,7 @@ function CredentialsDialog({
                   invalid={mismatch}
                 />
               </Field>
-              <Field label="Hint" hint="Shown on the lock screen after a wrong attempt.">
+              <Field label={t('securityPage.hint')} hint={t('securityPage.hintShown')}>
                 <Input value={hint} onChange={(e) => setHint(e.target.value)} />
               </Field>
             </>
@@ -240,7 +235,7 @@ function CredentialsDialog({
             </p>
           )}
           <button type="submit" className="sr-only" tabIndex={-1}>
-            Submit
+            {t('action.submit')}
           </button>
         </form>
       )}
@@ -249,20 +244,18 @@ function CredentialsDialog({
 }
 
 export function SecurityPage() {
+  const t = useT();
   const kernel = useKernel();
   const [lock, patch] = useSetting('lock');
   const [dialog, setDialog] = useState<Mode | null>(null);
 
   return (
-    <SettingsPage
-      title="Lock Screen & Security"
-      description="When the screen locks, what it shows, and your password."
-    >
-      <SettingsGroup title="Lock screen">
+    <SettingsPage title={t('securityPage.title')} description={t('securityPage.intro')}>
+      <SettingsGroup title={t('securityPage.titleLockScreen')}>
         <Row
           id="security.autoLock"
-          label="Lock after"
-          description="Idle time before the screen locks."
+          label={t('securityPage.lockAfter')}
+          description={t('securityPage.lockAfterHint')}
         >
           <Select
             options={MINUTE_OPTIONS}
@@ -272,7 +265,7 @@ export function SecurityPage() {
         </Row>
         <Row
           id="security.screensaver"
-          label="Screensaver"
+          label={t('securityPage.screensaver')}
           description={screensaverById(lock.screensaver)?.description}
         >
           <Select
@@ -281,7 +274,7 @@ export function SecurityPage() {
             onChange={(screensaver) => patch({ screensaver })}
           />
         </Row>
-        <Row id="security.screensaverAfter" label="Start screensaver after">
+        <Row id="security.screensaverAfter" label={t('securityPage.screensaverAfter')}>
           <Select
             options={MINUTE_OPTIONS}
             value={String(lock.screensaverMinutes)}
@@ -289,16 +282,20 @@ export function SecurityPage() {
             disabled={lock.screensaver === 'none'}
           />
         </Row>
-        <Row id="security.wake" label="Require password on wake">
+        <Row id="security.wake" label={t('securityPage.requirePassword')}>
           <Switch
             checked={lock.requirePasswordOnWake}
             onChange={(e) => patch({ requirePasswordOnWake: e.target.checked })}
           />
         </Row>
-        <Row id="security.hint" label="Show password hint" description="After a wrong attempt.">
+        <Row
+          id="security.hint"
+          label={t('securityPage.showHint')}
+          description={t('securityPage.showHintWhen')}
+        >
           <Switch checked={lock.showHint} onChange={(e) => patch({ showHint: e.target.checked })} />
         </Row>
-        <Row id="security.clock" label="Show clock">
+        <Row id="security.clock" label={t('securityPage.showClock')}>
           <Switch
             checked={lock.showClock}
             onChange={(e) => patch({ showClock: e.target.checked })}
@@ -306,41 +303,41 @@ export function SecurityPage() {
         </Row>
         <Row
           id="security.message"
-          label="Lock screen message"
-          description="For example who to contact if the machine is found."
+          label={t('securityPage.message')}
+          description={t('securityPage.messageHint')}
           stacked
         >
           <Input
-            aria-label="Lock screen message"
+            aria-label={t('securityPage.message')}
             value={lock.message}
             onChange={(e) => patch({ message: e.target.value })}
-            placeholder="No message"
+            placeholder={t('securityPage.noMessage')}
           />
         </Row>
       </SettingsGroup>
 
-      <SettingsGroup title="Password">
+      <SettingsGroup title={t('securityPage.titlePassword')}>
         <Row
           id="security.password"
-          label="Password"
-          description="Changing it also makes a new recovery key."
+          label={t('securityPage.titlePassword')}
+          description={t('securityPage.passwordHint')}
         >
           <Button size="sm" onClick={() => setDialog('change')}>
-            Change password…
+            {t('securityPage.changePassword')}
           </Button>
         </Row>
         <Row
           id="security.recovery"
-          label="Recovery key"
-          description="Unlocks the account without the password."
+          label={t('securityPage.recoveryKey')}
+          description={t('securityPage.recoveryKeyHint')}
         >
           <Button size="sm" onClick={() => setDialog('recovery')}>
-            Generate a new recovery key…
+            {t('securityPage.generateKey')}
           </Button>
         </Row>
-        <Row id="security.lockNow" label="Lock now">
+        <Row id="security.lockNow" label={t('securityPage.lockNow')}>
           <Button size="sm" icon={<Lock className="size-3.5" />} onClick={() => kernel.lock()}>
-            Lock
+            {t('securityPage.lock')}
           </Button>
         </Row>
       </SettingsGroup>

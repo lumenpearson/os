@@ -78,6 +78,8 @@ const TRANSLATED = [
   'packages/apps/src/settings/pages/Display.tsx',
   'packages/apps/src/settings/pages/Animation.tsx',
   'packages/apps/src/settings/pages/Appearance.tsx',
+  'packages/apps/src/settings/pages/Security.tsx',
+  'packages/apps/src/settings/pages/General.tsx',
   'packages/shell/src/boot/BootScreen.tsx',
   'packages/shell/src/lock/LockScreen.tsx',
   'packages/shell/src/taskbar/Taskbar.tsx',
