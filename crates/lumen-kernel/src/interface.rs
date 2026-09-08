@@ -172,13 +172,40 @@ impl InterfaceStore {
         self.booted_marker(version).is_file()
     }
 
-    /// The interface reporting that it got as far as drawing itself.
-    pub fn mark_booted(&self, version: &str) -> Result<()> {
+    /// Written when a version is about to be served for the first time, and
+    /// removed when it reports. Its presence at the next start is the whole
+    /// evidence that a version was given its chance and did not answer.
+    fn attempt_marker(&self, version: &str) -> PathBuf {
+        self.root.join(format!(".trying-{version}"))
+    }
+
+    fn attempted(&self, version: &str) -> bool {
+        self.attempt_marker(version).is_file()
+    }
+
+    fn mark_attempted(&self, version: &str) -> Result<()> {
+        self.write_marker(&self.attempt_marker(version))
+    }
+
+    fn write_marker(&self, path: &Path) -> Result<()> {
         std::fs::create_dir_all(&self.root)
             .map_err(|e| KernelError::io(&e, Some(&self.root.display().to_string())))?;
-        let path = self.booted_marker(version);
-        std::fs::write(&path, b"")
+        std::fs::write(path, b"")
             .map_err(|e| KernelError::io(&e, Some(&path.display().to_string())))
+    }
+
+    /// The interface reporting that it got as far as drawing itself.
+    ///
+    /// The attempt marker goes with it. A version that answered must not keep
+    /// carrying the evidence of a start that did not, or the next one would
+    /// read it as a failure and give up a version that works.
+    pub fn mark_booted(&self, version: &str) -> Result<()> {
+        self.write_marker(&self.booted_marker(version))?;
+        match std::fs::remove_file(self.attempt_marker(version)) {
+            Ok(()) => Ok(()),
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(()),
+            Err(e) => Err(KernelError::io(&e, None)),
+        }
     }
 
     /// Remove the pointer, which puts the embedded bundle back in charge.
@@ -204,6 +231,18 @@ impl InterfaceStore {
             return Ok(None);
         };
         if self.has_booted(&pointer.version) {
+            return Ok(None);
+        }
+        /*
+         * A version that has never run gets exactly one start to prove
+         * itself. Without this a freshly applied patch — which has of course
+         * never reported — would be given up before it was ever served, and
+         * no patch could take effect at all. The marker is written before the
+         * interface is served, so a start that never reaches it leaves the
+         * evidence behind for the next one to read.
+         */
+        if !self.attempted(&pointer.version) {
+            self.mark_attempted(&pointer.version)?;
             return Ok(None);
         }
         match &pointer.previous {
@@ -310,6 +349,34 @@ mod tests {
     }
 
     #[test]
+    fn settle_gives_a_version_that_has_never_run_its_one_chance() {
+        // The point of applying a version is that it gets to run. A freshly
+        // applied one has of course never reported, and giving up on that
+        // would mean no patch could ever take effect — which is exactly what
+        // the first build of this did.
+        let (dir, store) = store();
+        std::fs::create_dir_all(dir.path().join("0.1.0")).expect("mkdir");
+        store
+            .write_pointer(&pointer("0.2.0", Some("0.1.0")))
+            .expect("write");
+        assert_eq!(store.settle().expect("settle"), None);
+        assert_eq!(store.pointer().expect("read").expect("p").version, "0.2.0");
+    }
+
+    #[test]
+    fn reporting_a_boot_ends_the_probation() {
+        // The attempt marker is what makes a second start give up. A version
+        // that answered must not keep carrying it, or a later start would
+        // read it as a failure.
+        let (_dir, store) = store();
+        store.write_pointer(&pointer("0.2.0", None)).expect("write");
+        store.settle().expect("its chance");
+        store.mark_booted("0.2.0").expect("mark");
+        assert_eq!(store.settle().expect("settled"), None);
+        assert_eq!(store.pointer().expect("read").expect("p").version, "0.2.0");
+    }
+
+    #[test]
     fn a_version_that_reported_once_is_trusted_from_then_on() {
         let (_dir, store) = store();
         assert!(!store.has_booted("0.2.0"));
@@ -318,14 +385,15 @@ mod tests {
     }
 
     #[test]
-    fn settle_reverts_when_the_live_version_never_reported() {
+    fn settle_reverts_on_the_start_after_the_one_that_never_reported() {
         let (dir, store) = store();
         std::fs::create_dir_all(dir.path().join("0.1.0")).expect("mkdir");
         store
             .write_pointer(&pointer("0.2.0", Some("0.1.0")))
             .expect("write");
 
-        assert_eq!(store.settle().expect("settle"), Some("0.2.0".into()));
+        assert_eq!(store.settle().expect("its chance"), None);
+        assert_eq!(store.settle().expect("given up"), Some("0.2.0".into()));
         let now = store.pointer().expect("read").expect("pointer");
         assert_eq!(now.version, "0.1.0");
         assert_eq!(now.previous, None);
@@ -344,7 +412,8 @@ mod tests {
     fn settle_falls_to_the_embedded_bundle_when_there_is_nothing_to_revert_to() {
         let (_dir, store) = store();
         store.write_pointer(&pointer("0.2.0", None)).expect("write");
-        assert_eq!(store.settle().expect("settle"), Some("0.2.0".into()));
+        assert_eq!(store.settle().expect("its chance"), None);
+        assert_eq!(store.settle().expect("given up"), Some("0.2.0".into()));
         assert!(store.pointer().expect("read").is_none());
     }
 
@@ -356,7 +425,8 @@ mod tests {
         store
             .write_pointer(&pointer("0.2.0", Some("0.1.0")))
             .expect("write");
-        assert_eq!(store.settle().expect("settle"), Some("0.2.0".into()));
+        assert_eq!(store.settle().expect("its chance"), None);
+        assert_eq!(store.settle().expect("given up"), Some("0.2.0".into()));
         assert!(store.pointer().expect("read").is_none());
     }
 
@@ -377,9 +447,11 @@ mod tests {
         store
             .write_pointer(&pointer("0.2.0", Some("0.1.0")))
             .expect("write");
-        store.settle().expect("settle");
+        store.settle().expect("its chance");
+        store.settle().expect("given up");
         assert!(store.has_booted("0.1.0"));
-        assert_eq!(store.settle().expect("second settle"), None);
+        // Back on 0.1.0, which has reported before, so nothing more is given up.
+        assert_eq!(store.settle().expect("settled"), None);
     }
 
     #[test]
