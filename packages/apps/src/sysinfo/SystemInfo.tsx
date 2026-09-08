@@ -63,6 +63,7 @@ const SAMPLE_DEADLINE_MS = SAMPLE_MS + 1500;
 
 export default function SystemInfo(_props: AppProps) {
   const t = useT();
+  const plural = usePlural();
   const platform = usePlatform();
   const vfs = useVfs();
   const kernel = useKernel();
@@ -137,10 +138,15 @@ export default function SystemInfo(_props: AppProps) {
     copyText(made.text);
     const { total, missing } = latest.current.counts;
     notify(
-      'Report copied',
-      missing === 0 ? `${total} values.` : `${total} values, ${missing} unavailable.`,
+      t('sysinfoApp.reportCopied'),
+      missing === 0
+        ? t('sysinfoApp.valuesOnly', { values: plural('count.values', total) })
+        : t('sysinfoApp.valuesAndMissing', {
+            values: plural('count.values', total),
+            missing,
+          }),
     );
-  }, [report, copyText, notify, latest]);
+  }, [report, copyText, notify, latest, t, plural]);
 
   const saveReport = useCallback(async () => {
     const made = report();
@@ -149,16 +155,19 @@ export default function SystemInfo(_props: AppProps) {
     try {
       await vfs.ensureDir(dir);
       const path = await vfs.createFile(dir, reportFileName(made.collectedAt), made.text);
-      notify('Report saved', path, {
+      notify(t('sysinfoApp.reportSaved'), path, {
         actions: [{ id: 'open', label: t('desktop.open') }],
         onAction: (id) => {
           if (id === 'open') void open(path);
         },
       });
     } catch (error) {
-      notify('Could not save the report', error instanceof Error ? error.message : String(error));
+      notify(
+        t('sysinfoApp.couldNotSaveReport'),
+        error instanceof Error ? error.message : String(error),
+      );
     }
-  }, [report, kernel, vfs, notify, open]);
+  }, [report, kernel, vfs, notify, open, t]);
 
   const refresh = useCallback(() => setAttempt((n) => n + 1), []);
   const ready = snapshot !== null;

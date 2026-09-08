@@ -194,7 +194,7 @@ export default function TaskManager({ pid, windowId }: AppProps) {
         kernel.kill(row.pid);
       }
     },
-    [ordered, pid, dialogs, kernel],
+    [ordered, pid, dialogs, kernel, t],
   );
 
   const quitApp = useCallback(

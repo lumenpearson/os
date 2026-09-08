@@ -178,7 +178,7 @@ export function PerformanceTab({ active, refreshMs }: PerformanceTabProps) {
 
   const charts = useMemo(
     () => buildCharts(snapshot, support, refreshMs, platform.adapter.id, t),
-    [snapshot, support, refreshMs, platform.adapter.id],
+    [snapshot, support, refreshMs, platform.adapter.id, t],
   );
 
   return (

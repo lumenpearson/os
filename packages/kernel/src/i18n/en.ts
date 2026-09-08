@@ -1022,6 +1022,12 @@ export const en = {
   'taskManagerApp.lastSeconds': 'last {value} s',
   'taskManagerApp.lastMinutes': 'last {value} min',
 
+  'sysinfoApp.reportCopied': 'Report copied',
+  'sysinfoApp.reportSaved': 'Report saved',
+  'sysinfoApp.couldNotSaveReport': 'Could not save the report',
+  'sysinfoApp.valuesOnly': '{values}.',
+  'sysinfoApp.valuesAndMissing': '{values}, {missing} unavailable.',
+
   // ── task manager, console, storage and system information ──────────────
   'taskManagerApp.host': 'Host',
   'taskManagerApp.platform': 'Platform',

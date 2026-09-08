@@ -986,6 +986,12 @@ export const ru: Record<MessageKey, string> = {
   'taskManagerApp.lastSeconds': 'последние {value} с',
   'taskManagerApp.lastMinutes': 'последние {value} мин',
 
+  'sysinfoApp.reportCopied': 'Отчёт скопирован',
+  'sysinfoApp.reportSaved': 'Отчёт сохранён',
+  'sysinfoApp.couldNotSaveReport': 'Не удалось сохранить отчёт',
+  'sysinfoApp.valuesOnly': '{values}.',
+  'sysinfoApp.valuesAndMissing': '{values}, недоступно: {missing}.',
+
   'taskManagerApp.host': 'Хост',
   'taskManagerApp.platform': 'Платформа',
   'taskManagerApp.logicalCores': 'Логические ядра',

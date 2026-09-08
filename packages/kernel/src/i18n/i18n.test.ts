@@ -45,6 +45,7 @@ describe('the dictionaries', () => {
     'taskManagerApp.pid', // the column heading is the abbreviation itself
     'taskManagerApp.processTally', // a count and a note, joined with no words
     'storageApp.filesAndBytes', // two readings with a separator, no words
+    'sysinfoApp.valuesOnly', // a count and a full stop, no words
   ];
 
   it('say something different from English', () => {

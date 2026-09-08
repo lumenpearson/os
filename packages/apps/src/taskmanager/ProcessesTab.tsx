@@ -155,7 +155,7 @@ export function ProcessesTab({
       });
     }
     return cols;
-  }, [ranks, apps, width]);
+  }, [ranks, apps, width, t]);
 
   const contextRow = rows.find((r) => r.pid === menuPid) ?? null;
 
