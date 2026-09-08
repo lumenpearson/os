@@ -1,3 +1,4 @@
+import { useT } from '@lumen/kernel/react';
 import { Button, Sidebar, type SidebarSection } from '@lumen/ui';
 import { Archive, Ban, Folder, FolderPlus, Inbox, PenLine, Send, Trash2 } from 'lucide-react';
 import type { MouseEvent, ReactNode } from 'react';
@@ -44,6 +45,7 @@ export function MailboxSidebar({
   onFolderMenu,
   className,
 }: MailboxSidebarProps) {
+  const t = useT();
   const meta = (id: string, drafts = false) => {
     const count = counts[id];
     if (!count) return undefined;
@@ -54,7 +56,7 @@ export function MailboxSidebar({
   const sections: SidebarSection[] = [
     {
       id: 'mailboxes',
-      title: 'Mailboxes',
+      title: t('mailApp.mailboxes'),
       items: SYSTEM_MAILBOXES.map((id) => ({
         id,
         label: MAILBOX_LABELS[id],
@@ -67,7 +69,7 @@ export function MailboxSidebar({
   if (data.folders.length > 0) {
     sections.push({
       id: 'folders',
-      title: 'Folders',
+      title: t('filesApp.folders'),
       items: data.folders.map((folder) => ({
         id: folder.id,
         label: folder.name,
@@ -95,10 +97,10 @@ export function MailboxSidebar({
             icon={<FolderPlus className="size-3.5" />}
             onClick={onNewFolder}
           >
-            New Folder
+            {t('mailApp.newFolderTitle')}
           </Button>
           <p className="px-1 pb-0.5 text-xs leading-normal text-ink-3">
-            This mailbox is a file on this computer. Nothing is sent or received over a network.
+            {t('mailApp.localOnlyShort')}
           </p>
         </div>
       }

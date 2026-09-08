@@ -1,5 +1,5 @@
 import { appsThatCanOpen, TRASH_DIR, useClipboardStore } from '@lumen/kernel';
-import { useKernel, useSetting, useVfs } from '@lumen/kernel/react';
+import { useKernel, useSetting, useT, useVfs } from '@lumen/kernel/react';
 import {
   AnchoredMenu,
   AppFrame,
@@ -107,6 +107,7 @@ function editingElsewhere(): boolean {
 }
 
 export default function Files({ args }: AppProps) {
+  const t = useT();
   const kernel = useKernel();
   const vfs = useVfs();
   const { container } = useApp();
@@ -202,7 +203,7 @@ export default function Files({ args }: AppProps) {
 
   useEffect(() => {
     let cancelled = false;
-    const all = standardPlaces(home).map((p) => p.path);
+    const all = standardPlaces(home, t).map((p) => p.path);
     Promise.all(all.map((p) => vfs.exists(p)))
       .then((flags) => {
         if (!cancelled) setPlaces(new Set(all.filter((_, i) => flags[i])));
@@ -211,7 +212,7 @@ export default function Files({ args }: AppProps) {
     return () => {
       cancelled = true;
     };
-  }, [vfs, home]);
+  }, [vfs, home, t]);
 
   const refreshUsage = useCallback(() => {
     vfs
@@ -483,9 +484,9 @@ export default function Files({ args }: AppProps) {
       emptyTrash: () => {
         void run(async () => {
           const ok = await dialogs.confirm({
-            title: 'Empty the Trash?',
-            message: 'Everything in the Trash is deleted for good.',
-            confirmLabel: 'Empty Trash',
+            title: t('filesApp.emptyTrashTitle'),
+            message: t('filesApp.emptyTrashMessage'),
+            confirmLabel: t('menu.emptyTrash'),
             danger: true,
           });
           if (!ok) return;
@@ -538,11 +539,11 @@ export default function Files({ args }: AppProps) {
       editPattern: () => {
         void (async () => {
           const answer = await dialogs.prompt({
-            title: 'Filter by Name',
-            message: 'Type part of a name, or a pattern with * and ?.',
+            title: t('filesApp.filterByName'),
+            message: t('filesApp.filterByNameHint'),
             defaultValue: filter.pattern,
             mono: true,
-            confirmLabel: 'Filter',
+            confirmLabel: t('menu.filter'),
           });
           if (answer === null) return;
           patchOwn({ filter: { ...filter, pattern: answer.trim() } });
@@ -559,8 +560,8 @@ export default function Files({ args }: AppProps) {
       goToFolder: () => {
         void (async () => {
           const answer = await dialogs.prompt({
-            title: 'Go to Folder',
-            message: 'Type a path. "~" is your home folder.',
+            title: t('filesApp.goToFolder'),
+            message: t('filesApp.goToFolderHint'),
             defaultValue: path,
             mono: true,
             confirmLabel: 'Go',
@@ -568,7 +569,7 @@ export default function Files({ args }: AppProps) {
           if (answer === null) return;
           const target = kernel.expandPath(answer.trim());
           if (await vfs.isDirectory(target)) go(target);
-          else await dialogs.alert({ title: 'No such folder', message: target });
+          else await dialogs.alert({ title: t('filesApp.noSuchFolder'), message: target });
         })();
       },
       toggleFavorite: (target: string) => {
@@ -604,6 +605,7 @@ export default function Files({ args }: AppProps) {
     run,
     transfer,
     go,
+    t,
   ]);
 
   // ── menus ───────────────────────────────────────────────────────────────
@@ -637,12 +639,12 @@ export default function Files({ args }: AppProps) {
           ? appsThatCanOpen(single.path)
           : { handlers: [], others: [] },
       places: [
-        { label: 'Home', path: home, shortcut: 'Shift+Mod+H' },
-        { label: 'Desktop', path: join(home, 'Desktop') },
-        { label: 'Documents', path: join(home, 'Documents') },
-        { label: 'Downloads', path: join(home, 'Downloads') },
-        { label: 'Applications', path: '/Applications' },
-        { label: 'Trash', path: TRASH_DIR },
+        { label: t('filesApp.home'), path: home, shortcut: 'Shift+Mod+H' },
+        { label: t('filesApp.desktop'), path: join(home, 'Desktop') },
+        { label: t('filesApp.documents'), path: join(home, 'Documents') },
+        { label: t('filesApp.downloads'), path: join(home, 'Downloads') },
+        { label: t('filesApp.applications'), path: '/Applications' },
+        { label: t('filesApp.trash'), path: TRASH_DIR },
       ],
     };
   }, [
@@ -665,6 +667,7 @@ export default function Files({ args }: AppProps) {
     favorites,
     home,
     entryFor,
+    t,
   ]);
 
   useAppMenus(menubarFor(menuState, actions), [menuState, actions]);
@@ -745,16 +748,16 @@ export default function Files({ args }: AppProps) {
       description={dir.error.message}
       action={
         <Button icon={<House className="size-3.5" />} onClick={() => go(home)}>
-          Go Home
+          {t('filesApp.goHome')}
         </Button>
       }
     />
   ) : filtering && total > 0 ? (
     <EmptyState
       icon={<ListFilter />}
-      title="Nothing here matches the filter"
+      title={t('filesApp.noMatch')}
       description={filterSummary(filter)}
-      action={<Button onClick={actions.clearFilter}>Clear Filters</Button>}
+      action={<Button onClick={actions.clearFilter}>{t('files.clearFilters')}</Button>}
     />
   ) : (
     <EmptyState
@@ -895,8 +898,16 @@ export default function Files({ args }: AppProps) {
             <span className="tabular-nums">
               {statusText(entries.length, selection.keys.size, usage, total)}
             </span>
-            {isSearch && <span className="text-ink-3">Results in {kernel.labelFor(path)}</span>}
-            {filtering && <span className="text-ink-3">Filter: {filterSummary(filter)}</span>}
+            {isSearch && (
+              <span className="text-ink-3">
+                {t('filesApp.resultsInPath', { place: kernel.labelFor(path) })}
+              </span>
+            )}
+            {filtering && (
+              <span className="text-ink-3">
+                {t('filesApp.filterIs', { summary: filterSummary(filter) })}
+              </span>
+            )}
           </>
         }
       >

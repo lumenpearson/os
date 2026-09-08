@@ -1,3 +1,4 @@
+import { useT } from '@lumen/kernel/react';
 import { cx } from '@lumen/ui';
 import { type DirEntry, dirname } from '@lumen/vfs';
 import { ChevronRight } from 'lucide-react';
@@ -139,6 +140,7 @@ function ColumnList({
   onRenameCommit,
   onRenameCancel,
 }: ColumnListProps) {
+  const t = useT();
   const dir = useDirectory(path, { showHidden });
   const entries = useMemo(
     () => sortWithPlan(dir.entries, sortPlanFor(sort, foldersFirst)),
@@ -204,7 +206,7 @@ function ColumnList({
     >
       {dir.error && <p className="p-3 text-sm text-danger">{dir.error.message}</p>}
       {!dir.error && !dir.loading && entries.length === 0 && (
-        <p className="p-3 text-center text-sm text-ink-3">Empty</p>
+        <p className="p-3 text-center text-sm text-ink-3">{t('filesApp.empty')}</p>
       )}
     </EntryListBox>
   );

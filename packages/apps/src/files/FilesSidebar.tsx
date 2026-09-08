@@ -1,5 +1,6 @@
+import type { Translate } from '@lumen/kernel';
 import { APPLICATIONS_DIR, HOME_SUBDIRS, TRASH_DIR } from '@lumen/kernel';
-import { useKernel } from '@lumen/kernel/react';
+import { useKernel, useT } from '@lumen/kernel/react';
 import {
   AnchoredMenu,
   cx,
@@ -44,9 +45,9 @@ export interface Place {
 }
 
 /** The standard home folders, in sidebar order. */
-export function standardPlaces(home: string): Place[] {
+export function standardPlaces(home: string, t: Translate): Place[] {
   return [
-    { label: 'Home', path: home },
+    { label: t('filesApp.home'), path: home },
     ...HOME_SUBDIRS.map((name) => ({ label: name, path: join(home, name) })),
   ];
 }
@@ -81,6 +82,7 @@ export function FilesSidebar({
   onDropFolder,
   onDragLeave,
 }: FilesSidebarProps) {
+  const t = useT();
   const kernel = useKernel();
   const menu = useContextMenu();
   const [menuPath, setMenuPath] = useState<string | null>(null);
@@ -100,7 +102,7 @@ export function FilesSidebar({
       onDragOver: (e: DragEvent) => onDragOverFolder(p, e),
       onDrop: (e: DragEvent) => onDropFolder(p, e),
     });
-    const standard = standardPlaces(home)
+    const standard = standardPlaces(home, t)
       .filter((p) => existing.has(p.path))
       .map((p) =>
         item(
@@ -113,10 +115,10 @@ export function FilesSidebar({
       );
     const user = favorites.map((p) => item(p, kernel.labelFor(p), Folder));
     return [
-      { id: 'favorites', title: 'Favourites', items: [...standard, ...user] },
+      { id: 'favorites', title: t('filesApp.favourites'), items: [...standard, ...user] },
       {
         id: 'locations',
-        title: 'Locations',
+        title: t('filesApp.locations'),
         items: [
           item('/', 'This Computer', HardDrive),
           item(APPLICATIONS_DIR, 'Applications', AppWindow),
@@ -124,17 +126,27 @@ export function FilesSidebar({
         ],
       },
     ];
-  }, [home, existing, favorites, kernel, menu.openAt, onNavigate, onDragOverFolder, onDropFolder]);
+  }, [
+    home,
+    existing,
+    favorites,
+    kernel,
+    menu.openAt,
+    onNavigate,
+    onDragOverFolder,
+    onDropFolder,
+    t,
+  ]);
 
   const ids = useMemo(() => new Set(sections.flatMap((s) => s.items.map((i) => i.id))), [sections]);
   const activeId = dropTarget !== null && ids.has(dropTarget) ? dropTarget : path;
 
   const menuItems: MenuEntry[] = menuPath
     ? [
-        { id: 'open', label: 'Open', onSelect: () => onNavigate(menuPath) },
+        { id: 'open', label: t('desktop.open'), onSelect: () => onNavigate(menuPath) },
         {
           id: 'open-window',
-          label: 'Open in New Window',
+          label: t('filesApp.openInNewWindow'),
           onSelect: () => onOpenNewWindow(menuPath),
         },
         ...(favorites.includes(menuPath)
@@ -142,7 +154,7 @@ export function FilesSidebar({
               { type: 'separator' } as MenuEntry,
               {
                 id: 'remove',
-                label: 'Remove from Favourites',
+                label: t('filesApp.removeFromFavourites'),
                 onSelect: () => onRemoveFavorite(menuPath),
               },
             ]

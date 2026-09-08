@@ -1,3 +1,4 @@
+import { useT } from '@lumen/kernel/react';
 import { cx } from '@lumen/ui';
 import type { DirEntry } from '@lumen/vfs';
 import { useMemo } from 'react';
@@ -16,6 +17,7 @@ export interface IndexRailProps {
  * first item under it; the file view scrolls the selection into view.
  */
 export function IndexRail({ entries, cursor, onJump }: IndexRailProps) {
+  const t = useT();
   const letters = useMemo(() => railLetters(entries), [entries]);
   const here = useMemo(() => {
     const entry = cursor === null ? undefined : entries.find((e) => e.path === cursor);
@@ -25,7 +27,7 @@ export function IndexRail({ entries, cursor, onJump }: IndexRailProps) {
   if (letters.length === 0) return null;
   return (
     <nav
-      aria-label="Jump to letter"
+      aria-label={t('filesApp.jumpToLetter')}
       className="flex w-6 shrink-0 flex-col items-center justify-center gap-px border-l border-rule py-2"
     >
       {letters.map((letter) => (

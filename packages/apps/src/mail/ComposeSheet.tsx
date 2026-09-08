@@ -1,3 +1,4 @@
+import { useT } from '@lumen/kernel/react';
 import { Button, Dialog, IconButton, Input, TextArea } from '@lumen/ui';
 import { Paperclip, Send, X } from 'lucide-react';
 import { useId, useState } from 'react';
@@ -29,6 +30,7 @@ export function ComposeSheet({
   onSend,
   onClose,
 }: ComposeSheetProps) {
+  const t = useT();
   const id = useId();
   const [showBcc, setShowBcc] = useState(draft.bcc.trim() !== '');
   const field = (name: string) => `${id}-${name}`;
@@ -44,15 +46,15 @@ export function ComposeSheet({
       container={container}
       actions={
         <>
-          <Button onClick={onClose}>Close</Button>
-          <Button onClick={onSaveDraft}>Save Draft</Button>
+          <Button onClick={onClose}>{t('action.close')}</Button>
+          <Button onClick={onSaveDraft}>{t('mail.saveDraft')}</Button>
           <Button
             variant="primary"
             icon={<Send className="size-3.5" />}
             disabled={!addressed}
             onClick={onSend}
           >
-            Send
+            {t('mailApp.send')}
           </Button>
         </>
       }
@@ -67,7 +69,7 @@ export function ComposeSheet({
         <div className="flex flex-col divide-y divide-rule border-y border-rule">
           <div className="flex items-center gap-3 py-1.5">
             <label htmlFor={field('to')} className="mono w-12 shrink-0 text-xs text-ink-3">
-              To
+              {t('mailApp.to')}
             </label>
             <Input
               id={field('to')}
@@ -75,18 +77,18 @@ export function ComposeSheet({
               size="sm"
               data-autofocus={draft.to.trim() === '' ? true : undefined}
               value={draft.to}
-              placeholder="name@local"
+              placeholder={t('mailApp.addressPlaceholder')}
               onChange={(e) => set({ to: e.target.value })}
             />
             {!showBcc && (
               <Button size="sm" variant="ghost" onClick={() => setShowBcc(true)}>
-                Bcc
+                {t('mailApp.bcc')}
               </Button>
             )}
           </div>
           <div className="flex items-center gap-3 py-1.5">
             <label htmlFor={field('cc')} className="mono w-12 shrink-0 text-xs text-ink-3">
-              Cc
+              {t('mailApp.cc')}
             </label>
             <Input
               id={field('cc')}
@@ -99,7 +101,7 @@ export function ComposeSheet({
           {showBcc && (
             <div className="flex items-center gap-3 py-1.5">
               <label htmlFor={field('bcc')} className="mono w-12 shrink-0 text-xs text-ink-3">
-                Bcc
+                {t('mailApp.bcc')}
               </label>
               <Input
                 id={field('bcc')}
@@ -112,7 +114,7 @@ export function ComposeSheet({
           )}
           <div className="flex items-center gap-3 py-1.5">
             <label htmlFor={field('subject')} className="mono w-12 shrink-0 text-xs text-ink-3">
-              Subject
+              {t('mailApp.subject')}
             </label>
             <Input
               id={field('subject')}
@@ -124,7 +126,7 @@ export function ComposeSheet({
         </div>
 
         <TextArea
-          aria-label="Message"
+          aria-label={t('mailApp.message')}
           data-autofocus={draft.to.trim() === '' ? undefined : true}
           className="min-h-56"
           value={draft.body}
@@ -138,7 +140,7 @@ export function ComposeSheet({
             icon={<Paperclip className="size-3.5" />}
             onClick={onAttach}
           >
-            Attach File
+            {t('mailApp.attachFile')}
           </Button>
           {draft.attachments.map((file) => (
             <span
@@ -161,10 +163,7 @@ export function ComposeSheet({
           ))}
         </div>
 
-        <p className="text-sm text-ink-3">
-          Send files a copy in Sent and delivers one to this computer&rsquo;s Inbox. There is no
-          network account to send it anywhere else.
-        </p>
+        <p className="text-sm text-ink-3">{t('mailApp.sendExplainsInbox')}</p>
       </form>
     </Dialog>
   );

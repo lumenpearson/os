@@ -8,7 +8,7 @@
  * sheet, because a mail client that stayed quiet about it would be lying.
  */
 
-import { useCurrentUser, useKernel, useSettings, useVfs } from '@lumen/kernel/react';
+import { useCurrentUser, useKernel, useSettings, useT, useVfs } from '@lumen/kernel/react';
 import {
   AnchoredMenu,
   AppFrame,
@@ -100,6 +100,7 @@ function typingInField(): boolean {
 }
 
 export default function Mail(_props: AppProps) {
+  const t = useT();
   const kernel = useKernel();
   const vfs = useVfs();
   const settings = useSettings();
@@ -239,9 +240,9 @@ export default function Mail(_props: AppProps) {
     dirtyDraft
       ? () =>
           dialogs.confirm({
-            title: 'Discard this message?',
-            message: 'The draft has not been saved.',
-            confirmLabel: 'Discard',
+            title: t('mailApp.discardTitle'),
+            message: t('mailApp.discardMessage'),
+            confirmLabel: t('mailApp.discard'),
             danger: true,
           })
       : null,
@@ -313,9 +314,9 @@ export default function Mail(_props: AppProps) {
     closeDraft: async () => {
       if (dirtyDraft) {
         const discard = await dialogs.confirm({
-          title: 'Discard this message?',
-          message: 'The draft has not been saved.',
-          confirmLabel: 'Discard',
+          title: t('mailApp.discardTitle'),
+          message: t('mailApp.discardMessage'),
+          confirmLabel: t('mailApp.discard'),
           danger: true,
         });
         if (!discard) return;
@@ -323,7 +324,11 @@ export default function Mail(_props: AppProps) {
       setDraft(null);
     },
     attach: async () => {
-      const chosen = await pickFile({ mode: 'open', multiple: true, title: 'Attach Files' });
+      const chosen = await pickFile({
+        mode: 'open',
+        multiple: true,
+        title: t('mailApp.attachFiles'),
+      });
       const paths = Array.isArray(chosen) ? chosen : chosen ? [chosen] : [];
       if (paths.length === 0) return;
       const files = await Promise.all(
@@ -384,19 +389,19 @@ export default function Mail(_props: AppProps) {
       const trash = messagesIn(data, 'trash');
       if (trash.length === 0) return;
       const sure = await dialogs.confirm({
-        title: 'Empty the Trash?',
+        title: t('filesApp.emptyTrashTitle'),
         message: `${trash.length === 1 ? '1 message' : `${trash.length} messages`} will be removed from this computer. This cannot be undone.`,
-        confirmLabel: 'Empty Trash',
+        confirmLabel: t('menu.emptyTrash'),
         danger: true,
       });
       if (sure) dispatch({ type: 'emptyTrash' });
     },
     newFolder: async () => {
       const name = await dialogs.prompt({
-        title: 'New Folder',
-        message: 'A folder in this mailbox.',
-        placeholder: 'Project X',
-        confirmLabel: 'Create',
+        title: t('menu.newFolder'),
+        message: t('mailApp.newFolderHint'),
+        placeholder: t('mailApp.folderPlaceholder'),
+        confirmLabel: t('mailApp.create'),
         validate: (value) => (value.trim() === '' ? 'Give the folder a name.' : null),
       });
       if (name === null || name.trim() === '') return;
@@ -408,9 +413,9 @@ export default function Mail(_props: AppProps) {
       const folder = data.folders.find((f) => f.id === id);
       if (!folder) return;
       const name = await dialogs.prompt({
-        title: 'Rename Folder',
+        title: t('mailApp.renameFolder'),
         defaultValue: folder.name,
-        confirmLabel: 'Rename',
+        confirmLabel: t('menu.rename'),
         validate: (value) => (value.trim() === '' ? 'Give the folder a name.' : null),
       });
       if (name === null || name.trim() === '') return;
@@ -426,7 +431,7 @@ export default function Mail(_props: AppProps) {
           inside === 0
             ? 'The folder is empty.'
             : `${inside === 1 ? '1 message' : `${inside} messages`} will move to the Trash.`,
-        confirmLabel: 'Delete Folder',
+        confirmLabel: t('mailApp.deleteFolder'),
         danger: true,
       });
       if (sure) dispatch({ type: 'deleteFolder', id });
@@ -525,13 +530,13 @@ export default function Mail(_props: AppProps) {
         toolbar={
           <Toolbar dense windowControls>
             {layout.back ? (
-              <IconButton size="sm" label="Back to list" onClick={() => setPane('list')}>
+              <IconButton size="sm" label={t('mailApp.backToList')} onClick={() => setPane('list')}>
                 <ChevronLeft />
               </IconButton>
             ) : (
               <IconButton
                 size="sm"
-                label="Mailboxes"
+                label={t('mailApp.mailboxes')}
                 active={layout.sidebar || layout.sidebarOverlay}
                 onClick={() => actions.toggleSidebar()}
               >
@@ -541,14 +546,18 @@ export default function Mail(_props: AppProps) {
             <span className="truncate-1 mr-1 min-w-0 max-w-48 text-base font-medium text-ink">
               {title}
             </span>
-            <IconButton size="sm" label="New message" onClick={() => actions.newMessage()}>
+            <IconButton
+              size="sm"
+              label={t('mailApp.newMessage')}
+              onClick={() => actions.newMessage()}
+            >
               <SquarePen />
             </IconButton>
             {!narrow && (
               <ToolbarGroup className="ml-1">
                 <IconButton
                   size="sm"
-                  label="Reply"
+                  label={t('mailApp.reply')}
                   disabled={!selected}
                   onClick={() => actions.reply(false)}
                 >
@@ -556,7 +565,7 @@ export default function Mail(_props: AppProps) {
                 </IconButton>
                 <IconButton
                   size="sm"
-                  label="Reply all"
+                  label={t('mailApp.replyAll')}
                   disabled={!selected}
                   onClick={() => actions.reply(true)}
                 >
@@ -564,7 +573,7 @@ export default function Mail(_props: AppProps) {
                 </IconButton>
                 <IconButton
                   size="sm"
-                  label="Forward"
+                  label={t('menu.forward')}
                   disabled={!selected}
                   onClick={() => actions.forward()}
                 >
@@ -576,7 +585,7 @@ export default function Mail(_props: AppProps) {
               {selectionInTrash ? (
                 <IconButton
                   size="sm"
-                  label="Move back from Trash"
+                  label={t('mailApp.moveBackFromTrash')}
                   disabled={!selected}
                   onClick={() => actions.restore()}
                 >
@@ -585,7 +594,7 @@ export default function Mail(_props: AppProps) {
               ) : (
                 <IconButton
                   size="sm"
-                  label="Move to Archive"
+                  label={t('mailApp.moveToArchive')}
                   disabled={!selected}
                   onClick={() => actions.archive()}
                 >
@@ -616,8 +625,8 @@ export default function Mail(_props: AppProps) {
               <SearchField
                 ref={searchRef}
                 size="sm"
-                aria-label="Search mail"
-                placeholder="Search"
+                aria-label={t('mailApp.searchMail')}
+                placeholder={t('systemBar.search')}
                 value={query}
                 onChange={setQuery}
                 onKeyDown={(e) => {
@@ -636,9 +645,13 @@ export default function Mail(_props: AppProps) {
             <span className="tabular-nums">
               {threads.length === 1 ? '1 conversation' : `${threads.length} conversations`}
             </span>
-            {unread > 0 && <span className="tabular-nums text-ink-3">{unread} unread</span>}
+            {unread > 0 && (
+              <span className="tabular-nums text-ink-3">
+                {t('mailApp.unreadCount', { count: unread })}
+              </span>
+            )}
             <span className="flex-1" />
-            <span className="truncate-1 text-ink-3">Local mailbox · ~/.config/mail.json</span>
+            <span className="truncate-1 text-ink-3">{t('mailApp.localFile')}</span>
           </>
         }
       >
@@ -678,7 +691,7 @@ export default function Mail(_props: AppProps) {
           <div className="lumen-fade-enter h-full shadow-md">{sidebar}</div>
           <button
             type="button"
-            aria-label="Close mailboxes"
+            aria-label={t('mailApp.closeMailboxes')}
             className="flex-1 bg-scrim lumen-fade-enter"
             onClick={() => setSidebarOpen(false)}
           />
@@ -692,12 +705,12 @@ export default function Mail(_props: AppProps) {
         items={[
           {
             id: 'rename',
-            label: 'Rename Folder…',
+            label: t('mailApp.renameFolderEllipsis'),
             onSelect: () => menuFolder && void actions.renameFolder(menuFolder),
           },
           {
             id: 'delete',
-            label: 'Delete Folder',
+            label: t('mailApp.deleteFolder'),
             danger: true,
             onSelect: () => menuFolder && void actions.deleteFolder(menuFolder),
           },

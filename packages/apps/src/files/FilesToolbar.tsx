@@ -1,3 +1,5 @@
+import type { Translate } from '@lumen/kernel';
+import { useT } from '@lumen/kernel/react';
 import {
   AnchoredMenu,
   Breadcrumb,
@@ -58,12 +60,17 @@ export interface FilesToolbarProps {
   onDropFolder: (path: string, e: DragEvent) => void;
 }
 
-const VIEW_OPTIONS = [
-  { value: 'list', icon: <List />, title: 'List' },
-  { value: 'grid', icon: <LayoutGrid />, title: 'Grid' },
-  { value: 'columns', icon: <Columns3 />, title: 'Columns' },
-  { value: 'cards', icon: <GalleryHorizontalEnd />, title: 'Cards' },
-] as const;
+/*
+ * A function of the translator, not a table built at import: a table would
+ * keep whatever language was in force when the module first loaded.
+ */
+const viewOptions = (t: Translate) =>
+  [
+    { value: 'list', icon: <List />, title: t('filesPage.viewList') },
+    { value: 'grid', icon: <LayoutGrid />, title: t('filesPage.viewGrid') },
+    { value: 'columns', icon: <Columns3 />, title: t('filesPage.viewColumns') },
+    { value: 'cards', icon: <GalleryHorizontalEnd />, title: t('filesPage.viewCards') },
+  ] as const;
 
 const HIGHLIGHT = ['bg-selection', 'text-ink'];
 
@@ -91,6 +98,7 @@ export function FilesToolbar({
   onDragOverFolder,
   onDropFolder,
 }: FilesToolbarProps) {
+  const t = useT();
   const [sortAnchor, setSortAnchor] = useState<HTMLButtonElement | null>(null);
   const [sortOpen, setSortOpen] = useState(false);
   const [filterAnchor, setFilterAnchor] = useState<HTMLButtonElement | null>(null);
@@ -135,13 +143,17 @@ export function FilesToolbar({
       <div className="w-18 shrink-0" aria-hidden />
       {parts.navigation && (
         <ToolbarGroup>
-          <IconButton label="Back" disabled={!canBack} onClick={actions.back}>
+          <IconButton label={t('menu.back')} disabled={!canBack} onClick={actions.back}>
             <ChevronLeft />
           </IconButton>
-          <IconButton label="Forward" disabled={!canForward} onClick={actions.forward}>
+          <IconButton label={t('menu.forward')} disabled={!canForward} onClick={actions.forward}>
             <ChevronRight />
           </IconButton>
-          <IconButton label="Enclosing folder" disabled={path === '/'} onClick={actions.up}>
+          <IconButton
+            label={t('filesApp.enclosingFolder')}
+            disabled={path === '/'}
+            onClick={actions.up}
+          >
             <ArrowUp />
           </IconButton>
         </ToolbarGroup>
@@ -168,16 +180,16 @@ export function FilesToolbar({
       </div>
       {inTrash && (
         <Button size="sm" icon={<Trash2 className="size-3.5" />} onClick={actions.emptyTrash}>
-          Empty Trash…
+          {t('menu.emptyTrashEllipsis')}
         </Button>
       )}
       <ToolbarGroup className="gap-1">
         {/* The four views stay on View > as List/Grid/Columns/Cards and Mod+1…4. */}
         {parts.view && !narrow && (
           <SegmentedControl
-            aria-label="View"
+            aria-label={t('menu.view')}
             size="sm"
-            options={VIEW_OPTIONS}
+            options={viewOptions(t)}
             value={view}
             onChange={actions.setView}
           />
@@ -186,7 +198,7 @@ export function FilesToolbar({
           <>
             <IconButton
               ref={setSortAnchor}
-              label="Sort"
+              label={t('filesApp.sort')}
               aria-haspopup="menu"
               aria-expanded={sortOpen}
               active={sortOpen}
@@ -225,7 +237,11 @@ export function FilesToolbar({
           </>
         )}
         {parts.newFolder && (
-          <IconButton label="New folder" disabled={inTrash} onClick={actions.newFolder}>
+          <IconButton
+            label={t('filesApp.newFolder')}
+            disabled={inTrash}
+            onClick={actions.newFolder}
+          >
             <FolderPlus />
           </IconButton>
         )}
@@ -243,8 +259,8 @@ export function FilesToolbar({
         <SearchField
           value={query}
           onChange={onQueryChange}
-          placeholder="Search"
-          aria-label="Search this folder"
+          placeholder={t('systemBar.search')}
+          aria-label={t('filesApp.searchThisFolder')}
           className={narrow ? 'w-28' : 'w-44'}
           onKeyDown={(e) => {
             // Keep typing keys (including Mod+A/C/V) native inside the field.
