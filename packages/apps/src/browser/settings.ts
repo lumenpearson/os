@@ -9,6 +9,7 @@
  * here plainly instead of being hidden behind a switch that does nothing.
  */
 
+import { t } from '@lumen/kernel';
 import { join, normalize } from '@lumen/vfs';
 import { DEFAULT_ZOOM, ZOOM_LEVELS } from './tabs';
 import {
@@ -338,14 +339,14 @@ export function preflight(url: string, pageProtocol: string): BlockedReason | nu
   if (scheme === 'other' || scheme === 'lumen') {
     return {
       cause: 'unsupported-scheme',
-      title: 'Only http and https open here',
+      title: t('browserApp.onlyHttp'),
       text: `A frame can only be given an http or https address, and this one is ${url.trim().split(':')[0]}:.`,
     };
   }
   if (scheme === 'http' && pageProtocol === 'https:') {
     return {
       cause: 'mixed-content',
-      title: 'This address is not encrypted',
+      title: t('browserApp.notEncrypted'),
       text: `Lumen itself is served over https, so the browser refuses to load ${hostOf(url) || 'an http address'} over http inside it; no header from the site is involved.`,
     };
   }

@@ -1,3 +1,4 @@
+import { useT } from '@lumen/kernel/react';
 import { Input, Label } from '@lumen/ui';
 import { Search } from 'lucide-react';
 import { type FormEvent, useState } from 'react';
@@ -22,6 +23,7 @@ const MAX_RECENT = 6;
  * other in the app.
  */
 export function Start({ bookmarks, history, engine, onNavigate }: StartProps) {
+  const t = useT();
   const [query, setQuery] = useState('');
   const favorites = bookmarks.slice(0, MAX_FAVORITES);
   const recent = uniqueByUrl(history, MAX_RECENT);
@@ -53,10 +55,10 @@ export function Start({ bookmarks, history, engine, onNavigate }: StartProps) {
 
         <section className="flex flex-col gap-3">
           <h2>
-            <Label>Bookmarks</Label>
+            <Label>{t('browserApp.bookmarks')}</Label>
           </h2>
           {favorites.length === 0 ? (
-            <p className="text-base text-ink-3">Star a page to keep it here.</p>
+            <p className="text-base text-ink-3">{t('browserApp.starToKeep')}</p>
           ) : (
             <ul className="grid grid-cols-[repeat(auto-fill,minmax(9rem,1fr))] gap-2">
               {favorites.map((b) => (
@@ -85,10 +87,10 @@ export function Start({ bookmarks, history, engine, onNavigate }: StartProps) {
 
         <section className="flex flex-col gap-2">
           <h2>
-            <Label>Recent</Label>
+            <Label>{t('browserApp.recent')}</Label>
           </h2>
           {recent.length === 0 ? (
-            <p className="text-base text-ink-3">Pages you visit show up here.</p>
+            <p className="text-base text-ink-3">{t('browserApp.recentHint')}</p>
           ) : (
             <ul className="flex flex-col">
               {recent.map((v) => {

@@ -1,3 +1,4 @@
+import { useT } from '@lumen/kernel/react';
 import { isTauri } from '@lumen/platform';
 import { Button, cx, Spinner } from '@lumen/ui';
 import { ExternalLink, ListPlus, RotateCw, ShieldOff } from 'lucide-react';
@@ -58,6 +59,7 @@ export function Frame({
   onAlwaysOutside,
   onStopOutside,
 }: FrameProps) {
+  const t = useT();
   const { id, url, status } = tab;
   const external = status === 'external';
 
@@ -217,8 +219,7 @@ export function Frame({
       {framed && relayed && status !== 'blocked' && (
         <div className="pointer-events-none absolute inset-x-0 top-0 flex justify-center p-1.5">
           <p className="pointer-events-auto rounded-sm border border-rule bg-surface px-2.5 py-1 text-xs text-ink-2 shadow-sm">
-            {hostOf(url)} refuses to be framed, so Lumen fetched the page. Signing in and anything
-            the site loads from script will not work.
+            {t('browserApp.relayNote', { host: hostOf(url) })}
           </p>
         </div>
       )}
@@ -226,14 +227,14 @@ export function Frame({
       {external && (
         <Panel
           icon={<ExternalLink className="size-8 stroke-[1.5] text-ink-3" aria-hidden />}
-          title="This site opens outside Lumen"
+          title={t('browserApp.opensOutside')}
           text={`${host} is on your list of sites that open in the browser Lumen is running in.`}
           url={url}
         >
           <Button variant="primary" icon={<ExternalLink />} onClick={() => onOpenOutside(url)}>
-            Open Outside Lumen
+            {t('browserApp.openOutside')}
           </Button>
-          <Button onClick={() => onStopOutside(url)}>Stop Opening Outside</Button>
+          <Button onClick={() => onStopOutside(url)}>{t('browserApp.stopOpeningOutside')}</Button>
         </Panel>
       )}
 
@@ -263,6 +264,7 @@ function BlockedPanel({
   onOpenOutside: () => void;
   onAlwaysOutside: () => void;
 }) {
+  const t = useT();
   // Nothing to add to the list, and nothing outside can open it either.
   const web = reason.cause !== 'unsupported-scheme' && hostOf(url) !== '';
 
@@ -274,15 +276,15 @@ function BlockedPanel({
       url={url}
     >
       <Button icon={<RotateCw />} onClick={onReload}>
-        Try Again
+        {t('browserApp.tryAgain')}
       </Button>
       {web && (
         <>
           <Button variant="primary" icon={<ExternalLink />} onClick={onOpenOutside}>
-            Open Outside Lumen
+            {t('browserApp.openOutside')}
           </Button>
           <Button icon={<ListPlus />} onClick={onAlwaysOutside}>
-            Always Open Outside
+            {t('browserApp.alwaysOutside')}
           </Button>
         </>
       )}

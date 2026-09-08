@@ -1,3 +1,4 @@
+import { useT } from '@lumen/kernel/react';
 import { Globe } from 'lucide-react';
 import type { Bookmark } from './data';
 
@@ -9,9 +10,10 @@ export interface FavoritesBarProps {
 
 /** One quiet row of starred pages, shown or hidden by the user's own choice. */
 export function FavoritesBar({ bookmarks, onOpen, onShowAll }: FavoritesBarProps) {
+  const t = useT();
   return (
     <nav
-      aria-label="Bookmarks bar"
+      aria-label={t('browserApp.bookmarksBar')}
       className="lumen-scroll flex h-8 shrink-0 items-center gap-1 overflow-y-hidden border-b border-rule bg-canvas px-2"
     >
       {bookmarks.length === 0 ? (
@@ -20,7 +22,7 @@ export function FavoritesBar({ bookmarks, onOpen, onShowAll }: FavoritesBarProps
           onClick={onShowAll}
           className="rounded-xs px-1.5 py-0.5 text-sm text-ink-3 hover:text-ink lumen-focus"
         >
-          No bookmarks yet — star a page to keep it here
+          {t('browserApp.noBookmarksYetBar')}
         </button>
       ) : (
         bookmarks.map((b) => (

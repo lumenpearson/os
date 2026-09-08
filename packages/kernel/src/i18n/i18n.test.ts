@@ -46,6 +46,11 @@ describe('the dictionaries', () => {
     'taskManagerApp.processTally', // a count and a note, joined with no words
     'storageApp.filesAndBytes', // two readings with a separator, no words
     'sysinfoApp.valuesOnly', // a count and a full stop, no words
+    'browserApp.examplePage', // an example address, not a sentence
+    'browserApp.queryPlaceholder', // likewise
+    'browserApp.sitePlaceholder', // likewise
+    'browserApp.javascript', // the language's name
+    'browserApp.formsHint', // the sandbox token itself, which is not translated
   ];
 
   it('say something different from English', () => {

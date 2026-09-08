@@ -1,3 +1,4 @@
+import { useT } from '@lumen/kernel/react';
 import { AnchoredMenu, cx, IconButton, type MenuEntry, Toolbar, ToolbarGroup } from '@lumen/ui';
 import {
   ArrowLeft,
@@ -62,6 +63,7 @@ export function NavigationBar({
   onSettings,
   onSettingsPage,
 }: NavigationBarProps) {
+  const t = useT();
   const [menuAnchor, setMenuAnchor] = useState<HTMLButtonElement | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const loading = status === 'loading';
@@ -69,22 +71,27 @@ export function NavigationBar({
   return (
     <Toolbar dense className="gap-1.5">
       <ToolbarGroup>
-        <IconButton label="Back" size="sm" disabled={!canBack} onClick={onBack}>
+        <IconButton label={t('browserApp.back')} size="sm" disabled={!canBack} onClick={onBack}>
           <ArrowLeft />
         </IconButton>
-        <IconButton label="Forward" size="sm" disabled={!canForward} onClick={onForward}>
+        <IconButton
+          label={t('browserApp.forward')}
+          size="sm"
+          disabled={!canForward}
+          onClick={onForward}
+        >
           <ArrowRight />
         </IconButton>
         {loading ? (
-          <IconButton label="Stop" size="sm" onClick={onStop}>
+          <IconButton label={t('browserApp.stop')} size="sm" onClick={onStop}>
             <X />
           </IconButton>
         ) : (
-          <IconButton label="Reload" size="sm" onClick={onReload}>
+          <IconButton label={t('browserApp.reload')} size="sm" onClick={onReload}>
             <RotateCw />
           </IconButton>
         )}
-        <IconButton label="Home" size="sm" onClick={onHome}>
+        <IconButton label={t('browserApp.home')} size="sm" onClick={onHome}>
           <House />
         </IconButton>
       </ToolbarGroup>
@@ -106,12 +113,17 @@ export function NavigationBar({
         >
           <Star className={cx(bookmarked && 'fill-current text-accent')} />
         </IconButton>
-        <IconButton label="Browser settings" size="sm" active={onSettingsPage} onClick={onSettings}>
+        <IconButton
+          label={t('browserApp.settingsButton')}
+          size="sm"
+          active={onSettingsPage}
+          onClick={onSettings}
+        >
           <SlidersHorizontal />
         </IconButton>
         <IconButton
           ref={setMenuAnchor}
-          label="Browser menu"
+          label={t('browserApp.menu')}
           size="sm"
           aria-haspopup="menu"
           aria-expanded={menuOpen}

@@ -1,3 +1,4 @@
+import { useT } from '@lumen/kernel/react';
 import { cx, Spinner, VisuallyHidden } from '@lumen/ui';
 import { Bookmark, Clock, Globe, Lock, Search, ShieldOff } from 'lucide-react';
 import type { KeyboardEvent, RefObject } from 'react';
@@ -45,6 +46,7 @@ export function AddressBar({
   onNavigate,
   inputRef,
 }: AddressBarProps) {
+  const t = useT();
   const listId = useId();
   /** null while the bar shows the current page rather than something typed. */
   const [draft, setDraft] = useState<string | null>(null);
@@ -114,7 +116,7 @@ export function AddressBar({
           // listbox below is referenced by aria-controls, and the highlighted
           // row is named by aria-activedescendant while focus stays here.
           role="combobox"
-          aria-label="Address and search"
+          aria-label={t('browserApp.addressAndSearch')}
           aria-expanded={open}
           aria-controls={listId}
           aria-autocomplete="list"
@@ -145,7 +147,7 @@ export function AddressBar({
         <ul
           id={listId}
           role="listbox"
-          aria-label="Suggestions"
+          aria-label={t('browserApp.suggestions')}
           className="lumen-scroll absolute top-full right-0 left-0 z-30 mt-1 max-h-80 rounded-md border border-rule bg-surface p-1 shadow-lg"
         >
           {rows.map((row, i) => {

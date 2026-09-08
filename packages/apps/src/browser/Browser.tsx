@@ -1,4 +1,4 @@
-import { useKernel, usePlatform, useSetting } from '@lumen/kernel/react';
+import { useKernel, usePlatform, useSetting, useT } from '@lumen/kernel/react';
 import { EmptyState, type MenuEntry, useLatest } from '@lumen/ui';
 import { join } from '@lumen/vfs';
 import { Compass } from 'lucide-react';
@@ -76,6 +76,7 @@ const EXPORT_NAME = 'bookmarks.json';
  * about why rather than pretending.
  */
 export default function Browser({ args }: AppProps) {
+  const t = useT();
   const kernel = useKernel();
   const [keyboard] = useSetting('keyboard');
   const shortcutLabel = useShortcutLabel();
@@ -297,12 +298,12 @@ export default function Browser({ args }: AppProps) {
   const chooseDownloads = useCallback(async () => {
     const chosen = await pickFile({
       mode: 'folder',
-      title: 'Choose a downloads folder',
+      title: t('browserApp.chooseDownloads'),
       startDir: kernel.home,
-      confirmLabel: 'Use Folder',
+      confirmLabel: t('browserApp.useFolder'),
     });
     if (typeof chosen === 'string') updateSettings({ downloadsDir: chosen });
-  }, [pickFile, kernel.home, updateSettings]);
+  }, [pickFile, kernel.home, updateSettings, t]);
 
   const exportBookmarks = useCallback(async () => {
     const dir = downloadsPath(settings, kernel.home);
@@ -424,20 +425,20 @@ export default function Browser({ args }: AppProps) {
     () => [
       {
         id: 'new-tab',
-        label: 'New Tab',
+        label: t('browserApp.newTab'),
         shortcut: shortcutLabel(SHORTCUTS.newTab),
         onSelect: actions.newTab,
       },
       { type: 'separator' },
       {
         id: 'zoom-out',
-        label: 'Zoom Out',
+        label: t('browserApp.zoomOut'),
         shortcut: shortcutLabel(SHORTCUTS.zoomOut),
         onSelect: actions.zoomOut,
       },
       {
         id: 'zoom-in',
-        label: 'Zoom In',
+        label: t('browserApp.zoomIn'),
         shortcut: shortcutLabel(SHORTCUTS.zoomIn),
         onSelect: actions.zoomIn,
       },
@@ -451,20 +452,20 @@ export default function Browser({ args }: AppProps) {
       { type: 'separator' },
       {
         id: 'history',
-        label: 'History',
+        label: t('browserApp.history'),
         shortcut: shortcutLabel(SHORTCUTS.showHistory),
         onSelect: actions.showHistory,
       },
       {
         id: 'bookmarks',
-        label: 'Bookmarks',
+        label: t('browserApp.bookmarks'),
         shortcut: shortcutLabel(SHORTCUTS.showBookmarks),
         onSelect: actions.showBookmarks,
       },
       {
         id: 'bookmarks-bar',
         type: 'checkbox',
-        label: 'Show Bookmarks Bar',
+        label: t('browserApp.showBookmarksBar'),
         shortcut: shortcutLabel(SHORTCUTS.bookmarksBar),
         checked: settings.showBookmarksBar,
         onSelect: actions.toggleBookmarksBar,
@@ -472,12 +473,12 @@ export default function Browser({ args }: AppProps) {
       { type: 'separator' },
       {
         id: 'settings',
-        label: 'Browser Settings',
+        label: t('browserApp.settings'),
         shortcut: shortcutLabel(SHORTCUTS.settings),
         onSelect: actions.showSettings,
       },
     ],
-    [actions, shortcutLabel, zoom, settings.defaultZoom, settings.showBookmarksBar],
+    [actions, shortcutLabel, zoom, settings.defaultZoom, settings.showBookmarksBar, t],
   );
 
   // ── the page ────────────────────────────────────────────────────────────
@@ -545,7 +546,7 @@ export default function Browser({ args }: AppProps) {
         return (
           <EmptyState
             icon={<Compass />}
-            title="No page at this address"
+            title={t('browserApp.noPageHere')}
             description={`Lumen has no internal page called ${url}.`}
           />
         );

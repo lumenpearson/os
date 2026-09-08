@@ -3,6 +3,7 @@
  * from that: the bookmark list and the address-bar suggestions.
  */
 
+import { t } from '@lumen/kernel';
 import { MAX_VISITS, searchVisits, uniqueByUrl, type Visit } from './history';
 import { type BrowserSettings, DEFAULT_SETTINGS, normalizeSettings } from './settings';
 import {
@@ -38,8 +39,8 @@ export interface BrowserData {
  * override that header, so listing one would only promise a blank panel.
  */
 export const DEFAULT_BOOKMARKS: readonly Bookmark[] = [
-  { id: 'default-start', title: 'New Tab', url: START_URL, addedAt: 0 },
-  { id: 'default-settings', title: 'Browser Settings', url: SETTINGS_URL, addedAt: 0 },
+  { id: 'default-start', title: t('browserApp.newTab'), url: START_URL, addedAt: 0 },
+  { id: 'default-settings', title: t('browserApp.settings'), url: SETTINGS_URL, addedAt: 0 },
   { id: 'default-example', title: 'Example Domain', url: 'https://example.com/', addedAt: 0 },
   { id: 'default-wikipedia', title: 'Wikipedia', url: 'https://www.wikipedia.org/', addedAt: 0 },
   { id: 'default-rfc', title: 'RFC Editor', url: 'https://www.rfc-editor.org/', addedAt: 0 },
