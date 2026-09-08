@@ -1,5 +1,12 @@
 import { describe, expect, it, vi } from 'vitest';
-import { acceptableTarget, fromThisApp, isPrivateAddress, loadPage, withBase } from './page';
+import {
+  acceptableTarget,
+  fromThisApp,
+  isPrivateAddress,
+  loadPage,
+  withBase,
+  withoutScripts,
+} from './page';
 
 describe('isPrivateAddress', () => {
   it('knows the ranges that are not the public internet', () => {
@@ -207,5 +214,54 @@ describe('loadPage', () => {
     const result = await loadPage('https://example.com/', doFetch as unknown as typeof fetch);
     expect(result.status).toBe(502);
     expect(result.problem).toContain('could not be reached');
+  });
+});
+
+describe('withoutScripts', () => {
+  it('takes out an external script and an inline one', () => {
+    const out = withoutScripts(
+      '<head><script src="/a.js"></script><script>window.x=1</script></head><body>text</body>',
+    );
+    expect(out).toBe('<head></head><body>text</body>');
+  });
+
+  it('ends an element at its first closing tag, as the parser does', () => {
+    // The site writes `<\/script>` inside a string precisely because a bare
+    // one would end the element. The browser ends it there; so does this.
+    const out = withoutScripts('<script>var s = "</script>";</script>after');
+    expect(out).toBe('";</script>after');
+  });
+
+  it('leaves the document alone when it has no scripts', () => {
+    const html = '<html><body><p>Just words</p></body></html>';
+    expect(withoutScripts(html)).toBe(html);
+  });
+
+  it('takes out a script whatever case or attributes it is written with', () => {
+    expect(withoutScripts('<SCRIPT TYPE="module" defer>x</SCRIPT>y')).toBe('y');
+  });
+
+  it('leaves a page that only looks like it has one', () => {
+    const html = '<p>Use &lt;script&gt; to add behaviour</p>';
+    expect(withoutScripts(html)).toBe(html);
+  });
+});
+
+describe('a relayed page', () => {
+  const ok = (body: string) =>
+    new Response(body, { status: 200, headers: { 'content-type': 'text/html' } });
+
+  it("arrives with the site's scripts gone and Lumen's signal in place", async () => {
+    const doFetch = vi.fn(async () =>
+      ok(
+        '<html><head><script src="https://example.com/app.js"></script></head><body><h1>Read me</h1><script>document.body.innerHTML=""</script></body></html>',
+      ),
+    );
+    const result = await loadPage('https://example.com/', doFetch as unknown as typeof fetch);
+    expect(result.body).toContain('<h1>Read me</h1>');
+    expect(result.body).not.toContain('app.js');
+    expect(result.body).not.toContain('document.body.innerHTML');
+    // Lumen's own one-line signal is injected after the strip, so it survives.
+    expect(result.body).toContain('page-ready');
   });
 });

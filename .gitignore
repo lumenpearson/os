@@ -53,3 +53,5 @@ pnpm-debug.log*
 # never sorts above a real spec in the runner's output.
 apps/web/e2e/zz-*.spec.ts
 apps/web/zz-*.pw.config.ts
+# and whatever a probe writes beside itself — screenshots, logs, dumps.
+apps/web/zz-*

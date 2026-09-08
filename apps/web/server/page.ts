@@ -182,6 +182,30 @@ const READY_SIGNAL =
   'try{parent.postMessage({lumen:"page-ready"},"*")}catch(e){}})}catch(e){}</script>';
 
 /**
+ * Take the site's own scripts out of the document.
+ *
+ * A relayed page is a reading copy, and its scripts cannot do their job here:
+ * the frame is sandboxed to an opaque origin, so `document.cookie` and
+ * `sessionStorage` throw on the first access, the site's own API calls are
+ * refused by its CORS rules, and nothing can be signed in to. The banner over
+ * the page says so already.
+ *
+ * What they can still do is destroy the page. A framework that throws while
+ * hydrating unmounts what the server rendered, and the reader is left with a
+ * blank white frame instead of an article that was sitting in the HTML all
+ * along. Measured on vercel.com: with the scripts, nothing; without them, the
+ * whole page.
+ *
+ * The regex stops at the first `</script>` exactly as the HTML parser does,
+ * so a closing tag inside a string ends the element for both of them alike.
+ * Inline `on*` handlers are left: they fire only on interaction, and removing
+ * attributes needs a parser rather than a pattern.
+ */
+export function withoutScripts(html: string): string {
+  return html.replace(/<script\b[^>]*>[\s\S]*?<\/script\s*>/gi, '');
+}
+
+/**
  * Give the document a `<base>`, so every relative link and asset in it
  * resolves against the site it came from rather than against Lumen.
  *
@@ -257,7 +281,7 @@ export async function loadPage(raw: string, doFetch = fetch): Promise<PageResult
     return {
       status: response.status,
       contentType: 'text/html; charset=utf-8',
-      body: withBase(text, target.href),
+      body: withBase(withoutScripts(text), target.href),
     };
   }
   return refuse(508, 'That site redirected too many times.');
