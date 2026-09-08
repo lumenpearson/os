@@ -1,3 +1,4 @@
+import { useT } from '@lumen/kernel/react';
 import { AnchoredMenu, cx, useContextMenu } from '@lumen/ui';
 import type { KeyboardEvent, PointerEvent } from 'react';
 import { useEffect, useRef, useState } from 'react';
@@ -33,6 +34,7 @@ export function SlideList({
   onDuplicate,
   onDelete,
 }: SlideListProps) {
+  const t = useT();
   const listRef = useRef<HTMLUListElement>(null);
   const rowRefs = useRef<Array<HTMLLIElement | null>>([]);
   const markerRef = useRef<HTMLDivElement>(null);
@@ -141,7 +143,7 @@ export function SlideList({
       <ul
         ref={listRef}
         role="listbox"
-        aria-label="Slides"
+        aria-label={t('slidesApp.slides')}
         aria-orientation="vertical"
         className="lumen-scroll relative flex min-h-0 flex-1 flex-col gap-1 p-2"
       >
@@ -185,29 +187,31 @@ export function SlideList({
           </li>
         ))}
       </ul>
-      {deck.slides.length === 0 && <p className="px-3 py-2 text-sm text-ink-3">No slides yet.</p>}
+      {deck.slides.length === 0 && (
+        <p className="px-3 py-2 text-sm text-ink-3">{t('slidesApp.noSlidesYet')}</p>
+      )}
       <AnchoredMenu
         open={menu.open}
         at={menu.at}
         onClose={menu.close}
         items={[
-          { id: 'duplicate', label: 'Duplicate', onSelect: () => onDuplicate(menuIndex) },
+          { id: 'duplicate', label: t('menu.duplicate'), onSelect: () => onDuplicate(menuIndex) },
           {
             id: 'delete',
-            label: 'Delete',
+            label: t('reminders.delete'),
             danger: true,
             onSelect: () => onDelete(menuIndex),
           },
           { type: 'separator' },
           {
             id: 'up',
-            label: 'Move Up',
+            label: t('slidesApp.moveUp'),
             enabled: menuIndex > 0,
             onSelect: () => onReorder(menuIndex, menuIndex - 1),
           },
           {
             id: 'down',
-            label: 'Move Down',
+            label: t('slidesApp.moveDown'),
             enabled: menuIndex < last,
             onSelect: () => onReorder(menuIndex, menuIndex + 1),
           },

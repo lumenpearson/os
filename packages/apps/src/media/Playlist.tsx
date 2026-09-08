@@ -1,3 +1,4 @@
+import { useT } from '@lumen/kernel/react';
 import { cx, EmptyState, IconButton, Label } from '@lumen/ui';
 import { Film, FolderPlus, GripVertical, ListMusic, Music, Plus, Trash2, X } from 'lucide-react';
 import { useRef, useState } from 'react';
@@ -37,6 +38,7 @@ export function Playlist({
   onClear,
   className,
 }: PlaylistProps) {
+  const t = useT();
   const rows = useRef<Array<HTMLLIElement | null>>([]);
   const indicator = useRef<HTMLDivElement>(null);
   const frame = useRef(0);
@@ -105,18 +107,18 @@ export function Playlist({
   return (
     <div className={cx('flex min-h-0 min-w-0 flex-col bg-surface', className)}>
       <div className="flex h-8 shrink-0 items-center gap-2 border-b border-rule px-2">
-        <Label>Playlist</Label>
+        <Label>{t('mediaApp.playlist')}</Label>
         <span className="mono text-xs text-ink-3 tabular-nums">{tracks.length}</span>
         <span className="flex-1" />
-        <IconButton size="sm" label="Add Files…" onClick={onAddFiles}>
+        <IconButton size="sm" label={t('mediaApp.addFiles')} onClick={onAddFiles}>
           <Plus />
         </IconButton>
-        <IconButton size="sm" label="Add Folder…" onClick={onAddFolder}>
+        <IconButton size="sm" label={t('mediaApp.addFolderEllipsis')} onClick={onAddFolder}>
           <FolderPlus />
         </IconButton>
         <IconButton
           size="sm"
-          label="Clear Playlist"
+          label={t('mediaApp.clearPlaylist')}
           onClick={onClear}
           disabled={tracks.length === 0}
         >
@@ -127,8 +129,8 @@ export function Playlist({
       {tracks.length === 0 ? (
         <EmptyState
           icon={<ListMusic />}
-          title="Empty playlist"
-          description="Add files or a folder to build a queue."
+          title={t('mediaApp.emptyPlaylist')}
+          description={t('mediaApp.addToBuild')}
         />
       ) : (
         <div className="lumen-scroll min-h-0 flex-1">

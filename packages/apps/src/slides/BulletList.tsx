@@ -1,3 +1,4 @@
+import { useT } from '@lumen/kernel/react';
 import { cx } from '@lumen/ui';
 import { type CSSProperties, type KeyboardEvent, useEffect, useMemo, useRef } from 'react';
 
@@ -87,6 +88,7 @@ export function BulletList({
   className,
   style,
 }: BulletListProps) {
+  const t = useT();
   const ref = useRef<HTMLUListElement>(null);
   const lines = useMemo(() => (bullets.length > 0 ? bullets : ['']), [bullets]);
   const empty = lines.every((line) => line.length === 0);
@@ -164,7 +166,7 @@ export function BulletList({
         contentEditable
         suppressContentEditableWarning
         role="textbox"
-        aria-label="Bullets"
+        aria-label={t('slidesApp.bullets')}
         aria-multiline="true"
         spellCheck
         style={LIST_STYLE}

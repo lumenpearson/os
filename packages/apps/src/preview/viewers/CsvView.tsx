@@ -1,3 +1,4 @@
+import { useT } from '@lumen/kernel/react';
 import { EmptyState } from '@lumen/ui';
 import { Table } from 'lucide-react';
 import { useMemo } from 'react';
@@ -16,10 +17,17 @@ function columnName(header: string, index: number): string {
 
 /** Delimited data as a read-only table, first row as the headers. */
 export function CsvView({ text, name }: CsvViewProps) {
+  const t = useT();
   const table = useMemo(() => toCsvTable(text), [text]);
 
   if (table.columns === 0) {
-    return <EmptyState icon={<Table />} title="Nothing to show" description="The file is empty." />;
+    return (
+      <EmptyState
+        icon={<Table />}
+        title={t('previewApp.nothingToShow')}
+        description={t('previewApp.fileEmpty')}
+      />
+    );
   }
 
   return (
@@ -71,10 +79,15 @@ export function CsvView({ text, name }: CsvViewProps) {
       </div>
       <p className="mono flex shrink-0 items-center gap-3 border-t border-rule bg-canvas px-4 py-1.5 text-xs text-ink-3">
         <span className="tabular-nums">
-          {table.totalRows.toLocaleString()} rows × {table.columns} columns
+          {t('previewApp.rowsByColumns', {
+            rows: table.totalRows.toLocaleString(),
+            columns: table.columns,
+          })}
         </span>
         {table.truncated && (
-          <span className="tabular-nums">first {CSV_ROW_LIMIT.toLocaleString()} shown</span>
+          <span className="tabular-nums">
+            {t('previewApp.firstShown', { count: CSV_ROW_LIMIT.toLocaleString() })}
+          </span>
         )}
       </p>
     </div>

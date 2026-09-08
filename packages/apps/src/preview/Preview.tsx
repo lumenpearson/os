@@ -1,4 +1,4 @@
-import { useKernel } from '@lumen/kernel/react';
+import { useKernel, useT } from '@lumen/kernel/react';
 import { AppFrame, Button, EmptyState, Spinner, useElementSize } from '@lumen/ui';
 import { basename, dirname, join, typeInfo } from '@lumen/vfs';
 import { FileWarning, FolderOpen, ImageOff } from 'lucide-react';
@@ -78,6 +78,7 @@ function firstPath(args: Record<string, unknown>): string | null {
  * is decided in `kind.ts`; the geometry lives in `zoom.ts`.
  */
 export default function Preview(props: AppProps) {
+  const t = useT();
   const args = useArgs(props.args);
   const kernel = useKernel();
   const pick = useFilePicker();
@@ -149,12 +150,12 @@ export default function Preview(props: AppProps) {
   }, [launch, path]);
 
   const openFile = useCallback(async () => {
-    const chosen = await pick({ mode: 'open', title: 'Open' });
+    const chosen = await pick({ mode: 'open', title: t('desktop.open') });
     const next = typeof chosen === 'string' ? chosen : (chosen?.[0] ?? null);
     if (next === null) return;
     setPath(next);
     kernel.addRecent(next, 'lumen.preview');
-  }, [pick, kernel]);
+  }, [pick, kernel, t]);
 
   // ── the view on the picture ─────────────────────────────────────────────
 
@@ -269,11 +270,11 @@ export default function Preview(props: AppProps) {
       return (
         <EmptyState
           icon={<ImageOff />}
-          title="No file open"
-          description="Open a picture, a PDF, a media file or a data file to look at it."
+          title={t('previewApp.noFileOpen')}
+          description={t('previewApp.openSomething')}
           action={
             <Button variant="primary" onClick={() => void openFile()}>
-              Open…
+              {t('previewApp.openEllipsis')}
             </Button>
           }
         />
@@ -282,11 +283,11 @@ export default function Preview(props: AppProps) {
       return (
         <EmptyState
           icon={<FileWarning />}
-          title="Could not open this file"
+          title={t('previewApp.couldNotOpen')}
           description={failure}
           action={
             <Button variant="primary" onClick={() => void openFile()}>
-              Open another file
+              {t('previewApp.openAnother')}
             </Button>
           }
         />
@@ -301,11 +302,11 @@ export default function Preview(props: AppProps) {
       return (
         <EmptyState
           icon={<ImageOff />}
-          title="Could not draw this picture"
+          title={t('previewApp.couldNotDraw')}
           description={`${typeInfo(path).label} — the file may be damaged or use a variant this runtime cannot decode.`}
           action={
             <Button icon={<FolderOpen />} onClick={reveal}>
-              Reveal in Files
+              {t('menu.revealInFiles')}
             </Button>
           }
         />

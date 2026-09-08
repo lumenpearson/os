@@ -1,3 +1,4 @@
+import { useT } from '@lumen/kernel/react';
 import { cx } from '@lumen/ui';
 import { basename } from '@lumen/vfs';
 import type { CSSProperties } from 'react';
@@ -39,6 +40,7 @@ export interface SlideCanvasProps {
 }
 
 function SlideImage({ path, alt }: { path: string; alt: string }) {
+  const _t = useT();
   const { url, error } = useObjectUrl(path);
   if (!url) {
     return (
@@ -66,6 +68,7 @@ export function SlideCanvas({
   chrome = false,
   className,
 }: SlideCanvasProps) {
+  const t = useT();
   const dark = theme === 'dark';
   const patch = (next: SlidePatch) => onPatch?.(next);
 
@@ -73,8 +76,8 @@ export function SlideCanvas({
     <EditableText
       value={slide.title ?? ''}
       onChange={(value) => patch({ title: value })}
-      placeholder="Click to add title"
-      label="Slide title"
+      placeholder={t('slidesApp.clickTitle')}
+      label={t('slidesApp.slideTitle')}
       editable={editable}
       style={style}
     />
@@ -89,8 +92,8 @@ export function SlideCanvas({
             <EditableText
               value={slide.subtitle ?? ''}
               onChange={(value) => patch({ subtitle: value })}
-              placeholder="Click to add subtitle"
-              label="Slide subtitle"
+              placeholder={t('slidesApp.clickSubtitle')}
+              label={t('slidesApp.slideSubtitle')}
               editable={editable}
               style={{ ...BODY, opacity: 0.7 }}
             />
@@ -103,7 +106,7 @@ export function SlideCanvas({
             <BulletList
               bullets={slide.bullets ?? EMPTY_BULLETS}
               onChange={(bullets) => patch({ bullets })}
-              placeholder="Click to add bullets"
+              placeholder={t('slidesApp.clickBullets')}
               editable={editable}
               style={BODY}
             />
@@ -116,8 +119,8 @@ export function SlideCanvas({
             <EditableText
               value={slide.text ?? ''}
               onChange={(value) => patch({ text: value })}
-              placeholder="Click to add text"
-              label="Slide text"
+              placeholder={t('slidesApp.clickText')}
+              label={t('slidesApp.slideText')}
               editable={editable}
               multiline
               className="flex-1"
@@ -133,8 +136,8 @@ export function SlideCanvas({
               <EditableText
                 value={slide.left ?? ''}
                 onChange={(value) => patch({ left: value })}
-                placeholder="Click to add text"
-                label="Left column"
+                placeholder={t('slidesApp.clickText')}
+                label={t('slidesApp.leftColumn')}
                 editable={editable}
                 multiline
                 className="flex-1"
@@ -143,8 +146,8 @@ export function SlideCanvas({
               <EditableText
                 value={slide.right ?? ''}
                 onChange={(value) => patch({ right: value })}
-                placeholder="Click to add text"
-                label="Right column"
+                placeholder={t('slidesApp.clickText')}
+                label={t('slidesApp.rightColumn')}
                 editable={editable}
                 multiline
                 className="flex-1"
@@ -172,7 +175,7 @@ export function SlideCanvas({
                     borderRadius: 8,
                   }}
                 >
-                  Choose an image
+                  {t('slidesApp.chooseAnImage')}
                 </button>
               ) : null}
             </div>

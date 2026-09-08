@@ -1,3 +1,4 @@
+import { useT } from '@lumen/kernel/react';
 import { cx, IconButton, Toolbar, ToolbarGroup, ToolbarSpacer } from '@lumen/ui';
 import {
   ChevronLeft,
@@ -74,13 +75,14 @@ export function PreviewToolbar({
   onToggleFullScreen,
   onReveal,
 }: PreviewToolbarProps) {
+  const t = useT();
   return (
     <Toolbar dense windowControls>
       <ToolbarGroup>
-        <IconButton label="Previous" disabled={!hasPrevious} onClick={onPrevious}>
+        <IconButton label={t('menu.previous')} disabled={!hasPrevious} onClick={onPrevious}>
           <ChevronLeft />
         </IconButton>
-        <IconButton label="Next" disabled={!hasNext} onClick={onNext}>
+        <IconButton label={t('menu.next')} disabled={!hasNext} onClick={onNext}>
           <ChevronRight />
         </IconButton>
       </ToolbarGroup>
@@ -92,14 +94,14 @@ export function PreviewToolbar({
 
       {zoomable && (
         <ToolbarGroup>
-          <IconButton label="Zoom Out" onClick={onZoomOut}>
+          <IconButton label={t('menu.zoomOut')} onClick={onZoomOut}>
             <ZoomOut />
           </IconButton>
           {!narrow && (
             <button
               type="button"
               onClick={onActualSize}
-              title="Actual Size"
+              title={t('menu.actualSize')}
               className={cx(
                 'mono h-7 min-w-13 rounded-sm px-1 text-xs tabular-nums text-ink-2 lumen-focus',
                 'transition-colors duration-(--duration-fast) ease-(--ease-standard) hover:bg-surface-2 hover:text-ink',
@@ -108,10 +110,10 @@ export function PreviewToolbar({
               {zoomPercent(scale)}%
             </button>
           )}
-          <IconButton label="Zoom In" onClick={onZoomIn}>
+          <IconButton label={t('menu.zoomIn')} onClick={onZoomIn}>
             <ZoomIn />
           </IconButton>
-          <IconButton label="Fit to Window" active={fit} onClick={onFit}>
+          <IconButton label={t('menu.fitToWindow')} active={fit} onClick={onFit}>
             <Scan />
           </IconButton>
         </ToolbarGroup>
@@ -119,10 +121,10 @@ export function PreviewToolbar({
 
       {zoomable && !narrow && (
         <ToolbarGroup className="ml-1">
-          <IconButton label="Rotate Left" onClick={onRotateLeft}>
+          <IconButton label={t('menu.rotateLeft')} onClick={onRotateLeft}>
             <RotateCcw />
           </IconButton>
-          <IconButton label="Rotate Right" onClick={onRotateRight}>
+          <IconButton label={t('menu.rotateRight')} onClick={onRotateRight}>
             <RotateCw />
           </IconButton>
         </ToolbarGroup>
@@ -132,17 +134,25 @@ export function PreviewToolbar({
 
       <ToolbarGroup>
         {hasSource && (
-          <IconButton label="View Source" active={showingSource} onClick={onToggleSource}>
+          <IconButton
+            label={t('preview.viewSource')}
+            active={showingSource}
+            onClick={onToggleSource}
+          >
             <Code2 />
           </IconButton>
         )}
         {canFilmstrip && (
-          <IconButton label="Show Filmstrip" active={filmstrip} onClick={onToggleFilmstrip}>
+          <IconButton
+            label={t('preview.showFilmstrip')}
+            active={filmstrip}
+            onClick={onToggleFilmstrip}
+          >
             <GalleryHorizontalEnd />
           </IconButton>
         )}
         {!narrow && (
-          <IconButton label="Reveal in Files" disabled={!hasFile} onClick={onReveal}>
+          <IconButton label={t('menu.revealInFiles')} disabled={!hasFile} onClick={onReveal}>
             <FolderOpen />
           </IconButton>
         )}

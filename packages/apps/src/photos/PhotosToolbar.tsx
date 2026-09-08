@@ -1,3 +1,4 @@
+import { useT } from '@lumen/kernel/react';
 import {
   cx,
   IconButton,
@@ -60,26 +61,27 @@ export function PhotosToolbar({
   onToggleSidebar,
   onToggleInfo,
 }: PhotosToolbarProps) {
+  const t = useT();
   return (
     <Toolbar dense windowControls className="gap-2">
       <SearchField
         ref={searchRef}
         value={query}
         onChange={onQueryChange}
-        placeholder="Search names"
-        aria-label="Search picture names"
+        placeholder={t('photosApp.searchNames')}
+        aria-label={t('photosApp.searchPictureNames')}
         className={cx('min-w-0 flex-1', layout.sortControls && 'max-w-64')}
       />
 
       {layout.albumPicker && (
         <Select
-          aria-label="Album"
+          aria-label={t('photosApp.album')}
           value={scopeId(scope)}
           onChange={onScopeChange}
           size="sm"
           className="max-w-40"
           options={[
-            { value: 'all', label: 'All Pictures' },
+            { value: 'all', label: t('photosApp.allPictures') },
             { value: 'favourites', label: `Favourites (${favouriteCount})` },
             ...albums.map((album) => ({
               value: scopeId({ kind: 'album' as const, album: album.id }),
@@ -94,7 +96,7 @@ export function PhotosToolbar({
       {layout.sortControls && (
         <ToolbarGroup className="gap-1">
           <Select
-            aria-label="Sort by"
+            aria-label={t('photosApp.sortBy')}
             value={sort}
             onChange={onSortChange}
             size="sm"
@@ -112,7 +114,7 @@ export function PhotosToolbar({
 
       {layout.sizeControl && (
         <SegmentedControl
-          aria-label="Thumbnail size"
+          aria-label={t('photosApp.thumbnailSize')}
           size="sm"
           value={size}
           onChange={onSizeChange}
@@ -122,10 +124,20 @@ export function PhotosToolbar({
 
       {layout.panelToggles && (
         <ToolbarGroup>
-          <IconButton label="Show Albums" size="sm" active={sidebar} onClick={onToggleSidebar}>
+          <IconButton
+            label={t('photosApp.showAlbums')}
+            size="sm"
+            active={sidebar}
+            onClick={onToggleSidebar}
+          >
             <PanelLeft />
           </IconButton>
-          <IconButton label="Show Info" size="sm" active={info} onClick={onToggleInfo}>
+          <IconButton
+            label={t('photosApp.showInfo')}
+            size="sm"
+            active={info}
+            onClick={onToggleInfo}
+          >
             <Info />
           </IconButton>
         </ToolbarGroup>

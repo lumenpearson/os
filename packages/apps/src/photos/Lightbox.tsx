@@ -1,3 +1,4 @@
+import { useT } from '@lumen/kernel/react';
 import {
   cx,
   EmptyState,
@@ -75,6 +76,7 @@ export function Lightbox({
   onToggleInfo,
   onDimensions,
 }: LightboxProps) {
+  const t = useT();
   const { url, loading, error } = useObjectUrl(photo.path);
   const [stage, stageSize] = useElementSize<HTMLDivElement>();
   const [view, setView] = useState<View>(INITIAL_VIEW);
@@ -119,7 +121,7 @@ export function Lightbox({
   return (
     <div className="flex h-full min-h-0 w-full flex-col bg-surface text-ink">
       <Toolbar dense windowControls className="gap-2">
-        <IconButton label="Back to Library" onClick={onClose}>
+        <IconButton label={t('photosApp.backToLibrary')} onClick={onClose}>
           <ArrowLeft />
         </IconButton>
         <span className="truncate-1 min-w-0 flex-1 text-base text-ink">{photo.name}</span>
@@ -131,11 +133,11 @@ export function Lightbox({
             is walked; the zoom has nowhere else to live, so it stays. */}
         {wide && (
           <ToolbarGroup>
-            <IconButton label="Previous" disabled={index <= 0} onClick={() => onStep(-1)}>
+            <IconButton label={t('menu.previous')} disabled={index <= 0} onClick={() => onStep(-1)}>
               <ChevronLeft />
             </IconButton>
             <IconButton
-              label="Next"
+              label={t('menu.next')}
               disabled={index < 0 || index >= total - 1}
               onClick={() => onStep(1)}
             >
@@ -146,14 +148,14 @@ export function Lightbox({
 
         {zoomable && (
           <ToolbarGroup>
-            <IconButton label="Zoom Out" onClick={() => rescale(zoomOut)}>
+            <IconButton label={t('menu.zoomOut')} onClick={() => rescale(zoomOut)}>
               <ZoomOut />
             </IconButton>
             {wide && (
               <button
                 type="button"
                 onClick={() => setView(actualView)}
-                title="Actual Size"
+                title={t('menu.actualSize')}
                 className={cx(
                   'mono h-7 min-w-13 rounded-sm px-1 text-xs tabular-nums text-ink-2 lumen-focus',
                   'transition-colors duration-(--duration-fast) ease-(--ease-standard) hover:bg-surface-2 hover:text-ink',
@@ -162,21 +164,25 @@ export function Lightbox({
                 {view.fit ? 'Fit' : `${zoomPercent(view.scale)}%`}
               </button>
             )}
-            <IconButton label="Zoom In" onClick={() => rescale(zoomIn)}>
+            <IconButton label={t('menu.zoomIn')} onClick={() => rescale(zoomIn)}>
               <ZoomIn />
             </IconButton>
-            <IconButton label="Fit to Window" active={view.fit} onClick={fit}>
+            <IconButton label={t('menu.fitToWindow')} active={view.fit} onClick={fit}>
               <Scan />
             </IconButton>
           </ToolbarGroup>
         )}
 
         <ToolbarGroup>
-          <IconButton label="Favourite" active={favourite} onClick={onToggleFavourite}>
+          <IconButton
+            label={t('photosApp.favourite')}
+            active={favourite}
+            onClick={onToggleFavourite}
+          >
             <Heart className={favourite ? 'fill-current text-accent' : undefined} />
           </IconButton>
           {wide && (
-            <IconButton label="Show Info" active={info} onClick={onToggleInfo}>
+            <IconButton label={t('photosApp.showInfo')} active={info} onClick={onToggleInfo}>
               <Info />
             </IconButton>
           )}
@@ -188,8 +194,8 @@ export function Lightbox({
           {undrawable || error ? (
             <EmptyState
               icon={<ImageOff />}
-              title="Could not draw this picture"
-              description="The file may be damaged, or use a variant this runtime cannot decode."
+              title={t('previewApp.couldNotDraw')}
+              description={t('photosApp.mayBeDamaged')}
             />
           ) : loading || url === null ? (
             <div className="flex min-h-0 flex-1 items-center justify-center">

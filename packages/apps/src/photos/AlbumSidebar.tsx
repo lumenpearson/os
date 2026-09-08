@@ -1,3 +1,4 @@
+import { useT } from '@lumen/kernel/react';
 import { Sidebar } from '@lumen/ui';
 import { Folder, Heart, Images } from 'lucide-react';
 import { type Album, albumLabel, type Scope, scopeId } from './library';
@@ -23,6 +24,7 @@ export function AlbumSidebar({
   scope,
   onScopeChange,
 }: AlbumSidebarProps) {
+  const t = useT();
   return (
     <Sidebar
       width={180}
@@ -33,14 +35,14 @@ export function AlbumSidebar({
           items: [
             {
               id: 'all',
-              label: 'All Pictures',
+              label: t('photosApp.allPictures'),
               icon: <Images />,
               meta: String(total),
               onSelect: () => onScopeChange('all'),
             },
             {
               id: 'favourites',
-              label: 'Favourites',
+              label: t('photosApp.favourites'),
               icon: <Heart />,
               meta: String(favouriteCount),
               onSelect: () => onScopeChange('favourites'),

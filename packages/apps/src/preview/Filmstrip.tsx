@@ -1,3 +1,4 @@
+import { useT } from '@lumen/kernel/react';
 import { cx } from '@lumen/ui';
 import { basename } from '@lumen/vfs';
 import { useEffect, useRef } from 'react';
@@ -21,6 +22,7 @@ const RADIUS = 12;
  * hundred photos would otherwise hold five hundred blobs in memory.
  */
 export function Filmstrip({ items, selected, onSelect }: FilmstripProps) {
+  const t = useT();
   const strip = useRef<HTMLDivElement>(null);
   const index = selected === null ? -1 : items.indexOf(selected);
   const loaded = thumbnailWindow(index, items.length, RADIUS);
@@ -62,7 +64,7 @@ export function Filmstrip({ items, selected, onSelect }: FilmstripProps) {
     <div
       ref={strip}
       role="listbox"
-      aria-label="Pictures in this folder"
+      aria-label={t('previewApp.picturesInFolder')}
       aria-orientation="horizontal"
       onKeyDown={onKeyDown}
       className="lumen-scroll flex shrink-0 items-center gap-1.5 border-t border-rule bg-canvas px-2 py-2"

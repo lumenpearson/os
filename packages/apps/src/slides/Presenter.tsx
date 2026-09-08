@@ -1,3 +1,4 @@
+import { useT } from '@lumen/kernel/react';
 import { cx, IconButton, useElementSize } from '@lumen/ui';
 import { ChevronLeft, ChevronRight, StickyNote, X } from 'lucide-react';
 import { type KeyboardEvent, useCallback, useEffect, useRef, useState } from 'react';
@@ -22,6 +23,7 @@ export interface PresenterProps {
  * Escape hands the window back.
  */
 export function Presenter({ deck, index, onIndex, onExit }: PresenterProps) {
+  const t = useT();
   const rootRef = useRef<HTMLElement>(null);
   const [stageRef, stage] = useElementSize<HTMLDivElement>();
   const [strip, setStrip] = useState(false);
@@ -146,7 +148,7 @@ export function Presenter({ deck, index, onIndex, onExit }: PresenterProps) {
           )}
         >
           <IconButton
-            label="Previous slide"
+            label={t('slidesApp.previousSlide')}
             size="sm"
             disabled={index === 0}
             onClick={() => go(index - 1)}
@@ -154,7 +156,7 @@ export function Presenter({ deck, index, onIndex, onExit }: PresenterProps) {
             <ChevronLeft />
           </IconButton>
           <IconButton
-            label="Next slide"
+            label={t('slidesApp.nextSlide')}
             size="sm"
             disabled={index >= count - 1}
             onClick={() => go(index + 1)}
@@ -162,14 +164,14 @@ export function Presenter({ deck, index, onIndex, onExit }: PresenterProps) {
             <ChevronRight />
           </IconButton>
           <IconButton
-            label="Presenter notes"
+            label={t('slidesApp.presenterNotes')}
             size="sm"
             active={strip}
             onClick={() => setStrip((open) => !open)}
           >
             <StickyNote />
           </IconButton>
-          <IconButton label="Exit presentation" size="sm" onClick={onExit}>
+          <IconButton label={t('slidesApp.exitPresentation')} size="sm" onClick={onExit}>
             <X />
           </IconButton>
         </div>
@@ -178,17 +180,17 @@ export function Presenter({ deck, index, onIndex, onExit }: PresenterProps) {
       {strip && (
         <div className="flex h-40 shrink-0 gap-6 border-t border-rule bg-surface p-3">
           <div className="lumen-scroll flex min-w-0 flex-1 flex-col gap-1">
-            <span className="mono text-xs text-ink-3">Notes</span>
+            <span className="mono text-xs text-ink-3">{t('slidesApp.notes')}</span>
             <p className="whitespace-pre-wrap text-base text-ink">
               {slide?.notes?.trim() ? slide.notes : 'No notes on this slide.'}
             </p>
           </div>
           <div className="flex shrink-0 flex-col items-end gap-1">
-            <span className="mono text-xs text-ink-3">Next</span>
+            <span className="mono text-xs text-ink-3">{t('menu.next')}</span>
             {next ? (
               <SlideCanvas slide={next} theme={theme} scale={NEXT_SCALE} chrome />
             ) : (
-              <span className="text-sm text-ink-3">End of deck</span>
+              <span className="text-sm text-ink-3">{t('slidesApp.endOfDeck')}</span>
             )}
           </div>
         </div>

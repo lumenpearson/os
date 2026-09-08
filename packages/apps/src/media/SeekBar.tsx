@@ -1,3 +1,4 @@
+import { useT } from '@lumen/kernel/react';
 import { cx } from '@lumen/ui';
 import { useEffect, useRef, useState } from 'react';
 import { useMediaFrames } from './clock';
@@ -34,6 +35,7 @@ export interface SeekBarProps {
  * renders and the media element is not seeked forty times a second.
  */
 export function SeekBar({ media, playing, duration, onSeek, onToggle, className }: SeekBarProps) {
+  const t = useT();
   const rail = useRef<HTMLDivElement>(null);
   const played = useRef<HTMLDivElement>(null);
   const thumb = useRef<HTMLDivElement>(null);
@@ -200,7 +202,7 @@ export function SeekBar({ media, playing, duration, onSeek, onToggle, className 
           ref={rail}
           role="slider"
           tabIndex={0}
-          aria-label="Playback position"
+          aria-label={t('mediaApp.position')}
           aria-valuemin={0}
           aria-valuemax={0}
           aria-valuenow={0}
