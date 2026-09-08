@@ -1,8 +1,26 @@
 import { useSessionStore, useWindowStore } from '@lumen/kernel';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { LumenOS } from './LumenOS';
+
+/*
+ * The one call the shell makes into the host that has a consequence if it is
+ * missed: on the desktop, an interface that never reports is given up on the
+ * next start. The real web platform's `ready` is a no-op, so it is wrapped
+ * here to be watched rather than replaced.
+ */
+const { reportedReady } = vi.hoisted(() => ({ reportedReady: vi.fn(async () => {}) }));
+vi.mock('@lumen/platform', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@lumen/platform')>();
+  return {
+    ...actual,
+    createPlatform: async (version?: string) => {
+      const platform = await actual.createPlatform(version);
+      return { ...platform, interface: { ...platform.interface, ready: reportedReady } };
+    },
+  };
+});
 
 /**
  * Boots the real OS against the in-memory platform the web build falls back
@@ -12,6 +30,7 @@ describe('LumenOS', () => {
   beforeEach(() => {
     useWindowStore.setState({ windows: {}, order: [], focusedId: null });
     useSessionStore.setState({ state: 'booting', failedAttempts: 0, lockedUntil: null });
+    reportedReady.mockClear();
   });
 
   it('shows the boot screen, then the setup assistant when there is no user', async () => {
@@ -48,4 +67,12 @@ describe('LumenOS', () => {
     expect(screen.getByTestId('taskbar')).toBeInTheDocument();
     expect(screen.getByTestId('start-button')).toBeInTheDocument();
   }, 30_000);
+
+  it('tells the host the interface drew itself, so the version is not given up', async () => {
+    render(<LumenOS autoSetup={{ name: 'Ada Lovelace' }} />);
+    await waitFor(() => expect(screen.getByTestId('lock-screen')).toBeInTheDocument(), {
+      timeout: 15_000,
+    });
+    await waitFor(() => expect(reportedReady).toHaveBeenCalled());
+  });
 });

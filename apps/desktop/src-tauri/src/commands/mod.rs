@@ -7,5 +7,6 @@
 
 pub mod config;
 pub mod fs;
+pub mod interface;
 pub mod shell;
 pub mod system;

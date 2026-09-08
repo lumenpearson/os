@@ -80,6 +80,23 @@ export interface PlatformCapabilities {
   relocatableHome: boolean;
 }
 
+/**
+ * Which interface is running, and which binary is under it.
+ *
+ * Two numbers rather than one because a patch moves only the interface. A
+ * release that needs the binary has to say so, and it can only say so if both
+ * are visible.
+ */
+export interface InterfaceState {
+  /** The applied version, or null when the copy inside the binary is live. */
+  version: string | null;
+  /** The host binary's version. No patch can change this. */
+  host: string;
+  previous: string | null;
+  /** Set when the last start gave up a version that never reported. */
+  rolledBackFrom: string | null;
+}
+
 export interface Platform {
   readonly kind: PlatformKind;
   readonly capabilities: PlatformCapabilities;
@@ -103,6 +120,15 @@ export interface Platform {
     set(patch: Partial<HostConfig>): Promise<HostConfig>;
     /** Ask the host for a directory and move the home there. Returns the new path or null. */
     pickHomeDir(): Promise<string | null>;
+  };
+  interface: {
+    /** Which interface is running, and which binary is under it. */
+    state(): Promise<InterfaceState>;
+    /**
+     * Report that the interface drew itself. Until this arrives the live
+     * version is on probation and the next start would give it up.
+     */
+    ready(): Promise<void>;
   };
   /** Exit the host application (desktop) or reload the page (web). */
   quit(): Promise<void>;

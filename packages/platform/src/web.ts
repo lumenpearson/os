@@ -185,6 +185,18 @@ export function createWebPlatform(appVersion = KERNEL_VERSION): Platform {
       },
       async revealHome() {},
     },
+    interface: {
+      /*
+       * Served fresh by whoever is hosting it, so the version running is the
+       * only version there is: nothing to patch, nothing to report and
+       * nothing to roll back. Saying so is better than a control that looks
+       * like it does something.
+       */
+      async state() {
+        return { version: null, host: appVersion, previous: null, rolledBackFrom: null };
+      },
+      async ready() {},
+    },
     config: {
       async get() {
         return readConfig();

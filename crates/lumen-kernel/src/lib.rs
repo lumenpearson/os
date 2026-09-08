@@ -17,7 +17,7 @@ pub mod system;
 pub use config::{ConfigPatch, HostConfig};
 pub use error::{ErrorCode, KernelError, Result};
 pub use fs::{FileKind, FileStat, Usage};
-pub use interface::{interface_dir, InterfaceStore, Pointer};
+pub use interface::{interface_dir, InterfaceState, InterfaceStore, Pointer};
 pub use sandbox::Sandbox;
 pub use system::{HostProcess, SystemInfo, SystemMetrics, SystemMonitor};
 

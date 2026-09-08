@@ -77,6 +77,23 @@ fn percent_decode(raw: &str) -> String {
     String::from_utf8_lossy(&out).into_owned()
 }
 
+/// What the front end is told about itself.
+///
+/// The interface and the binary are reported separately because a patch moves
+/// only one of them. A release that needs the other has to say so, and it can
+/// only say so if the two numbers are visible side by side.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct InterfaceState {
+    /// The applied version, or `None` for the bundle inside the binary.
+    pub version: Option<String>,
+    /// The host binary's version. No patch can change this.
+    pub host: String,
+    pub previous: Option<String>,
+    /// Set when the last start gave up on a version that never reported.
+    pub rolled_back_from: Option<String>,
+}
+
 #[derive(Debug, Clone)]
 pub struct InterfaceStore {
     root: PathBuf,
@@ -129,6 +146,19 @@ impl InterfaceStore {
             return None;
         }
         full.is_file().then_some(full)
+    }
+
+    /// What is running, for the interface to show. A pointer that cannot be
+    /// read reports the embedded bundle rather than failing, for the same
+    /// reason it serves it: this call must not be a way for the OS to break.
+    pub fn state(&self, host: &str, rolled_back_from: Option<String>) -> InterfaceState {
+        let pointer = self.pointer().ok().flatten();
+        InterfaceState {
+            version: pointer.as_ref().map(|p| p.version.clone()),
+            host: host.to_owned(),
+            previous: pointer.and_then(|p| p.previous),
+            rolled_back_from,
+        }
     }
 
     /// A marker file per version, rather than a field in the pointer: the
@@ -350,6 +380,38 @@ mod tests {
         store.settle().expect("settle");
         assert!(store.has_booted("0.1.0"));
         assert_eq!(store.settle().expect("second settle"), None);
+    }
+
+    #[test]
+    fn the_state_names_the_embedded_bundle_when_no_patch_is_applied() {
+        let (_dir, store) = store();
+        let state = store.state("0.1.0", None);
+        assert_eq!(state.version, None);
+        assert_eq!(state.host, "0.1.0");
+        assert_eq!(state.previous, None);
+        assert_eq!(state.rolled_back_from, None);
+    }
+
+    #[test]
+    fn the_state_names_the_applied_version_and_what_it_replaced() {
+        let (_dir, store) = store();
+        store
+            .write_pointer(&pointer("0.2.0", Some("0.1.0")))
+            .expect("write");
+        let state = store.state("0.1.0", Some("0.3.0".into()));
+        assert_eq!(state.version.as_deref(), Some("0.2.0"));
+        // The binary's version is its own and no patch can move it: that is
+        // the whole reason the two are reported separately.
+        assert_eq!(state.host, "0.1.0");
+        assert_eq!(state.previous.as_deref(), Some("0.1.0"));
+        assert_eq!(state.rolled_back_from.as_deref(), Some("0.3.0"));
+    }
+
+    #[test]
+    fn an_unreadable_pointer_reports_the_embedded_bundle_rather_than_failing() {
+        let (dir, store) = store();
+        std::fs::write(dir.path().join("current.json"), b"{ not json").expect("write");
+        assert_eq!(store.state("0.1.0", None).version, None);
     }
 
     #[test]

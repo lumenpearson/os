@@ -10,7 +10,9 @@ mod commands;
 
 use std::sync::{Mutex, MutexGuard};
 
-use lumen_kernel::{HostConfig, KernelError, Sandbox, SystemMonitor};
+use lumen_kernel::{
+    interface_dir, HostConfig, InterfaceStore, KernelError, Sandbox, SystemMonitor,
+};
 use tauri::Manager;
 
 /// Lock managed state, reporting a poisoned mutex as an error instead of
@@ -27,7 +29,38 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_window_state::Builder::new().build())
+        // The interface is served from here rather than from the assets baked
+        // into the binary alone, so a later version can be put on disk and
+        // take over without replacing the executable.
+        .register_uri_scheme_protocol("lumen", |ctx, request| {
+            commands::interface::respond(ctx.app_handle(), &request)
+        })
         .setup(|app| {
+            /*
+             * The interface store is settled and managed before the window
+             * exists, because the window's first request is for the interface
+             * and the handler answers it out of this state. Set up afterwards,
+             * an applied version would be ignored for exactly one start —
+             * which is the kind of bug that only shows up on someone else's
+             * machine.
+             *
+             * Settling gives up a live version that never reported drawing
+             * itself. A failure to read any of it is not a reason to refuse to
+             * start: the bundle inside the binary is always there.
+             */
+            let interface = InterfaceStore::new(interface_dir());
+            let rolled_back = interface.settle().unwrap_or_else(|err| {
+                eprintln!("lumen: cannot settle the interface: {err}");
+                None
+            });
+            if let Some(version) = &rolled_back {
+                eprintln!("lumen: interface {version} never reported a load; went back");
+            }
+            app.manage(commands::interface::RolledBack(Mutex::new(rolled_back)));
+            app.manage(Mutex::new(interface));
+
+            open_main_window(app)?;
+
             let mut config = HostConfig::load().unwrap_or_else(|err| {
                 eprintln!("lumen: {err}; using default configuration");
                 HostConfig::default()
@@ -67,6 +100,8 @@ pub fn run() {
             commands::config::config_get,
             commands::config::config_set,
             commands::config::config_pick_home_dir,
+            commands::interface::interface_state,
+            commands::interface::interface_ready,
         ])
         .run(tauri::generate_context!());
 
@@ -74,6 +109,38 @@ pub fn run() {
         eprintln!("lumen: cannot start the desktop host: {err}");
         std::process::exit(1);
     }
+}
+
+/// Where the window is pointed, which is not the same string on every host.
+///
+/// WebView2 cannot navigate a scheme it does not know, so wry serves custom
+/// protocols from `http://<scheme>.localhost` on Windows and Android and from
+/// the scheme itself everywhere else. Writing one of those in the
+/// configuration file would leave the other platforms opening a dead address.
+fn interface_url() -> &'static str {
+    #[cfg(any(windows, target_os = "android"))]
+    {
+        "http://lumen.localhost/index.html"
+    }
+    #[cfg(not(any(windows, target_os = "android")))]
+    {
+        "lumen://localhost/index.html"
+    }
+}
+
+/// Build the window the configuration describes, at the address above.
+///
+/// `create: false` in `tauri.conf.json` stops Tauri opening it on its own, so
+/// every other property of the window — its size, its chrome, whether it
+/// starts maximised — stays in that file and is read from it here. Only the
+/// address is decided in Rust, because only the address depends on the host.
+fn open_main_window(app: &tauri::App) -> std::result::Result<(), Box<dyn std::error::Error>> {
+    let Some(mut window) = app.config().app.windows.first().cloned() else {
+        return Err("tauri.conf.json describes no window to open".into());
+    };
+    window.url = tauri::WebviewUrl::CustomProtocol(interface_url().parse()?);
+    tauri::WebviewWindowBuilder::from_config(app, &window)?.build()?;
+    Ok(())
 }
 
 /// Open the configured home directory, creating it if needed. If it cannot

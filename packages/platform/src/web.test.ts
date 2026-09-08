@@ -27,3 +27,23 @@ describe('web platform', () => {
     expect(platform.capabilities.hostProcesses).toBe(false);
   });
 });
+
+describe('the interface it is running', () => {
+  it('reports the version it was given and nothing to patch', async () => {
+    // A web Lumen is served fresh, so the version running is the only
+    // version there is. Reporting that plainly is what lets Settings say so
+    // instead of showing a control that cannot do anything.
+    const platform = createWebPlatform('1.2.3');
+    const state = await platform.interface.state();
+    expect(state).toEqual({
+      version: null,
+      host: '1.2.3',
+      previous: null,
+      rolledBackFrom: null,
+    });
+  });
+
+  it('takes the ready report without a host to send it to', async () => {
+    await expect(createWebPlatform().interface.ready()).resolves.toBeUndefined();
+  });
+});
