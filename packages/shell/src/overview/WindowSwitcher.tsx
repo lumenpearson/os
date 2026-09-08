@@ -1,10 +1,11 @@
 import { useRegistryStore } from '@lumen/kernel';
-import { useWindows } from '@lumen/kernel/react';
+import { useT, useWindows } from '@lumen/kernel/react';
 import { cx } from '@lumen/ui';
 import { useShellStore } from '../shellStore';
 
 /** The Alt+Tab strip: app icons with the current candidate highlighted. */
 export function WindowSwitcher() {
+  const t = useT();
   const index = useShellStore((s) => s.switcher);
   const windows = useWindows().filter((w) => !w.minimized);
   const apps = useRegistryStore((s) => s.apps);
@@ -15,7 +16,7 @@ export function WindowSwitcher() {
       className="pointer-events-none absolute inset-0 z-[1350] flex items-center justify-center"
       data-testid="window-switcher"
       role="dialog"
-      aria-label="Switch window"
+      aria-label={t('window.switch')}
     >
       <div className="flex max-w-[90vw] flex-col items-center gap-3 rounded-lg border border-rule bg-surface/95 p-4 shadow-lg">
         <div className="flex flex-wrap justify-center gap-2">

@@ -1,6 +1,6 @@
 import { formatRelative } from '@lumen/apps';
 import { type Notification, useNotificationStore, useRegistryStore } from '@lumen/kernel';
-import { useNotifications, useRuntimeSettings, useSetting } from '@lumen/kernel/react';
+import { useNotifications, useRuntimeSettings, useSetting, useT } from '@lumen/kernel/react';
 import { Button, cx, IconButton, Switch, useClickOutside, useEscape, usePresence } from '@lumen/ui';
 import { X } from 'lucide-react';
 import { useEffect, useMemo, useRef } from 'react';
@@ -8,6 +8,7 @@ import { useShellStore } from '../shellStore';
 
 /** The notification list, grouped by app, with Do Not Disturb. */
 export function NotificationCenter() {
+  const t = useT();
   const open = useShellStore((s) => s.notificationCenter);
   const toggle = useShellStore((s) => s.toggle);
   const { items } = useNotifications();
@@ -44,7 +45,7 @@ export function NotificationCenter() {
       ref={ref}
       {...anim}
       role="dialog"
-      aria-label="Notifications"
+      aria-label={t('systemBar.notifications')}
       data-testid="notification-center"
       className={cx(
         'absolute right-2 top-[calc(var(--lumen-menubar-h)+6px)] z-[1200] flex max-h-[calc(100vh-var(--lumen-menubar-h)-var(--lumen-taskbar-h)-20px)] w-[min(360px,calc(100vw-16px))] flex-col rounded-lg border border-rule bg-chrome text-ink shadow-lg',
@@ -54,10 +55,10 @@ export function NotificationCenter() {
       style={{ ['--lumen-pop-origin' as string]: 'top right' }}
     >
       <div className="flex items-center gap-3 border-b border-rule px-3 py-2">
-        <span className="text-base font-medium">Notifications</span>
+        <span className="text-base font-medium">{t('systemBar.notifications')}</span>
         <div className="flex-1" />
         <Switch
-          label="Do Not Disturb"
+          label={t('notifications.doNotDisturb')}
           checked={notif.doNotDisturb}
           onChange={(e) => setNotif({ doNotDisturb: e.target.checked })}
           className="text-sm"
@@ -65,7 +66,7 @@ export function NotificationCenter() {
       </div>
       <div className="lumen-scroll flex-1 p-2">
         {groups.length === 0 && (
-          <p className="px-2 py-10 text-center text-sm text-ink-3">No notifications</p>
+          <p className="px-2 py-10 text-center text-sm text-ink-3">{t('notifications.none')}</p>
         )}
         {groups.map(([appId, list]) => {
           const app = apps[appId];
@@ -95,7 +96,7 @@ export function NotificationCenter() {
                       </span>
                     </div>
                     <IconButton
-                      label="Remove"
+                      label={t('notifications.remove')}
                       size="sm"
                       className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
                       onClick={() => remove(n.id)}
@@ -112,7 +113,7 @@ export function NotificationCenter() {
       {items.length > 0 && (
         <div className="border-t border-rule p-2">
           <Button size="sm" variant="ghost" block onClick={clearAll}>
-            Clear all
+            {t('notifications.clearAll')}
           </Button>
         </div>
       )}

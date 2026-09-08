@@ -47,6 +47,15 @@ const TRANSLATED = [
   'packages/shell/src/taskbar/items/StartItem.tsx',
   'packages/shell/src/taskbar/items/SearchItem.tsx',
   'packages/shell/src/taskbar/items/TrashItem.tsx',
+  'packages/shell/src/desktop/DesktopIcons.tsx',
+  'packages/shell/src/start/StartMenu.tsx',
+  'packages/shell/src/spotlight/Spotlight.tsx',
+  'packages/shell/src/windows/windowMenu.ts',
+  'packages/shell/src/notifications/NotificationCenter.tsx',
+  'packages/shell/src/controlcenter/ControlCenter.tsx',
+  'packages/shell/src/overview/WindowSwitcher.tsx',
+  'packages/shell/src/power/PowerScreen.tsx',
+  'packages/shell/src/taskbar/useTaskbarApps.ts',
 ];
 
 /** Props whose value is read out by a person or a screen reader. */

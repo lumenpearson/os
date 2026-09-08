@@ -1,6 +1,6 @@
 import { FileTypeIcon, ManifestIcon } from '@lumen/apps';
 import { type AppDefinition, getSettings, searchApps, useRegistryStore } from '@lumen/kernel';
-import { useKernel, useVfs } from '@lumen/kernel/react';
+import { useKernel, useT, useVfs } from '@lumen/kernel/react';
 import { cx, Kbd, useClickOutside, useDebounced, useEscape, usePresence } from '@lumen/ui';
 import { basename, type DirEntry, dirname } from '@lumen/vfs';
 import { Calculator, Lock, Moon, Search, Trash2 } from 'lucide-react';
@@ -24,6 +24,7 @@ type Result =
 
 /** The system search palette (Mod+Space): apps, files, arithmetic, commands. */
 export function Spotlight() {
+  const t = useT();
   const kernel = useKernel();
   const vfs = useVfs();
   const open = useShellStore((s) => s.spotlight);
@@ -69,7 +70,7 @@ export function Spotlight() {
     const out: Result[] = [];
     const calc = evaluateArithmetic(q);
     if (calc !== null)
-      out.push({ kind: 'calc', id: 'calc', label: calc, detail: 'Press Enter to copy' });
+      out.push({ kind: 'calc', id: 'calc', label: calc, detail: t('spotlight.pressEnterToCopy') });
     for (const app of searchApps(q, 5))
       out.push({ kind: 'app', id: app.id, label: app.name, detail: app.description, app });
     for (const inst of Object.values(installed)) {
@@ -78,7 +79,7 @@ export function Spotlight() {
           kind: 'installed',
           id: inst.manifest.id,
           label: inst.manifest.name,
-          detail: 'Installed app',
+          detail: t('spotlight.installedApp'),
           icon: inst.manifest.icon,
         });
     }
@@ -86,24 +87,24 @@ export function Spotlight() {
       {
         kind: 'command',
         id: 'lock',
-        label: 'Lock Screen',
-        detail: 'System',
+        label: t('system.lock'),
+        detail: t('spotlight.system'),
         icon: <Lock className="size-4" />,
         run: () => kernel.lock(),
       },
       {
         kind: 'command',
         id: 'sleep',
-        label: 'Sleep',
-        detail: 'System',
+        label: t('lock.sleep'),
+        detail: t('spotlight.system'),
         icon: <Moon className="size-4" />,
         run: () => kernel.sleep(),
       },
       {
         kind: 'command',
         id: 'trash',
-        label: 'Empty Trash',
-        detail: 'Files',
+        label: t('spotlight.emptyTrash'),
+        detail: t('spotlight.files'),
         icon: <Trash2 className="size-4" />,
         run: () => void vfs.emptyTrash(),
       },
@@ -155,7 +156,7 @@ export function Spotlight() {
       <div
         ref={ref}
         role="dialog"
-        aria-label="Search"
+        aria-label={t('systemBar.search')}
         {...anim}
         // border and radius are on this same element, so the stroke wraps the arc;
         // overflow-hidden only clips the result list, which has no border of its own.
@@ -184,8 +185,8 @@ export function Spotlight() {
             ref={inputRef}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search apps, files, or calculate"
-            aria-label="Search"
+            placeholder={t('spotlight.searchPlaceholder')}
+            aria-label={t('systemBar.search')}
             aria-autocomplete="list"
             aria-controls="spotlight-results"
             aria-activedescendant={results[active] ? `spotlight-option-${active}` : undefined}
@@ -199,7 +200,7 @@ export function Spotlight() {
           <ul
             id="spotlight-results"
             role="listbox"
-            aria-label="Results"
+            aria-label={t('spotlight.results')}
             className="lumen-scroll max-h-[50vh] border-t border-rule p-1"
           >
             {results.map((r, i) => (
@@ -249,7 +250,7 @@ export function Spotlight() {
         )}
         {query.trim().length > 0 && results.length === 0 && (
           <p className="border-t border-rule px-4 py-6 text-center text-sm text-ink-3">
-            Nothing found for “{query}” · {basename(kernel.home)}
+            {t('spotlight.nothingFound', { query })} · {basename(kernel.home)}
           </p>
         )}
       </div>

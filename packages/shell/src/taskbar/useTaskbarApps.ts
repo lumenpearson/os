@@ -7,6 +7,7 @@
 
 import {
   type AppDefinition,
+  t,
   useRegistryStore,
   useSettingsStore,
   useWindowStore,
@@ -102,7 +103,7 @@ export function useTaskbarApps(): TaskbarApps {
         { label: app.name, enabled: false },
         { type: 'separator' },
         {
-          label: 'New Window',
+          label: t('system.newWindow'),
           enabled: !app.singleton || !entry,
           onSelect: () => void kernel.launch(app.id),
         },
@@ -123,7 +124,7 @@ export function useTaskbarApps(): TaskbarApps {
         ...(entry
           ? [
               {
-                label: 'Quit',
+                label: t('window.quit'),
                 danger: true,
                 onSelect: () => entry.pids.forEach((pid) => void kernel.quitApp(pid)),
               },

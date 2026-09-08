@@ -28,6 +28,8 @@ describe('the dictionaries', () => {
    */
   const SAME_IN_BOTH: MessageKey[] = [
     'region.dateIso', // the standard's name, ISO 8601, which is not translated
+    'controlCenter.wifi', // a trademark, written the same in Russian
+    'controlCenter.bluetooth', // likewise
   ];
 
   it('say something different from English', () => {

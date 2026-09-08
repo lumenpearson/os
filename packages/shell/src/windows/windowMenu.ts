@@ -1,3 +1,4 @@
+import { t } from '@lumen/kernel';
 /**
  * The title bar's own menu. Every item here is something the window store
  * already does — minimize, toggleMaximize, snap, close — so the menu, the
@@ -35,14 +36,14 @@ export function windowMenuItems(
   const items: MenuEntry[] = [
     {
       id: 'minimize',
-      label: 'Minimize',
+      label: t('window.minimize'),
       shortcut: shortcut('window.minimize'),
       enabled: state.minimizable && !state.fullscreen,
       onSelect: actions.minimize,
     },
     {
       id: 'zoom',
-      label: 'Zoom',
+      label: t('window.zoom'),
       shortcut: shortcut('window.maximize'),
       enabled: state.maximizable && !state.fullscreen,
       onSelect: actions.zoom,
@@ -55,14 +56,14 @@ export function windowMenuItems(
       { id: 'tile-sep', type: 'separator' },
       {
         id: 'snap-left',
-        label: 'Snap Left',
+        label: t('window.snapLeft'),
         shortcut: shortcut('window.snapLeft'),
         enabled: !state.fullscreen && state.snap !== 'left',
         onSelect: actions.snapLeft,
       },
       {
         id: 'snap-right',
-        label: 'Snap Right',
+        label: t('window.snapRight'),
         shortcut: shortcut('window.snapRight'),
         enabled: !state.fullscreen && state.snap !== 'right',
         onSelect: actions.snapRight,
@@ -73,7 +74,7 @@ export function windowMenuItems(
     { id: 'close-sep', type: 'separator' },
     {
       id: 'close',
-      label: 'Close',
+      label: t('action.close'),
       shortcut: shortcut('window.close'),
       enabled: state.closable,
       onSelect: actions.close,

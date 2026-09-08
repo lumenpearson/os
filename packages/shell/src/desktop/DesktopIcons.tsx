@@ -7,6 +7,7 @@ import {
   useMarquee,
   useSetting,
   useSettings,
+  useT,
   useVfs,
   useWorkArea,
 } from '@lumen/kernel/react';
@@ -16,8 +17,27 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 const ICON_SIZES = { small: 56, medium: 72, large: 96 } as const;
 
+/**
+ * Each option names its own key rather than having one built from its value.
+ * A key stitched together at run time can be neither typechecked nor found by
+ * `scripts/check-i18n.mjs`, and the capitalised English word this used to
+ * make was never going to be a Russian one.
+ */
+const SORT_LABEL = {
+  name: 'desktop.sortName',
+  kind: 'desktop.sortKind',
+  date: 'desktop.sortDate',
+} as const;
+
+const SIZE_LABEL = {
+  small: 'desktop.sizeSmall',
+  medium: 'desktop.sizeMedium',
+  large: 'desktop.sizeLarge',
+} as const;
+
 /** Files in ~/Desktop as icons with drag-to-arrange, rename and a context menu. */
 export function DesktopIcons() {
+  const t = useT();
   const kernel = useKernel();
   const vfs = useVfs();
   const settings = useSettings();
@@ -195,32 +215,35 @@ export function DesktopIcons() {
       await vfs.rename(entry.path, join(dir, n));
     } catch (err) {
       await dialogs.alert({
-        title: 'Could not rename',
+        title: t('desktop.couldNotRename'),
         message: String(err instanceof Error ? err.message : err),
       });
     }
   };
 
   const itemMenu = (entry: DirEntry): MenuEntry[] => [
-    { label: 'Open', onSelect: () => void kernel.open(entry.path) },
+    { label: t('desktop.open'), onSelect: () => void kernel.open(entry.path) },
     { type: 'separator' },
     {
-      label: 'Get Info',
+      label: t('desktop.getInfo'),
       onSelect: () =>
         void kernel.launch('lumen.files', { path: dir, select: entry.path, info: true }),
     },
-    { label: 'Rename', onSelect: () => setRenaming(entry.path) },
-    { label: 'Duplicate', onSelect: () => void vfs.copyInto(entry.path, dir) },
-    { label: 'Copy', onSelect: () => useClipboardStore.getState().copyFiles([entry.path], 'copy') },
+    { label: t('desktop.rename'), onSelect: () => setRenaming(entry.path) },
+    { label: t('desktop.duplicate'), onSelect: () => void vfs.copyInto(entry.path, dir) },
+    {
+      label: t('action.copy'),
+      onSelect: () => useClipboardStore.getState().copyFiles([entry.path], 'copy'),
+    },
     { type: 'separator' },
-    { label: 'Move to Trash', danger: true, onSelect: () => void vfs.trash(entry.path) },
+    { label: t('desktop.moveToTrash'), danger: true, onSelect: () => void vfs.trash(entry.path) },
   ];
 
   const backgroundMenu: MenuEntry[] = [
-    { label: 'New Folder', onSelect: () => void vfs.createFolder(dir) },
-    { label: 'New Text File', onSelect: () => void vfs.createFile(dir, 'untitled.txt') },
+    { label: t('desktop.newFolder'), onSelect: () => void vfs.createFolder(dir) },
+    { label: t('desktop.newTextFile'), onSelect: () => void vfs.createFile(dir, 'untitled.txt') },
     {
-      label: 'Paste',
+      label: t('action.paste'),
       enabled: useClipboardStore.getState().item?.kind === 'files',
       onSelect: async () => {
         const item = useClipboardStore.getState().item;
@@ -233,20 +256,20 @@ export function DesktopIcons() {
       },
     },
     { type: 'separator' },
-    { label: 'Clean Up', onSelect: () => persist({}) },
+    { label: t('desktop.cleanUp'), onSelect: () => persist({}) },
     {
-      label: 'Sort By',
+      label: t('desktop.sortBy'),
       submenu: (['name', 'kind', 'date'] as const).map((k) => ({
-        label: k[0]?.toUpperCase() + k.slice(1),
+        label: t(SORT_LABEL[k]),
         type: 'radio' as const,
         checked: desktop.sortBy === k,
         onSelect: () => setDesktop({ sortBy: k }),
       })),
     },
     {
-      label: 'Icon Size',
+      label: t('desktop.iconSize'),
       submenu: (['small', 'medium', 'large'] as const).map((k) => ({
-        label: k[0]?.toUpperCase() + k.slice(1),
+        label: t(SIZE_LABEL[k]),
         type: 'radio' as const,
         checked: desktop.iconSize === k,
         onSelect: () => setDesktop({ iconSize: k }),
@@ -254,7 +277,7 @@ export function DesktopIcons() {
     },
     { type: 'separator' },
     {
-      label: 'Change Wallpaper',
+      label: t('desktop.changeWallpaper'),
       submenu: [
         ...WALLPAPERS.map((w) => ({
           label: w.name,
@@ -264,12 +287,15 @@ export function DesktopIcons() {
         })),
         { type: 'separator' as const },
         {
-          label: 'More in Settings…',
+          label: t('desktop.moreInSettings'),
           onSelect: () => void kernel.launch('lumen.settings', { section: 'wallpaper' }),
         },
       ],
     },
-    { label: 'Open in Files', onSelect: () => void kernel.launch('lumen.files', { path: dir }) },
+    {
+      label: t('desktop.openInFiles'),
+      onSelect: () => void kernel.launch('lumen.files', { path: dir }),
+    },
   ];
 
   return (
@@ -284,7 +310,7 @@ export function DesktopIcons() {
       }}
       data-testid="desktop-icons"
       role="listbox"
-      aria-label="Desktop"
+      aria-label={t('desktop.desktop')}
       aria-multiselectable="true"
       tabIndex={-1}
       onPointerDown={(e) => {
@@ -342,7 +368,7 @@ export function DesktopIcons() {
                 // biome-ignore lint/a11y/noAutofocus: the field replaces the name the user just chose to rename
                 autoFocus
                 defaultValue={entry.name}
-                aria-label="New name"
+                aria-label={t('desktop.newName')}
                 className="mono w-full rounded-xs border border-accent bg-surface px-1 text-center text-xs text-ink outline-none"
                 onFocus={(e) =>
                   e.currentTarget.setSelectionRange(0, basename(entry.name, true).length)

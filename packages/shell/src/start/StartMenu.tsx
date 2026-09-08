@@ -6,6 +6,7 @@ import {
   useInstalledApps,
   useKernel,
   useRuntimeSettings,
+  useT,
 } from '@lumen/kernel/react';
 import {
   AnchoredMenu,
@@ -34,6 +35,7 @@ const CATEGORY_LABEL: Record<AppCategory, string> = {
 
 /** The Start menu: search, all apps by category, recent files, account and power. */
 export function StartMenu() {
+  const t = useT();
   const kernel = useKernel();
   const open = useShellStore((s) => s.startMenu);
   const toggle = useShellStore((s) => s.toggle);
@@ -97,7 +99,7 @@ export function StartMenu() {
     <div
       ref={ref}
       role="dialog"
-      aria-label="Start menu"
+      aria-label={t('start.menu')}
       data-testid="start-menu"
       {...anim}
       className={cx(
@@ -125,15 +127,17 @@ export function StartMenu() {
           ref={inputRef}
           value={query}
           onChange={setQuery}
-          placeholder="Search apps, files, settings"
-          aria-label="Search"
+          placeholder={t('start.searchPlaceholder')}
+          aria-label={t('systemBar.search')}
         />
       </div>
       <div className="lumen-scroll min-h-0 flex-1 px-3 pb-3">
         {results ? (
-          <ul className="flex flex-col gap-px" aria-label="Results">
+          <ul className="flex flex-col gap-px" aria-label={t('start.results')}>
             {results.length === 0 && (
-              <li className="px-2 py-6 text-center text-sm text-ink-3">No apps match “{query}”</li>
+              <li className="px-2 py-6 text-center text-sm text-ink-3">
+                {t('start.noneMatch', { query })}
+              </li>
             )}
             {results.map((a) => (
               <li key={a.id}>
@@ -169,7 +173,7 @@ export function StartMenu() {
             {installed.length > 0 && (
               <section>
                 <h2 className="mono px-2 pb-1 text-2xs uppercase tracking-[0.08em] text-ink-3">
-                  Installed
+                  {t('start.installed')}
                 </h2>
                 <ul className="grid grid-cols-[repeat(auto-fill,minmax(88px,1fr))] gap-1">
                   {installed.map(({ manifest }) => (
@@ -187,7 +191,7 @@ export function StartMenu() {
             {settings.taskbar.showRecents && recents.length > 0 && (
               <section>
                 <h2 className="mono px-2 pb-1 text-2xs uppercase tracking-[0.08em] text-ink-3">
-                  Recent
+                  {t('start.recent')}
                 </h2>
                 <ul className="flex flex-col gap-px">
                   {recents.map((r) => (
@@ -222,7 +226,7 @@ export function StartMenu() {
         <div className="flex-1" />
         <button
           type="button"
-          aria-label="Settings"
+          aria-label={t('settings.general')}
           onClick={() => launch('lumen.settings')}
           className="flex size-7 items-center justify-center rounded-sm text-ink-2 hover:bg-surface-2 hover:text-ink lumen-focus"
         >
@@ -231,7 +235,7 @@ export function StartMenu() {
         <button
           ref={powerRef}
           type="button"
-          aria-label="Power"
+          aria-label={t('lock.power')}
           aria-haspopup="menu"
           onClick={() => setPowerOpen(true)}
           className="flex size-7 items-center justify-center rounded-sm text-ink-2 hover:bg-surface-2 hover:text-ink lumen-focus"
@@ -245,22 +249,22 @@ export function StartMenu() {
           align="end"
           items={[
             {
-              label: 'Lock',
+              label: t('start.lock'),
               onSelect: () => {
                 toggle('startMenu', false);
                 kernel.lock();
               },
             },
             {
-              label: 'Sleep',
+              label: t('lock.sleep'),
               onSelect: () => {
                 toggle('startMenu', false);
                 kernel.sleep();
               },
             },
             { type: 'separator' },
-            { label: 'Restart…', onSelect: () => void kernel.restart() },
-            { label: 'Shut Down…', onSelect: () => void kernel.shutdown() },
+            { label: t('system.restart'), onSelect: () => void kernel.restart() },
+            { label: t('system.shutDown'), onSelect: () => void kernel.shutdown() },
           ]}
         />
       </div>
