@@ -1,3 +1,4 @@
+import { t } from '@lumen/kernel';
 /**
  * The menubar for the Workbench window, built from one snapshot of state so a
  * command does the same thing whether it is clicked in the toolbar, picked
@@ -33,12 +34,12 @@ export function buildWorkbenchMenus(
   return [
     {
       id: 'file',
-      label: 'File',
-      items: [{ id: 'close', label: 'Close', shortcut: 'Mod+W', onSelect: actions.close }],
+      label: t('menu.file'),
+      items: [{ id: 'close', label: t('menu.close'), shortcut: 'Mod+W', onSelect: actions.close }],
     },
     {
       id: 'edit',
-      label: 'Edit',
+      label: t('menu.edit'),
       items: [
         {
           id: 'copy-output',
@@ -50,7 +51,7 @@ export function buildWorkbenchMenus(
         separator,
         {
           id: 'clear',
-          label: 'Clear',
+          label: t('menu.clear'),
           shortcut: 'Shift+Mod+K',
           enabled: state.hasInput,
           onSelect: actions.clear,
@@ -59,7 +60,7 @@ export function buildWorkbenchMenus(
     },
     {
       id: 'view',
-      label: 'View',
+      label: t('menu.view'),
       items: [
         ...TOOLS.map<MenuItemTemplate>((tool) => ({
           id: `tool-${tool}`,

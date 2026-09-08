@@ -1,3 +1,4 @@
+import { t } from '@lumen/kernel';
 /**
  * The menubar for the clock window, built from one snapshot of state so a
  * command does the same thing whether it is clicked or typed.
@@ -43,7 +44,7 @@ export function buildClockMenus(state: ClockMenuState, actions: ClockMenuActions
   return [
     {
       id: 'view',
-      label: 'View',
+      label: t('menu.view'),
       items: [
         ...TABS.map((tab, index) => ({
           id: tab,
@@ -98,7 +99,7 @@ export function buildClockMenus(state: ClockMenuState, actions: ClockMenuActions
         separator,
         {
           id: 'reset',
-          label: 'Reset',
+          label: t('menu.reset'),
           shortcut: on('stopwatch', 'Mod+R'),
           enabled: !state.stopwatchIdle,
           onSelect: actions.resetStopwatch,
@@ -107,7 +108,7 @@ export function buildClockMenus(state: ClockMenuState, actions: ClockMenuActions
     },
     {
       id: 'timer',
-      label: 'Timer',
+      label: t('menu.timer'),
       items: [
         {
           id: 'toggle',
@@ -119,7 +120,7 @@ export function buildClockMenus(state: ClockMenuState, actions: ClockMenuActions
         separator,
         {
           id: 'reset',
-          label: 'Reset',
+          label: t('menu.reset'),
           shortcut: on('timer', 'Mod+R'),
           enabled: !state.timerIdle,
           onSelect: actions.resetTimer,

@@ -1,3 +1,4 @@
+import { t } from '@lumen/kernel';
 /**
  * The menubar for the archive window, built from one snapshot of state so a
  * command does the same thing whether it is clicked in the toolbar, chosen
@@ -43,11 +44,11 @@ export function buildArchiveMenus(
   return [
     {
       id: 'file',
-      label: 'File',
+      label: t('menu.file'),
       items: [
         {
           id: 'open',
-          label: 'Open…',
+          label: t('menu.open'),
           shortcut: 'Mod+O',
           enabled: !state.busy,
           onSelect: actions.open,
@@ -75,16 +76,16 @@ export function buildArchiveMenus(
           onSelect: actions.extractSelected,
         },
         separator,
-        { id: 'close', label: 'Close', shortcut: 'Mod+W', onSelect: actions.close },
+        { id: 'close', label: t('menu.close'), shortcut: 'Mod+W', onSelect: actions.close },
       ],
     },
     {
       id: 'edit',
-      label: 'Edit',
+      label: t('menu.edit'),
       items: [
         {
           id: 'find',
-          label: 'Find',
+          label: t('menu.find'),
           shortcut: 'Mod+F',
           enabled: state.hasArchive,
           onSelect: actions.find,
@@ -93,7 +94,7 @@ export function buildArchiveMenus(
     },
     {
       id: 'view',
-      label: 'View',
+      label: t('menu.view'),
       items: [
         {
           id: 'sort',
@@ -112,14 +113,14 @@ export function buildArchiveMenus(
             {
               id: 'sort-asc',
               type: 'radio',
-              label: 'Ascending',
+              label: t('menu.ascending'),
               checked: state.sort.direction === 'asc',
               onSelect: () => actions.setDirection('asc'),
             },
             {
               id: 'sort-desc',
               type: 'radio',
-              label: 'Descending',
+              label: t('menu.descending'),
               checked: state.sort.direction === 'desc',
               onSelect: () => actions.setDirection('desc'),
             },

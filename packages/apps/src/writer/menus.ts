@@ -4,6 +4,7 @@
  * however it is invoked.
  */
 import type { MenuItemTemplate, MenuTemplate } from '@lumen/kernel';
+import { t } from '@lumen/kernel';
 import {
   type Alignment,
   BLOCK_TYPES,
@@ -58,9 +59,9 @@ export interface WriterMenuState {
 const separator: MenuItemTemplate = { type: 'separator' };
 
 const ALIGNMENTS: Array<{ value: Alignment; label: string }> = [
-  { value: 'left', label: 'Left' },
+  { value: 'left', label: t('menu.left') },
   { value: 'center', label: 'Centre' },
-  { value: 'right', label: 'Right' },
+  { value: 'right', label: t('menu.right') },
 ];
 
 export function buildMenus(state: WriterMenuState, actions: WriterActions): MenuTemplate[] {
@@ -69,55 +70,75 @@ export function buildMenus(state: WriterMenuState, actions: WriterActions): Menu
   return [
     {
       id: 'file',
-      label: 'File',
+      label: t('menu.file'),
       items: [
-        { id: 'new', label: 'New', shortcut: 'Mod+N', onSelect: actions.newDocument },
-        { id: 'open', label: 'Open…', shortcut: 'Mod+O', onSelect: actions.open },
+        { id: 'new', label: t('menu.new'), shortcut: 'Mod+N', onSelect: actions.newDocument },
+        { id: 'open', label: t('menu.open'), shortcut: 'Mod+O', onSelect: actions.open },
         separator,
         {
           id: 'save',
-          label: 'Save',
+          label: t('menu.save'),
           shortcut: 'Mod+S',
           enabled: !state.readOnly,
           onSelect: actions.save,
         },
-        { id: 'save-as', label: 'Save As…', shortcut: 'Shift+Mod+S', onSelect: actions.saveAs },
+        {
+          id: 'save-as',
+          label: t('menu.saveAs'),
+          shortcut: 'Shift+Mod+S',
+          onSelect: actions.saveAs,
+        },
         separator,
-        { id: 'export-html', label: 'Export as HTML…', onSelect: () => actions.exportAs('html') },
+        {
+          id: 'export-html',
+          label: t('menu.exportHtml'),
+          onSelect: () => actions.exportAs('html'),
+        },
         {
           id: 'export-markdown',
-          label: 'Export as Markdown…',
+          label: t('menu.exportMarkdown'),
           onSelect: () => actions.exportAs('markdown'),
         },
         {
           id: 'export-text',
-          label: 'Export as Plain Text…',
+          label: t('menu.exportPlainText'),
           onSelect: () => actions.exportAs('text'),
         },
         separator,
-        { id: 'close', label: 'Close', shortcut: 'Mod+W', onSelect: actions.closeWindow },
+        { id: 'close', label: t('menu.close'), shortcut: 'Mod+W', onSelect: actions.closeWindow },
       ],
     },
     {
       id: 'edit',
-      label: 'Edit',
+      label: t('menu.edit'),
       items: [
-        { id: 'undo', label: 'Undo', shortcut: 'Mod+Z', enabled: editable, onSelect: actions.undo },
+        {
+          id: 'undo',
+          label: t('menu.undo'),
+          shortcut: 'Mod+Z',
+          enabled: editable,
+          onSelect: actions.undo,
+        },
         {
           id: 'redo',
-          label: 'Redo',
+          label: t('menu.redo'),
           shortcut: 'Shift+Mod+Z',
           enabled: editable,
           onSelect: actions.redo,
         },
         separator,
-        { id: 'cut', label: 'Cut', enabled: editable, onSelect: actions.cut },
-        { id: 'copy', label: 'Copy', onSelect: actions.copy },
-        { id: 'paste', label: 'Paste', enabled: editable, onSelect: actions.paste },
+        { id: 'cut', label: t('action.cut'), enabled: editable, onSelect: actions.cut },
+        { id: 'copy', label: t('action.copy'), onSelect: actions.copy },
+        { id: 'paste', label: t('action.paste'), enabled: editable, onSelect: actions.paste },
         separator,
-        { id: 'select-all', label: 'Select All', shortcut: 'Mod+A', onSelect: actions.selectAll },
+        {
+          id: 'select-all',
+          label: t('menu.selectAll'),
+          shortcut: 'Mod+A',
+          onSelect: actions.selectAll,
+        },
         separator,
-        { id: 'find', label: 'Find…', shortcut: 'Mod+F', onSelect: actions.find },
+        { id: 'find', label: t('menu.findEllipsis'), shortcut: 'Mod+F', onSelect: actions.find },
         {
           id: 'find-next',
           label: 'Find Next',
@@ -137,7 +158,7 @@ export function buildMenus(state: WriterMenuState, actions: WriterActions): Menu
     formatMenu(state, actions, editable),
     {
       id: 'view',
-      label: 'View',
+      label: t('menu.view'),
       items: [
         {
           id: 'reading-mode',
@@ -151,7 +172,7 @@ export function buildMenus(state: WriterMenuState, actions: WriterActions): Menu
         {
           id: 'fullscreen',
           type: 'checkbox',
-          label: 'Full Screen',
+          label: t('menu.fullScreen'),
           shortcut: 'F11',
           checked: state.fullscreen,
           onSelect: actions.toggleFullScreen,
@@ -160,7 +181,7 @@ export function buildMenus(state: WriterMenuState, actions: WriterActions): Menu
     },
     {
       id: 'help',
-      label: 'Help',
+      label: t('menu.help'),
       items: [
         { id: 'shortcuts', label: 'Keyboard Shortcuts', onSelect: actions.showShortcuts },
         { id: 'about', label: 'About Writer', onSelect: actions.showAbout },
@@ -177,7 +198,7 @@ function formatMenu(
   const { editor } = state;
   return {
     id: 'format',
-    label: 'Format',
+    label: t('menu.format'),
     items: [
       mark('bold', 'Bold', 'Mod+B', editor.bold, editable, actions),
       mark('italic', 'Italic', 'Mod+I', editor.italic, editable, actions),

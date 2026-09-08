@@ -1,3 +1,4 @@
+import { t } from '@lumen/kernel';
 /**
  * The menubar for the game window, built from one snapshot of state so a
  * command does the same thing whether it is clicked or typed.
@@ -28,9 +29,9 @@ export function buildMinesweeperMenus(
   return [
     {
       id: 'game',
-      label: 'Game',
+      label: t('menu.game'),
       items: [
-        { id: 'new', label: 'New Game', shortcut: 'Mod+N', onSelect: actions.newGame },
+        { id: 'new', label: t('menu.newGame'), shortcut: 'Mod+N', onSelect: actions.newGame },
         separator,
         ...PRESET_IDS.map((id, index) => ({
           id,

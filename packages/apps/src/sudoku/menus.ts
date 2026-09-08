@@ -1,3 +1,4 @@
+import { t } from '@lumen/kernel';
 /**
  * The menubar for a Sudoku window, built from one snapshot of state so a
  * command reads and behaves the same whether it is clicked or typed. Every
@@ -39,7 +40,7 @@ export function buildSudokuMenus(state: SudokuMenuState, actions: SudokuActions)
   return [
     {
       id: 'game',
-      label: 'Game',
+      label: t('menu.game'),
       items: [
         {
           id: 'new',
@@ -63,23 +64,23 @@ export function buildSudokuMenus(state: SudokuMenuState, actions: SudokuActions)
           onSelect: actions.hint,
         },
         separator,
-        { id: 'close', label: 'Close', shortcut: 'Mod+W', onSelect: actions.close },
+        { id: 'close', label: t('menu.close'), shortcut: 'Mod+W', onSelect: actions.close },
       ],
     },
     {
       id: 'edit',
-      label: 'Edit',
+      label: t('menu.edit'),
       items: [
         {
           id: 'undo',
-          label: 'Undo',
+          label: t('menu.undo'),
           shortcut: 'Mod+Z',
           enabled: state.canUndo,
           onSelect: actions.undo,
         },
         {
           id: 'redo',
-          label: 'Redo',
+          label: t('menu.redo'),
           shortcut: 'Shift+Mod+Z',
           enabled: state.canRedo,
           onSelect: actions.redo,
@@ -96,7 +97,7 @@ export function buildSudokuMenus(state: SudokuMenuState, actions: SudokuActions)
     },
     {
       id: 'view',
-      label: 'View',
+      label: t('menu.view'),
       items: [
         {
           id: 'pencil',
@@ -116,7 +117,7 @@ export function buildSudokuMenus(state: SudokuMenuState, actions: SudokuActions)
         {
           id: 'timer',
           type: 'checkbox',
-          label: 'Timer',
+          label: t('menu.timer'),
           checked: state.timer,
           onSelect: actions.toggleTimer,
         },

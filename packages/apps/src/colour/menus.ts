@@ -1,3 +1,4 @@
+import { t } from '@lumen/kernel';
 /**
  * The menubar, built from one snapshot of state so a command does the same
  * thing whether it is clicked, picked from a menu or typed as a shortcut.
@@ -40,12 +41,12 @@ export function buildColourMenus(
   return [
     {
       id: 'file',
-      label: 'File',
-      items: [{ id: 'close', label: 'Close', shortcut: 'Mod+W', onSelect: actions.close }],
+      label: t('menu.file'),
+      items: [{ id: 'close', label: t('menu.close'), shortcut: 'Mod+W', onSelect: actions.close }],
     },
     {
       id: 'edit',
-      label: 'Edit',
+      label: t('menu.edit'),
       items: [
         {
           id: 'copy-hex',
@@ -101,7 +102,7 @@ export function buildColourMenus(
     },
     {
       id: 'view',
-      label: 'View',
+      label: t('menu.view'),
       items: PANELS.map<MenuItemTemplate>((panel) => ({
         id: `panel-${panel.id}`,
         type: 'radio',

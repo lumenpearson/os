@@ -1,3 +1,4 @@
+import { t } from '@lumen/kernel';
 /**
  * The menubar for the Contacts window, built from one snapshot of state so a
  * command does the same thing whether it is clicked, chosen from a menu or
@@ -44,7 +45,7 @@ export function buildContactsMenus(
   return [
     {
       id: 'file',
-      label: 'File',
+      label: t('menu.file'),
       items: [
         { id: 'new', label: 'New Contact', shortcut: 'Mod+N', onSelect: actions.newContact },
         separator,
@@ -61,14 +62,14 @@ export function buildContactsMenus(
           onSelect: actions.exportVcard,
         },
         separator,
-        { id: 'close', label: 'Close', shortcut: 'Mod+W', onSelect: actions.close },
+        { id: 'close', label: t('menu.close'), shortcut: 'Mod+W', onSelect: actions.close },
       ],
     },
     {
       id: 'edit',
-      label: 'Edit',
+      label: t('menu.edit'),
       items: [
-        { id: 'find', label: 'Find', shortcut: 'Mod+F', onSelect: actions.find },
+        { id: 'find', label: t('menu.find'), shortcut: 'Mod+F', onSelect: actions.find },
         separator,
         {
           id: 'edit-contact',
@@ -94,7 +95,7 @@ export function buildContactsMenus(
         separator,
         {
           id: 'favourite',
-          label: 'Favourite',
+          label: t('menu.favourite'),
           type: 'checkbox',
           shortcut: 'Mod+D',
           checked: state.isFavourite,
@@ -120,7 +121,7 @@ export function buildContactsMenus(
     },
     {
       id: 'view',
-      label: 'View',
+      label: t('menu.view'),
       items: [
         {
           id: 'sort-first',

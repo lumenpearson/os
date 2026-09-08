@@ -1,3 +1,4 @@
+import { t } from '@lumen/kernel';
 /**
  * The menubar for the game window, built from one snapshot of state so a
  * command does the same thing whether it is clicked in the toolbar, chosen
@@ -29,23 +30,23 @@ export function buildTwenty48Menus(
   return [
     {
       id: 'game',
-      label: 'Game',
+      label: t('menu.game'),
       items: [
-        { id: 'new', label: 'New Game', shortcut: 'Mod+N', onSelect: actions.newGame },
+        { id: 'new', label: t('menu.newGame'), shortcut: 'Mod+N', onSelect: actions.newGame },
         {
           id: 'undo',
-          label: 'Undo',
+          label: t('menu.undo'),
           shortcut: 'Mod+Z',
           enabled: state.canUndo,
           onSelect: actions.undo,
         },
         separator,
-        { id: 'close', label: 'Close', shortcut: 'Mod+W', onSelect: actions.close },
+        { id: 'close', label: t('menu.close'), shortcut: 'Mod+W', onSelect: actions.close },
       ],
     },
     {
       id: 'view',
-      label: 'View',
+      label: t('menu.view'),
       items: [
         {
           id: 'best',

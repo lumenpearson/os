@@ -1,3 +1,4 @@
+import { t } from '@lumen/kernel';
 /**
  * The menubar for the Software Center window. The install commands take the
  * window to the Install section first, so a menu choice and a click on the
@@ -84,7 +85,7 @@ export function buildSoftwareMenus(
   return [
     {
       id: 'file',
-      label: 'File',
+      label: t('menu.file'),
       items: [
         {
           id: 'file.install',
@@ -99,16 +100,16 @@ export function buildSoftwareMenus(
           onSelect: actions.pasteManifest,
         },
         { type: 'separator' },
-        { id: 'file.close', label: 'Close', shortcut: 'Mod+W', onSelect: actions.close },
+        { id: 'file.close', label: t('menu.close'), shortcut: 'Mod+W', onSelect: actions.close },
       ],
     },
     {
       id: 'edit',
-      label: 'Edit',
+      label: t('menu.edit'),
       items: [
         {
           id: 'edit.find',
-          label: 'Find',
+          label: t('menu.find'),
           shortcut: 'Mod+F',
           enabled: state.section !== 'install',
           onSelect: actions.find,
@@ -117,7 +118,7 @@ export function buildSoftwareMenus(
     },
     {
       id: 'view',
-      label: 'View',
+      label: t('menu.view'),
       items: [
         /*
          * The View menu mirrors the sidebar, bands and all, so the two ways

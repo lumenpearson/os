@@ -1,3 +1,4 @@
+import { t } from '@lumen/kernel';
 /**
  * The menubar for the System Information window. Every command needs a
  * finished reading behind it, so they all stand down until the first snapshot
@@ -30,7 +31,7 @@ export function buildSysInfoMenus(
   return [
     {
       id: 'file',
-      label: 'File',
+      label: t('menu.file'),
       items: [
         {
           id: 'file.save',
@@ -40,12 +41,12 @@ export function buildSysInfoMenus(
           onSelect: actions.saveReport,
         },
         separator,
-        { id: 'file.close', label: 'Close', shortcut: 'Mod+W', onSelect: actions.close },
+        { id: 'file.close', label: t('menu.close'), shortcut: 'Mod+W', onSelect: actions.close },
       ],
     },
     {
       id: 'edit',
-      label: 'Edit',
+      label: t('menu.edit'),
       items: [
         {
           id: 'edit.copy',
@@ -58,7 +59,7 @@ export function buildSysInfoMenus(
     },
     {
       id: 'view',
-      label: 'View',
+      label: t('menu.view'),
       items: [
         {
           id: 'view.refresh',

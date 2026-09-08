@@ -3,6 +3,7 @@
  * command reads the same whether it is clicked or typed as a shortcut.
  */
 import type { MenuItemTemplate, MenuTemplate } from '@lumen/kernel';
+import { t } from '@lumen/kernel';
 import { LAYOUT_LABELS, SLIDE_LAYOUTS, type SlideLayout } from './deck';
 
 export interface SlidesMenuState {
@@ -40,37 +41,42 @@ export function buildSlidesMenus(state: SlidesMenuState, actions: SlidesActions)
   return [
     {
       id: 'file',
-      label: 'File',
+      label: t('menu.file'),
       items: [
         { id: 'new', label: 'New Presentation', shortcut: 'Mod+N', onSelect: actions.newDeck },
-        { id: 'open', label: 'Open…', shortcut: 'Mod+O', onSelect: actions.open },
+        { id: 'open', label: t('menu.open'), shortcut: 'Mod+O', onSelect: actions.open },
         separator,
-        { id: 'save', label: 'Save', shortcut: 'Mod+S', onSelect: actions.save },
-        { id: 'save-as', label: 'Save As…', shortcut: 'Shift+Mod+S', onSelect: actions.saveAs },
+        { id: 'save', label: t('menu.save'), shortcut: 'Mod+S', onSelect: actions.save },
+        {
+          id: 'save-as',
+          label: t('menu.saveAs'),
+          shortcut: 'Shift+Mod+S',
+          onSelect: actions.saveAs,
+        },
         {
           id: 'export-html',
-          label: 'Export as HTML…',
+          label: t('menu.exportHtml'),
           enabled: state.hasSlides,
           onSelect: actions.exportHtml,
         },
         separator,
-        { id: 'close', label: 'Close', shortcut: 'Mod+W', onSelect: actions.close },
+        { id: 'close', label: t('menu.close'), shortcut: 'Mod+W', onSelect: actions.close },
       ],
     },
     {
       id: 'edit',
-      label: 'Edit',
+      label: t('menu.edit'),
       items: [
         {
           id: 'undo',
-          label: 'Undo',
+          label: t('menu.undo'),
           shortcut: 'Mod+Z',
           enabled: state.canUndo,
           onSelect: actions.undo,
         },
         {
           id: 'redo',
-          label: 'Redo',
+          label: t('menu.redo'),
           shortcut: 'Shift+Mod+Z',
           enabled: state.canRedo,
           onSelect: actions.redo,
@@ -121,7 +127,7 @@ export function buildSlidesMenus(state: SlidesMenuState, actions: SlidesActions)
     },
     {
       id: 'view',
-      label: 'View',
+      label: t('menu.view'),
       items: [
         {
           id: 'thumbnails',
@@ -150,7 +156,7 @@ export function buildSlidesMenus(state: SlidesMenuState, actions: SlidesActions)
     },
     {
       id: 'help',
-      label: 'Help',
+      label: t('menu.help'),
       items: [{ id: 'help', label: 'Slides Help', onSelect: actions.help }],
     },
   ];

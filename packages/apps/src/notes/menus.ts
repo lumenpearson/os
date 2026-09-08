@@ -3,6 +3,7 @@
  * command reads the same whether it is clicked or typed as a shortcut.
  */
 import type { MenuItemTemplate, MenuTemplate } from '@lumen/kernel';
+import { t } from '@lumen/kernel';
 import { SORT_LABELS, type SortKey, VIEW_LABELS, type ViewMode } from './library';
 import type { InlineFormat, ListStyle } from './wrap';
 
@@ -53,19 +54,19 @@ export function buildNotesMenus(state: NotesMenuState, actions: NotesActions): M
   return [
     {
       id: 'file',
-      label: 'File',
+      label: t('menu.file'),
       items: [
         { id: 'new', label: 'New Note', shortcut: 'Mod+N', onSelect: actions.newNote },
         {
           id: 'duplicate',
-          label: 'Duplicate',
+          label: t('menu.duplicate'),
           shortcut: 'Mod+D',
           enabled: state.hasNote,
           onSelect: actions.duplicate,
         },
         {
           id: 'rename',
-          label: 'Rename…',
+          label: t('menu.renameEllipsis'),
           shortcut: 'Mod+R',
           enabled: state.hasNote,
           onSelect: actions.rename,
@@ -82,13 +83,13 @@ export function buildNotesMenus(state: NotesMenuState, actions: NotesActions): M
         separator,
         {
           id: 'export-markdown',
-          label: 'Export as Markdown…',
+          label: t('menu.exportMarkdown'),
           enabled: state.hasNote,
           onSelect: actions.exportMarkdown,
         },
         {
           id: 'export-text',
-          label: 'Export as Plain Text…',
+          label: t('menu.exportPlainText'),
           enabled: state.hasNote,
           onSelect: actions.exportText,
         },
@@ -102,17 +103,19 @@ export function buildNotesMenus(state: NotesMenuState, actions: NotesActions): M
           onSelect: actions.moveToTrash,
         },
         separator,
-        { id: 'close', label: 'Close', shortcut: 'Mod+W', onSelect: actions.close },
+        { id: 'close', label: t('menu.close'), shortcut: 'Mod+W', onSelect: actions.close },
       ],
     },
     {
       id: 'edit',
-      label: 'Edit',
-      items: [{ id: 'find', label: 'Find…', shortcut: 'Mod+F', onSelect: actions.find }],
+      label: t('menu.edit'),
+      items: [
+        { id: 'find', label: t('menu.findEllipsis'), shortcut: 'Mod+F', onSelect: actions.find },
+      ],
     },
     {
       id: 'view',
-      label: 'View',
+      label: t('menu.view'),
       items: [
         ...(['edit', 'preview', 'split'] as ViewMode[]).map<MenuItemTemplate>((mode) => ({
           id: `view-${mode}`,
@@ -126,7 +129,7 @@ export function buildNotesMenus(state: NotesMenuState, actions: NotesActions): M
         {
           id: 'sort',
           type: 'submenu',
-          label: 'Sort By',
+          label: t('menu.sortBy'),
           submenu: SORT_KEYS.map<MenuItemTemplate>((key) => ({
             id: `sort-${key}`,
             type: 'radio',
@@ -147,18 +150,18 @@ export function buildNotesMenus(state: NotesMenuState, actions: NotesActions): M
     },
     {
       id: 'format',
-      label: 'Format',
+      label: t('menu.format'),
       items: [
         {
           id: 'bold',
-          label: 'Bold',
+          label: t('menu.bold'),
           shortcut: 'Mod+B',
           enabled: editable,
           onSelect: () => actions.format('bold'),
         },
         {
           id: 'italic',
-          label: 'Italic',
+          label: t('menu.italic'),
           shortcut: 'Mod+I',
           enabled: editable,
           onSelect: () => actions.format('italic'),
@@ -254,7 +257,7 @@ export function buildNotesMenus(state: NotesMenuState, actions: NotesActions): M
     },
     {
       id: 'help',
-      label: 'Help',
+      label: t('menu.help'),
       items: [{ id: 'help', label: 'Notes Help', onSelect: actions.help }],
     },
   ];

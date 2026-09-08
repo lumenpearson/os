@@ -1,3 +1,4 @@
+import { t } from '@lumen/kernel';
 /**
  * The menubar for the Reminders window, built from one snapshot of state so a
  * command reads the same whether it is clicked in a menu, typed as a shortcut
@@ -52,7 +53,7 @@ export function buildRemindersMenus(
   return [
     {
       id: 'file',
-      label: 'File',
+      label: t('menu.file'),
       items: [
         {
           id: 'new-reminder',
@@ -62,14 +63,14 @@ export function buildRemindersMenus(
         },
         { id: 'new-list', label: 'New List', shortcut: 'Shift+Mod+N', onSelect: actions.newList },
         separator,
-        { id: 'close', label: 'Close', shortcut: 'Mod+W', onSelect: actions.close },
+        { id: 'close', label: t('menu.close'), shortcut: 'Mod+W', onSelect: actions.close },
       ],
     },
     {
       id: 'edit',
-      label: 'Edit',
+      label: t('menu.edit'),
       items: [
-        { id: 'find', label: 'Find…', shortcut: 'Mod+F', onSelect: actions.find },
+        { id: 'find', label: t('menu.findEllipsis'), shortcut: 'Mod+F', onSelect: actions.find },
         separator,
         {
           id: 'edit-details',
@@ -134,7 +135,7 @@ export function buildRemindersMenus(
     },
     {
       id: 'view',
-      label: 'View',
+      label: t('menu.view'),
       items: [
         ...SMART_LISTS.map<MenuItemTemplate>((id) => ({
           id: `smart-${id}`,
@@ -156,7 +157,7 @@ export function buildRemindersMenus(
         {
           id: 'sidebar',
           type: 'checkbox',
-          label: 'Sidebar',
+          label: t('menu.sidebar'),
           shortcut: 'Shift+Mod+S',
           checked: state.showSidebar,
           onSelect: actions.toggleSidebar,

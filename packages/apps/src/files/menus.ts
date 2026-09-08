@@ -4,6 +4,7 @@
  * same command behaves the same wherever it is invoked from.
  */
 import type { AppDefinition, MenuTemplate } from '@lumen/kernel';
+import { t } from '@lumen/kernel';
 import type { MenuEntry } from '@lumen/ui';
 import type { DirEntry } from '@lumen/vfs';
 import { createElement } from 'react';
@@ -111,14 +112,14 @@ export function sortSubmenu(
     {
       id: 'sort-asc',
       type: 'radio',
-      label: 'Ascending',
+      label: t('menu.ascending'),
       checked: sort.direction === 'asc',
       onSelect: () => actions.setSort({ column: sort.column, direction: 'asc' }),
     },
     {
       id: 'sort-desc',
       type: 'radio',
-      label: 'Descending',
+      label: t('menu.descending'),
       checked: sort.direction === 'desc',
       onSelect: () => actions.setSort({ column: sort.column, direction: 'desc' }),
     },
@@ -316,33 +317,47 @@ export function contextMenuFor(
     ];
     if (openWith) items.push(openWith);
     if (state.canPutBack) {
-      items.push(separator, { id: 'put-back', label: 'Put Back', onSelect: actions.putBack });
+      items.push(separator, {
+        id: 'put-back',
+        label: t('menu.putBack'),
+        onSelect: actions.putBack,
+      });
     }
     items.push(
       separator,
-      { id: 'info', label: 'Get Info', shortcut: shortcut('Mod+I'), onSelect: actions.getInfo },
-      { id: 'quick-look', label: 'Quick Look', enabled: single, onSelect: actions.quickLook },
+      {
+        id: 'info',
+        label: t('menu.getInfo'),
+        shortcut: shortcut('Mod+I'),
+        onSelect: actions.getInfo,
+      },
+      {
+        id: 'quick-look',
+        label: t('menu.quickLook'),
+        enabled: single,
+        onSelect: actions.quickLook,
+      },
       separator,
       {
         id: 'rename',
-        label: 'Rename',
+        label: t('menu.rename'),
         shortcut: shortcut('F2'),
         enabled: single,
         onSelect: actions.rename,
       },
       {
         id: 'duplicate',
-        label: 'Duplicate',
+        label: t('menu.duplicate'),
         shortcut: shortcut('Mod+D'),
         enabled: !state.inTrash,
         onSelect: actions.duplicate,
       },
       separator,
-      { id: 'cut', label: 'Cut', shortcut: shortcut('Mod+X'), onSelect: actions.cut },
-      { id: 'copy', label: 'Copy', shortcut: shortcut('Mod+C'), onSelect: actions.copy },
+      { id: 'cut', label: t('action.cut'), shortcut: shortcut('Mod+X'), onSelect: actions.cut },
+      { id: 'copy', label: t('action.copy'), shortcut: shortcut('Mod+C'), onSelect: actions.copy },
       {
         id: 'paste',
-        label: 'Paste',
+        label: t('action.paste'),
         shortcut: shortcut('Mod+V'),
         enabled: state.canPaste,
         onSelect: actions.paste,
@@ -368,49 +383,54 @@ export function contextMenuFor(
   const items: MenuEntry[] = [
     {
       id: 'new-folder',
-      label: 'New Folder',
+      label: t('menu.newFolder'),
       shortcut: shortcut('Shift+Mod+N'),
       enabled: !state.inTrash,
       onSelect: actions.newFolder,
     },
     {
       id: 'new-text',
-      label: 'New Text File',
+      label: t('menu.newTextFile'),
       enabled: !state.inTrash,
       onSelect: () => actions.newDocument('text'),
     },
     {
       id: 'new-document',
-      label: 'New Document',
+      label: t('menu.newDocument'),
       enabled: !state.inTrash,
       submenu: newDocumentSubmenu(actions),
     },
     separator,
     {
       id: 'paste',
-      label: 'Paste',
+      label: t('action.paste'),
       shortcut: shortcut('Mod+V'),
       enabled: state.canPaste && !state.inTrash,
       onSelect: actions.paste,
     },
-    { id: 'info', label: 'Get Info', shortcut: shortcut('Mod+I'), onSelect: actions.getInfo },
+    {
+      id: 'info',
+      label: t('menu.getInfo'),
+      shortcut: shortcut('Mod+I'),
+      onSelect: actions.getInfo,
+    },
     separator,
     {
       id: 'hidden',
       type: 'checkbox',
-      label: 'Show Hidden Files',
+      label: t('menu.showHiddenFiles'),
       checked: state.showHidden,
       onSelect: actions.toggleHidden,
     },
     {
       id: 'sort-by',
-      label: 'Sort By',
+      label: t('menu.sortBy'),
       submenu: sortSubmenu(state.sort, state.foldersFirst, actions),
     },
-    { id: 'filter', label: 'Filter', submenu: filterSubmenu(state, actions) },
+    { id: 'filter', label: t('menu.filter'), submenu: filterSubmenu(state, actions) },
     {
       id: 'view',
-      label: 'View',
+      label: t('menu.view'),
       submenu: [
         ...viewSubmenu(state.view, actions),
         separator,
@@ -421,7 +441,7 @@ export function contextMenuFor(
   if (state.inTrash) {
     items.push(separator, {
       id: 'empty-trash',
-      label: 'Empty Trash…',
+      label: t('menu.emptyTrashEllipsis'),
       danger: true,
       onSelect: actions.emptyTrash,
     });
@@ -439,33 +459,39 @@ export function menubarFor(state: MenuState, actions: FilesActions): MenuTemplat
     { id: 'new-window', label: 'New Window', shortcut: 'Mod+N', onSelect: actions.newWindow },
     {
       id: 'new-folder',
-      label: 'New Folder',
+      label: t('menu.newFolder'),
       shortcut: 'Shift+Mod+N',
       enabled: !state.inTrash,
       onSelect: actions.newFolder,
     },
     {
       id: 'new-text',
-      label: 'New Text File',
+      label: t('menu.newTextFile'),
       enabled: !state.inTrash,
       onSelect: () => actions.newDocument('text'),
     },
     {
       id: 'new-document',
-      label: 'New Document',
+      label: t('menu.newDocument'),
       enabled: !state.inTrash,
       submenu: newDocumentSubmenu(actions),
     },
     separator,
     { id: 'open', label: 'Open', shortcut: 'Mod+O', enabled: some, onSelect: actions.open },
     ...(openWith ? [openWith] : []),
-    { id: 'info', label: 'Get Info', shortcut: 'Mod+I', onSelect: actions.getInfo },
-    { id: 'quick-look', label: 'Quick Look', enabled: single, onSelect: actions.quickLook },
+    { id: 'info', label: t('menu.getInfo'), shortcut: 'Mod+I', onSelect: actions.getInfo },
+    { id: 'quick-look', label: t('menu.quickLook'), enabled: single, onSelect: actions.quickLook },
     separator,
-    { id: 'rename', label: 'Rename', shortcut: 'F2', enabled: single, onSelect: actions.rename },
+    {
+      id: 'rename',
+      label: t('menu.rename'),
+      shortcut: 'F2',
+      enabled: single,
+      onSelect: actions.rename,
+    },
     {
       id: 'duplicate',
-      label: 'Duplicate',
+      label: t('menu.duplicate'),
       shortcut: 'Mod+D',
       enabled: some && !state.inTrash,
       onSelect: actions.duplicate,
@@ -473,7 +499,12 @@ export function menubarFor(state: MenuState, actions: FilesActions): MenuTemplat
     separator,
   ];
   if (state.canPutBack)
-    file.push({ id: 'put-back', label: 'Put Back', enabled: some, onSelect: actions.putBack });
+    file.push({
+      id: 'put-back',
+      label: t('menu.putBack'),
+      enabled: some,
+      onSelect: actions.putBack,
+    });
   file.push({
     id: 'trash',
     label: trashLabel(state),
@@ -485,7 +516,7 @@ export function menubarFor(state: MenuState, actions: FilesActions): MenuTemplat
   if (state.inTrash)
     file.push({
       id: 'empty-trash',
-      label: 'Empty Trash…',
+      label: t('menu.emptyTrashEllipsis'),
       danger: true,
       onSelect: actions.emptyTrash,
     });
@@ -497,19 +528,30 @@ export function menubarFor(state: MenuState, actions: FilesActions): MenuTemplat
   });
 
   const edit: MenuEntry[] = [
-    { id: 'undo', label: 'Undo', shortcut: 'Mod+Z', enabled: false },
+    { id: 'undo', label: t('menu.undo'), shortcut: 'Mod+Z', enabled: false },
     separator,
-    { id: 'cut', label: 'Cut', shortcut: 'Mod+X', enabled: some, onSelect: actions.cut },
-    { id: 'copy', label: 'Copy', shortcut: 'Mod+C', enabled: some, onSelect: actions.copy },
+    { id: 'cut', label: t('action.cut'), shortcut: 'Mod+X', enabled: some, onSelect: actions.cut },
+    {
+      id: 'copy',
+      label: t('action.copy'),
+      shortcut: 'Mod+C',
+      enabled: some,
+      onSelect: actions.copy,
+    },
     {
       id: 'paste',
-      label: 'Paste',
+      label: t('action.paste'),
       shortcut: 'Mod+V',
       enabled: state.canPaste && !state.inTrash,
       onSelect: actions.paste,
     },
     separator,
-    { id: 'select-all', label: 'Select All', shortcut: 'Mod+A', onSelect: actions.selectAll },
+    {
+      id: 'select-all',
+      label: t('menu.selectAll'),
+      shortcut: 'Mod+A',
+      onSelect: actions.selectAll,
+    },
   ];
 
   const view: MenuEntry[] = [
@@ -518,7 +560,7 @@ export function menubarFor(state: MenuState, actions: FilesActions): MenuTemplat
     {
       id: 'hidden',
       type: 'checkbox',
-      label: 'Show Hidden Files',
+      label: t('menu.showHiddenFiles'),
       shortcut: 'Shift+Mod+Period',
       checked: state.showHidden,
       onSelect: actions.toggleHidden,
@@ -527,23 +569,23 @@ export function menubarFor(state: MenuState, actions: FilesActions): MenuTemplat
     separator,
     {
       id: 'sort-by',
-      label: 'Sort By',
+      label: t('menu.sortBy'),
       submenu: sortSubmenu(state.sort, state.foldersFirst, actions),
     },
-    { id: 'filter', label: 'Filter', submenu: filterSubmenu(state, actions) },
+    { id: 'filter', label: t('menu.filter'), submenu: filterSubmenu(state, actions) },
   ];
 
   const go: MenuEntry[] = [
     {
       id: 'back',
-      label: 'Back',
+      label: t('menu.back'),
       shortcut: 'Mod+[',
       enabled: state.canBack,
       onSelect: actions.back,
     },
     {
       id: 'forward',
-      label: 'Forward',
+      label: t('menu.forward'),
       shortcut: 'Mod+]',
       enabled: state.canForward,
       onSelect: actions.forward,
@@ -567,9 +609,9 @@ export function menubarFor(state: MenuState, actions: FilesActions): MenuTemplat
   ];
 
   return [
-    { id: 'file', label: 'File', items: file },
-    { id: 'edit', label: 'Edit', items: edit },
-    { id: 'view', label: 'View', items: view },
-    { id: 'go', label: 'Go', items: go },
+    { id: 'file', label: t('menu.file'), items: file },
+    { id: 'edit', label: t('menu.edit'), items: edit },
+    { id: 'view', label: t('menu.view'), items: view },
+    { id: 'go', label: t('menu.go'), items: go },
   ];
 }

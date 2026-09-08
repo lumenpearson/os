@@ -1,3 +1,4 @@
+import { t } from '@lumen/kernel';
 /**
  * The menubar, built from one snapshot of state so a command does the same
  * thing whether it is clicked in the detail pane, picked from the menu or
@@ -42,12 +43,12 @@ export function buildCharmapMenus(
   return [
     {
       id: 'file',
-      label: 'File',
-      items: [{ id: 'close', label: 'Close', shortcut: 'Mod+W', onSelect: actions.close }],
+      label: t('menu.file'),
+      items: [{ id: 'close', label: t('menu.close'), shortcut: 'Mod+W', onSelect: actions.close }],
     },
     {
       id: 'edit',
-      label: 'Edit',
+      label: t('menu.edit'),
       items: [
         {
           id: 'copy-character',
@@ -92,7 +93,7 @@ export function buildCharmapMenus(
         separator,
         {
           id: 'clear-recents',
-          label: 'Clear Recents',
+          label: t('menu.clearRecents'),
           enabled: state.hasRecents,
           onSelect: actions.clearRecents,
         },
@@ -100,7 +101,7 @@ export function buildCharmapMenus(
     },
     {
       id: 'go',
-      label: 'Go',
+      label: t('menu.go'),
       items: [
         { id: 'go-pinned', label: 'Pinned', onSelect: actions.showPinned },
         { id: 'go-recent', label: 'Recent', onSelect: actions.showRecent },
@@ -120,12 +121,12 @@ export function buildCharmapMenus(
           onSelect: () => actions.stepBlock(1),
         },
         separator,
-        { id: 'find', label: 'Find', shortcut: 'Mod+F', onSelect: actions.focusSearch },
+        { id: 'find', label: t('menu.find'), shortcut: 'Mod+F', onSelect: actions.focusSearch },
       ],
     },
     {
       id: 'view',
-      label: 'View',
+      label: t('menu.view'),
       items: [
         {
           id: 'sidebar',

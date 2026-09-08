@@ -4,6 +4,7 @@
  * shortcut, or pressed in the toolbar.
  */
 import type { MenuItemTemplate, MenuTemplate } from '@lumen/kernel';
+import { t } from '@lumen/kernel';
 import { LEVELS, type LogLevel } from './types';
 
 export interface ConsoleMenuState {
@@ -42,7 +43,7 @@ export function buildConsoleMenus(
   return [
     {
       id: 'file',
-      label: 'File',
+      label: t('menu.file'),
       items: [
         {
           id: 'file.export',
@@ -52,12 +53,12 @@ export function buildConsoleMenus(
           onSelect: actions.exportLog,
         },
         separator,
-        { id: 'file.clear', label: 'Clear', shortcut: 'Mod+K', onSelect: actions.clear },
+        { id: 'file.clear', label: t('menu.clear'), shortcut: 'Mod+K', onSelect: actions.clear },
       ],
     },
     {
       id: 'edit',
-      label: 'Edit',
+      label: t('menu.edit'),
       items: [
         {
           id: 'edit.copy',
@@ -67,12 +68,12 @@ export function buildConsoleMenus(
           onSelect: actions.copySelected,
         },
         separator,
-        { id: 'edit.find', label: 'Find', shortcut: 'Mod+F', onSelect: actions.find },
+        { id: 'edit.find', label: t('menu.find'), shortcut: 'Mod+F', onSelect: actions.find },
       ],
     },
     {
       id: 'view',
-      label: 'View',
+      label: t('menu.view'),
       items: [
         {
           id: 'view.follow',

@@ -4,6 +4,7 @@
  * without rendering the app.
  */
 import type { MenuItemTemplate, MenuTemplate } from '@lumen/kernel';
+import { t } from '@lumen/kernel';
 import { type Align, NUMBER_FORMATS, type NumberFormat } from './engine/format';
 
 export interface SheetsMenuState {
@@ -47,9 +48,9 @@ export interface SheetsMenuActions {
 }
 
 const ALIGNS: Array<{ value: Align; label: string }> = [
-  { value: 'left', label: 'Left' },
+  { value: 'left', label: t('menu.left') },
   { value: 'center', label: 'Center' },
-  { value: 'right', label: 'Right' },
+  { value: 'right', label: t('menu.right') },
 ];
 
 export function buildMenus(state: SheetsMenuState, actions: SheetsMenuActions): MenuTemplate[] {
@@ -72,52 +73,62 @@ export function buildMenus(state: SheetsMenuState, actions: SheetsMenuActions): 
   return [
     {
       id: 'file',
-      label: 'File',
+      label: t('menu.file'),
       items: [
-        { id: 'new', label: 'New', shortcut: 'Mod+N', onSelect: actions.newWindow },
-        { id: 'open', label: 'Open…', shortcut: 'Mod+O', onSelect: actions.open },
+        { id: 'new', label: t('menu.new'), shortcut: 'Mod+N', onSelect: actions.newWindow },
+        { id: 'open', label: t('menu.open'), shortcut: 'Mod+O', onSelect: actions.open },
         { id: 'file-sep-1', type: 'separator' },
-        { id: 'save', label: 'Save', shortcut: 'Mod+S', onSelect: actions.save },
-        { id: 'save-as', label: 'Save As…', shortcut: 'Shift+Mod+S', onSelect: actions.saveAs },
+        { id: 'save', label: t('menu.save'), shortcut: 'Mod+S', onSelect: actions.save },
+        {
+          id: 'save-as',
+          label: t('menu.saveAs'),
+          shortcut: 'Shift+Mod+S',
+          onSelect: actions.saveAs,
+        },
         { id: 'export-csv', label: 'Export CSV…', onSelect: actions.exportCsv },
         { id: 'file-sep-2', type: 'separator' },
-        { id: 'close', label: 'Close', shortcut: 'Mod+W', onSelect: actions.close },
+        { id: 'close', label: t('menu.close'), shortcut: 'Mod+W', onSelect: actions.close },
       ],
     },
     {
       id: 'edit',
-      label: 'Edit',
+      label: t('menu.edit'),
       items: [
         {
           id: 'undo',
-          label: 'Undo',
+          label: t('menu.undo'),
           shortcut: 'Mod+Z',
           enabled: state.canUndo,
           onSelect: actions.undo,
         },
         {
           id: 'redo',
-          label: 'Redo',
+          label: t('menu.redo'),
           shortcut: 'Shift+Mod+Z',
           enabled: state.canRedo,
           onSelect: actions.redo,
         },
         { id: 'edit-sep-1', type: 'separator' },
-        { id: 'cut', label: 'Cut', shortcut: 'Mod+X', onSelect: actions.cut },
-        { id: 'copy', label: 'Copy', shortcut: 'Mod+C', onSelect: actions.copy },
-        { id: 'paste', label: 'Paste', shortcut: 'Mod+V', onSelect: actions.paste },
-        { id: 'clear', label: 'Clear', shortcut: 'Delete', onSelect: actions.clear },
+        { id: 'cut', label: t('action.cut'), shortcut: 'Mod+X', onSelect: actions.cut },
+        { id: 'copy', label: t('action.copy'), shortcut: 'Mod+C', onSelect: actions.copy },
+        { id: 'paste', label: t('action.paste'), shortcut: 'Mod+V', onSelect: actions.paste },
+        { id: 'clear', label: t('menu.clear'), shortcut: 'Delete', onSelect: actions.clear },
         { id: 'edit-sep-2', type: 'separator' },
-        { id: 'select-all', label: 'Select All', shortcut: 'Mod+A', onSelect: actions.selectAll },
+        {
+          id: 'select-all',
+          label: t('menu.selectAll'),
+          shortcut: 'Mod+A',
+          onSelect: actions.selectAll,
+        },
       ],
     },
     {
       id: 'format',
-      label: 'Format',
+      label: t('menu.format'),
       items: [
         {
           id: 'bold',
-          label: 'Bold',
+          label: t('menu.bold'),
           shortcut: 'Mod+B',
           type: 'checkbox',
           checked: state.bold,
@@ -125,7 +136,7 @@ export function buildMenus(state: SheetsMenuState, actions: SheetsMenuActions): 
         },
         {
           id: 'italic',
-          label: 'Italic',
+          label: t('menu.italic'),
           shortcut: 'Mod+I',
           type: 'checkbox',
           checked: state.italic,
@@ -154,7 +165,7 @@ export function buildMenus(state: SheetsMenuState, actions: SheetsMenuActions): 
       label: 'Sheet',
       items: [
         { id: 'add-sheet', label: 'Add Sheet', onSelect: actions.addSheet },
-        { id: 'rename-sheet', label: 'Rename…', onSelect: actions.renameSheet },
+        { id: 'rename-sheet', label: t('menu.renameEllipsis'), onSelect: actions.renameSheet },
         {
           id: 'delete-sheet',
           label: 'Delete Sheet',
@@ -166,7 +177,7 @@ export function buildMenus(state: SheetsMenuState, actions: SheetsMenuActions): 
     },
     {
       id: 'help',
-      label: 'Help',
+      label: t('menu.help'),
       items: [{ id: 'functions', label: 'Functions…', onSelect: actions.showFunctions }],
     },
   ];

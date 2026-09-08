@@ -1,3 +1,4 @@
+import { t } from '@lumen/kernel';
 /**
  * The menubar for the Mail window, built from one snapshot of state so a
  * command does the same thing whether it is clicked in a toolbar, picked from
@@ -55,7 +56,7 @@ export function buildMailMenus(state: MailMenuState, actions: MailActions): Menu
   return [
     {
       id: 'file',
-      label: 'File',
+      label: t('menu.file'),
       items: [
         {
           id: 'new-message',
@@ -88,18 +89,20 @@ export function buildMailMenus(state: MailMenuState, actions: MailActions): Menu
         separator,
         {
           id: 'empty-trash',
-          label: 'Empty Trash',
+          label: t('menu.emptyTrash'),
           danger: true,
           onSelect: actions.emptyTrash,
         },
         separator,
-        { id: 'close', label: 'Close', shortcut: 'Mod+W', onSelect: actions.close },
+        { id: 'close', label: t('menu.close'), shortcut: 'Mod+W', onSelect: actions.close },
       ],
     },
     {
       id: 'edit',
-      label: 'Edit',
-      items: [{ id: 'find', label: 'Find…', shortcut: 'Mod+F', onSelect: actions.find }],
+      label: t('menu.edit'),
+      items: [
+        { id: 'find', label: t('menu.findEllipsis'), shortcut: 'Mod+F', onSelect: actions.find },
+      ],
     },
     {
       id: 'message',
@@ -115,7 +118,7 @@ export function buildMailMenus(state: MailMenuState, actions: MailActions): Menu
         },
         {
           id: 'forward',
-          label: 'Forward',
+          label: t('menu.forward'),
           shortcut: 'Shift+Mod+F',
           enabled: on,
           onSelect: actions.forward,
@@ -163,12 +166,12 @@ export function buildMailMenus(state: MailMenuState, actions: MailActions): Menu
     },
     {
       id: 'view',
-      label: 'View',
+      label: t('menu.view'),
       items: [
         {
           id: 'sort',
           type: 'submenu',
-          label: 'Sort By',
+          label: t('menu.sortBy'),
           submenu: SORT_KEYS.map<MenuItemTemplate>((key) => ({
             id: `sort-${key}`,
             type: 'radio',
@@ -188,7 +191,7 @@ export function buildMailMenus(state: MailMenuState, actions: MailActions): Menu
         {
           id: 'sidebar',
           type: 'checkbox',
-          label: 'Sidebar',
+          label: t('menu.sidebar'),
           shortcut: 'Shift+Mod+S',
           checked: state.sidebar,
           onSelect: actions.toggleSidebar,

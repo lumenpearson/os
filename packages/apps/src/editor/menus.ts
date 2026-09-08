@@ -3,6 +3,7 @@
  * command reads the same whether it is clicked or typed as a shortcut.
  */
 import type { MenuItemTemplate, MenuTemplate } from '@lumen/kernel';
+import { t } from '@lumen/kernel';
 
 export interface EditorMenuState {
   hasPath: boolean;
@@ -51,42 +52,42 @@ export function buildEditorMenus(state: EditorMenuState, actions: EditorActions)
   return [
     {
       id: 'file',
-      label: 'File',
+      label: t('menu.file'),
       items: [
-        { id: 'new', label: 'New', shortcut: 'Mod+N', onSelect: actions.newWindow },
-        { id: 'open', label: 'Open…', shortcut: 'Mod+O', onSelect: actions.open },
+        { id: 'new', label: t('menu.new'), shortcut: 'Mod+N', onSelect: actions.newWindow },
+        { id: 'open', label: t('menu.open'), shortcut: 'Mod+O', onSelect: actions.open },
         separator,
         {
           id: 'save',
-          label: 'Save',
+          label: t('menu.save'),
           shortcut: 'Mod+S',
           enabled: !state.readOnly,
           onSelect: actions.save,
         },
         {
           id: 'save-as',
-          label: 'Save As…',
+          label: t('menu.saveAs'),
           shortcut: 'Shift+Mod+S',
           onSelect: actions.saveAs,
         },
         separator,
-        { id: 'close', label: 'Close', shortcut: 'Mod+W', onSelect: actions.close },
+        { id: 'close', label: t('menu.close'), shortcut: 'Mod+W', onSelect: actions.close },
       ],
     },
     {
       id: 'edit',
-      label: 'Edit',
+      label: t('menu.edit'),
       items: [
         {
           id: 'undo',
-          label: 'Undo',
+          label: t('menu.undo'),
           shortcut: 'Mod+Z',
           enabled: state.canUndo && !state.readOnly && !state.fieldFocused,
           onSelect: actions.undo,
         },
         {
           id: 'redo',
-          label: 'Redo',
+          label: t('menu.redo'),
           shortcut: 'Shift+Mod+Z',
           enabled: state.canRedo && !state.readOnly && !state.fieldFocused,
           onSelect: actions.redo,
@@ -94,34 +95,34 @@ export function buildEditorMenus(state: EditorMenuState, actions: EditorActions)
         separator,
         {
           id: 'cut',
-          label: 'Cut',
+          label: t('action.cut'),
           shortcut: 'Mod+X',
           enabled: state.hasSelection && !state.readOnly && !state.fieldFocused,
           onSelect: actions.cut,
         },
         {
           id: 'copy',
-          label: 'Copy',
+          label: t('action.copy'),
           shortcut: 'Mod+C',
           enabled: state.hasSelection && !state.fieldFocused,
           onSelect: actions.copy,
         },
         {
           id: 'paste',
-          label: 'Paste',
+          label: t('action.paste'),
           shortcut: 'Mod+V',
           enabled: !state.readOnly && !state.fieldFocused,
           onSelect: actions.paste,
         },
         {
           id: 'select-all',
-          label: 'Select All',
+          label: t('menu.selectAll'),
           shortcut: 'Mod+A',
           enabled: !state.fieldFocused,
           onSelect: actions.selectAll,
         },
         separator,
-        { id: 'find', label: 'Find…', shortcut: 'Mod+F', onSelect: actions.find },
+        { id: 'find', label: t('menu.findEllipsis'), shortcut: 'Mod+F', onSelect: actions.find },
         {
           id: 'replace',
           label: 'Replace…',
@@ -134,7 +135,7 @@ export function buildEditorMenus(state: EditorMenuState, actions: EditorActions)
     },
     {
       id: 'view',
-      label: 'View',
+      label: t('menu.view'),
       items: [
         {
           id: 'word-wrap',
@@ -162,12 +163,17 @@ export function buildEditorMenus(state: EditorMenuState, actions: EditorActions)
         separator,
         { id: 'zoom-in', label: 'Bigger', shortcut: 'Mod+=', onSelect: actions.zoomIn },
         { id: 'zoom-out', label: 'Smaller', shortcut: 'Mod+-', onSelect: actions.zoomOut },
-        { id: 'zoom-reset', label: 'Actual Size', shortcut: 'Mod+0', onSelect: actions.zoomReset },
+        {
+          id: 'zoom-reset',
+          label: t('menu.actualSize'),
+          shortcut: 'Mod+0',
+          onSelect: actions.zoomReset,
+        },
       ],
     },
     {
       id: 'help',
-      label: 'Help',
+      label: t('menu.help'),
       items: [{ id: 'help', label: 'Text Editor Help', onSelect: actions.help }],
     },
   ];

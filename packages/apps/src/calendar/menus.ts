@@ -3,6 +3,7 @@
  * command reads the same whether it is clicked or typed as a shortcut.
  */
 import type { MenuItemTemplate, MenuTemplate } from '@lumen/kernel';
+import { t } from '@lumen/kernel';
 import { type CalendarView, VIEW_LABELS, VIEW_SHORTCUTS, VIEWS } from './view';
 
 export interface CalendarMenuState {
@@ -34,7 +35,7 @@ export function buildCalendarMenus(
   return [
     {
       id: 'file',
-      label: 'File',
+      label: t('menu.file'),
       items: [
         { id: 'new-event', label: 'New Event', shortcut: 'Mod+N', onSelect: actions.newEvent },
         {
@@ -54,17 +55,19 @@ export function buildCalendarMenus(
           onSelect: actions.deleteEvent,
         },
         separator,
-        { id: 'close', label: 'Close', shortcut: 'Mod+W', onSelect: actions.close },
+        { id: 'close', label: t('menu.close'), shortcut: 'Mod+W', onSelect: actions.close },
       ],
     },
     {
       id: 'edit',
-      label: 'Edit',
-      items: [{ id: 'find', label: 'Find…', shortcut: 'Mod+F', onSelect: actions.find }],
+      label: t('menu.edit'),
+      items: [
+        { id: 'find', label: t('menu.findEllipsis'), shortcut: 'Mod+F', onSelect: actions.find },
+      ],
     },
     {
       id: 'view',
-      label: 'View',
+      label: t('menu.view'),
       items: [
         ...VIEWS.map<MenuItemTemplate>((view) => ({
           id: `view-${view}`,
@@ -76,13 +79,18 @@ export function buildCalendarMenus(
         })),
         separator,
         { id: 'today', label: 'Today', shortcut: 'Mod+T', onSelect: actions.today },
-        { id: 'previous', label: 'Previous', shortcut: 'Mod+[', onSelect: actions.previous },
-        { id: 'next', label: 'Next', shortcut: 'Mod+]', onSelect: actions.next },
+        {
+          id: 'previous',
+          label: t('menu.previous'),
+          shortcut: 'Mod+[',
+          onSelect: actions.previous,
+        },
+        { id: 'next', label: t('menu.next'), shortcut: 'Mod+]', onSelect: actions.next },
         separator,
         {
           id: 'sidebar',
           type: 'checkbox',
-          label: 'Sidebar',
+          label: t('menu.sidebar'),
           shortcut: 'Shift+Mod+S',
           checked: state.showSidebar,
           onSelect: actions.toggleSidebar,

@@ -3,6 +3,7 @@
  * a command reads the same whether it is clicked or typed.
  */
 import type { MenuItemTemplate, MenuTemplate } from '@lumen/kernel';
+import { t } from '@lumen/kernel';
 import { REFRESH_RATES, type TabId } from './config';
 import { formatInterval } from './format';
 
@@ -38,7 +39,7 @@ export function buildTaskManagerMenus(
   return [
     {
       id: 'view',
-      label: 'View',
+      label: t('menu.view'),
       items: [
         {
           id: 'view.processes',

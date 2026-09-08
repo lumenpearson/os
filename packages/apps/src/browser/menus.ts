@@ -1,3 +1,4 @@
+import { t } from '@lumen/kernel';
 /**
  * The menubar, built from one snapshot of state and one set of actions, so a
  * command does the same thing from the menu, the toolbar and the keyboard.
@@ -87,14 +88,14 @@ export function menubarFor(state: BrowserMenuState, actions: BrowserActions): Me
   const history: MenuItemTemplate[] = [
     {
       id: 'back',
-      label: 'Back',
+      label: t('menu.back'),
       shortcut: SHORTCUTS.back,
       enabled: state.canBack,
       onSelect: actions.back,
     },
     {
       id: 'forward',
-      label: 'Forward',
+      label: t('menu.forward'),
       shortcut: SHORTCUTS.forward,
       enabled: state.canForward,
       onSelect: actions.forward,
@@ -143,8 +144,18 @@ export function menubarFor(state: BrowserMenuState, actions: BrowserActions): Me
   ];
 
   const view: MenuItemTemplate[] = [
-    { id: 'zoom-in', label: 'Zoom In', shortcut: SHORTCUTS.zoomIn, onSelect: actions.zoomIn },
-    { id: 'zoom-out', label: 'Zoom Out', shortcut: SHORTCUTS.zoomOut, onSelect: actions.zoomOut },
+    {
+      id: 'zoom-in',
+      label: t('menu.zoomIn'),
+      shortcut: SHORTCUTS.zoomIn,
+      onSelect: actions.zoomIn,
+    },
+    {
+      id: 'zoom-out',
+      label: t('menu.zoomOut'),
+      shortcut: SHORTCUTS.zoomOut,
+      onSelect: actions.zoomOut,
+    },
     {
       id: 'zoom-reset',
       label: zoomResetLabel(state.zoom, state.defaultZoom),
@@ -155,9 +166,9 @@ export function menubarFor(state: BrowserMenuState, actions: BrowserActions): Me
   ];
 
   return [
-    { id: 'file', label: 'File', items: file },
+    { id: 'file', label: t('menu.file'), items: file },
     { id: 'history', label: 'History', items: history },
     { id: 'bookmarks', label: 'Bookmarks', items: bookmarks },
-    { id: 'view', label: 'View', items: view },
+    { id: 'view', label: t('menu.view'), items: view },
   ];
 }

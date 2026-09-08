@@ -4,6 +4,7 @@
  * menu or typed as a shortcut.
  */
 import type { MenuItemTemplate, MenuTemplate } from '@lumen/kernel';
+import { t } from '@lumen/kernel';
 import type { Color } from './board';
 import { LEVELS, type LevelId } from './engine';
 
@@ -60,7 +61,7 @@ export function buildChessMenus(state: ChessMenuState, actions: ChessActions): M
   return [
     {
       id: 'game',
-      label: 'Game',
+      label: t('menu.game'),
       items: [
         { id: 'new', label: 'New Game…', shortcut: 'Mod+N', onSelect: actions.newGame },
         {
@@ -112,12 +113,12 @@ export function buildChessMenus(state: ChessMenuState, actions: ChessActions): M
           onSelect: actions.resign,
         },
         separator,
-        { id: 'close', label: 'Close', shortcut: 'Mod+W', onSelect: actions.close },
+        { id: 'close', label: t('menu.close'), shortcut: 'Mod+W', onSelect: actions.close },
       ],
     },
     {
       id: 'edit',
-      label: 'Edit',
+      label: t('menu.edit'),
       items: [
         {
           id: 'copy-fen',
@@ -142,7 +143,7 @@ export function buildChessMenus(state: ChessMenuState, actions: ChessActions): M
     },
     {
       id: 'view',
-      label: 'View',
+      label: t('menu.view'),
       items: [
         {
           id: 'flip',
@@ -214,7 +215,7 @@ export function buildChessMenus(state: ChessMenuState, actions: ChessActions): M
     },
     {
       id: 'help',
-      label: 'Help',
+      label: t('menu.help'),
       items: [
         { id: 'how-to-play', label: 'How to Play', onSelect: actions.howToPlay },
         { id: 'about', label: 'About Chess', onSelect: actions.about },

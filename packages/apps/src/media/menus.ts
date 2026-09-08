@@ -3,6 +3,7 @@
  * command reads the same whether it is clicked or typed.
  */
 import type { MenuItemTemplate, MenuTemplate } from '@lumen/kernel';
+import { t } from '@lumen/kernel';
 import { RATES } from './config';
 import type { LoopMode } from './queue';
 import { formatRate } from './time';
@@ -49,9 +50,9 @@ export function buildMediaMenus(state: MediaMenuState, actions: MediaActions): M
   return [
     {
       id: 'file',
-      label: 'File',
+      label: t('menu.file'),
       items: [
-        { id: 'open', label: 'Open…', shortcut: 'Mod+O', onSelect: actions.open },
+        { id: 'open', label: t('menu.open'), shortcut: 'Mod+O', onSelect: actions.open },
         {
           id: 'add-files',
           label: 'Add to Playlist…',
@@ -81,14 +82,14 @@ export function buildMediaMenus(state: MediaMenuState, actions: MediaActions): M
         },
         {
           id: 'next',
-          label: 'Next',
+          label: t('menu.next'),
           shortcut: 'N',
           enabled: state.hasTracks,
           onSelect: actions.next,
         },
         {
           id: 'previous',
-          label: 'Previous',
+          label: t('menu.previous'),
           shortcut: 'P',
           enabled: state.hasTracks,
           onSelect: actions.previous,
@@ -129,12 +130,12 @@ export function buildMediaMenus(state: MediaMenuState, actions: MediaActions): M
     },
     {
       id: 'view',
-      label: 'View',
+      label: t('menu.view'),
       items: [
         {
           id: 'fullscreen',
           type: 'checkbox',
-          label: 'Full Screen',
+          label: t('menu.fullScreen'),
           shortcut: 'F',
           checked: state.fullscreen,
           onSelect: actions.toggleFullscreen,

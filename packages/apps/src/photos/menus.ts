@@ -4,6 +4,7 @@
  * context menu on a tile.
  */
 import type { MenuItemTemplate, MenuTemplate } from '@lumen/kernel';
+import { t } from '@lumen/kernel';
 import { THUMB_SIZES, type ThumbSize } from './grid';
 import { SORT_KEYS, type SortKey } from './library';
 
@@ -51,24 +52,24 @@ export function buildPhotosMenus(state: PhotosMenuState, actions: PhotosActions)
   return [
     {
       id: 'file',
-      label: 'File',
+      label: t('menu.file'),
       items: [
         {
           id: 'open-preview',
-          label: 'Open in Preview',
+          label: t('menu.openInPreview'),
           shortcut: 'Mod+O',
           enabled: state.hasSelection,
           onSelect: actions.openInPreview,
         },
         {
           id: 'open-paint',
-          label: 'Open in Paint',
+          label: t('menu.openInPaint'),
           enabled: state.hasSelection && state.canEdit,
           onSelect: actions.openInPaint,
         },
         {
           id: 'reveal',
-          label: 'Reveal in Files',
+          label: t('menu.revealInFiles'),
           shortcut: 'Shift+Mod+R',
           enabled: state.hasSelection,
           onSelect: actions.reveal,
@@ -78,14 +79,14 @@ export function buildPhotosMenus(state: PhotosMenuState, actions: PhotosActions)
         separator,
         {
           id: 'trash',
-          label: 'Move to Trash…',
+          label: t('menu.moveToTrash'),
           shortcut: 'Mod+Backspace',
           danger: true,
           enabled: state.hasSelection,
           onSelect: actions.trash,
         },
         separator,
-        { id: 'close', label: 'Close', shortcut: 'Mod+W', onSelect: actions.close },
+        { id: 'close', label: t('menu.close'), shortcut: 'Mod+W', onSelect: actions.close },
       ],
     },
     {
@@ -102,7 +103,7 @@ export function buildPhotosMenus(state: PhotosMenuState, actions: PhotosActions)
         {
           id: 'favourite',
           type: 'checkbox',
-          label: 'Favourite',
+          label: t('menu.favourite'),
           shortcut: 'Mod+D',
           checked: state.favourite,
           enabled: state.hasSelection,
@@ -111,14 +112,14 @@ export function buildPhotosMenus(state: PhotosMenuState, actions: PhotosActions)
         separator,
         {
           id: 'previous',
-          label: 'Previous',
+          label: t('menu.previous'),
           shortcut: 'Mod+Left',
           enabled: state.hasPrevious,
           onSelect: actions.previous,
         },
         {
           id: 'next',
-          label: 'Next',
+          label: t('menu.next'),
           shortcut: 'Mod+Right',
           enabled: state.hasNext,
           onSelect: actions.next,
@@ -127,7 +128,7 @@ export function buildPhotosMenus(state: PhotosMenuState, actions: PhotosActions)
     },
     {
       id: 'view',
-      label: 'View',
+      label: t('menu.view'),
       items: [
         ...SORT_KEYS.map(
           (key): MenuItemTemplate => ({
@@ -142,14 +143,14 @@ export function buildPhotosMenus(state: PhotosMenuState, actions: PhotosActions)
         {
           id: 'ascending',
           type: 'radio',
-          label: 'Ascending',
+          label: t('menu.ascending'),
           checked: state.ascending,
           onSelect: () => actions.setAscending(true),
         },
         {
           id: 'descending',
           type: 'radio',
-          label: 'Descending',
+          label: t('menu.descending'),
           checked: !state.ascending,
           onSelect: () => actions.setAscending(false),
         },
@@ -191,23 +192,23 @@ export function buildPhotosMenus(state: PhotosMenuState, actions: PhotosActions)
 export function pictureContextMenu(state: PhotosMenuState, actions: PhotosActions) {
   return [
     { id: 'view', label: 'View Full Window', onSelect: actions.openLightbox },
-    { id: 'open-preview', label: 'Open in Preview', onSelect: actions.openInPreview },
+    { id: 'open-preview', label: t('menu.openInPreview'), onSelect: actions.openInPreview },
     {
       id: 'open-paint',
-      label: 'Open in Paint',
+      label: t('menu.openInPaint'),
       enabled: state.canEdit,
       onSelect: actions.openInPaint,
     },
-    { id: 'reveal', label: 'Reveal in Files', onSelect: actions.reveal },
+    { id: 'reveal', label: t('menu.revealInFiles'), onSelect: actions.reveal },
     { type: 'separator' as const },
     {
       id: 'favourite',
       type: 'checkbox' as const,
-      label: 'Favourite',
+      label: t('menu.favourite'),
       checked: state.favourite,
       onSelect: actions.toggleFavourite,
     },
     { type: 'separator' as const },
-    { id: 'trash', label: 'Move to Trash…', danger: true, onSelect: actions.trash },
+    { id: 'trash', label: t('menu.moveToTrash'), danger: true, onSelect: actions.trash },
   ];
 }

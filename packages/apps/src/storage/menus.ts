@@ -1,3 +1,4 @@
+import { t } from '@lumen/kernel';
 /**
  * The menubar for the Storage window. Built from one snapshot of state, so a
  * command reads the same whether it is clicked or typed, and a command with
@@ -42,7 +43,7 @@ export function buildStorageMenus(
   return [
     {
       id: 'file',
-      label: 'File',
+      label: t('menu.file'),
       items: [
         {
           id: 'file.rescan',
@@ -61,18 +62,18 @@ export function buildStorageMenus(
         separator,
         {
           id: 'file.empty-trash',
-          label: 'Empty Trash',
+          label: t('menu.emptyTrash'),
           danger: true,
           enabled: state.trashBytes !== null && state.trashBytes > 0 && !state.scanning,
           onSelect: actions.emptyTrash,
         },
         separator,
-        { id: 'file.close', label: 'Close', shortcut: 'Mod+W', onSelect: actions.close },
+        { id: 'file.close', label: t('menu.close'), shortcut: 'Mod+W', onSelect: actions.close },
       ],
     },
     {
       id: 'view',
-      label: 'View',
+      label: t('menu.view'),
       items: [
         {
           id: 'view.overview',
