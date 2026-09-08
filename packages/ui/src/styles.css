@@ -122,6 +122,14 @@
     color: color-mix(in srgb, var(--lumen-accent-ink) 78%, transparent);
   }
   .lumen-menu-separator {
+    /*
+     * `border: 0` is the whole rule working. Preflight gives every `hr` a
+     * 1px top border in `currentColor`, and this element is 1px tall, so
+     * that opaque line in the ink colour covered the translucent one below
+     * it: what read as the separator was the reset's, not the theme's, and
+     * it was near-black on a surface meant to show what is behind it.
+     */
+    border: 0;
     height: 1px;
     margin: 4px 8px;
     background: var(--lumen-rule);
