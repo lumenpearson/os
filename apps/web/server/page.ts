@@ -202,7 +202,16 @@ const READY_SIGNAL =
  * attributes needs a parser rather than a pattern.
  */
 export function withoutScripts(html: string): string {
-  return html.replace(/<script\b[^>]*>[\s\S]*?<\/script\s*>/gi, '');
+  const scriptTagPattern = /<script\b[^>]*>[\s\S]*?<\/script\s*>/gi;
+  let previous: string;
+  let current = html;
+
+  do {
+    previous = current;
+    current = current.replace(scriptTagPattern, '');
+  } while (current !== previous);
+
+  return current;
 }
 
 /**
