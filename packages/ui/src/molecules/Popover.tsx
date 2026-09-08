@@ -77,6 +77,7 @@ export function Popover({
   return createPortal(
     <div
       ref={ref}
+      data-over-page
       {...anim}
       role="dialog"
       tabIndex={-1}

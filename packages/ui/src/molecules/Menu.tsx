@@ -241,6 +241,7 @@ function Submenu({
   const left = rect.right + width > window.innerWidth ? rect.left - width : rect.right - 2;
   return createPortal(
     <div
+      data-over-page
       className="fixed z-[1101]"
       style={{ left, top: rect.top - 5 }}
       onPointerDown={(e) => e.stopPropagation()}
@@ -319,6 +320,7 @@ export function AnchoredMenu({
   return createPortal(
     <div
       ref={ref}
+      data-over-page
       className={cx('fixed z-[1100]', leaving && 'pointer-events-none')}
       style={{
         left: placed?.left ?? -9999,

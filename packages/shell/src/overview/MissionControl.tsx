@@ -89,6 +89,7 @@ export function MissionControl() {
   return (
     <div
       {...anim}
+      data-over-page
       className={cx(
         'absolute inset-0 z-[1300] bg-scrim',
         leaving ? 'lumen-fade-exit' : 'lumen-fade-enter',

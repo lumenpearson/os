@@ -35,6 +35,7 @@ export function PowerScreen({
   if (state === 'sleeping') {
     return (
       <div
+        data-over-page
         className="fixed inset-0 z-[2000] bg-black select-none"
         aria-label={t('power.sleeping')}
         role="status"
@@ -51,6 +52,7 @@ export function PowerScreen({
   const restarting = state === 'restarting';
   return (
     <div
+      data-over-page
       className="fixed inset-0 z-[2000] flex flex-col items-center justify-center gap-8 bg-[#0f1012] text-[#ececee] select-none"
       role="status"
       data-testid="power-screen"

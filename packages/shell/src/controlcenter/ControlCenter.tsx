@@ -44,6 +44,7 @@ export function ControlCenter() {
       {brightness < 1 && (
         <div
           aria-hidden
+          data-over-page
           className="pointer-events-none absolute inset-0 z-[2150] bg-black"
           style={{ opacity: 1 - brightness }}
         />
@@ -55,6 +56,7 @@ export function ControlCenter() {
           role="dialog"
           aria-label={t('systemBar.controlCenter')}
           data-testid="control-center"
+          data-over-page
           className={cx(
             'absolute right-2 top-[calc(var(--lumen-menubar-h)+6px)] z-[1200] flex w-[min(320px,calc(100vw-16px))] flex-col gap-3 rounded-lg border border-rule bg-chrome p-3 text-ink shadow-lg',
             leaving ? 'lumen-pop-exit' : 'lumen-pop-enter',

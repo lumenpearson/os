@@ -242,7 +242,11 @@ export default function LockScreen() {
 
 function Screen({ children }: { children: React.ReactNode }) {
   return (
-    <div className="fixed inset-0 z-[2000] flex select-none" data-testid="lock-screen">
+    <div
+      data-over-page
+      className="fixed inset-0 z-[2000] flex select-none"
+      data-testid="lock-screen"
+    >
       <Wallpaper dim />
       <div className="relative z-10 flex flex-1 flex-col">{children}</div>
     </div>

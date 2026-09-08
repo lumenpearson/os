@@ -102,6 +102,7 @@ export function StartMenu() {
       aria-label={t('start.menu')}
       data-testid="start-menu"
       {...anim}
+      data-over-page
       className={cx(
         // deslop-ignore-next-line 22 — border and radius are on this element; the clipped children have no border of their own.
         'absolute z-[1200] flex w-[min(560px,calc(100vw-16px))] flex-col overflow-hidden rounded-lg border border-rule bg-chrome text-ink shadow-lg',

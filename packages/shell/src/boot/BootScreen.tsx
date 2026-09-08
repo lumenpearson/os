@@ -15,6 +15,7 @@ export function BootScreen({ error }: { error?: string }) {
       role="status"
       aria-live="polite"
       aria-label={error ? t('boot.failed') : t('boot.starting')}
+      data-over-page
       className="fixed inset-0 z-[2200] flex flex-col items-center justify-center gap-10 bg-[#141517] text-[#ececee] select-none"
       data-testid="boot-screen"
     >

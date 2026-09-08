@@ -72,6 +72,7 @@ export default function SetupAssistant() {
 
   return (
     <div
+      data-over-page
       className="fixed inset-0 z-[2000] flex items-center justify-center bg-canvas text-ink select-none"
       data-testid="setup-assistant"
     >

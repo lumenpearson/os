@@ -51,6 +51,7 @@ export function PerformanceOverlay() {
     <div
       // Above the windows and out of the way of the pointer: it is a readout,
       // not a control, and it must never take a click meant for the desktop.
+      data-over-page
       className="pointer-events-none fixed bottom-2 left-2 z-[1500] select-none"
       data-testid="performance-overlay"
       role="status"

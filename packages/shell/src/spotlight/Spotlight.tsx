@@ -147,6 +147,7 @@ export function Spotlight() {
 
   return (
     <div
+      data-over-page
       className={cx(
         'absolute inset-0 z-[1250] flex items-start justify-center pt-[16vh]',
         leaving && 'pointer-events-none',

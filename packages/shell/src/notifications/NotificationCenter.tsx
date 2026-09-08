@@ -47,6 +47,7 @@ export function NotificationCenter() {
       role="dialog"
       aria-label={t('systemBar.notifications')}
       data-testid="notification-center"
+      data-over-page
       className={cx(
         'absolute right-2 top-[calc(var(--lumen-menubar-h)+6px)] z-[1200] flex max-h-[calc(100vh-var(--lumen-menubar-h)-var(--lumen-taskbar-h)-20px)] w-[min(360px,calc(100vw-16px))] flex-col rounded-lg border border-rule bg-chrome text-ink shadow-lg',
         leaving ? 'lumen-pop-exit' : 'lumen-pop-enter',

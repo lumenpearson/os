@@ -109,6 +109,7 @@ export function createWebPlatform(appVersion = KERNEL_VERSION): Platform {
       canQuit: false,
       realMetrics: false,
       relocatableHome: false,
+      pageViews: false,
     },
     adapter,
     window: {
@@ -184,6 +185,25 @@ export function createWebPlatform(appVersion = KERNEL_VERSION): Platform {
         window.open(url, '_blank', 'noopener,noreferrer');
       },
       async revealHome() {},
+    },
+    /*
+     * A browser page has no window of its own to put a second web view in, so
+     * every call here does nothing and the browser app falls back to a frame.
+     * They are not made to throw: the app checks the capability, and a host
+     * that answers "no" quietly is easier to reason about than one that
+     * answers by failing.
+     */
+    pages: {
+      async open() {},
+      async navigate() {},
+      async place() {},
+      async zoom() {},
+      async reload() {},
+      async close() {},
+      async closeAll() {},
+      async listen() {
+        return () => {};
+      },
     },
     interface: {
       /*

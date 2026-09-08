@@ -13,6 +13,7 @@ export function WindowSwitcher() {
   const current = windows[index];
   return (
     <div
+      data-over-page
       className="pointer-events-none absolute inset-0 z-[1350] flex items-center justify-center"
       data-testid="window-switcher"
       role="dialog"

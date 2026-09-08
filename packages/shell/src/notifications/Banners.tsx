@@ -20,6 +20,7 @@ export function Banners() {
   if (settings.notifications.doNotDisturb) return null;
   return (
     <div
+      data-over-page
       className="pointer-events-none absolute right-3 top-[calc(var(--lumen-menubar-h)+8px)] z-[1500] flex w-[min(340px,calc(100vw-24px))] flex-col gap-2"
       aria-live="polite"
       data-testid="banners"
