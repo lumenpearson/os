@@ -58,14 +58,14 @@ export function buildClockMenus(state: ClockMenuState, actions: ClockMenuActions
         {
           id: 'digital',
           type: 'radio',
-          label: 'Digital Face',
+          label: t('clock.digital'),
           checked: state.face === 'digital',
           onSelect: () => actions.setFace('digital'),
         },
         {
           id: 'analogue',
           type: 'radio',
-          label: 'Analogue Face',
+          label: t('clock.analogue'),
           checked: state.face === 'analogue',
           onSelect: () => actions.setFace('analogue'),
         },
@@ -73,7 +73,7 @@ export function buildClockMenus(state: ClockMenuState, actions: ClockMenuActions
         {
           id: 'clock24h',
           type: 'checkbox',
-          label: '24-Hour Clock',
+          label: t('clock.twentyFour'),
           checked: state.clock24h,
           onSelect: () => actions.setClock24h(!state.clock24h),
         },
@@ -81,7 +81,7 @@ export function buildClockMenus(state: ClockMenuState, actions: ClockMenuActions
     },
     {
       id: 'stopwatch',
-      label: 'Stopwatch',
+      label: t('clock.stopwatch'),
       items: [
         {
           id: 'toggle',
@@ -91,7 +91,7 @@ export function buildClockMenus(state: ClockMenuState, actions: ClockMenuActions
         },
         {
           id: 'lap',
-          label: 'Lap',
+          label: t('clock.lap'),
           shortcut: on('stopwatch', 'Mod+L'),
           enabled: state.stopwatchRunning,
           onSelect: actions.lapStopwatch,

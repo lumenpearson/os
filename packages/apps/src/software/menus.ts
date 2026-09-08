@@ -38,17 +38,17 @@ export interface SectionMeta {
  * and each one answers a question a person actually arrives with.
  */
 export const SECTIONS: ReadonlyArray<SectionMeta> = [
-  { id: 'discover', label: 'Discover', group: 'store' },
-  { id: 'categories', label: 'Categories', group: 'store' },
-  { id: 'collections', label: 'Collections', group: 'store' },
-  { id: 'deals', label: 'Offers', group: 'store' },
-  { id: 'installed', label: 'Installed', group: 'library' },
-  { id: 'updates', label: 'Updates', group: 'library' },
-  { id: 'account', label: 'Account', group: 'account' },
-  { id: 'subscription', label: 'Subscription', group: 'account' },
-  { id: 'purchases', label: 'Purchases', group: 'account' },
-  { id: 'install', label: 'Add Package', group: 'system' },
-  { id: 'settings', label: 'Store Settings', group: 'system' },
+  { id: 'discover', label: t('software.discover'), group: 'store' },
+  { id: 'categories', label: t('software.categories'), group: 'store' },
+  { id: 'collections', label: t('software.collections'), group: 'store' },
+  { id: 'deals', label: t('software.offers'), group: 'store' },
+  { id: 'installed', label: t('software.installed'), group: 'library' },
+  { id: 'updates', label: t('software.updates'), group: 'library' },
+  { id: 'account', label: t('software.account'), group: 'account' },
+  { id: 'subscription', label: t('software.subscription'), group: 'account' },
+  { id: 'purchases', label: t('software.purchases'), group: 'account' },
+  { id: 'install', label: t('software.addPackage'), group: 'system' },
+  { id: 'settings', label: t('software.storeSettings'), group: 'system' },
 ];
 
 /*
@@ -59,10 +59,10 @@ export const SECTIONS: ReadonlyArray<SectionMeta> = [
 
 /** The sidebar's bands, in order, with the heading each one carries. */
 export const SECTION_GROUPS: ReadonlyArray<{ id: SectionMeta['group']; title: string }> = [
-  { id: 'store', title: 'Store' },
-  { id: 'library', title: 'Library' },
-  { id: 'account', title: 'Account' },
-  { id: 'system', title: 'Manage' },
+  { id: 'store', title: t('software.storeGroup') },
+  { id: 'library', title: t('software.libraryGroup') },
+  { id: 'account', title: t('software.accountGroup') },
+  { id: 'system', title: t('software.manageGroup') },
 ];
 
 export interface SoftwareMenuState {
@@ -89,13 +89,13 @@ export function buildSoftwareMenus(
       items: [
         {
           id: 'file.install',
-          label: 'Install from File…',
+          label: t('software.installFromFile'),
           shortcut: 'Mod+O',
           onSelect: actions.installFromFile,
         },
         {
           id: 'file.paste',
-          label: 'Paste Manifest…',
+          label: t('software.pasteManifest'),
           shortcut: 'Shift+Mod+V',
           onSelect: actions.pasteManifest,
         },
@@ -144,7 +144,7 @@ export function buildSoftwareMenus(
         { type: 'separator' },
         {
           id: 'view.refresh',
-          label: 'Refresh Catalogue',
+          label: t('software.refreshCatalogue'),
           shortcut: 'Mod+R',
           onSelect: actions.refresh,
         },

@@ -43,7 +43,7 @@ export function buildClipboardMenus(
       items: [
         {
           id: 'put-back',
-          label: 'Put Back on Clipboard',
+          label: t('clipboard.putBack'),
           shortcut: 'Mod+Return',
           enabled: state.hasSelection,
           onSelect: actions.putBack,
@@ -58,7 +58,7 @@ export function buildClipboardMenus(
         },
         {
           id: 'remove',
-          label: 'Remove',
+          label: t('clipboard.remove'),
           shortcut: 'Mod+Backspace',
           enabled: state.hasSelection,
           danger: true,
@@ -66,7 +66,7 @@ export function buildClipboardMenus(
         },
         {
           id: 'clear-all',
-          label: 'Clear All…',
+          label: t('clipboard.clearAll'),
           shortcut: 'Shift+Mod+Backspace',
           enabled: state.hasItems,
           danger: true,

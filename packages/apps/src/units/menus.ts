@@ -46,7 +46,7 @@ export function buildUnitsMenus(state: UnitsMenuState, actions: UnitsMenuActions
           enabled: state.hasResult,
           onSelect: actions.copyResult,
         },
-        { id: 'swap', label: 'Swap Units', shortcut: 'Mod+S', onSelect: actions.swapUnits },
+        { id: 'swap', label: t('units.swapUnits'), shortcut: 'Mod+S', onSelect: actions.swapUnits },
         separator,
         {
           id: 'clear-recents',
@@ -70,13 +70,13 @@ export function buildUnitsMenus(state: UnitsMenuState, actions: UnitsMenuActions
         separator,
         {
           id: 'previous-category',
-          label: 'Previous Category',
+          label: t('units.previousCategory'),
           shortcut: 'Mod+[',
           onSelect: () => actions.stepCategory(-1),
         },
         {
           id: 'next-category',
-          label: 'Next Category',
+          label: t('units.nextCategory'),
           shortcut: 'Mod+]',
           onSelect: () => actions.stepCategory(1),
         },
@@ -84,7 +84,7 @@ export function buildUnitsMenus(state: UnitsMenuState, actions: UnitsMenuActions
         {
           id: 'recents',
           type: 'checkbox',
-          label: 'Recents',
+          label: t('units.recents'),
           shortcut: 'Mod+R',
           checked: state.showRecents,
           onSelect: actions.toggleRecents,

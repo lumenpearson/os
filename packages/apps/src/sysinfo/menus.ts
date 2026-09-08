@@ -35,7 +35,7 @@ export function buildSysInfoMenus(
       items: [
         {
           id: 'file.save',
-          label: 'Save Report to Documents',
+          label: t('sysinfo.saveReport'),
           shortcut: 'Mod+S',
           enabled: hasReport,
           onSelect: actions.saveReport,
@@ -50,7 +50,7 @@ export function buildSysInfoMenus(
       items: [
         {
           id: 'edit.copy',
-          label: 'Copy Report',
+          label: t('sysinfo.copyReport'),
           shortcut: 'Shift+Mod+C',
           enabled: hasReport,
           onSelect: actions.copyReport,
@@ -63,7 +63,7 @@ export function buildSysInfoMenus(
       items: [
         {
           id: 'view.refresh',
-          label: 'Take Readings Again',
+          label: t('sysinfo.takeReadings'),
           shortcut: 'Mod+R',
           enabled: !state.reading,
           onSelect: actions.refresh,

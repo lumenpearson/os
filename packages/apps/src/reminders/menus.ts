@@ -57,11 +57,16 @@ export function buildRemindersMenus(
       items: [
         {
           id: 'new-reminder',
-          label: 'New Reminder',
+          label: t('reminders.newReminder'),
           shortcut: 'Mod+N',
           onSelect: actions.newReminder,
         },
-        { id: 'new-list', label: 'New List', shortcut: 'Shift+Mod+N', onSelect: actions.newList },
+        {
+          id: 'new-list',
+          label: t('reminders.newList'),
+          shortcut: 'Shift+Mod+N',
+          onSelect: actions.newList,
+        },
         separator,
         { id: 'close', label: t('menu.close'), shortcut: 'Mod+W', onSelect: actions.close },
       ],
@@ -74,7 +79,7 @@ export function buildRemindersMenus(
         separator,
         {
           id: 'edit-details',
-          label: 'Edit Details…',
+          label: t('reminders.editDetails'),
           shortcut: 'Mod+E',
           enabled: onRow,
           onSelect: actions.editDetails,
@@ -96,28 +101,28 @@ export function buildRemindersMenus(
         separator,
         {
           id: 'indent',
-          label: 'Make Subtask',
+          label: t('reminders.makeSubtask'),
           shortcut: 'Mod+]',
           enabled: onRow && state.canIndent,
           onSelect: actions.indent,
         },
         {
           id: 'outdent',
-          label: 'Lift Out of Subtask',
+          label: t('reminders.liftOut'),
           shortcut: 'Mod+[',
           enabled: onRow && state.canOutdent,
           onSelect: actions.outdent,
         },
         {
           id: 'move-up',
-          label: 'Move Up',
+          label: t('reminders.moveUp'),
           shortcut: 'Shift+Mod+ArrowUp',
           enabled: onRow,
           onSelect: actions.moveUp,
         },
         {
           id: 'move-down',
-          label: 'Move Down',
+          label: t('reminders.moveDown'),
           shortcut: 'Shift+Mod+ArrowDown',
           enabled: onRow,
           onSelect: actions.moveDown,
@@ -125,7 +130,7 @@ export function buildRemindersMenus(
         separator,
         {
           id: 'delete',
-          label: 'Delete',
+          label: t('reminders.delete'),
           shortcut: 'Delete',
           danger: true,
           enabled: onRow,
@@ -149,7 +154,7 @@ export function buildRemindersMenus(
         {
           id: 'show-completed',
           type: 'checkbox',
-          label: 'Show Completed',
+          label: t('reminders.showCompleted'),
           shortcut: 'Shift+Mod+C',
           checked: state.showCompleted,
           onSelect: actions.toggleShowCompleted,

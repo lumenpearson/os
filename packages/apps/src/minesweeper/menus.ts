@@ -44,7 +44,7 @@ export function buildMinesweeperMenus(
         {
           id: 'custom',
           type: 'radio',
-          label: 'Custom…',
+          label: t('minesweeper.custom'),
           shortcut: 'Mod+4',
           checked: state.difficulty === 'custom',
           onSelect: actions.openCustom,
@@ -52,7 +52,7 @@ export function buildMinesweeperMenus(
         separator,
         {
           id: 'best-times',
-          label: 'Best Times…',
+          label: t('minesweeper.bestTimes'),
           shortcut: 'Mod+B',
           onSelect: actions.openBestTimes,
         },
@@ -60,12 +60,12 @@ export function buildMinesweeperMenus(
     },
     {
       id: 'options',
-      label: 'Options',
+      label: t('minesweeper.options'),
       items: [
         {
           id: 'question-marks',
           type: 'checkbox',
-          label: 'Question Marks',
+          label: t('minesweeper.questionMarks'),
           shortcut: 'Mod+Q',
           checked: state.questionMarks,
           onSelect: actions.toggleQuestionMarks,

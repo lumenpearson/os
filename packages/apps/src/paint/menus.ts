@@ -64,7 +64,7 @@ export function buildPaintMenus(state: PaintMenuState, actions: PaintActions): M
         },
         {
           id: 'export',
-          label: 'Export PNG…',
+          label: t('paint.exportPng'),
           shortcut: 'Shift+Mod+E',
           onSelect: actions.exportPng,
         },
@@ -119,14 +119,14 @@ export function buildPaintMenus(state: PaintMenuState, actions: PaintActions): M
         },
         {
           id: 'deselect',
-          label: 'Deselect',
+          label: t('paint.deselect'),
           shortcut: 'Mod+D',
           enabled: state.hasSelection,
           onSelect: actions.deselect,
         },
         {
           id: 'crop',
-          label: 'Crop to Selection',
+          label: t('paint.cropToSelection'),
           shortcut: 'Shift+Mod+X',
           enabled: state.hasSelection,
           onSelect: actions.crop,
@@ -135,15 +135,20 @@ export function buildPaintMenus(state: PaintMenuState, actions: PaintActions): M
     },
     {
       id: 'image',
-      label: 'Image',
+      label: t('paint.image'),
       items: [
         {
           id: 'canvas-size',
-          label: 'Canvas Size…',
+          label: t('paint.canvasSize'),
           shortcut: 'Shift+Mod+C',
           onSelect: actions.canvasSize,
         },
-        { id: 'scale', label: 'Scale…', shortcut: 'Shift+Mod+I', onSelect: actions.scaleImage },
+        {
+          id: 'scale',
+          label: t('paint.scale'),
+          shortcut: 'Shift+Mod+I',
+          onSelect: actions.scaleImage,
+        },
         separator,
         { id: 'flip-h', label: t('menu.flipHorizontal'), onSelect: actions.flipHorizontal },
         { id: 'flip-v', label: t('menu.flipVertical'), onSelect: actions.flipVertical },
@@ -184,7 +189,7 @@ export function buildPaintMenus(state: PaintMenuState, actions: PaintActions): M
         {
           id: 'grid',
           type: 'checkbox',
-          label: 'Show Grid',
+          label: t('paint.showGrid'),
           shortcut: 'Shift+Mod+G',
           checked: state.showGrid,
           enabled: state.gridAvailable,

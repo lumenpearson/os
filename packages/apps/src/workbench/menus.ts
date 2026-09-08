@@ -43,7 +43,7 @@ export function buildWorkbenchMenus(
       items: [
         {
           id: 'copy-output',
-          label: 'Copy Output',
+          label: t('workbench.copyOutput'),
           shortcut: 'Shift+Mod+C',
           enabled: state.hasOutput,
           onSelect: actions.copyOutput,
@@ -73,13 +73,13 @@ export function buildWorkbenchMenus(
         separator,
         {
           id: 'next-tool',
-          label: 'Next Tool',
+          label: t('workbench.nextTool'),
           shortcut: 'Mod+]',
           onSelect: actions.nextTool,
         },
         {
           id: 'previous-tool',
-          label: 'Previous Tool',
+          label: t('workbench.previousTool'),
           shortcut: 'Mod+[',
           onSelect: actions.previousTool,
         },

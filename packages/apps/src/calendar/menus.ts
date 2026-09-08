@@ -37,10 +37,15 @@ export function buildCalendarMenus(
       id: 'file',
       label: t('menu.file'),
       items: [
-        { id: 'new-event', label: 'New Event', shortcut: 'Mod+N', onSelect: actions.newEvent },
+        {
+          id: 'new-event',
+          label: t('calendar.newEvent'),
+          shortcut: 'Mod+N',
+          onSelect: actions.newEvent,
+        },
         {
           id: 'edit-event',
-          label: 'Edit Event…',
+          label: t('calendar.editEvent'),
           shortcut: 'Mod+E',
           enabled: state.hasSelection,
           onSelect: actions.editEvent,
@@ -48,7 +53,7 @@ export function buildCalendarMenus(
         separator,
         {
           id: 'delete-event',
-          label: 'Delete Event',
+          label: t('calendar.deleteEvent'),
           shortcut: 'Delete',
           danger: true,
           enabled: state.hasSelection,
@@ -78,7 +83,7 @@ export function buildCalendarMenus(
           onSelect: () => actions.setView(view),
         })),
         separator,
-        { id: 'today', label: 'Today', shortcut: 'Mod+T', onSelect: actions.today },
+        { id: 'today', label: t('calendar.today'), shortcut: 'Mod+T', onSelect: actions.today },
         {
           id: 'previous',
           label: t('menu.previous'),

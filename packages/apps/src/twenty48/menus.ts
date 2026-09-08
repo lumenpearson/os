@@ -51,7 +51,7 @@ export function buildTwenty48Menus(
         {
           id: 'best',
           type: 'checkbox',
-          label: 'Best Score',
+          label: t('twenty48.bestScore'),
           shortcut: 'Mod+B',
           checked: state.showBest,
           onSelect: actions.toggleBest,
@@ -59,7 +59,7 @@ export function buildTwenty48Menus(
         {
           id: 'animations',
           type: 'checkbox',
-          label: 'Animations',
+          label: t('twenty48.animations'),
           checked: state.animations,
           onSelect: actions.toggleAnimations,
         },

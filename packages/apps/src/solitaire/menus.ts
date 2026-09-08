@@ -34,8 +34,13 @@ export function buildSolitaireMenus(
       id: 'game',
       label: t('menu.game'),
       items: [
-        { id: 'new', label: 'New Deal', shortcut: 'Mod+N', onSelect: actions.newDeal },
-        { id: 'restart', label: 'Restart This Deal', shortcut: 'Mod+R', onSelect: actions.restart },
+        { id: 'new', label: t('solitaire.newDeal'), shortcut: 'Mod+N', onSelect: actions.newDeal },
+        {
+          id: 'restart',
+          label: t('solitaire.restartDeal'),
+          shortcut: 'Mod+R',
+          onSelect: actions.restart,
+        },
         separator,
         {
           id: 'undo',
@@ -55,7 +60,7 @@ export function buildSolitaireMenus(
         {
           id: 'draw-one',
           type: 'radio',
-          label: 'Draw One',
+          label: t('solitaire.drawOne'),
           shortcut: 'Mod+1',
           checked: state.draw === 1,
           onSelect: () => actions.setDraw(1),
@@ -63,7 +68,7 @@ export function buildSolitaireMenus(
         {
           id: 'draw-three',
           type: 'radio',
-          label: 'Draw Three',
+          label: t('solitaire.drawThree'),
           shortcut: 'Mod+3',
           checked: state.draw === 3,
           onSelect: () => actions.setDraw(3),

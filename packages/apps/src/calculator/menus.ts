@@ -50,7 +50,7 @@ export function buildCalculatorMenus(
         { id: 'clear', label: t('menu.clear'), shortcut: 'Escape', onSelect: actions.clear },
         {
           id: 'clear-tape',
-          label: 'Clear Tape',
+          label: t('calculator.clearTape'),
           enabled: state.hasTape,
           onSelect: actions.clearTape,
         },
@@ -72,7 +72,7 @@ export function buildCalculatorMenus(
         {
           id: 'tape',
           type: 'checkbox',
-          label: 'Show Tape',
+          label: t('calculator.showTape'),
           shortcut: 'Mod+T',
           checked: state.showTape,
           onSelect: actions.toggleTape,
@@ -81,7 +81,7 @@ export function buildCalculatorMenus(
         {
           id: 'degrees',
           type: 'radio',
-          label: 'Degrees',
+          label: t('calculator.degrees'),
           enabled: angleEnabled,
           checked: state.angle === 'deg',
           onSelect: () => actions.setAngle('deg'),
@@ -89,7 +89,7 @@ export function buildCalculatorMenus(
         {
           id: 'radians',
           type: 'radio',
-          label: 'Radians',
+          label: t('calculator.radians'),
           enabled: angleEnabled,
           checked: state.angle === 'rad',
           onSelect: () => actions.setAngle('rad'),

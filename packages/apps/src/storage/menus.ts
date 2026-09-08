@@ -47,14 +47,14 @@ export function buildStorageMenus(
       items: [
         {
           id: 'file.rescan',
-          label: 'Rescan',
+          label: t('storage.rescan'),
           shortcut: 'Mod+R',
           enabled: !state.scanning,
           onSelect: actions.rescan,
         },
         {
           id: 'file.cancel',
-          label: 'Cancel Scan',
+          label: t('storage.cancelScan'),
           shortcut: 'Mod+.',
           enabled: state.scanning,
           onSelect: actions.cancelScan,
@@ -102,7 +102,7 @@ export function buildStorageMenus(
         separator,
         {
           id: 'view.up',
-          label: 'Go Up',
+          label: t('storage.goUp'),
           shortcut: 'Mod+Up',
           enabled: state.view === 'folders' && state.canGoUp,
           onSelect: actions.goUp,

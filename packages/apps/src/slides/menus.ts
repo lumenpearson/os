@@ -43,7 +43,12 @@ export function buildSlidesMenus(state: SlidesMenuState, actions: SlidesActions)
       id: 'file',
       label: t('menu.file'),
       items: [
-        { id: 'new', label: 'New Presentation', shortcut: 'Mod+N', onSelect: actions.newDeck },
+        {
+          id: 'new',
+          label: t('slides.newPresentation'),
+          shortcut: 'Mod+N',
+          onSelect: actions.newDeck,
+        },
         { id: 'open', label: t('menu.open'), shortcut: 'Mod+O', onSelect: actions.open },
         separator,
         { id: 'save', label: t('menu.save'), shortcut: 'Mod+S', onSelect: actions.save },
@@ -82,29 +87,29 @@ export function buildSlidesMenus(state: SlidesMenuState, actions: SlidesActions)
           onSelect: actions.redo,
         },
         separator,
-        { id: 'rename', label: 'Presentation Title…', onSelect: actions.renameDeck },
+        { id: 'rename', label: t('slides.presentationTitle'), onSelect: actions.renameDeck },
       ],
     },
     {
       id: 'slide',
-      label: 'Slide',
+      label: t('slides.slide'),
       items: [
         {
           id: 'new-slide',
-          label: 'New Slide',
+          label: t('slides.newSlide'),
           shortcut: 'Shift+Mod+N',
           onSelect: actions.newSlide,
         },
         {
           id: 'duplicate',
-          label: 'Duplicate Slide',
+          label: t('slides.duplicateSlide'),
           shortcut: 'Mod+D',
           enabled: state.hasSlides,
           onSelect: actions.duplicate,
         },
         {
           id: 'delete',
-          label: 'Delete Slide',
+          label: t('slides.deleteSlide'),
           enabled: state.hasSlides,
           danger: true,
           onSelect: actions.remove,
@@ -113,7 +118,7 @@ export function buildSlidesMenus(state: SlidesMenuState, actions: SlidesActions)
         {
           id: 'layout',
           type: 'submenu',
-          label: 'Layout',
+          label: t('slides.layout'),
           enabled: state.hasSlides,
           submenu: SLIDE_LAYOUTS.map((layout) => ({
             id: `layout-${layout}`,
@@ -132,14 +137,14 @@ export function buildSlidesMenus(state: SlidesMenuState, actions: SlidesActions)
         {
           id: 'thumbnails',
           type: 'checkbox',
-          label: 'Thumbnails',
+          label: t('slides.thumbnails'),
           checked: state.thumbnailsOpen,
           onSelect: actions.toggleThumbnails,
         },
         {
           id: 'notes',
           type: 'checkbox',
-          label: 'Notes Panel',
+          label: t('slides.notesPanel'),
           shortcut: 'Shift+Mod+I',
           checked: state.notesOpen,
           onSelect: actions.toggleNotes,
@@ -147,7 +152,7 @@ export function buildSlidesMenus(state: SlidesMenuState, actions: SlidesActions)
         separator,
         {
           id: 'present',
-          label: 'Present',
+          label: t('slides.present'),
           shortcut: 'F5',
           enabled: state.hasSlides,
           onSelect: actions.present,
@@ -157,7 +162,7 @@ export function buildSlidesMenus(state: SlidesMenuState, actions: SlidesActions)
     {
       id: 'help',
       label: t('menu.help'),
-      items: [{ id: 'help', label: 'Slides Help', onSelect: actions.help }],
+      items: [{ id: 'help', label: t('slides.help'), onSelect: actions.help }],
     },
   ];
 }

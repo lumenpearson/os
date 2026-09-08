@@ -47,7 +47,7 @@ export function buildConsoleMenus(
       items: [
         {
           id: 'file.export',
-          label: 'Export…',
+          label: t('console.export'),
           shortcut: 'Mod+S',
           enabled: state.rowCount > 0,
           onSelect: actions.exportLog,
@@ -62,7 +62,7 @@ export function buildConsoleMenus(
       items: [
         {
           id: 'edit.copy',
-          label: 'Copy Selected',
+          label: t('console.copySelected'),
           shortcut: 'Mod+C',
           enabled: state.hasSelection,
           onSelect: actions.copySelected,
@@ -78,7 +78,7 @@ export function buildConsoleMenus(
         {
           id: 'view.follow',
           type: 'checkbox',
-          label: 'Follow Tail',
+          label: t('console.followTail'),
           shortcut: 'Mod+T',
           checked: state.follow,
           onSelect: actions.toggleFollow,
@@ -86,7 +86,7 @@ export function buildConsoleMenus(
         {
           id: 'view.levels',
           type: 'submenu',
-          label: 'Levels',
+          label: t('console.levels'),
           submenu: LEVELS.map((level) => ({
             id: `view.levels.${level}`,
             type: 'checkbox' as const,

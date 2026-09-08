@@ -55,7 +55,7 @@ export function buildArchiveMenus(
         },
         {
           id: 'new',
-          label: 'New Archive…',
+          label: t('archive.newArchive'),
           shortcut: 'Shift+Mod+N',
           enabled: !state.busy,
           onSelect: actions.newArchive,
@@ -63,14 +63,14 @@ export function buildArchiveMenus(
         separator,
         {
           id: 'extract-all',
-          label: 'Extract All…',
+          label: t('archive.extractAll'),
           shortcut: 'Mod+E',
           enabled: ready,
           onSelect: actions.extractAll,
         },
         {
           id: 'extract-selected',
-          label: 'Extract Selected…',
+          label: t('archive.extractSelected'),
           shortcut: 'Shift+Mod+E',
           enabled: ready && state.hasSelection,
           onSelect: actions.extractSelected,
@@ -99,7 +99,7 @@ export function buildArchiveMenus(
         {
           id: 'sort',
           type: 'submenu',
-          label: 'Sort',
+          label: t('archive.sort'),
           submenu: [
             ...SORT_COLUMNS.map<MenuItemTemplate>((column, index) => ({
               id: `sort-${column}`,
@@ -130,7 +130,7 @@ export function buildArchiveMenus(
         {
           id: 'exact-bytes',
           type: 'checkbox',
-          label: 'Show Sizes as Bytes',
+          label: t('archive.sizesAsBytes'),
           shortcut: 'Mod+B',
           checked: state.exactBytes,
           onSelect: actions.toggleExactBytes,
@@ -138,7 +138,7 @@ export function buildArchiveMenus(
         {
           id: 'details',
           type: 'checkbox',
-          label: 'Details',
+          label: t('archive.details'),
           shortcut: 'Shift+Mod+D',
           checked: state.showDetails,
           onSelect: actions.toggleDetails,
@@ -146,14 +146,14 @@ export function buildArchiveMenus(
         separator,
         {
           id: 'expand-all',
-          label: 'Expand All',
+          label: t('archive.expandAll'),
           shortcut: 'Mod+.',
           enabled: state.hasArchive,
           onSelect: actions.expandAll,
         },
         {
           id: 'collapse-all',
-          label: 'Collapse All',
+          label: t('archive.collapseAll'),
           shortcut: 'Shift+Mod+.',
           enabled: state.hasArchive,
           onSelect: actions.collapseAll,

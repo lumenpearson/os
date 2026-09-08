@@ -44,7 +44,7 @@ export function buildSudokuMenus(state: SudokuMenuState, actions: SudokuActions)
       items: [
         {
           id: 'new',
-          label: 'New Puzzle',
+          label: t('sudoku.newPuzzle'),
           submenu: DIFFICULTIES.map<MenuItemTemplate>((difficulty, position) => ({
             id: `new-${difficulty}`,
             type: 'radio',
@@ -55,10 +55,10 @@ export function buildSudokuMenus(state: SudokuMenuState, actions: SudokuActions)
           })),
         },
         separator,
-        { id: 'check', label: 'Check', shortcut: 'Mod+K', onSelect: actions.check },
+        { id: 'check', label: t('sudoku.check'), shortcut: 'Mod+K', onSelect: actions.check },
         {
           id: 'hint',
-          label: 'Hint',
+          label: t('sudoku.hint'),
           shortcut: 'Mod+H',
           enabled: state.canHint,
           onSelect: actions.hint,
@@ -88,7 +88,7 @@ export function buildSudokuMenus(state: SudokuMenuState, actions: SudokuActions)
         separator,
         {
           id: 'clear-cell',
-          label: 'Clear Cell',
+          label: t('sudoku.clearCell'),
           shortcut: 'Mod+Backspace',
           enabled: state.canClear,
           onSelect: actions.clearCell,
@@ -102,7 +102,7 @@ export function buildSudokuMenus(state: SudokuMenuState, actions: SudokuActions)
         {
           id: 'pencil',
           type: 'checkbox',
-          label: 'Pencil Marks',
+          label: t('sudoku.pencilMarks'),
           shortcut: 'Mod+P',
           checked: state.pencil,
           onSelect: actions.togglePencil,
@@ -110,7 +110,7 @@ export function buildSudokuMenus(state: SudokuMenuState, actions: SudokuActions)
         {
           id: 'highlight',
           type: 'checkbox',
-          label: 'Highlight Peers',
+          label: t('sudoku.highlightPeers'),
           checked: state.highlight,
           onSelect: actions.toggleHighlight,
         },

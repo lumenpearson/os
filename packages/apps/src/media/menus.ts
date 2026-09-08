@@ -41,9 +41,9 @@ export interface MediaActions {
 const separator: MenuItemTemplate = { type: 'separator' };
 
 const LOOP_LABELS: Array<{ mode: LoopMode; label: string }> = [
-  { mode: 'off', label: 'Off' },
-  { mode: 'all', label: 'All' },
-  { mode: 'one', label: 'One' },
+  { mode: 'off', label: t('media.off') },
+  { mode: 'all', label: t('media.all') },
+  { mode: 'one', label: t('media.one') },
 ];
 
 export function buildMediaMenus(state: MediaMenuState, actions: MediaActions): MenuTemplate[] {
@@ -55,15 +55,15 @@ export function buildMediaMenus(state: MediaMenuState, actions: MediaActions): M
         { id: 'open', label: t('menu.open'), shortcut: 'Mod+O', onSelect: actions.open },
         {
           id: 'add-files',
-          label: 'Add to Playlist…',
+          label: t('media.addToPlaylist'),
           shortcut: 'Shift+Mod+O',
           onSelect: actions.addFiles,
         },
-        { id: 'add-folder', label: 'Add Folder…', onSelect: actions.addFolder },
+        { id: 'add-folder', label: t('media.addFolder'), onSelect: actions.addFolder },
         separator,
         {
           id: 'clear',
-          label: 'Clear Playlist',
+          label: t('media.clearPlaylist'),
           enabled: state.hasTracks,
           onSelect: actions.clear,
         },
@@ -71,7 +71,7 @@ export function buildMediaMenus(state: MediaMenuState, actions: MediaActions): M
     },
     {
       id: 'playback',
-      label: 'Playback',
+      label: t('media.playback'),
       items: [
         {
           id: 'toggle',
@@ -98,7 +98,7 @@ export function buildMediaMenus(state: MediaMenuState, actions: MediaActions): M
         {
           id: 'rate',
           type: 'submenu',
-          label: 'Rate',
+          label: t('media.rate'),
           submenu: RATES.map((rate) => ({
             id: `rate-${rate}`,
             type: 'radio',
@@ -110,7 +110,7 @@ export function buildMediaMenus(state: MediaMenuState, actions: MediaActions): M
         {
           id: 'loop',
           type: 'submenu',
-          label: 'Loop',
+          label: t('media.loop'),
           submenu: LOOP_LABELS.map(({ mode, label }) => ({
             id: `loop-${mode}`,
             type: 'radio',
@@ -122,7 +122,7 @@ export function buildMediaMenus(state: MediaMenuState, actions: MediaActions): M
         {
           id: 'shuffle',
           type: 'checkbox',
-          label: 'Shuffle',
+          label: t('media.shuffle'),
           checked: state.shuffle,
           onSelect: actions.toggleShuffle,
         },
@@ -144,7 +144,7 @@ export function buildMediaMenus(state: MediaMenuState, actions: MediaActions): M
         {
           id: 'playlist',
           type: 'checkbox',
-          label: 'Show Playlist',
+          label: t('media.showPlaylist'),
           shortcut: 'Mod+L',
           checked: state.showPlaylist,
           onSelect: actions.togglePlaylist,
@@ -152,7 +152,7 @@ export function buildMediaMenus(state: MediaMenuState, actions: MediaActions): M
         {
           id: 'visualiser',
           type: 'checkbox',
-          label: 'Show Visualiser',
+          label: t('media.showVisualiser'),
           checked: state.showVisualiser,
           enabled: state.canVisualise,
           onSelect: actions.toggleVisualiser,
