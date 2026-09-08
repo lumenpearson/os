@@ -3,6 +3,14 @@ import { en, LANGUAGES, type Language, type MessageKey } from './en';
 import { ru } from './ru';
 
 export type { Language, MessageKey };
+
+/**
+ * The translator, as a type. Tables of options live outside the component
+ * that draws them and take this rather than reaching for the store, so that
+ * they are filled in at render and follow the language instead of freezing at
+ * whatever it was when the module first loaded.
+ */
+export type Translate = (key: MessageKey, vars?: Record<string, string | number>) => string;
 export { en, LANGUAGES, ru };
 
 const DICTIONARIES: Record<Language, Record<MessageKey, string>> = { en, ru };
