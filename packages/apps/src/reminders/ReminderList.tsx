@@ -1,3 +1,4 @@
+import { useT } from '@lumen/kernel/react';
 import { EmptyState } from '@lumen/ui';
 import { ListChecks } from 'lucide-react';
 import type { KeyboardEvent } from 'react';
@@ -44,12 +45,13 @@ export function ReminderList({
   onToggleFlagged,
   onOpen,
 }: ReminderListProps) {
+  const t = useT();
   if (sections.length === 0) {
     return (
       <EmptyState
         icon={<ListChecks />}
         title={emptyMessage}
-        description="Type in the field above to add one."
+        description={t('remindersApp.typeAbove')}
       />
     );
   }
@@ -57,7 +59,7 @@ export function ReminderList({
     <div className="px-2 py-2">
       <div
         role="listbox"
-        aria-label="Reminders"
+        aria-label={t('remindersApp.reminders')}
         onKeyDown={onKeyDown}
         className="mx-auto w-full"
         style={{ maxWidth: CONTENT_MAX_WIDTH }}

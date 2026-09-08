@@ -1,3 +1,4 @@
+import { useT } from '@lumen/kernel/react';
 /**
  * The hour grid behind the week and day views.
  *
@@ -86,6 +87,7 @@ export function TimeGrid({
   onCreateRange,
   onMoveOccurrence,
 }: TimeGridProps) {
+  const t = useT();
   const body = useRef<HTMLDivElement>(null);
   const ghost = useRef<HTMLDivElement>(null);
   const [dragging, setDragging] = useState<Span | null>(null);
@@ -258,7 +260,9 @@ export function TimeGrid({
               className={cx('grid border-b border-rule', LANE_INSET)}
               style={{ gridTemplateColumns: columns }}
             >
-              <span className="mono self-center px-2 text-right text-2xs text-ink-3">All day</span>
+              <span className="mono self-center px-2 text-right text-2xs text-ink-3">
+                {t('calendarApp.allDay')}
+              </span>
               {bands.map((list, index) => (
                 <div
                   key={days[index]}

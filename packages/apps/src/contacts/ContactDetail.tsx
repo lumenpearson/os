@@ -1,3 +1,4 @@
+import { useT } from '@lumen/kernel/react';
 /**
  * The card, read-only. Editing is a separate mode with its own Save and
  * Cancel, so nothing on screen changes the record while it is being read.
@@ -36,6 +37,7 @@ export function ContactDetail({
   onToggleFavourite,
   onOpenUrl,
 }: ContactDetailProps) {
+  const t = useT();
   const name = displayName(contact);
   const birthday = formatBirthday(contact.birthday, locale);
   const hasDetails =
@@ -48,10 +50,10 @@ export function ContactDetail({
     contact.groups.length > 0;
 
   return (
-    <section aria-label="Contact card" className="lumen-scroll min-h-0 min-w-0 flex-1">
+    <section aria-label={t('contactsApp.card')} className="lumen-scroll min-h-0 min-w-0 flex-1">
       <header className="flex items-start gap-3 px-4 pt-4 pb-3">
         {showBack && (
-          <IconButton size="sm" label="Back to list" onClick={onBack}>
+          <IconButton size="sm" label={t('contactsApp.backToList')} onClick={onBack}>
             <ChevronLeft />
           </IconButton>
         )}
@@ -59,7 +61,11 @@ export function ContactDetail({
         <div className="flex min-w-0 flex-1 flex-col gap-0.5">
           <Heading level={2} className="flex min-w-0 items-baseline gap-2">
             <span className="truncate-1">{name || 'No name'}</span>
-            {isMe && <span className="mono shrink-0 text-2xs font-normal text-ink-3">Me</span>}
+            {isMe && (
+              <span className="mono shrink-0 text-2xs font-normal text-ink-3">
+                {t('contactsApp.me')}
+              </span>
+            )}
           </Heading>
           {contact.nickname !== '' && (
             <p className="truncate-1 text-sm text-ink-3">“{contact.nickname}”</p>
@@ -80,7 +86,7 @@ export function ContactDetail({
             <Star className={cx(contact.favourite && 'fill-current text-accent')} />
           </IconButton>
           <Button size="sm" icon={<Pencil className="size-3.5" />} onClick={onEdit}>
-            Edit
+            {t('menu.edit')}
           </Button>
         </div>
       </header>
@@ -114,24 +120,24 @@ export function ContactDetail({
             </Row>
           ))}
           {birthday !== '' && (
-            <Row label="birthday">
+            <Row label={t('contactsApp.birthday')}>
               <span className="mono tabular-nums">{birthday}</span>
             </Row>
           )}
           {contact.groups.length > 0 && (
-            <Row label="groups">
+            <Row label={t('contactsApp.groups')}>
               <span>{contact.groups.join(', ')}</span>
             </Row>
           )}
           {contact.notes !== '' && (
-            <Row label="note">
+            <Row label={t('contactsApp.note')}>
               <p className="whitespace-pre-wrap">{contact.notes}</p>
             </Row>
           )}
         </dl>
       ) : (
         <p className="border-t border-rule px-4 py-3 text-base text-ink-3">
-          Nothing on this card yet. Edit it to add a number or an address.
+          {t('contactsApp.nothingYetShort')}
         </p>
       )}
     </section>
@@ -139,6 +145,7 @@ export function ContactDetail({
 }
 
 function Row({ label, children }: { label: string; children: ReactNode }) {
+  const _t = useT();
   return (
     <div className="grid grid-cols-[4.5rem_1fr] items-baseline gap-3 py-1">
       <dt className="mono truncate-1 pt-px text-right text-2xs text-ink-3">{label}</dt>
@@ -148,6 +155,7 @@ function Row({ label, children }: { label: string; children: ReactNode }) {
 }
 
 function AddressLines({ address }: { address: PostalAddress }) {
+  const _t = useT();
   const lines = [
     address.street,
     [address.postcode, address.city].filter(Boolean).join(' '),

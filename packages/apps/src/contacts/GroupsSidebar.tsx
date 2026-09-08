@@ -1,3 +1,4 @@
+import { useT } from '@lumen/kernel/react';
 /**
  * The groups sidebar: the whole book, the starred cards, and every group any
  * contact belongs to. Groups are not a separate list to maintain — they are
@@ -28,20 +29,21 @@ export function GroupsSidebar({
   favourites,
   onSelect,
 }: GroupsSidebarProps) {
+  const t = useT();
   const sections: SidebarSection[] = [
     {
       id: 'book',
       items: [
         {
           id: ALL,
-          label: 'All Contacts',
+          label: t('contactsApp.allContacts'),
           icon: <Users />,
           meta: String(total),
           onSelect: () => onSelect(null),
         },
         {
           id: FAVOURITES,
-          label: 'Favourites',
+          label: t('contactsApp.favourites'),
           icon: <Star />,
           meta: String(favourites),
           onSelect: () => onSelect(FAVOURITES),
@@ -53,7 +55,7 @@ export function GroupsSidebar({
   if (groups.length > 0) {
     sections.push({
       id: 'groups',
-      title: 'Groups',
+      title: t('contactsApp.groups'),
       items: groups.map((group) => ({
         id: group.name,
         label: group.name,

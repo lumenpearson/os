@@ -8,7 +8,7 @@
  * thing the user can still edit as a whole.
  */
 
-import { useKernel, useSettings } from '@lumen/kernel/react';
+import { useKernel, useSettings, useT } from '@lumen/kernel/react';
 import {
   AppFrame,
   Button,
@@ -68,6 +68,7 @@ import {
 const TICK_MS = 60_000;
 
 export default function Calendar(_props: AppProps) {
+  const t = useT();
   const kernel = useKernel();
   const settings = useSettings();
   const { container } = useApp();
@@ -280,13 +281,17 @@ export default function Calendar(_props: AppProps) {
       <AppFrame
         toolbar={
           <Toolbar dense windowControls>
-            <IconButton size="sm" label="Previous" onClick={() => latest.current.step(-1)}>
+            <IconButton
+              size="sm"
+              label={t('menu.previous')}
+              onClick={() => latest.current.step(-1)}
+            >
               <ChevronLeft className="size-3.5" />
             </IconButton>
             <Button size="sm" variant="ghost" onClick={() => latest.current.today()}>
-              Today
+              {t('calendarApp.today')}
             </Button>
-            <IconButton size="sm" label="Next" onClick={() => latest.current.step(1)}>
+            <IconButton size="sm" label={t('menu.next')} onClick={() => latest.current.step(1)}>
               <ChevronRight className="size-3.5" />
             </IconButton>
             {/* The window has no title bar of its own, so this line is what
@@ -295,7 +300,7 @@ export default function Calendar(_props: AppProps) {
             <ToolbarSpacer />
             <SegmentedControl
               size="sm"
-              aria-label="View"
+              aria-label={t('menu.view')}
               options={VIEWS.map((id) =>
                 // Initials once the row is short of the width the controls took:
                 // the tooltip and the accessible name stay the whole word.
@@ -306,7 +311,11 @@ export default function Calendar(_props: AppProps) {
               value={view}
               onChange={(next) => setPrefs({ view: next })}
             />
-            <IconButton size="sm" label="New event" onClick={() => latest.current.newEvent()}>
+            <IconButton
+              size="sm"
+              label={t('calendarApp.newEvent')}
+              onClick={() => latest.current.newEvent()}
+            >
               <CalendarPlus className="size-3.5" />
             </IconButton>
           </Toolbar>

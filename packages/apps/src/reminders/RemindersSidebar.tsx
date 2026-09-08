@@ -1,3 +1,4 @@
+import { useT } from '@lumen/kernel/react';
 import { AnchoredMenu, Button, type MenuEntry, Sidebar, type SidebarSection } from '@lumen/ui';
 import {
   CalendarClock,
@@ -43,12 +44,13 @@ export function RemindersSidebar({
   onRenameList,
   onDeleteList,
 }: RemindersSidebarProps) {
+  const t = useT();
   const [menuFor, setMenuFor] = useState<{ id: string; x: number; y: number } | null>(null);
 
   const sections: SidebarSection[] = [
     {
       id: 'smart',
-      title: 'Lists',
+      title: t('remindersApp.lists'),
       items: SMART_LISTS.map((id) => ({
         id: selectionId({ kind: 'smart', id }),
         label: SMART_LABELS[id],
@@ -59,7 +61,7 @@ export function RemindersSidebar({
     },
     {
       id: 'user',
-      title: 'My Lists',
+      title: t('remindersApp.myLists'),
       items: lists.map((list) => ({
         id: selectionId({ kind: 'list', id: list.id }),
         label: list.name,
@@ -77,12 +79,12 @@ export function RemindersSidebar({
   const entries: MenuEntry[] = [
     {
       id: 'rename',
-      label: 'Rename List…',
+      label: t('remindersApp.renameListEllipsis'),
       onSelect: () => menuFor && onRenameList(menuFor.id),
     },
     {
       id: 'delete',
-      label: 'Delete List',
+      label: t('remindersApp.deleteList'),
       danger: true,
       onSelect: () => menuFor && onDeleteList(menuFor.id),
     },
@@ -104,7 +106,7 @@ export function RemindersSidebar({
               onClick={onNewList}
               className="justify-start"
             >
-              New List
+              {t('remindersApp.newList')}
             </Button>
           </div>
         }

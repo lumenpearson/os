@@ -1,3 +1,4 @@
+import { usePlural, useT } from '@lumen/kernel/react';
 /**
  * What looks like the same person twice. Each pile says why it was gathered
  * and what merging it would keep; nothing is merged without being asked.
@@ -29,23 +30,23 @@ export function DuplicatesDialog({
   onMerge,
   onClose,
 }: DuplicatesDialogProps) {
+  const t = useT();
+  const plural = usePlural();
   return (
     <Dialog
       open={open}
       onClose={onClose}
-      title="Duplicates"
+      title={t('contactsApp.duplicates')}
       width={480}
       container={container}
       actions={
         <Button size="sm" onClick={onClose}>
-          Done
+          {t('action.done')}
         </Button>
       }
     >
       {groups.length === 0 ? (
-        <p className="py-2 text-base text-ink-2">
-          No two cards share an email address, a phone number or a name.
-        </p>
+        <p className="py-2 text-base text-ink-2">{t('contactsApp.noDuplicates')}</p>
       ) : (
         <ul className="flex flex-col gap-2 py-1">
           {groups.map((group) => (
@@ -56,11 +57,14 @@ export function DuplicatesDialog({
               <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                 <span className="truncate-1 text-base text-ink">{summarise(group.contacts)}</span>
                 <span className="mono text-2xs text-ink-3">
-                  {group.contacts.length} cards · {REASONS[group.reason]}
+                  {t('contactsApp.cardsAndReason', {
+                    cards: plural('count.cards', group.contacts.length),
+                    reason: REASONS[group.reason],
+                  })}
                 </span>
               </div>
               <Button size="sm" onClick={() => onMerge(group)}>
-                Merge
+                {t('contactsApp.merge')}
               </Button>
             </li>
           ))}

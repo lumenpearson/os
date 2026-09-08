@@ -1,3 +1,4 @@
+import { useT } from '@lumen/kernel/react';
 import { Input } from '@lumen/ui';
 import { Plus } from 'lucide-react';
 import type { KeyboardEvent, RefObject } from 'react';
@@ -28,6 +29,7 @@ export function ComposeField({
   onFocus,
   onStepIntoList,
 }: ComposeFieldProps) {
+  const t = useT();
   const onKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'Enter') {
       event.preventDefault();
@@ -45,8 +47,8 @@ export function ComposeField({
           ref={inputRef}
           value={value}
           leading={<Plus />}
-          aria-label="New reminder"
-          placeholder="New reminder"
+          aria-label={t('remindersApp.newReminder')}
+          placeholder={t('remindersApp.newReminder')}
           onChange={(e) => onChange(e.target.value)}
           onKeyDown={onKeyDown}
           onFocus={onFocus}

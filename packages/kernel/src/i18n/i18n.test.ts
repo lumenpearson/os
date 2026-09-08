@@ -39,6 +39,9 @@ describe('the dictionaries', () => {
     'writerApp.urlPlaceholder', // an example URL, not a sentence
     'writerApp.html', // the format's name
     'writerApp.markdown', // likewise
+    'contactsApp.websitePlaceholder', // an example URL
+    'contactsApp.noLabel', // an em dash standing in for "no label"
+    'contactsApp.cardsAndReason', // punctuation between two values, no words
   ];
 
   it('say something different from English', () => {

@@ -1,3 +1,4 @@
+import { useT } from '@lumen/kernel/react';
 /**
  * The sidebar: a small month for jumping about, and under it either the search
  * results or what is on the selected day. Search takes the panel over while
@@ -61,17 +62,18 @@ export function CalendarSidebar({
   onOpenEvent,
   onOpenHit,
 }: CalendarSidebarProps) {
+  const t = useT();
   return (
     <aside
-      aria-label="Calendar sidebar"
+      aria-label={t('calendarApp.sidebar')}
       className="flex w-56 shrink-0 flex-col border-r border-rule bg-canvas"
     >
       <div className="shrink-0 p-2">
         <SearchField
           ref={searchRef}
           size="sm"
-          placeholder="Search events"
-          aria-label="Search events"
+          placeholder={t('calendarApp.searchEvents')}
+          aria-label={t('calendarApp.searchEvents')}
           value={query}
           onChange={onQuery}
         />
@@ -83,9 +85,12 @@ export function CalendarSidebar({
           <div className="lumen-scroll min-h-0 flex-1 border-t border-rule">
             <h3 className="px-3 pt-2 pb-1 text-xs text-ink-2">{formatFullDate(cursor, o)}</h3>
             {dayEvents.length === 0 ? (
-              <p className="px-3 pb-3 text-sm text-ink-3">Nothing on this day.</p>
+              <p className="px-3 pb-3 text-sm text-ink-3">{t('calendarApp.nothingOnDay')}</p>
             ) : (
-              <ul aria-label="Events on this day" className="flex flex-col gap-1 px-2 pb-2">
+              <ul
+                aria-label={t('calendarApp.eventsOnDay')}
+                className="flex flex-col gap-1 px-2 pb-2"
+              >
                 {dayEvents.map((occurrence) => (
                   <li key={occurrence.id} className="flex flex-col gap-px">
                     <EventChip
@@ -111,11 +116,11 @@ export function CalendarSidebar({
           {hits.length === 0 ? (
             <EmptyState
               icon={<Search className="size-5" />}
-              title="No events match"
+              title={t('calendarApp.noEventsMatch')}
               description={`Nothing has “${query.trim()}” in its title, place or notes.`}
             />
           ) : (
-            <ul aria-label="Search results">
+            <ul aria-label={t('calendarApp.searchResults')}>
               {hits.map((hit) => (
                 <li key={hit.event.id}>
                   <button
@@ -155,6 +160,7 @@ interface MiniMonthProps {
 
 /** Six weeks of the cursor's month, for jumping without changing the view. */
 function MiniMonth({ cursor, today, firstDay, o, onCursor }: MiniMonthProps) {
+  const t = useT();
   const days = useMemo(() => monthGrid(cursor, firstDay), [cursor, firstDay]);
   const headers = useMemo(() => weekdayHeaders(firstDay, o, 'narrow'), [firstDay, o]);
 
@@ -163,10 +169,16 @@ function MiniMonth({ cursor, today, firstDay, o, onCursor }: MiniMonthProps) {
       <div className="flex items-center justify-between px-1 pb-1">
         <span className="text-sm font-medium text-ink">{formatMonthYear(cursor, o)}</span>
         <span className="flex gap-px">
-          <MiniStep label="Previous month" onClick={() => onCursor(addMonths(cursor, -1))}>
+          <MiniStep
+            label={t('calendarApp.previousMonth')}
+            onClick={() => onCursor(addMonths(cursor, -1))}
+          >
             ‹
           </MiniStep>
-          <MiniStep label="Next month" onClick={() => onCursor(addMonths(cursor, 1))}>
+          <MiniStep
+            label={t('calendarApp.nextMonth')}
+            onClick={() => onCursor(addMonths(cursor, 1))}
+          >
             ›
           </MiniStep>
         </span>
