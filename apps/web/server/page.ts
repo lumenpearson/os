@@ -31,6 +31,7 @@
  *   an open proxy for anyone who finds the URL.
  */
 
+import { randomUUID } from 'node:crypto';
 import { lookup } from 'node:dns/promises';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { isIP } from 'node:net';
@@ -47,6 +48,12 @@ export interface PageResult {
   /** Always set; the body is text either way, so a refusal reads as a page. */
   contentType: string;
   body: string;
+  /**
+   * The policy the page is served under, when it is a page. It names the one
+   * nonce Lumen's own script carries, so nothing else in the document can
+   * run — whatever the strip did or did not catch.
+   */
+  contentSecurityPolicy?: string;
   /** Set when this is a refusal rather than a page, for the log. */
   problem?: string;
 }
@@ -176,10 +183,27 @@ async function readCapped(response: Response): Promise<{ text: string; tooLarge:
  * So the document says so itself. It sends one message, carries no data, and
  * changes nothing else about the page.
  */
-const READY_SIGNAL =
-  '<script>try{parent.postMessage({lumen:"page-ready"},"*");' +
-  'addEventListener("DOMContentLoaded",function(){' +
-  'try{parent.postMessage({lumen:"page-ready"},"*")}catch(e){}})}catch(e){}</script>';
+function readySignal(nonce: string): string {
+  const on = nonce === '' ? '' : ` nonce="${nonce}"`;
+  return (
+    `<script${on}>try{parent.postMessage({lumen:"page-ready"},"*");` +
+    'addEventListener("DOMContentLoaded",function(){' +
+    'try{parent.postMessage({lumen:"page-ready"},"*")}catch(e){}})}catch(e){}</script>'
+  );
+}
+
+/**
+ * A policy that lets Lumen's one script run and nothing else's.
+ *
+ * The strip above keeps the page whole; this keeps it safe, and it is the
+ * half that does not depend on getting string surgery right. A script the
+ * scanner somehow missed still cannot execute, because it carries no nonce.
+ * `object-src` closes the other way a document runs code. Nothing else is
+ * restricted: the page's own styles, images and fonts are the page.
+ */
+function policyFor(nonce: string): string {
+  return `script-src 'nonce-${nonce}'; object-src 'none'`;
+}
 
 /**
  * Take the site's own scripts out of the document.
@@ -196,13 +220,84 @@ const READY_SIGNAL =
  * along. Measured on vercel.com: with the scripts, nothing; without them, the
  * whole page.
  *
- * The regex stops at the first `</script>` exactly as the HTML parser does,
- * so a closing tag inside a string ends the element for both of them alike.
+ * This walks the document rather than running a pattern over it, because the
+ * pattern was wrong in the two ways a pattern always is here. An end tag may
+ * carry rubbish — `</script bar>` and `</script\t\n>` both close the element
+ * for a browser — and a `<script>` that is never closed runs to the end of
+ * the file. A regex that ends at `</script\s*>` misses both, and leaves the
+ * script it was meant to remove. The scanner below ends an element exactly
+ * where the HTML parser's script-data state does.
+ *
  * Inline `on*` handlers are left: they fire only on interaction, and removing
- * attributes needs a parser rather than a pattern.
+ * attributes needs a real parser. The nonce policy below is what stands
+ * behind this in any case — this keeps the page whole; that keeps it safe.
  */
 export function withoutScripts(html: string): string {
-  return html.replace(/<script\b[^>]*>[\s\S]*?<\/script\s*>/gi, '');
+  let out = '';
+  let at = 0;
+  for (;;) {
+    const open = openingScript(html, at);
+    if (open < 0) return out + html.slice(at);
+    out += html.slice(at, open);
+    at = pastElement(html, pastStartTag(html, open));
+  }
+}
+
+const SCRIPT = 'script';
+
+/** A tag name ends at whitespace, `/`, `>`, or the end of the document. */
+function endsName(c: string): boolean {
+  return (
+    c === '' ||
+    c === '>' ||
+    c === '/' ||
+    c === ' ' ||
+    c === '\t' ||
+    c === '\n' ||
+    c === '\f' ||
+    c === '\r'
+  );
+}
+
+/** Where the next `<script` start tag begins at or after `from`, or -1. */
+function openingScript(html: string, from: number): number {
+  for (let i = html.indexOf('<', from); i >= 0; i = html.indexOf('<', i + 1)) {
+    if (html.slice(i + 1, i + 1 + SCRIPT.length).toLowerCase() !== SCRIPT) continue;
+    if (!endsName(html.charAt(i + 1 + SCRIPT.length))) continue;
+    return i;
+  }
+  return -1;
+}
+
+/** Just past the start tag opening at `open`, minding quoted attributes. */
+function pastStartTag(html: string, open: number): number {
+  let quote = '';
+  for (let i = open + 1; i < html.length; i++) {
+    const c = html.charAt(i);
+    if (quote !== '') {
+      if (c === quote) quote = '';
+      continue;
+    }
+    if (c === '"' || c === "'") quote = c;
+    else if (c === '>') return i + 1;
+  }
+  return html.length;
+}
+
+/**
+ * Just past the element whose content starts at `from`.
+ *
+ * An unterminated script is script data to the end of the document, for a
+ * browser and so for this: everything after it goes.
+ */
+function pastElement(html: string, from: number): number {
+  for (let i = html.indexOf('</', from); i >= 0; i = html.indexOf('</', i + 1)) {
+    if (html.slice(i + 2, i + 2 + SCRIPT.length).toLowerCase() !== SCRIPT) continue;
+    if (!endsName(html.charAt(i + 2 + SCRIPT.length))) continue;
+    const close = html.indexOf('>', i + 2 + SCRIPT.length);
+    return close < 0 ? html.length : close + 1;
+  }
+  return html.length;
 }
 
 /**
@@ -212,9 +307,9 @@ export function withoutScripts(html: string): string {
  * A document that already has one is left alone: the site has said where its
  * relative URLs point and it knows better than this does.
  */
-export function withBase(html: string, url: string): string {
+export function withBase(html: string, url: string, nonce = ''): string {
   if (/<base\b/i.test(html)) return html;
-  const tag = `<base href="${url.replace(/"/g, '&quot;')}">${READY_SIGNAL}`;
+  const tag = `<base href="${url.replace(/"/g, '&quot;')}">${readySignal(nonce)}`;
   const head = html.match(/<head\b[^>]*>/i);
   if (head?.index !== undefined) {
     const at = head.index + head[0].length;
@@ -278,10 +373,14 @@ export async function loadPage(raw: string, doFetch = fetch): Promise<PageResult
     }
     const { text, tooLarge } = await readCapped(response);
     if (tooLarge) return refuse(413, 'That page is too large to show here.');
+    // One nonce per response, never reused, so a script cannot be written to
+    // match a value seen on some earlier page.
+    const nonce = randomUUID().replace(/-/g, '');
     return {
       status: response.status,
       contentType: 'text/html; charset=utf-8',
-      body: withBase(withoutScripts(text), target.href),
+      body: withBase(withoutScripts(text), target.href, nonce),
+      contentSecurityPolicy: policyFor(nonce),
     };
   }
   return refuse(508, 'That site redirected too many times.');
@@ -332,5 +431,8 @@ export async function servePage(req: IncomingMessage, res: ServerResponse): Prom
   }
 
   const page = await loadPage(target);
+  if (page.contentSecurityPolicy !== undefined) {
+    res.setHeader('Content-Security-Policy', page.contentSecurityPolicy);
+  }
   send(page.status, page.body, page.contentType);
 }

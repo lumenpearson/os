@@ -225,11 +225,30 @@ describe('withoutScripts', () => {
     expect(out).toBe('<head></head><body>text</body>');
   });
 
-  it('ends an element at its first closing tag, as the parser does', () => {
-    // The site writes `<\/script>` inside a string precisely because a bare
-    // one would end the element. The browser ends it there; so does this.
-    const out = withoutScripts('<script>var s = "</script>";</script>after');
-    expect(out).toBe('";</script>after');
+  it('ends an element at an end tag carrying rubbish', () => {
+    // What the previous pattern missed, and what CodeQL called: a browser
+    // closes the element here, so anything that does not is leaving a script
+    // in the page it claimed to have cleaned.
+    expect(withoutScripts('<script>evil()</script bar>after')).toBe('after');
+    expect(withoutScripts('<script>evil()</script\t\n >after')).toBe('after');
+    expect(withoutScripts('<script>evil()</script/>after')).toBe('after');
+  });
+
+  it('drops the rest of the document after a script that is never closed', () => {
+    // Unterminated, the element runs to the end of the file for a parser, so
+    // what follows is script data and not content to keep.
+    expect(withoutScripts('<p>before</p><script>evil()<p>looks like content')).toBe(
+      '<p>before</p>',
+    );
+  });
+
+  it('is not ended early by a greater-than inside an attribute', () => {
+    expect(withoutScripts('<script data-x="a>b">evil()</script>kept')).toBe('kept');
+  });
+
+  it('takes out a script whatever case or attributes it is written with', () => {
+    expect(withoutScripts('<SCRIPT TYPE="module" defer>x</SCRIPT>y')).toBe('y');
+    expect(withoutScripts('<script\n  async\n>x</script>y')).toBe('y');
   });
 
   it('leaves the document alone when it has no scripts', () => {
@@ -237,13 +256,25 @@ describe('withoutScripts', () => {
     expect(withoutScripts(html)).toBe(html);
   });
 
-  it('takes out a script whatever case or attributes it is written with', () => {
-    expect(withoutScripts('<SCRIPT TYPE="module" defer>x</SCRIPT>y')).toBe('y');
+  it('leaves a tag whose name only starts with the word', () => {
+    const html = '<scripture>Not a script</scripture>';
+    expect(withoutScripts(html)).toBe(html);
   });
 
   it('leaves a page that only looks like it has one', () => {
     const html = '<p>Use &lt;script&gt; to add behaviour</p>';
     expect(withoutScripts(html)).toBe(html);
+  });
+
+  it('leaves nothing that could start a script element', () => {
+    // The property the whole function exists for, over the shapes above.
+    for (const html of [
+      '<script>a</script bar><script>b</script\t>',
+      '<div><script src=x>\u003c/script\u003e</script></div>',
+      '<script><script>nested-looking</script>',
+    ]) {
+      expect(withoutScripts(html).toLowerCase()).not.toContain('<script');
+    }
   });
 });
 
@@ -263,5 +294,20 @@ describe('a relayed page', () => {
     expect(result.body).not.toContain('document.body.innerHTML');
     // Lumen's own one-line signal is injected after the strip, so it survives.
     expect(result.body).toContain('page-ready');
+  });
+
+  it('runs under a policy naming the one nonce its own script carries', async () => {
+    const doFetch = vi.fn(async () => ok('<html><head></head><body>hi</body></html>'));
+    const result = await loadPage('https://example.com/', doFetch as unknown as typeof fetch);
+    const nonce = result.body.match(/<script nonce="([a-f0-9]+)"/)?.[1];
+    expect(nonce, 'the injected script carries a nonce').toBeTruthy();
+    expect(result.contentSecurityPolicy).toBe(`script-src 'nonce-${nonce}'; object-src 'none'`);
+  });
+
+  it('mints a new nonce for every page, so one cannot be written in advance', async () => {
+    const doFetch = vi.fn(async () => ok('<html><head></head><body>hi</body></html>'));
+    const first = await loadPage('https://example.com/', doFetch as unknown as typeof fetch);
+    const second = await loadPage('https://example.com/', doFetch as unknown as typeof fetch);
+    expect(first.contentSecurityPolicy).not.toBe(second.contentSecurityPolicy);
   });
 });
