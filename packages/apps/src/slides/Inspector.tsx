@@ -1,3 +1,4 @@
+import { useT } from '@lumen/kernel/react';
 import { Button, Field, IconButton, Select, TextArea } from '@lumen/ui';
 import { basename } from '@lumen/vfs';
 import { ImagePlus, PanelRightClose } from 'lucide-react';
@@ -41,36 +42,37 @@ export function Inspector({
   onChooseImage,
   onClose,
 }: InspectorProps) {
+  const t = useT();
   const layoutId = useId();
   const themeId = useId();
   const notesId = useId();
 
   return (
     <aside
-      aria-label="Slide properties"
+      aria-label={t('slidesApp.properties')}
       className="flex w-64 shrink-0 flex-col border-l border-rule bg-surface"
     >
       <header className="flex h-9 shrink-0 items-center justify-between border-b border-rule pr-1 pl-3">
-        <span className="text-sm font-medium text-ink-2">Slide</span>
-        <IconButton label="Hide notes panel" size="sm" onClick={onClose}>
+        <span className="text-sm font-medium text-ink-2">{t('slidesApp.slide')}</span>
+        <IconButton label={t('slidesApp.hideNotes')} size="sm" onClick={onClose}>
           <PanelRightClose />
         </IconButton>
       </header>
       <div className="lumen-scroll flex min-h-0 flex-1 flex-col gap-6 p-3">
-        <Field label="Speaker notes" htmlFor={notesId}>
+        <Field label={t('slidesApp.speakerNotes')} htmlFor={notesId}>
           <TextArea
             id={notesId}
             value={slide?.notes ?? ''}
             disabled={!slide}
             rows={8}
-            placeholder="What to say on this slide"
+            placeholder={t('slidesApp.whatToSay')}
             onChange={(event) => onNotes(event.target.value)}
             className="min-h-32"
           />
         </Field>
 
         <div className="flex flex-col gap-3">
-          <Field label="Layout" inline htmlFor={layoutId}>
+          <Field label={t('slidesApp.layout')} inline htmlFor={layoutId}>
             <Select
               id={layoutId}
               options={LAYOUT_OPTIONS}
@@ -80,7 +82,7 @@ export function Inspector({
               onChange={onLayout}
             />
           </Field>
-          <Field label="Theme" inline htmlFor={themeId}>
+          <Field label={t('slidesApp.theme')} inline htmlFor={themeId}>
             <Select
               id={themeId}
               options={THEME_OPTIONS}

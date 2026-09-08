@@ -1,3 +1,5 @@
+import type { Translate } from '@lumen/kernel';
+import { useT } from '@lumen/kernel/react';
 /**
  * The card, being edited. The form works on a draft; nothing reaches the store
  * until Save, and Cancel throws the draft away — which is why the detail pane
@@ -37,6 +39,7 @@ export function ContactEditor({
   onCancel,
   onPickPhoto,
 }: ContactEditorProps) {
+  const t = useT();
   const id = useId();
   // The typed text and the stored list are not the same thing: "Work, " has a
   // trailing separator the store would drop while the user is still typing.
@@ -73,14 +76,14 @@ export function ContactEditor({
                   type="button"
                   onClick={() => set({ photo: null })}
                 >
-                  Remove
+                  {t('contactsApp.remove')}
                 </Button>
               )}
             </div>
           </div>
 
           <div className={`grid gap-3 ${pairs}`}>
-            <Field label="First name" htmlFor={`${id}-given`}>
+            <Field label={t('contactsApp.firstName')} htmlFor={`${id}-given`}>
               <Input
                 id={`${id}-given`}
                 data-autofocus
@@ -88,7 +91,7 @@ export function ContactEditor({
                 onChange={(event) => set({ given: event.target.value })}
               />
             </Field>
-            <Field label="Last name" htmlFor={`${id}-family`}>
+            <Field label={t('contactsApp.lastName')} htmlFor={`${id}-family`}>
               <Input
                 id={`${id}-family`}
                 value={draft.family}
@@ -97,7 +100,7 @@ export function ContactEditor({
             </Field>
           </div>
 
-          <Field label="Nickname" htmlFor={`${id}-nickname`}>
+          <Field label={t('contactsApp.nickname')} htmlFor={`${id}-nickname`}>
             <Input
               id={`${id}-nickname`}
               value={draft.nickname}
@@ -106,14 +109,14 @@ export function ContactEditor({
           </Field>
 
           <div className={`grid gap-3 ${pairs}`}>
-            <Field label="Company" htmlFor={`${id}-org`}>
+            <Field label={t('contactsApp.company')} htmlFor={`${id}-org`}>
               <Input
                 id={`${id}-org`}
                 value={draft.organisation}
                 onChange={(event) => set({ organisation: event.target.value })}
               />
             </Field>
-            <Field label="Job title" htmlFor={`${id}-title`}>
+            <Field label={t('contactsApp.jobTitle')} htmlFor={`${id}-title`}>
               <Input
                 id={`${id}-title`}
                 value={draft.title}
@@ -123,28 +126,28 @@ export function ContactEditor({
           </div>
 
           <ValueList
-            title="Phone"
+            title={t('contactsApp.phone')}
             entries={draft.phones}
             labels={PHONE_LABELS}
-            placeholder="+44 20 7946 0018"
+            placeholder={t('contactsApp.phonePlaceholder')}
             inputMode="tel"
             mono
             onChange={(phones) => set({ phones })}
           />
           <ValueList
-            title="Email"
+            title={t('contactsApp.email')}
             entries={draft.emails}
             labels={EMAIL_LABELS}
-            placeholder="name@example.org"
+            placeholder={t('contactsApp.emailPlaceholder')}
             inputMode="email"
             mono
             onChange={(emails) => set({ emails })}
           />
           <ValueList
-            title="Website"
+            title={t('contactsApp.website')}
             entries={draft.urls}
             labels={URL_LABELS}
-            placeholder="https://example.org"
+            placeholder={t('contactsApp.websitePlaceholder')}
             inputMode="url"
             mono
             onChange={(urls) => set({ urls })}
@@ -156,7 +159,7 @@ export function ContactEditor({
           />
 
           <div className={`grid gap-3 ${pairs}`}>
-            <Field label="Birthday" htmlFor={`${id}-bday`}>
+            <Field label={t('contactsApp.birthday')} htmlFor={`${id}-bday`}>
               <Input
                 id={`${id}-bday`}
                 type="date"
@@ -165,7 +168,11 @@ export function ContactEditor({
                 onChange={(event) => set({ birthday: event.target.value })}
               />
             </Field>
-            <Field label="Groups" htmlFor={`${id}-groups`} hint="Separate with commas.">
+            <Field
+              label={t('contactsApp.groups')}
+              htmlFor={`${id}-groups`}
+              hint={t('contactsApp.separateCommas')}
+            >
               <Input
                 id={`${id}-groups`}
                 value={groupsText}
@@ -177,7 +184,7 @@ export function ContactEditor({
             </Field>
           </div>
 
-          <Field label="Note" htmlFor={`${id}-notes`}>
+          <Field label={t('contactsApp.note')} htmlFor={`${id}-notes`}>
             <TextArea
               id={`${id}-notes`}
               rows={4}
@@ -192,19 +199,26 @@ export function ContactEditor({
         <span className="text-sm text-ink-3">{isNew ? 'New contact' : 'Editing'}</span>
         <span className="flex-1" />
         <Button size="sm" type="button" variant="ghost" onClick={onCancel}>
-          Cancel
+          {t('action.cancel')}
         </Button>
         <Button size="sm" type="submit" variant="primary">
-          Save
+          {t('menu.save')}
         </Button>
       </div>
     </form>
   );
 }
 
-function labelOptions(defaults: readonly string[], current: string): Array<SelectOption<string>> {
+function labelOptions(
+  defaults: readonly string[],
+  current: string,
+  t: Translate,
+): Array<SelectOption<string>> {
   const known = defaults.includes(current) || current === '' ? defaults : [...defaults, current];
-  return [{ value: '', label: '—' }, ...known.map((value) => ({ value, label: value }))];
+  return [
+    { value: '', label: t('contactsApp.noLabel') },
+    ...known.map((value) => ({ value, label: value })),
+  ];
 }
 
 interface ValueListProps {
@@ -227,6 +241,7 @@ function ValueList({
   mono,
   onChange,
 }: ValueListProps) {
+  const t = useT();
   const replace = (index: number, patch: Partial<LabelledValue>) =>
     onChange(entries.map((entry, at) => (at === index ? { ...entry, ...patch } : entry)));
 
@@ -240,7 +255,7 @@ function ValueList({
             aria-label={`${title} ${index + 1} label`}
             className="w-24 shrink-0"
             value={entry.label}
-            options={labelOptions(labels, entry.label)}
+            options={labelOptions(labels, entry.label, t)}
             onChange={(label) => replace(index, { label: normalizeLabel(label) })}
           />
           <Input
@@ -269,13 +284,14 @@ function ValueList({
         icon={<Plus className="size-3.5" />}
         onClick={() => onChange([...entries, { label: labels[0] ?? '', value: '' }])}
       >
-        Add {title.toLowerCase()}
+        {t('contactsApp.addOf', { what: title.toLowerCase() })}
       </Button>
     </fieldset>
   );
 }
 
 const EMPTY_ADDRESS: PostalAddress = {
+  // i18n-ignore-next-line a vCard label stored in the card, not a word on screen
   label: 'home',
   street: '',
   city: '',
@@ -293,12 +309,13 @@ function AddressList({
   narrow: boolean;
   onChange: (addresses: PostalAddress[]) => void;
 }) {
+  const t = useT();
   const replace = (index: number, patch: Partial<PostalAddress>) =>
     onChange(addresses.map((entry, at) => (at === index ? { ...entry, ...patch } : entry)));
 
   return (
     <fieldset className="flex flex-col gap-2">
-      <legend className="pb-1 text-base text-ink">Address</legend>
+      <legend className="pb-1 text-base text-ink">{t('contactsApp.address')}</legend>
       {addresses.map((address, index) => (
         <div key={`address-${index}`} className="flex flex-col gap-1.5 rounded-sm bg-surface-2 p-2">
           <div className="flex items-center gap-2">
@@ -307,13 +324,13 @@ function AddressList({
               aria-label={`Address ${index + 1} label`}
               className="w-24 shrink-0"
               value={address.label}
-              options={labelOptions(ADDRESS_LABELS, address.label)}
+              options={labelOptions(ADDRESS_LABELS, address.label, t)}
               onChange={(label) => replace(index, { label: normalizeLabel(label) })}
             />
             <Input
               size="sm"
               aria-label={`Address ${index + 1} street`}
-              placeholder="Street"
+              placeholder={t('contactsApp.street')}
               value={address.street}
               onChange={(event) => replace(index, { street: event.target.value })}
             />
@@ -329,14 +346,14 @@ function AddressList({
             <Input
               size="sm"
               aria-label={`Address ${index + 1} city`}
-              placeholder="City"
+              placeholder={t('contactsApp.city')}
               value={address.city}
               onChange={(event) => replace(index, { city: event.target.value })}
             />
             <Input
               size="sm"
               aria-label={`Address ${index + 1} region`}
-              placeholder="Region"
+              placeholder={t('contactsApp.region')}
               value={address.region}
               onChange={(event) => replace(index, { region: event.target.value })}
             />
@@ -344,14 +361,14 @@ function AddressList({
               size="sm"
               mono
               aria-label={`Address ${index + 1} postcode`}
-              placeholder="Postcode"
+              placeholder={t('contactsApp.postcode')}
               value={address.postcode}
               onChange={(event) => replace(index, { postcode: event.target.value })}
             />
             <Input
               size="sm"
               aria-label={`Address ${index + 1} country`}
-              placeholder="Country"
+              placeholder={t('contactsApp.country')}
               value={address.country}
               onChange={(event) => replace(index, { country: event.target.value })}
             />
@@ -366,7 +383,7 @@ function AddressList({
         icon={<Plus className="size-3.5" />}
         onClick={() => onChange([...addresses, { ...EMPTY_ADDRESS }])}
       >
-        Add address
+        {t('contactsApp.addAddress')}
       </Button>
     </fieldset>
   );

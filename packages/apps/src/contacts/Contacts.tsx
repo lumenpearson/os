@@ -11,7 +11,7 @@
  * first. Every decision comes from the measured size of this window.
  */
 
-import { useCurrentUser, useKernel, useSettings, useVfs } from '@lumen/kernel/react';
+import { useCurrentUser, useKernel, useSettings, useT, useVfs } from '@lumen/kernel/react';
 import {
   AppFrame,
   Button,
@@ -79,6 +79,7 @@ const PHOTO_TYPES = ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.avif'];
 const reason = (error: unknown) => (error instanceof Error ? error.message : String(error));
 
 export default function Contacts(props: AppProps) {
+  const t = useT();
   const kernel = useKernel();
   const vfs = useVfs();
   const settings = useSettings();
@@ -239,8 +240,8 @@ export default function Contacts(props: AppProps) {
     const name = displayName(selected) || 'this contact';
     const ok = await dialogs.confirm({
       title: `Delete ${name}?`,
-      message: 'The card is removed from the address book.',
-      confirmLabel: 'Delete',
+      message: t('contactsApp.removedFromBook'),
+      confirmLabel: t('reminders.delete'),
       danger: true,
     });
     if (!ok) return;
@@ -248,7 +249,7 @@ export default function Contacts(props: AppProps) {
     setSelectedId(null);
     setDraft(null);
     setPane('list');
-  }, [selected, dialogs, dispatch]);
+  }, [selected, dialogs, dispatch, t]);
 
   const toggleFavourite = useCallback(() => {
     if (!selected) return;
@@ -293,12 +294,12 @@ export default function Contacts(props: AppProps) {
   const importVcard = useCallback(async () => {
     const target = await pick({
       mode: 'open',
-      title: 'Import vCard',
+      title: t('contactsApp.importVcard'),
       extensions: ['.vcf'],
       startDir: join(kernel.home, 'Documents'),
     });
     if (typeof target === 'string') await importFrom(target);
-  }, [pick, kernel.home, importFrom]);
+  }, [pick, kernel.home, importFrom, t]);
 
   const exportVcard = useCallback(async () => {
     const one = latest.current.selected;
@@ -330,13 +331,13 @@ export default function Contacts(props: AppProps) {
   const pickPhoto = useCallback(async () => {
     const target = await pick({
       mode: 'open',
-      title: 'Choose Photo',
+      title: t('contactsApp.choosePhoto'),
       extensions: PHOTO_TYPES,
       startDir: join(kernel.home, 'Pictures'),
     });
     if (typeof target !== 'string') return;
     setDraft((current) => (current ? { ...current, photo: target } : current));
-  }, [pick, kernel.home]);
+  }, [pick, kernel.home, t]);
 
   const find = useCallback(() => {
     setPane('list');
@@ -372,12 +373,12 @@ export default function Contacts(props: AppProps) {
   const confirmDiscard = useCallback(async () => {
     const name = draft ? displayName(draft) || 'This contact' : 'This contact';
     return dialogs.confirm({
-      title: 'Discard changes?',
+      title: t('contactsApp.discardChanges'),
       message: `${name} has edits that have not been saved.`,
-      confirmLabel: 'Discard',
+      confirmLabel: t('mailApp.discard'),
       danger: true,
     });
-  }, [dialogs, draft]);
+  }, [dialogs, draft, t]);
 
   useCloseGuard(dirty ? confirmDiscard : null);
 
@@ -442,26 +443,32 @@ export default function Contacts(props: AppProps) {
         toolbar={
           <Toolbar dense windowControls>
             {/* The window has no title bar of its own, so this row names it. */}
-            <span className="truncate-1 mr-1 min-w-0 text-base font-medium text-ink">Contacts</span>
+            <span className="truncate-1 mr-1 min-w-0 text-base font-medium text-ink">
+              {t('contactsApp.contacts')}
+            </span>
             {layout.canSidebar && (
               <IconButton
                 size="sm"
-                label="Groups sidebar"
+                label={t('contactsApp.groupsSidebar')}
                 active={prefs.showGroups}
                 onClick={() => commands.current.toggleGroups()}
               >
                 <PanelLeft />
               </IconButton>
             )}
-            <IconButton size="sm" label="New contact" onClick={() => commands.current.startNew()}>
+            <IconButton
+              size="sm"
+              label={t('contactsApp.newContact')}
+              onClick={() => commands.current.startNew()}
+            >
               <UserPlus />
             </IconButton>
             <div className="ml-auto min-w-0 max-w-64 flex-1">
               <SearchField
                 ref={searchInput}
                 size="sm"
-                placeholder="Search"
-                aria-label="Search contacts"
+                placeholder={t('systemBar.search')}
+                aria-label={t('contactsApp.searchContacts')}
                 value={query}
                 onChange={setQuery}
               />
@@ -546,11 +553,11 @@ export default function Contacts(props: AppProps) {
               ) : (
                 <EmptyState
                   icon={<Users className="size-5" />}
-                  title="No contact selected"
-                  description="Pick a name from the list, or make a new card."
+                  title={t('contactsApp.noneSelected')}
+                  description={t('contactsApp.pickAName')}
                   action={
                     <Button size="sm" onClick={() => commands.current.startNew()}>
-                      New Contact
+                      {t('contactsApp.newContactTitle')}
                     </Button>
                   }
                 />

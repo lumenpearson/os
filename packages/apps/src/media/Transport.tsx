@@ -1,3 +1,4 @@
+import { useT } from '@lumen/kernel/react';
 import { cx, IconButton, Select, Slider } from '@lumen/ui';
 import {
   ListMusic,
@@ -88,10 +89,11 @@ export function Transport({
   onPlaylist,
   className,
 }: TransportProps) {
+  const t = useT();
   const VolumeGlyph = muted || volume === 0 ? VolumeX : volume < 0.5 ? Volume1 : Volume2;
   return (
     <div className={cx('flex min-w-0 items-center gap-1', className)}>
-      <IconButton label="Previous track" onClick={onPrevious} disabled={!hasTracks}>
+      <IconButton label={t('mediaApp.previousTrack')} onClick={onPrevious} disabled={!hasTracks}>
         <SkipBack />
       </IconButton>
       <IconButton
@@ -103,14 +105,19 @@ export function Transport({
       >
         {playing ? <Pause /> : <Play />}
       </IconButton>
-      <IconButton label="Next track" onClick={onNext} disabled={!hasTracks}>
+      <IconButton label={t('mediaApp.nextTrack')} onClick={onNext} disabled={!hasTracks}>
         <SkipForward />
       </IconButton>
 
       {showOrder && (
         <>
           <span className="mx-1 h-4 w-px shrink-0 bg-rule" />
-          <IconButton label="Shuffle" active={shuffle} onClick={onShuffle} disabled={!hasTracks}>
+          <IconButton
+            label={t('mediaApp.shuffle')}
+            active={shuffle}
+            onClick={onShuffle}
+            disabled={!hasTracks}
+          >
             <Shuffle />
           </IconButton>
           <IconButton label={LOOP_LABEL[loop]} active={loop !== 'off'} onClick={onLoop}>
@@ -125,7 +132,7 @@ export function Transport({
         <Select
           size="sm"
           mono
-          aria-label="Playback rate"
+          aria-label={t('mediaApp.rate')}
           className="mr-1 shrink-0"
           options={RATE_OPTIONS}
           value={String(rate)}
@@ -138,7 +145,7 @@ export function Transport({
       {showVolumeSlider && (
         <Slider
           className="w-32 shrink-0"
-          aria-label="Volume"
+          aria-label={t('previewApp.volume')}
           min={0}
           max={100}
           step={1}
@@ -147,7 +154,7 @@ export function Transport({
           showValue={() => formatPercent(muted ? 0 : volume)}
         />
       )}
-      <IconButton label="Show playlist" active={showPlaylist} onClick={onPlaylist}>
+      <IconButton label={t('mediaApp.showPlaylist')} active={showPlaylist} onClick={onPlaylist}>
         <ListMusic />
       </IconButton>
       {showFullscreen && (

@@ -3,6 +3,7 @@
  * command reads the same whether it is clicked or typed as a shortcut.
  */
 import type { MenuItemTemplate, MenuTemplate } from '@lumen/kernel';
+import { t } from '@lumen/kernel';
 import { LAYOUT_LABELS, SLIDE_LAYOUTS, type SlideLayout } from './deck';
 
 export interface SlidesMenuState {
@@ -40,65 +41,75 @@ export function buildSlidesMenus(state: SlidesMenuState, actions: SlidesActions)
   return [
     {
       id: 'file',
-      label: 'File',
+      label: t('menu.file'),
       items: [
-        { id: 'new', label: 'New Presentation', shortcut: 'Mod+N', onSelect: actions.newDeck },
-        { id: 'open', label: 'Open…', shortcut: 'Mod+O', onSelect: actions.open },
+        {
+          id: 'new',
+          label: t('slides.newPresentation'),
+          shortcut: 'Mod+N',
+          onSelect: actions.newDeck,
+        },
+        { id: 'open', label: t('menu.open'), shortcut: 'Mod+O', onSelect: actions.open },
         separator,
-        { id: 'save', label: 'Save', shortcut: 'Mod+S', onSelect: actions.save },
-        { id: 'save-as', label: 'Save As…', shortcut: 'Shift+Mod+S', onSelect: actions.saveAs },
+        { id: 'save', label: t('menu.save'), shortcut: 'Mod+S', onSelect: actions.save },
+        {
+          id: 'save-as',
+          label: t('menu.saveAs'),
+          shortcut: 'Shift+Mod+S',
+          onSelect: actions.saveAs,
+        },
         {
           id: 'export-html',
-          label: 'Export as HTML…',
+          label: t('menu.exportHtml'),
           enabled: state.hasSlides,
           onSelect: actions.exportHtml,
         },
         separator,
-        { id: 'close', label: 'Close', shortcut: 'Mod+W', onSelect: actions.close },
+        { id: 'close', label: t('menu.close'), shortcut: 'Mod+W', onSelect: actions.close },
       ],
     },
     {
       id: 'edit',
-      label: 'Edit',
+      label: t('menu.edit'),
       items: [
         {
           id: 'undo',
-          label: 'Undo',
+          label: t('menu.undo'),
           shortcut: 'Mod+Z',
           enabled: state.canUndo,
           onSelect: actions.undo,
         },
         {
           id: 'redo',
-          label: 'Redo',
+          label: t('menu.redo'),
           shortcut: 'Shift+Mod+Z',
           enabled: state.canRedo,
           onSelect: actions.redo,
         },
         separator,
-        { id: 'rename', label: 'Presentation Title…', onSelect: actions.renameDeck },
+        { id: 'rename', label: t('slides.presentationTitle'), onSelect: actions.renameDeck },
       ],
     },
     {
       id: 'slide',
-      label: 'Slide',
+      label: t('slides.slide'),
       items: [
         {
           id: 'new-slide',
-          label: 'New Slide',
+          label: t('slides.newSlide'),
           shortcut: 'Shift+Mod+N',
           onSelect: actions.newSlide,
         },
         {
           id: 'duplicate',
-          label: 'Duplicate Slide',
+          label: t('slides.duplicateSlide'),
           shortcut: 'Mod+D',
           enabled: state.hasSlides,
           onSelect: actions.duplicate,
         },
         {
           id: 'delete',
-          label: 'Delete Slide',
+          label: t('slides.deleteSlide'),
           enabled: state.hasSlides,
           danger: true,
           onSelect: actions.remove,
@@ -107,7 +118,7 @@ export function buildSlidesMenus(state: SlidesMenuState, actions: SlidesActions)
         {
           id: 'layout',
           type: 'submenu',
-          label: 'Layout',
+          label: t('slides.layout'),
           enabled: state.hasSlides,
           submenu: SLIDE_LAYOUTS.map((layout) => ({
             id: `layout-${layout}`,
@@ -121,19 +132,19 @@ export function buildSlidesMenus(state: SlidesMenuState, actions: SlidesActions)
     },
     {
       id: 'view',
-      label: 'View',
+      label: t('menu.view'),
       items: [
         {
           id: 'thumbnails',
           type: 'checkbox',
-          label: 'Thumbnails',
+          label: t('slides.thumbnails'),
           checked: state.thumbnailsOpen,
           onSelect: actions.toggleThumbnails,
         },
         {
           id: 'notes',
           type: 'checkbox',
-          label: 'Notes Panel',
+          label: t('slides.notesPanel'),
           shortcut: 'Shift+Mod+I',
           checked: state.notesOpen,
           onSelect: actions.toggleNotes,
@@ -141,7 +152,7 @@ export function buildSlidesMenus(state: SlidesMenuState, actions: SlidesActions)
         separator,
         {
           id: 'present',
-          label: 'Present',
+          label: t('slides.present'),
           shortcut: 'F5',
           enabled: state.hasSlides,
           onSelect: actions.present,
@@ -150,8 +161,8 @@ export function buildSlidesMenus(state: SlidesMenuState, actions: SlidesActions)
     },
     {
       id: 'help',
-      label: 'Help',
-      items: [{ id: 'help', label: 'Slides Help', onSelect: actions.help }],
+      label: t('menu.help'),
+      items: [{ id: 'help', label: t('slides.help'), onSelect: actions.help }],
     },
   ];
 }

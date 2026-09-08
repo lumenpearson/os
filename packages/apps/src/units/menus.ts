@@ -1,3 +1,4 @@
+import { t } from '@lumen/kernel';
 /**
  * The menubar for the converter, built from one snapshot of state so a command
  * does the same thing whether it is clicked in the toolbar, picked from the
@@ -31,25 +32,25 @@ export function buildUnitsMenus(state: UnitsMenuState, actions: UnitsMenuActions
   return [
     {
       id: 'file',
-      label: 'File',
-      items: [{ id: 'close', label: 'Close', shortcut: 'Mod+W', onSelect: actions.close }],
+      label: t('menu.file'),
+      items: [{ id: 'close', label: t('menu.close'), shortcut: 'Mod+W', onSelect: actions.close }],
     },
     {
       id: 'edit',
-      label: 'Edit',
+      label: t('menu.edit'),
       items: [
         {
           id: 'copy-result',
-          label: 'Copy Result',
+          label: t('menu.copyResult'),
           shortcut: 'Mod+C',
           enabled: state.hasResult,
           onSelect: actions.copyResult,
         },
-        { id: 'swap', label: 'Swap Units', shortcut: 'Mod+S', onSelect: actions.swapUnits },
+        { id: 'swap', label: t('units.swapUnits'), shortcut: 'Mod+S', onSelect: actions.swapUnits },
         separator,
         {
           id: 'clear-recents',
-          label: 'Clear Recents',
+          label: t('menu.clearRecents'),
           enabled: state.hasRecents,
           onSelect: actions.clearRecents,
         },
@@ -57,7 +58,7 @@ export function buildUnitsMenus(state: UnitsMenuState, actions: UnitsMenuActions
     },
     {
       id: 'view',
-      label: 'View',
+      label: t('menu.view'),
       items: [
         ...CATEGORIES.map<MenuItemTemplate>((category) => ({
           id: `category-${category.id}`,
@@ -69,13 +70,13 @@ export function buildUnitsMenus(state: UnitsMenuState, actions: UnitsMenuActions
         separator,
         {
           id: 'previous-category',
-          label: 'Previous Category',
+          label: t('units.previousCategory'),
           shortcut: 'Mod+[',
           onSelect: () => actions.stepCategory(-1),
         },
         {
           id: 'next-category',
-          label: 'Next Category',
+          label: t('units.nextCategory'),
           shortcut: 'Mod+]',
           onSelect: () => actions.stepCategory(1),
         },
@@ -83,7 +84,7 @@ export function buildUnitsMenus(state: UnitsMenuState, actions: UnitsMenuActions
         {
           id: 'recents',
           type: 'checkbox',
-          label: 'Recents',
+          label: t('units.recents'),
           shortcut: 'Mod+R',
           checked: state.showRecents,
           onSelect: actions.toggleRecents,

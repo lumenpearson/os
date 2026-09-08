@@ -329,6 +329,7 @@ function MenuBarItem({
          */
         createPortal(
           <div
+            data-over-page
             className="fixed z-[1100]"
             style={{
               left: ref.current.getBoundingClientRect().left,

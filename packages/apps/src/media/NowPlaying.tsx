@@ -1,3 +1,4 @@
+import { useT } from '@lumen/kernel/react';
 import { Button, EmptyState } from '@lumen/ui';
 import { dirname, formatBytes } from '@lumen/vfs';
 import { Music } from 'lucide-react';
@@ -23,6 +24,7 @@ export interface NowPlayingProps {
  * album, because nothing here reads tags.
  */
 export function NowPlaying({ track, media, playing, duration, size, onAdd }: NowPlayingProps) {
+  const t = useT();
   const elapsed = useRef<HTMLSpanElement>(null);
   const remaining = useRef<HTMLSpanElement>(null);
 
@@ -36,11 +38,11 @@ export function NowPlaying({ track, media, playing, duration, size, onAdd }: Now
     return (
       <EmptyState
         icon={<Music />}
-        title="Nothing queued"
-        description="Add audio or video files, then press Play."
+        title={t('mediaApp.nothingQueued')}
+        description={t('mediaApp.addThenPlay')}
         action={
           <Button variant="primary" onClick={onAdd}>
-            Add Files…
+            {t('mediaApp.addFiles')}
           </Button>
         }
       />

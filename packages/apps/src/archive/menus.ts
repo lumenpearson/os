@@ -1,3 +1,4 @@
+import { t } from '@lumen/kernel';
 /**
  * The menubar for the archive window, built from one snapshot of state so a
  * command does the same thing whether it is clicked in the toolbar, chosen
@@ -43,18 +44,18 @@ export function buildArchiveMenus(
   return [
     {
       id: 'file',
-      label: 'File',
+      label: t('menu.file'),
       items: [
         {
           id: 'open',
-          label: 'Open…',
+          label: t('menu.open'),
           shortcut: 'Mod+O',
           enabled: !state.busy,
           onSelect: actions.open,
         },
         {
           id: 'new',
-          label: 'New Archive…',
+          label: t('archive.newArchive'),
           shortcut: 'Shift+Mod+N',
           enabled: !state.busy,
           onSelect: actions.newArchive,
@@ -62,29 +63,29 @@ export function buildArchiveMenus(
         separator,
         {
           id: 'extract-all',
-          label: 'Extract All…',
+          label: t('archive.extractAll'),
           shortcut: 'Mod+E',
           enabled: ready,
           onSelect: actions.extractAll,
         },
         {
           id: 'extract-selected',
-          label: 'Extract Selected…',
+          label: t('archive.extractSelected'),
           shortcut: 'Shift+Mod+E',
           enabled: ready && state.hasSelection,
           onSelect: actions.extractSelected,
         },
         separator,
-        { id: 'close', label: 'Close', shortcut: 'Mod+W', onSelect: actions.close },
+        { id: 'close', label: t('menu.close'), shortcut: 'Mod+W', onSelect: actions.close },
       ],
     },
     {
       id: 'edit',
-      label: 'Edit',
+      label: t('menu.edit'),
       items: [
         {
           id: 'find',
-          label: 'Find',
+          label: t('menu.find'),
           shortcut: 'Mod+F',
           enabled: state.hasArchive,
           onSelect: actions.find,
@@ -93,12 +94,12 @@ export function buildArchiveMenus(
     },
     {
       id: 'view',
-      label: 'View',
+      label: t('menu.view'),
       items: [
         {
           id: 'sort',
           type: 'submenu',
-          label: 'Sort',
+          label: t('archive.sort'),
           submenu: [
             ...SORT_COLUMNS.map<MenuItemTemplate>((column, index) => ({
               id: `sort-${column}`,
@@ -112,14 +113,14 @@ export function buildArchiveMenus(
             {
               id: 'sort-asc',
               type: 'radio',
-              label: 'Ascending',
+              label: t('menu.ascending'),
               checked: state.sort.direction === 'asc',
               onSelect: () => actions.setDirection('asc'),
             },
             {
               id: 'sort-desc',
               type: 'radio',
-              label: 'Descending',
+              label: t('menu.descending'),
               checked: state.sort.direction === 'desc',
               onSelect: () => actions.setDirection('desc'),
             },
@@ -129,7 +130,7 @@ export function buildArchiveMenus(
         {
           id: 'exact-bytes',
           type: 'checkbox',
-          label: 'Show Sizes as Bytes',
+          label: t('archive.sizesAsBytes'),
           shortcut: 'Mod+B',
           checked: state.exactBytes,
           onSelect: actions.toggleExactBytes,
@@ -137,7 +138,7 @@ export function buildArchiveMenus(
         {
           id: 'details',
           type: 'checkbox',
-          label: 'Details',
+          label: t('archive.details'),
           shortcut: 'Shift+Mod+D',
           checked: state.showDetails,
           onSelect: actions.toggleDetails,
@@ -145,14 +146,14 @@ export function buildArchiveMenus(
         separator,
         {
           id: 'expand-all',
-          label: 'Expand All',
+          label: t('archive.expandAll'),
           shortcut: 'Mod+.',
           enabled: state.hasArchive,
           onSelect: actions.expandAll,
         },
         {
           id: 'collapse-all',
-          label: 'Collapse All',
+          label: t('archive.collapseAll'),
           shortcut: 'Shift+Mod+.',
           enabled: state.hasArchive,
           onSelect: actions.collapseAll,

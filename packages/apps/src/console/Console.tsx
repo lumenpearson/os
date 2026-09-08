@@ -13,7 +13,7 @@
  */
 
 import { useClipboardStore } from '@lumen/kernel';
-import { useKernel, useVfs } from '@lumen/kernel/react';
+import { useKernel, usePlural, useT, useVfs } from '@lumen/kernel/react';
 import {
   AppFrame,
   Button,
@@ -72,6 +72,8 @@ const ACTIONS_AT = 460;
 const FOLLOW_AT = 400;
 
 export default function Console(_props: AppProps) {
+  const t = useT();
+  const plural = usePlural();
   const kernel = useKernel();
   const vfs = useVfs();
   const notify = useNotify();
@@ -132,8 +134,8 @@ export default function Console(_props: AppProps) {
     // because a log of everything is what the buffer already is.
     const body = rows.map((record) => serializeRecord(record)).join('\n');
     await vfs.writeText(path, `${body}\n`, { recursive: true });
-    notify('Log exported', path);
-  }, [kernel.home, notify, rows, vfs]);
+    notify(t('consoleApp.logExported'), path);
+  }, [kernel.home, notify, rows, vfs, t]);
 
   const copySelected = useCallback(() => {
     const record = rows.find((r) => r.id === selectedId);
@@ -181,14 +183,12 @@ export default function Console(_props: AppProps) {
   const empty =
     all.length === 0
       ? {
-          title: capture.paused ? 'Capture is paused' : 'Nothing has happened yet',
-          description: capture.paused
-            ? 'Resume to start recording again. Events that arrive while paused are counted, not kept.'
-            : 'Launch an app or change a setting and it will appear here.',
+          title: capture.paused ? t('consoleApp.capturePaused') : t('consoleApp.nothingHappened'),
+          description: capture.paused ? t('consoleApp.resumeHint') : t('consoleApp.launchHint'),
         }
       : {
-          title: 'Nothing matches',
-          description: 'Widen the levels, clear the source filter, or change the search.',
+          title: t('consoleApp.nothingMatches'),
+          description: t('consoleApp.widenFilters'),
         };
 
   return (
@@ -201,9 +201,15 @@ export default function Console(_props: AppProps) {
               is. It is also the strip the window drags from, which a plain
               span is.
             */}
-            <span className="shrink-0 pr-0.5 text-base font-medium text-ink">Console</span>
+            <span className="shrink-0 pr-0.5 text-base font-medium text-ink">
+              {t('consoleApp.console')}
+            </span>
 
-            <div className="flex shrink-0 items-center gap-0.5" role="group" aria-label="Levels">
+            <div
+              className="flex shrink-0 items-center gap-0.5"
+              role="group"
+              aria-label={t('consoleApp.levels')}
+            >
               {LEVELS.map((level) => (
                 <Button
                   key={level}
@@ -220,14 +226,14 @@ export default function Console(_props: AppProps) {
 
             {showSources && knownSources.length > 1 && (
               <select
-                aria-label="Source"
+                aria-label={t('consoleApp.source')}
                 className="h-6 rounded-xs border border-rule bg-surface px-1.5 text-sm text-ink lumen-focus"
                 value={sources === null ? '' : ([...sources][0] ?? '')}
                 onChange={(e) =>
                   setSources(e.target.value === '' ? null : new Set([e.target.value]))
                 }
               >
-                <option value="">All sources</option>
+                <option value="">{t('consoleApp.allSources')}</option>
                 {knownSources.map((source) => (
                   <option key={source} value={source}>
                     {source}
@@ -243,8 +249,8 @@ export default function Console(_props: AppProps) {
               // size; the search field is the one control here that can give
               // up width, and in the narrowest window it gives up more.
               className={cx('max-w-56', showFollow ? 'min-w-16' : 'min-w-12')}
-              placeholder="Search, or /regex/"
-              aria-label="Search log"
+              placeholder={t('consoleApp.searchHint')}
+              aria-label={t('consoleApp.searchLog')}
               value={search}
               onChange={setSearch}
             />
@@ -271,10 +277,14 @@ export default function Console(_props: AppProps) {
             </IconButton>
             {showActions && (
               <>
-                <IconButton size="sm" label="Export log" onClick={() => void exportLog()}>
+                <IconButton
+                  size="sm"
+                  label={t('consoleApp.exportLog')}
+                  onClick={() => void exportLog()}
+                >
                   <Download className="size-3.5" />
                 </IconButton>
-                <IconButton size="sm" label="Clear" onClick={clear}>
+                <IconButton size="sm" label={t('menu.clear')} onClick={clear}>
                   <Trash2 className="size-3.5" />
                 </IconButton>
               </>
@@ -286,11 +296,16 @@ export default function Console(_props: AppProps) {
         <>
           <span className="mono tabular-nums">
             {rows.length === all.length
-              ? `${all.length} records`
-              : `${rows.length} of ${all.length} records`}
+              ? plural('count.records', all.length)
+              : t('consoleApp.recordsOf', {
+                  shown: rows.length,
+                  total: plural('count.records', all.length),
+                })}
           </span>
           {capture.paused && capture.skipped > 0 && (
-            <span className="mono tabular-nums text-ink-3">{capture.skipped} skipped</span>
+            <span className="mono tabular-nums text-ink-3">
+              {t('consoleApp.skipped', { count: capture.skipped })}
+            </span>
           )}
           {error && <span className="text-danger">{error}</span>}
         </>

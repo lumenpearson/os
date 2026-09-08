@@ -1,4 +1,4 @@
-import { useKernel, useRuntimeSettings, useSetting } from '@lumen/kernel/react';
+import { useKernel, useRuntimeSettings, useSetting, useT } from '@lumen/kernel/react';
 import { Button, cx, Slider, useClickOutside, useEscape, usePresence } from '@lumen/ui';
 import {
   Bluetooth,
@@ -17,6 +17,7 @@ import { useShellStore } from '../shellStore';
 
 /** Quick toggles and sliders under the menubar. Everything writes to Settings. */
 export function ControlCenter() {
+  const t = useT();
   const kernel = useKernel();
   const open = useShellStore((s) => s.controlCenter);
   const toggle = useShellStore((s) => s.toggle);
@@ -43,6 +44,7 @@ export function ControlCenter() {
       {brightness < 1 && (
         <div
           aria-hidden
+          data-over-page
           className="pointer-events-none absolute inset-0 z-[2150] bg-black"
           style={{ opacity: 1 - brightness }}
         />
@@ -52,8 +54,9 @@ export function ControlCenter() {
           ref={ref}
           {...anim}
           role="dialog"
-          aria-label="Control Center"
+          aria-label={t('systemBar.controlCenter')}
           data-testid="control-center"
+          data-over-page
           className={cx(
             'absolute right-2 top-[calc(var(--lumen-menubar-h)+6px)] z-[1200] flex w-[min(320px,calc(100vw-16px))] flex-col gap-3 rounded-lg border border-rule bg-chrome p-3 text-ink shadow-lg',
             leaving ? 'lumen-pop-exit' : 'lumen-pop-enter',
@@ -64,7 +67,7 @@ export function ControlCenter() {
           <div className="grid grid-cols-2 gap-2">
             <Toggle
               icon={<Wifi />}
-              label="Wi-Fi"
+              label={t('controlCenter.wifi')}
               detail={network.airplane ? 'Airplane mode' : network.wifi ? network.ssid : 'Off'}
               active={network.wifi && !network.airplane}
               disabled={network.airplane}
@@ -72,7 +75,7 @@ export function ControlCenter() {
             />
             <Toggle
               icon={<Bluetooth />}
-              label="Bluetooth"
+              label={t('controlCenter.bluetooth')}
               detail={network.bluetooth && !network.airplane ? 'On' : 'Off'}
               active={network.bluetooth && !network.airplane}
               disabled={network.airplane}
@@ -80,14 +83,14 @@ export function ControlCenter() {
             />
             <Toggle
               icon={<Plane />}
-              label="Airplane"
+              label={t('controlCenter.airplane')}
               detail={network.airplane ? 'On' : 'Off'}
               active={network.airplane}
               onClick={() => setNetwork({ airplane: !network.airplane })}
             />
             <Toggle
               icon={<MoonStar />}
-              label="Do Not Disturb"
+              label={t('notifications.doNotDisturb')}
               detail={notifications.doNotDisturb ? 'On' : 'Off'}
               active={notifications.doNotDisturb}
               onClick={() => setNotifications({ doNotDisturb: !notifications.doNotDisturb })}
@@ -96,7 +99,7 @@ export function ControlCenter() {
           <div className="grid grid-cols-2 gap-2">
             <Toggle
               icon={appearance.theme === 'dark' ? <Moon /> : <Sun />}
-              label="Theme"
+              label={t('controlCenter.theme')}
               detail={
                 appearance.theme === 'auto'
                   ? 'Auto'
@@ -111,7 +114,7 @@ export function ControlCenter() {
             />
             <Toggle
               icon={<Lock />}
-              label="Lock"
+              label={t('controlCenter.lock')}
               detail="Now"
               active={false}
               onClick={() => {
@@ -122,7 +125,7 @@ export function ControlCenter() {
           </div>
           <div className="flex flex-col gap-2 rounded-md border border-rule bg-surface/70 p-3">
             <label className="flex items-center gap-2 text-sm text-ink-2" htmlFor="cc-brightness">
-              <SunMedium className="size-4" /> Brightness
+              <SunMedium className="size-4" /> {t('controlCenter.brightness')}
             </label>
             <Slider
               id="cc-brightness"
@@ -130,7 +133,7 @@ export function ControlCenter() {
               max={100}
               value={Math.round(brightness * 100)}
               onChange={(v) => setBrightness(v / 100)}
-              aria-label="Brightness"
+              aria-label={t('controlCenter.brightness')}
             />
             <label className="flex items-center gap-2 pt-1 text-sm text-ink-2" htmlFor="cc-volume">
               <button
@@ -141,7 +144,7 @@ export function ControlCenter() {
               >
                 {sound.muted ? <VolumeX className="size-4" /> : <Volume2 className="size-4" />}
               </button>
-              Sound
+              {t('controlCenter.sound')}
             </label>
             <Slider
               id="cc-volume"
@@ -149,7 +152,7 @@ export function ControlCenter() {
               max={100}
               value={sound.muted ? 0 : Math.round(sound.volume * 100)}
               onChange={(v) => setSound({ volume: v / 100, muted: false })}
-              aria-label="Volume"
+              aria-label={t('controlCenter.volume')}
             />
           </div>
           <Button
@@ -161,7 +164,7 @@ export function ControlCenter() {
               void kernel.launch('lumen.settings');
             }}
           >
-            All settings
+            {t('controlCenter.allSettings')}
           </Button>
         </div>
       )}

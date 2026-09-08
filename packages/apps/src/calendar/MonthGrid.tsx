@@ -3,6 +3,7 @@
 // row headers are structure around it and are not focus stops in either ARIA
 // grid pattern. Making them focusable would add tab stops a keyboard user has
 // to escape from.
+import { usePlural, useT } from '@lumen/kernel/react';
 import { cx, useElementSize } from '@lumen/ui';
 import { type KeyboardEvent, useEffect, useMemo, useRef } from 'react';
 import { DAYS_PER_WEEK, type DateKey, type FirstDay, sameMonth, weekNumber } from './dates';
@@ -59,6 +60,7 @@ export function MonthGrid({
   onSelectEvent,
   onOpenEvent,
 }: MonthGridProps) {
+  const t = useT();
   const cells = useRef(new Map<DateKey, HTMLDivElement>());
   const hasFocus = useRef(false);
   const [bodyRef, bodySize] = useElementSize<HTMLDivElement>();
@@ -107,7 +109,7 @@ export function MonthGrid({
   return (
     <div
       role="grid"
-      aria-label="Month"
+      aria-label={t('calendarApp.month')}
       className="flex min-h-0 min-w-0 flex-1 flex-col bg-surface"
       onFocus={() => {
         hasFocus.current = true;
@@ -129,7 +131,7 @@ export function MonthGrid({
             role="columnheader"
             className="mono border-r border-rule py-1 text-center text-2xs text-ink-3"
           >
-            Wk
+            {t('calendarApp.week')}
           </div>
         )}
         {headers.map((label, i) => (
@@ -224,6 +226,8 @@ function MonthCell({
   onSelectEvent,
   onOpenEvent,
 }: MonthCellProps) {
+  const _t = useT();
+  const plural = usePlural();
   const room = events.length > perCell ? Math.max(0, perCell - 1) : perCell;
   const shown = events.slice(0, room);
   const hidden = events.length - shown.length;
@@ -279,7 +283,7 @@ function MonthCell({
           }}
           className="mono truncate-1 rounded-xs px-1 text-left text-2xs tabular-nums text-ink-3 hover:text-ink lumen-focus"
         >
-          {hidden} more
+          {plural('count.moreItems', hidden)}
         </button>
       )}
     </div>

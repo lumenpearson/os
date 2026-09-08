@@ -1,5 +1,6 @@
+import type { Translate } from '@lumen/kernel';
 import { formatShortcut, GLOBAL_SHORTCUTS, type GlobalShortcutId, modIsMeta } from '@lumen/kernel';
-import { useSetting } from '@lumen/kernel/react';
+import { useSetting, useT } from '@lumen/kernel/react';
 import {
   Button,
   cx,
@@ -14,15 +15,20 @@ import { useState } from 'react';
 import { Row } from '../Row';
 import { findConflict, recordKey } from '../shortcutRecorder';
 
-const MODIFIERS: SegmentedOption<'auto' | 'ctrl' | 'meta'>[] = [
-  { value: 'auto', label: 'Auto' },
-  { value: 'ctrl', label: 'Ctrl' },
-  { value: 'meta', label: 'Cmd / Win' },
+/*
+ * A function of the translator, not a table built at import: a table would
+ * keep whatever language was in force when the module first loaded.
+ */
+const modifierOptions = (t: Translate): SegmentedOption<'auto' | 'ctrl' | 'meta'>[] => [
+  { value: 'auto', label: t('keyboardPage.modAuto') },
+  { value: 'ctrl', label: t('keyboardPage.modCtrl') },
+  { value: 'meta', label: t('keyboardPage.modCmd') },
 ];
 
 const SHORTCUT_IDS = Object.keys(GLOBAL_SHORTCUTS) as GlobalShortcutId[];
 
 export function KeyboardPage() {
+  const t = useT();
   const [keyboard, patch] = useSetting('keyboard');
   const [recording, setRecording] = useState<GlobalShortcutId | null>(null);
   const [conflict, setConflict] = useState<{ id: GlobalShortcutId; other: string } | null>(null);
@@ -51,19 +57,16 @@ export function KeyboardPage() {
   };
 
   return (
-    <SettingsPage
-      title="Keyboard"
-      description="The primary modifier and the system-wide shortcuts."
-    >
-      <SettingsGroup title="Modifier">
+    <SettingsPage title={t('settings.keyboard')} description={t('keyboardPage.intro')}>
+      <SettingsGroup title={t('keyboardPage.modifier')}>
         <Row
           id="keyboard.modifier"
-          label="Modifier key"
-          description="Mod = Ctrl on Windows, Cmd on macOS. Auto follows the host."
+          label={t('keyboardPage.modifierKey')}
+          description={t('keyboardPage.modifierHint')}
         >
           <SegmentedControl
-            aria-label="Modifier key"
-            options={MODIFIERS}
+            aria-label={t('keyboardPage.modifierKey')}
+            options={modifierOptions(t)}
             value={keyboard.modifier}
             onChange={(modifier) => patch({ modifier })}
           />
@@ -71,10 +74,10 @@ export function KeyboardPage() {
       </SettingsGroup>
 
       <SettingsGroup
-        title="Shortcuts"
-        description="Click a shortcut, then press the new keys. Escape cancels."
+        title={t('keyboardPage.shortcuts')}
+        description={t('keyboardPage.shortcutsHint')}
       >
-        <Row id="keyboard.shortcuts" label="System shortcuts" stacked>
+        <Row id="keyboard.shortcuts" label={t('keyboardPage.systemShortcuts')} stacked>
           <div className="flex w-full items-center justify-between">
             <span className="text-sm text-ink-2">
               {overridden.length === 0
@@ -86,14 +89,14 @@ export function KeyboardPage() {
               disabled={overridden.length === 0}
               onClick={() => patch({ shortcuts: {} })}
             >
-              Reset all
+              {t('keyboardPage.resetAll')}
             </Button>
           </div>
           <table className="w-full border-collapse text-base">
             <thead>
               <tr className="mono text-left text-2xs uppercase tracking-[0.08em] text-ink-3">
-                <th className="py-1 pr-2 font-medium">Action</th>
-                <th className="py-1 pr-2 font-medium">Keys</th>
+                <th className="py-1 pr-2 font-medium">{t('keyboardPage.action')}</th>
+                <th className="py-1 pr-2 font-medium">{t('keyboardPage.keys')}</th>
                 <th className="w-7 py-1" />
               </tr>
             </thead>
@@ -135,7 +138,7 @@ export function KeyboardPage() {
                     </td>
                     <td className="py-1">
                       <IconButton
-                        label="Reset to default"
+                        label={t('keyboardPage.resetToDefault')}
                         size="sm"
                         className={cx(!changed && 'invisible')}
                         onClick={() => resetOne(id)}
@@ -150,8 +153,8 @@ export function KeyboardPage() {
           </table>
           {conflict && (
             <p className="text-sm text-danger" role="status">
-              {formatShortcut(bindings[conflict.id] ?? '', keyboard.modifier)} is also used by{' '}
-              {conflict.other}.
+              {formatShortcut(bindings[conflict.id] ?? '', keyboard.modifier)}{' '}
+              {t('keyboardPage.alsoUsedBy')} {conflict.other}.
             </p>
           )}
         </Row>

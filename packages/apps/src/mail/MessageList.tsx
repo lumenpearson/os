@@ -1,3 +1,4 @@
+import { useT } from '@lumen/kernel/react';
 import { cx, EmptyState, Select } from '@lumen/ui';
 import { Flag, Paperclip, Search } from 'lucide-react';
 import { type CSSProperties, type KeyboardEvent, useEffect, useId, useRef } from 'react';
@@ -51,6 +52,7 @@ export function MessageList({
   className,
   style,
 }: MessageListProps) {
+  const t = useT();
   const listId = useId();
   const boxRef = useRef<HTMLDivElement>(null);
   const index = threads.findIndex((t) => t.messages.some((m) => m.id === selectedId));
@@ -111,7 +113,7 @@ export function MessageList({
         <div className="flex-1" />
         <Select
           size="sm"
-          aria-label="Sort messages by"
+          aria-label={t('mailApp.sortBy')}
           options={SORT_OPTIONS}
           value={sort}
           onChange={onSort}
@@ -132,7 +134,7 @@ export function MessageList({
         <div
           ref={boxRef}
           role="listbox"
-          aria-label="Messages"
+          aria-label={t('mailApp.messages')}
           aria-activedescendant={index >= 0 ? rowId(index) : undefined}
           tabIndex={0}
           onKeyDown={onKeyDown}
@@ -188,14 +190,14 @@ export function MessageList({
                     {thread.flagged && (
                       <Flag
                         role="img"
-                        aria-label="Flagged"
+                        aria-label={t('mailApp.flagged')}
                         className="size-3 shrink-0 text-accent"
                       />
                     )}
                     {thread.attachments > 0 && (
                       <Paperclip
                         role="img"
-                        aria-label="Attachment"
+                        aria-label={t('mailApp.attachment')}
                         className="size-3 shrink-0 text-ink-3"
                       />
                     )}

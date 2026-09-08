@@ -14,7 +14,7 @@ import {
 } from './hotspots';
 import { onScrollbar } from './scrollbar';
 import { ART_BOX, CURSOR_ART } from './set';
-import { type Shape, shapeForCursor } from './shapes';
+import { type Shape, shapeForCursor, shapeForElement } from './shapes';
 
 /**
  * The OS cursor. The native cursor is hidden through `[data-lumen-cursor=custom]`
@@ -51,24 +51,24 @@ export function CursorLayer() {
     let unread = false;
 
     const shapeFor = (from: Element | null): Shape => {
-      let node: Element | null = from;
-      while (node && node !== document.body) {
-        const hinted = (node as HTMLElement).dataset?.cursor;
-        if (hinted) return shapeForCursor(hinted) ?? 'arrow';
-        node = node.parentElement;
-      }
       if (!(from instanceof Element)) return 'arrow';
+      // What the element states, or failing that what it is. This is the
+      // whole of it in practice: the stylesheet that hides the native cursor
+      // sets `cursor: none !important` on every element while this layer is
+      // drawing, so the computed value below is `none` for all of them.
+      const asked = shapeForElement(from, document.body);
+      if (asked) return asked;
       const computed = getComputedStyle(from).cursor;
-      if (computed && computed !== 'none') return shapeForCursor(computed) ?? 'arrow';
+      if (computed && computed !== 'none') return shapeForCursor(computed);
       return 'arrow';
     };
 
     const apply = () => {
       raf = 0;
-      // `shapeFor` ends in getComputedStyle, which forces the browser to settle
-      // style. Reading it here costs one flush per frame, in the frame where
-      // style is being recalculated anyway; reading it in the pointer handler
-      // cost one per event, on every pointer move anywhere in the OS.
+      // `shapeFor` can end in getComputedStyle, which forces the browser to
+      // settle style. Reading it here costs one flush per frame, in the frame
+      // where style is being recalculated anyway; reading it in the pointer
+      // handler cost one per event, on every pointer move anywhere in the OS.
       if (unread) {
         unread = false;
         shape = shapeFor(target);

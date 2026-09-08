@@ -1,3 +1,4 @@
+import { useT } from '@lumen/kernel/react';
 import {
   Button,
   Checkbox,
@@ -43,6 +44,7 @@ export function DetailsDialog({
   onSave,
   onDelete,
 }: DetailsDialogProps) {
+  const t = useT();
   const [title, setTitle] = useState(item.title);
   const [notes, setNotes] = useState(item.notes);
   const [due, setDue] = useState(item.due ?? '');
@@ -76,19 +78,19 @@ export function DetailsDialog({
     <Dialog
       open
       onClose={onClose}
-      title="Reminder"
+      title={t('remindersApp.reminder')}
       width={460}
       container={container}
       actions={
         <>
           <Button variant="ghost" className="mr-auto text-danger" onClick={onDelete}>
-            Delete
+            {t('reminders.delete')}
           </Button>
           <Button variant="ghost" onClick={onClose}>
-            Cancel
+            {t('action.cancel')}
           </Button>
           <Button variant="primary" onClick={save}>
-            Save
+            {t('menu.save')}
           </Button>
         </>
       }
@@ -100,7 +102,7 @@ export function DetailsDialog({
           save();
         }}
       >
-        <Field label="Title" htmlFor={`${id}-title`}>
+        <Field label={t('calendarApp.title')} htmlFor={`${id}-title`}>
           <Input
             id={`${id}-title`}
             data-autofocus
@@ -108,7 +110,7 @@ export function DetailsDialog({
             onChange={(e) => setTitle(e.target.value)}
           />
         </Field>
-        <Field label="Notes" htmlFor={`${id}-notes`}>
+        <Field label={t('calendarApp.notes')} htmlFor={`${id}-notes`}>
           <TextArea
             id={`${id}-notes`}
             value={notes}
@@ -118,7 +120,7 @@ export function DetailsDialog({
           />
         </Field>
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Due" htmlFor={`${id}-due`}>
+          <Field label={t('remindersApp.due')} htmlFor={`${id}-due`}>
             <Input
               id={`${id}-due`}
               type="date"
@@ -128,7 +130,7 @@ export function DetailsDialog({
             />
           </Field>
           <Field
-            label="Time"
+            label={t('calendarApp.time')}
             htmlFor={`${id}-time`}
             hint={dated ? undefined : 'A time needs a date.'}
           >
@@ -142,7 +144,7 @@ export function DetailsDialog({
             />
           </Field>
         </div>
-        <Field label="Repeat" htmlFor={`${id}-repeat`}>
+        <Field label={t('calendarApp.repeat')} htmlFor={`${id}-repeat`}>
           <div className="flex items-center gap-2">
             <Select<RepeatChoice>
               id={`${id}-repeat`}
@@ -150,14 +152,14 @@ export function DetailsDialog({
               disabled={!dated}
               onChange={setRepeat}
               options={[
-                { value: 'none', label: 'Never' },
+                { value: 'none', label: t('calendarApp.never') },
                 ...FREQUENCIES.map((f) => ({ value: f, label: FREQUENCY_LABELS[f] })),
               ]}
             />
             {repeat !== 'none' && dated && (
               <>
                 <label htmlFor={`${id}-interval`} className="text-base text-ink-2">
-                  every
+                  {t('remindersApp.every')}
                 </label>
                 <Input
                   id={`${id}-interval`}
@@ -173,15 +175,15 @@ export function DetailsDialog({
             )}
           </div>
         </Field>
-        <Field label="Priority">
+        <Field label={t('remindersApp.priority')}>
           <SegmentedControl<Priority>
-            aria-label="Priority"
+            aria-label={t('remindersApp.priority')}
             value={priority}
             onChange={setPriority}
             options={PRIORITIES.map((p) => ({ value: p, label: PRIORITY_LABELS[p] }))}
           />
         </Field>
-        <Field label="List" htmlFor={`${id}-list`}>
+        <Field label={t('remindersApp.list')} htmlFor={`${id}-list`}>
           <Select
             id={`${id}-list`}
             value={listId}
@@ -190,12 +192,12 @@ export function DetailsDialog({
           />
         </Field>
         <Checkbox
-          label="Flagged"
+          label={t('remindersApp.flagged')}
           checked={flagged}
           onChange={(e) => setFlagged(e.target.checked)}
         />
         <button type="submit" className="hidden" aria-hidden tabIndex={-1}>
-          Save
+          {t('menu.save')}
         </button>
       </form>
     </Dialog>

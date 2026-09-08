@@ -1,5 +1,5 @@
-import type { AppDefinition, AppManifest } from '@lumen/kernel';
-import { useApps, useInstalledApps, useSetting } from '@lumen/kernel/react';
+import type { AppDefinition, AppManifest, Translate } from '@lumen/kernel';
+import { useApps, useInstalledApps, useSetting, useT } from '@lumen/kernel/react';
 import {
   AnchoredMenu,
   Button,
@@ -19,10 +19,16 @@ import { ManifestIcon } from '../../_sdk';
 import { addPinned, movePinned, removePinned } from '../logic';
 import { Row } from '../Row';
 
-const POSITIONS: SegmentedOption<'bottom' | 'left' | 'right'>[] = [
-  { value: 'bottom', label: 'Bottom' },
-  { value: 'left', label: 'Left' },
-  { value: 'right', label: 'Right' },
+/*
+ * A function of the translator rather than a table built once at import: a
+ * table would be filled in whatever language the settings happened to hold
+ * when the module first loaded, and would keep those words after the language
+ * changed. Called during render, it follows.
+ */
+const positionOptions = (t: Translate): SegmentedOption<'bottom' | 'left' | 'right'>[] => [
+  { value: 'bottom', label: t('option.bottom') },
+  { value: 'left', label: t('option.left') },
+  { value: 'right', label: t('option.right') },
 ];
 
 interface PinnedEntry {
@@ -58,6 +64,7 @@ function describe(
 }
 
 function PinnedApps() {
+  const t = useT();
   const [taskbar, patch] = useSetting('taskbar');
   const apps = useApps();
   const installed = useInstalledApps();
@@ -116,10 +123,12 @@ function PinnedApps() {
       <div
         ref={listRef}
         role="list"
-        aria-label="Pinned apps"
+        aria-label={t('taskbarPage.pinnedApps')}
         className="divide-y divide-rule rounded-sm border border-rule"
       >
-        {entries.length === 0 && <p className="px-3 py-2 text-sm text-ink-2">No apps pinned.</p>}
+        {entries.length === 0 && (
+          <p className="px-3 py-2 text-sm text-ink-2">{t('taskbarPage.nonePinned')}</p>
+        )}
         {entries.map((entry, i) => (
           <div
             key={entry.id}
@@ -170,11 +179,16 @@ function PinnedApps() {
             <GripVertical aria-hidden className="size-4 shrink-0 cursor-grab text-ink-3" />
             {entry.icon}
             <span className="truncate-1 flex-1 text-base">{entry.name}</span>
-            <IconButton label="Move up" size="sm" disabled={i === 0} onClick={() => move(i, i - 1)}>
+            <IconButton
+              label={t('taskbarPage.moveUp')}
+              size="sm"
+              disabled={i === 0}
+              onClick={() => move(i, i - 1)}
+            >
               <ArrowUp />
             </IconButton>
             <IconButton
-              label="Move down"
+              label={t('taskbarPage.moveDown')}
               size="sm"
               disabled={i === entries.length - 1}
               onClick={() => move(i, i + 1)}
@@ -200,7 +214,7 @@ function PinnedApps() {
           aria-haspopup="menu"
           aria-expanded={addOpen}
         >
-          Add…
+          {t('taskbarPage.add')}
         </Button>
         <AnchoredMenu
           open={addOpen}
@@ -208,7 +222,7 @@ function PinnedApps() {
           anchor={addAnchor}
           items={
             available.length === 0
-              ? [{ id: 'none', label: 'Every app is pinned', enabled: false }]
+              ? [{ id: 'none', label: t('taskbarPage.everyAppPinned'), enabled: false }]
               : available.map<MenuEntry>((a) => ({
                   id: a.id,
                   label: a.name,
@@ -223,25 +237,23 @@ function PinnedApps() {
 }
 
 export function TaskbarPage() {
+  const t = useT();
   const [taskbar, patch] = useSetting('taskbar');
   const [menubar, patchMenubar] = useSetting('menubar');
   return (
-    <SettingsPage
-      title="Taskbar & Menubar"
-      description="Where the taskbar sits, what it holds, and what the menubar shows."
-    >
-      <SettingsGroup title="Taskbar">
-        <Row id="taskbar.position" label="Position">
+    <SettingsPage title={t('taskbarPage.titleBoth')} description={t('taskbarPage.intro')}>
+      <SettingsGroup title={t('taskbarPage.titleTaskbar')}>
+        <Row id="taskbar.position" label={t('taskbarPage.position')}>
           <SegmentedControl
-            aria-label="Position"
-            options={POSITIONS}
+            aria-label={t('taskbarPage.position')}
+            options={positionOptions(t)}
             value={taskbar.position}
             onChange={(position) => patch({ position })}
           />
         </Row>
-        <Row id="taskbar.size" label="Icon size" stacked>
+        <Row id="taskbar.size" label={t('taskbarPage.iconSize')} stacked>
           <Slider
-            aria-label="Icon size"
+            aria-label={t('taskbarPage.iconSize')}
             min={32}
             max={64}
             step={1}
@@ -252,27 +264,31 @@ export function TaskbarPage() {
         </Row>
         <Row
           id="taskbar.autoHide"
-          label="Auto-hide"
-          description="Slides away until the pointer reaches the edge."
+          label={t('taskbarPage.autoHide')}
+          description={t('taskbarPage.autoHideHint')}
         >
           <Switch
             checked={taskbar.autoHide}
             onChange={(e) => patch({ autoHide: e.target.checked })}
           />
         </Row>
-        <Row id="taskbar.magnify" label="Magnify on hover">
+        <Row id="taskbar.magnify" label={t('taskbarPage.magnify')}>
           <Switch
             checked={taskbar.magnify}
             onChange={(e) => patch({ magnify: e.target.checked })}
           />
         </Row>
-        <Row id="taskbar.labels" label="Show labels" description="App names under the icons.">
+        <Row
+          id="taskbar.labels"
+          label={t('taskbarPage.showLabels')}
+          description={t('taskbarPage.showLabelsHint')}
+        >
           <Switch
             checked={taskbar.showLabels}
             onChange={(e) => patch({ showLabels: e.target.checked })}
           />
         </Row>
-        <Row id="taskbar.centered" label="Centred">
+        <Row id="taskbar.centered" label={t('taskbarPage.centred')}>
           <Switch
             checked={taskbar.centered}
             onChange={(e) => patch({ centered: e.target.checked })}
@@ -280,8 +296,8 @@ export function TaskbarPage() {
         </Row>
         <Row
           id="taskbar.recents"
-          label="Show recent apps"
-          description="Running apps that are not pinned."
+          label={t('taskbarPage.showRecent')}
+          description={t('taskbarPage.showRecentHint')}
         >
           <Switch
             checked={taskbar.showRecents}
@@ -290,66 +306,66 @@ export function TaskbarPage() {
         </Row>
       </SettingsGroup>
 
-      <SettingsGroup title="Pinned apps" description="Drag to reorder, or use the arrows.">
-        <Row id="taskbar.pinned" label="Pinned" stacked>
+      <SettingsGroup title={t('taskbarPage.pinnedApps')} description={t('taskbarPage.pinnedHint')}>
+        <Row id="taskbar.pinned" label={t('taskbarPage.pinned')} stacked>
           <PinnedApps />
         </Row>
       </SettingsGroup>
 
-      <SettingsGroup title="Menubar">
-        <Row id="taskbar.clock" label="Show clock">
+      <SettingsGroup title={t('taskbarPage.titleMenubar')}>
+        <Row id="taskbar.clock" label={t('taskbarPage.showClock')}>
           <Switch
             checked={menubar.showClock}
             onChange={(e) => patchMenubar({ showClock: e.target.checked })}
           />
         </Row>
-        <Row id="taskbar.clock24h" label="24-hour clock">
+        <Row id="taskbar.clock24h" label={t('taskbarPage.clock24')}>
           <Switch
             checked={menubar.clock24h}
             disabled={!menubar.showClock}
             onChange={(e) => patchMenubar({ clock24h: e.target.checked })}
           />
         </Row>
-        <Row id="taskbar.seconds" label="Show seconds">
+        <Row id="taskbar.seconds" label={t('taskbarPage.showSeconds')}>
           <Switch
             checked={menubar.showSeconds}
             disabled={!menubar.showClock}
             onChange={(e) => patchMenubar({ showSeconds: e.target.checked })}
           />
         </Row>
-        <Row id="taskbar.date" label="Show date">
+        <Row id="taskbar.date" label={t('taskbarPage.showDate')}>
           <Switch
             checked={menubar.showDate}
             disabled={!menubar.showClock}
             onChange={(e) => patchMenubar({ showDate: e.target.checked })}
           />
         </Row>
-        <Row id="taskbar.weekday" label="Show day of week">
+        <Row id="taskbar.weekday" label={t('taskbarPage.showDayOfWeek')}>
           <Switch
             checked={menubar.showDayOfWeek}
             disabled={!menubar.showClock}
             onChange={(e) => patchMenubar({ showDayOfWeek: e.target.checked })}
           />
         </Row>
-        <Row id="taskbar.battery" label="Show battery">
+        <Row id="taskbar.battery" label={t('taskbarPage.showBattery')}>
           <Switch
             checked={menubar.showBattery}
             onChange={(e) => patchMenubar({ showBattery: e.target.checked })}
           />
         </Row>
-        <Row id="taskbar.network" label="Show network">
+        <Row id="taskbar.network" label={t('taskbarPage.showNetwork')}>
           <Switch
             checked={menubar.showNetwork}
             onChange={(e) => patchMenubar({ showNetwork: e.target.checked })}
           />
         </Row>
-        <Row id="taskbar.sound" label="Show sound">
+        <Row id="taskbar.sound" label={t('taskbarPage.showSound')}>
           <Switch
             checked={menubar.showSound}
             onChange={(e) => patchMenubar({ showSound: e.target.checked })}
           />
         </Row>
-        <Row id="taskbar.user" label="Show user">
+        <Row id="taskbar.user" label={t('taskbarPage.showUser')}>
           <Switch
             checked={menubar.showUser}
             onChange={(e) => patchMenubar({ showUser: e.target.checked })}

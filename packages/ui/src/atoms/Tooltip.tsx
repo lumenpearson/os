@@ -85,6 +85,7 @@ export function Tooltip({ content, children, side = 'bottom', delay = 500 }: Too
         createPortal(
           <div
             id={id}
+            data-over-page
             role="tooltip"
             {...anim}
             className={cx(

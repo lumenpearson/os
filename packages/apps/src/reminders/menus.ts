@@ -1,3 +1,4 @@
+import { t } from '@lumen/kernel';
 /**
  * The menubar for the Reminders window, built from one snapshot of state so a
  * command reads the same whether it is clicked in a menu, typed as a shortcut
@@ -52,28 +53,33 @@ export function buildRemindersMenus(
   return [
     {
       id: 'file',
-      label: 'File',
+      label: t('menu.file'),
       items: [
         {
           id: 'new-reminder',
-          label: 'New Reminder',
+          label: t('reminders.newReminder'),
           shortcut: 'Mod+N',
           onSelect: actions.newReminder,
         },
-        { id: 'new-list', label: 'New List', shortcut: 'Shift+Mod+N', onSelect: actions.newList },
+        {
+          id: 'new-list',
+          label: t('reminders.newList'),
+          shortcut: 'Shift+Mod+N',
+          onSelect: actions.newList,
+        },
         separator,
-        { id: 'close', label: 'Close', shortcut: 'Mod+W', onSelect: actions.close },
+        { id: 'close', label: t('menu.close'), shortcut: 'Mod+W', onSelect: actions.close },
       ],
     },
     {
       id: 'edit',
-      label: 'Edit',
+      label: t('menu.edit'),
       items: [
-        { id: 'find', label: 'Find…', shortcut: 'Mod+F', onSelect: actions.find },
+        { id: 'find', label: t('menu.findEllipsis'), shortcut: 'Mod+F', onSelect: actions.find },
         separator,
         {
           id: 'edit-details',
-          label: 'Edit Details…',
+          label: t('reminders.editDetails'),
           shortcut: 'Mod+E',
           enabled: onRow,
           onSelect: actions.editDetails,
@@ -95,28 +101,28 @@ export function buildRemindersMenus(
         separator,
         {
           id: 'indent',
-          label: 'Make Subtask',
+          label: t('reminders.makeSubtask'),
           shortcut: 'Mod+]',
           enabled: onRow && state.canIndent,
           onSelect: actions.indent,
         },
         {
           id: 'outdent',
-          label: 'Lift Out of Subtask',
+          label: t('reminders.liftOut'),
           shortcut: 'Mod+[',
           enabled: onRow && state.canOutdent,
           onSelect: actions.outdent,
         },
         {
           id: 'move-up',
-          label: 'Move Up',
+          label: t('reminders.moveUp'),
           shortcut: 'Shift+Mod+ArrowUp',
           enabled: onRow,
           onSelect: actions.moveUp,
         },
         {
           id: 'move-down',
-          label: 'Move Down',
+          label: t('reminders.moveDown'),
           shortcut: 'Shift+Mod+ArrowDown',
           enabled: onRow,
           onSelect: actions.moveDown,
@@ -124,7 +130,7 @@ export function buildRemindersMenus(
         separator,
         {
           id: 'delete',
-          label: 'Delete',
+          label: t('reminders.delete'),
           shortcut: 'Delete',
           danger: true,
           enabled: onRow,
@@ -134,7 +140,7 @@ export function buildRemindersMenus(
     },
     {
       id: 'view',
-      label: 'View',
+      label: t('menu.view'),
       items: [
         ...SMART_LISTS.map<MenuItemTemplate>((id) => ({
           id: `smart-${id}`,
@@ -148,7 +154,7 @@ export function buildRemindersMenus(
         {
           id: 'show-completed',
           type: 'checkbox',
-          label: 'Show Completed',
+          label: t('reminders.showCompleted'),
           shortcut: 'Shift+Mod+C',
           checked: state.showCompleted,
           onSelect: actions.toggleShowCompleted,
@@ -156,7 +162,7 @@ export function buildRemindersMenus(
         {
           id: 'sidebar',
           type: 'checkbox',
-          label: 'Sidebar',
+          label: t('menu.sidebar'),
           shortcut: 'Shift+Mod+S',
           checked: state.showSidebar,
           onSelect: actions.toggleSidebar,

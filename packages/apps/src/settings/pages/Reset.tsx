@@ -1,5 +1,5 @@
 import { useSettingsStore } from '@lumen/kernel';
-import { useKernel } from '@lumen/kernel/react';
+import { useKernel, useT } from '@lumen/kernel/react';
 import { Button, Dialog, Input, SettingsGroup, SettingsPage, useDialogs } from '@lumen/ui';
 import { useState } from 'react';
 import { useApp } from '../../_sdk';
@@ -8,6 +8,7 @@ import { Row } from '../Row';
 const ERASE_WORD = 'ERASE';
 
 export function ResetPage() {
+  const t = useT();
   const kernel = useKernel();
   const dialogs = useDialogs();
   const { container } = useApp();
@@ -17,9 +18,9 @@ export function ResetPage() {
 
   const restoreDefaults = async () => {
     const ok = await dialogs.confirm({
-      title: 'Restore default settings?',
-      message: 'Every preference returns to its default. Files and your account are kept.',
-      confirmLabel: 'Restore',
+      title: t('resetPage.restoreConfirm'),
+      message: t('resetPage.everyPreferenceKept'),
+      confirmLabel: t('resetPage.restore'),
       danger: true,
     });
     if (ok) useSettingsStore.getState().reset();
@@ -31,29 +32,26 @@ export function ResetPage() {
   };
 
   return (
-    <SettingsPage
-      title="Reset"
-      description="Return settings to their defaults, or wipe the system."
-    >
-      <SettingsGroup title="Settings">
+    <SettingsPage title={t('settings.reset')} description={t('resetPage.intro')}>
+      <SettingsGroup title={t('resetPage.settings')}>
         <Row
           id="reset.defaults"
-          label="Restore default settings"
-          description="Keeps your files and account."
+          label={t('resetPage.restoreDefaults')}
+          description={t('resetPage.restoreDefaultsHint')}
         >
           <Button size="sm" onClick={() => void restoreDefaults()}>
-            Restore defaults…
+            {t('resetPage.restoreButton')}
           </Button>
         </Row>
       </SettingsGroup>
-      <SettingsGroup title="Everything">
+      <SettingsGroup title={t('resetPage.everything')}>
         <Row
           id="reset.erase"
-          label="Erase everything and start over"
-          description="Deletes all files, the user account and every setting, then runs setup again."
+          label={t('resetPage.eraseEverything')}
+          description={t('resetPage.eraseEverythingHint')}
         >
           <Button size="sm" variant="danger" onClick={() => setEraseOpen(true)}>
-            Erase…
+            {t('resetPage.eraseButton')}
           </Button>
         </Row>
       </SettingsGroup>
@@ -63,13 +61,13 @@ export function ResetPage() {
         onClose={() => {
           if (!erasing) setEraseOpen(false);
         }}
-        title="Erase everything?"
+        title={t('resetPage.eraseConfirm')}
         container={container}
         persistent={erasing}
         actions={
           <>
             <Button onClick={() => setEraseOpen(false)} disabled={erasing}>
-              Cancel
+              {t('action.cancel')}
             </Button>
             <Button
               variant="danger"
@@ -77,15 +75,15 @@ export function ResetPage() {
               loading={erasing}
               onClick={() => void erase()}
             >
-              Erase everything
+              {t('resetPage.eraseConfirmButton')}
             </Button>
           </>
         }
       >
         <div className="flex flex-col gap-3">
           <p className="text-ink-2">
-            All files, the user account and every setting are deleted. There is no undo. Type{' '}
-            <span className="mono text-ink">{ERASE_WORD}</span> to continue.
+            {t('resetPage.eraseExplains')} <span className="mono text-ink">{ERASE_WORD}</span>{' '}
+            {t('resetPage.toContinue')}
           </p>
           <Input
             data-autofocus

@@ -1,5 +1,5 @@
 import type { LaunchArgs } from '@lumen/kernel';
-import { useKernel, useSetting, useVfs } from '@lumen/kernel/react';
+import { useKernel, useSetting, useT, useVfs } from '@lumen/kernel/react';
 import { Button, cx, IconButton, useElementSize, useLatest } from '@lumen/ui';
 import { basename, dirname, join } from '@lumen/vfs';
 import { TriangleAlert, X } from 'lucide-react';
@@ -75,6 +75,7 @@ function describe(thrown: unknown): string {
  * audio track the video stage is hidden and the sound panel takes its place.
  */
 export default function MediaPlayer({ args: initialArgs }: AppProps) {
+  const t = useT();
   const kernel = useKernel();
   const vfs = useVfs();
   const notify = useNotify();
@@ -377,7 +378,11 @@ export default function MediaPlayer({ args: initialArgs }: AppProps) {
   );
 
   const addFolder = useCallback(async () => {
-    const chosen = await pick({ mode: 'folder', title: 'Add Folder', confirmLabel: 'Add' });
+    const chosen = await pick({
+      mode: 'folder',
+      title: t('mediaApp.addFolder'),
+      confirmLabel: t('mediaApp.add'),
+    });
     if (typeof chosen !== 'string') return;
     const found: string[] = [];
     try {
@@ -396,7 +401,7 @@ export default function MediaPlayer({ args: initialArgs }: AppProps) {
     }
     found.sort((a, b) => a.localeCompare(b));
     openPaths(found);
-  }, [pick, vfs, notify, openPaths]);
+  }, [pick, vfs, notify, openPaths, t]);
 
   // Files handed over at launch queue once the stored playlist has arrived,
   // so the file being read does not overwrite them.
@@ -651,7 +656,7 @@ export default function MediaPlayer({ args: initialArgs }: AppProps) {
                 advance(1);
               }}
             >
-              Next
+              {t('menu.next')}
             </Button>
             <Button
               size="sm"
@@ -661,9 +666,9 @@ export default function MediaPlayer({ args: initialArgs }: AppProps) {
                 if (index >= 0) dispatch({ type: 'remove', index });
               }}
             >
-              Remove
+              {t('mediaApp.remove')}
             </Button>
-            <IconButton size="sm" label="Dismiss" onClick={() => setFailure(null)}>
+            <IconButton size="sm" label={t('mediaApp.dismiss')} onClick={() => setFailure(null)}>
               <X />
             </IconButton>
           </div>

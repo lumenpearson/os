@@ -9,6 +9,7 @@
  * here plainly instead of being hidden behind a switch that does nothing.
  */
 
+import { t } from '@lumen/kernel';
 import { join, normalize } from '@lumen/vfs';
 import { DEFAULT_ZOOM, ZOOM_LEVELS } from './tabs';
 import {
@@ -338,14 +339,14 @@ export function preflight(url: string, pageProtocol: string): BlockedReason | nu
   if (scheme === 'other' || scheme === 'lumen') {
     return {
       cause: 'unsupported-scheme',
-      title: 'Only http and https open here',
+      title: t('browserApp.onlyHttp'),
       text: `A frame can only be given an http or https address, and this one is ${url.trim().split(':')[0]}:.`,
     };
   }
   if (scheme === 'http' && pageProtocol === 'https:') {
     return {
       cause: 'mixed-content',
-      title: 'This address is not encrypted',
+      title: t('browserApp.notEncrypted'),
       text: `Lumen itself is served over https, so the browser refuses to load ${hostOf(url) || 'an http address'} over http inside it; no header from the site is involved.`,
     };
   }
@@ -357,13 +358,36 @@ export function preflight(url: string, pageProtocol: string): BlockedReason | nu
 }
 
 /**
+ * The refusal the site itself stated, when it has been asked.
+ *
+ * This is the same fact `KNOWN_REFUSALS` holds, except read from the site
+ * today rather than from a list checked by hand, so it names the header the
+ * site is actually sending. Null when the site did not refuse, or when nobody
+ * could ask it.
+ */
+export function refusalFromProbe(url: string, header: string | null): BlockedReason | null {
+  if (!header) return null;
+  const host = hostOf(url) || 'The site';
+  return {
+    cause: 'known-refusal',
+    title: REFUSED_TITLE,
+    text: `${host} sends ${header}, so it may not be embedded in a page served from anywhere else.`,
+  };
+}
+
+/**
  * Why a page is not on screen. Everything that can be told apart is told
  * apart; the rest says plainly that it cannot be, because a cross-origin
  * frame hides its response headers from the page that embeds it.
  */
-export function blockedReason(url: string, pageProtocol: string): BlockedReason {
+export function blockedReason(
+  url: string,
+  pageProtocol: string,
+  probeHeader: string | null = null,
+): BlockedReason {
   return (
-    preflight(url, pageProtocol) ?? {
+    preflight(url, pageProtocol) ??
+    refusalFromProbe(url, probeHeader) ?? {
       cause: 'unknown',
       title: REFUSED_TITLE,
       text: 'The frame never reported a load, and a cross-origin frame hides its headers, so Lumen cannot tell whether X-Frame-Options or a Content-Security-Policy frame-ancestors rule turned it away.',

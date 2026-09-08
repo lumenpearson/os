@@ -1,3 +1,4 @@
+import { t } from '@lumen/kernel';
 /**
  * The menubar for the game window, built from one snapshot of state so a
  * command does the same thing whether it is clicked or typed.
@@ -28,9 +29,9 @@ export function buildMinesweeperMenus(
   return [
     {
       id: 'game',
-      label: 'Game',
+      label: t('menu.game'),
       items: [
-        { id: 'new', label: 'New Game', shortcut: 'Mod+N', onSelect: actions.newGame },
+        { id: 'new', label: t('menu.newGame'), shortcut: 'Mod+N', onSelect: actions.newGame },
         separator,
         ...PRESET_IDS.map((id, index) => ({
           id,
@@ -43,7 +44,7 @@ export function buildMinesweeperMenus(
         {
           id: 'custom',
           type: 'radio',
-          label: 'Custom…',
+          label: t('minesweeper.custom'),
           shortcut: 'Mod+4',
           checked: state.difficulty === 'custom',
           onSelect: actions.openCustom,
@@ -51,7 +52,7 @@ export function buildMinesweeperMenus(
         separator,
         {
           id: 'best-times',
-          label: 'Best Times…',
+          label: t('minesweeper.bestTimes'),
           shortcut: 'Mod+B',
           onSelect: actions.openBestTimes,
         },
@@ -59,12 +60,12 @@ export function buildMinesweeperMenus(
     },
     {
       id: 'options',
-      label: 'Options',
+      label: t('minesweeper.options'),
       items: [
         {
           id: 'question-marks',
           type: 'checkbox',
-          label: 'Question Marks',
+          label: t('minesweeper.questionMarks'),
           shortcut: 'Mod+Q',
           checked: state.questionMarks,
           onSelect: actions.toggleQuestionMarks,

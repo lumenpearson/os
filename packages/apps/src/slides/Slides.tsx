@@ -1,4 +1,4 @@
-import { useKernel, useVfs } from '@lumen/kernel/react';
+import { useKernel, useT, useVfs } from '@lumen/kernel/react';
 import {
   AnchoredMenu,
   AppFrame,
@@ -101,6 +101,7 @@ async function collectImages(vfs: Vfs, deck: Deck): Promise<ImageSources> {
 }
 
 export default function Slides(props: AppProps) {
+  const t = useT();
   const args = useArgs(props.args);
   const vfs = useVfs();
   const kernel = useKernel();
@@ -243,23 +244,23 @@ export default function Slides(props: AppProps) {
   const chooseImage = useCallback(async () => {
     const chosen = await pick({
       mode: 'open',
-      title: 'Choose Image',
+      title: t('slidesApp.chooseImage'),
       extensions: ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg', '.bmp', '.avif'],
       startDir: join(kernel.home, 'Pictures'),
     });
     const target = typeof chosen === 'string' ? chosen : (chosen?.[0] ?? null);
     if (target) patchSlide({ imagePath: target, layout: 'image' }, false);
-  }, [pick, kernel, patchSlide]);
+  }, [pick, kernel, patchSlide, t]);
 
   const renameDeck = useCallback(async () => {
     const answer = await dialogs.prompt({
-      title: 'Presentation Title',
-      message: 'Shown on the exported file and used as its name.',
+      title: t('slidesApp.titleDialog'),
+      message: t('slidesApp.titleHint'),
       defaultValue: historyRef.current.present.title,
-      confirmLabel: 'Rename',
+      confirmLabel: t('menu.rename'),
     });
     if (answer !== null) run({ type: 'setTitle', title: answer.trim() || 'Untitled' });
-  }, [dialogs, run, historyRef]);
+  }, [dialogs, run, historyRef, t]);
 
   // ── files ───────────────────────────────────────────────────────────────
 
@@ -278,7 +279,7 @@ export default function Slides(props: AppProps) {
     const current = pathRef.current;
     const chosen = await pick({
       mode: 'save',
-      title: 'Save As',
+      title: t('slidesApp.saveAs'),
       defaultName: current ? basename(current) : DEFAULT_NAME,
       startDir: current ? dirname(current) : undefined,
     });
@@ -291,7 +292,7 @@ export default function Slides(props: AppProps) {
       notify('Could not save', describe(cause));
       return false;
     }
-  }, [pick, writeTo, notify, pathRef]);
+  }, [pick, writeTo, notify, pathRef, t]);
 
   const save = useCallback(async () => {
     const target = pathRef.current;
@@ -310,25 +311,29 @@ export default function Slides(props: AppProps) {
     const current = pathRef.current;
     const answer = await dialogs.choose({
       title: `Save changes to ${current ? basename(current) : 'Untitled'}?`,
-      message: 'If you do not save, the changes are lost.',
+      message: t('slidesApp.changesLost'),
       buttons: [
-        { id: 'cancel', label: 'Cancel' },
-        { id: 'discard', label: "Don't Save", variant: 'secondary' },
-        { id: 'save', label: 'Save' },
+        { id: 'cancel', label: t('action.cancel') },
+        { id: 'discard', label: t('action.dontSave'), variant: 'secondary' },
+        { id: 'save', label: t('menu.save') },
       ],
     });
     if (answer === 'save') return save();
     return answer === 'discard';
-  }, [dialogs, save, dirtyRef, pathRef]);
+  }, [dialogs, save, dirtyRef, pathRef, t]);
 
   useCloseGuard(dirty ? confirmDiscard : null);
 
   const openFile = useCallback(async () => {
     if (!(await confirmDiscard())) return;
-    const chosen = await pick({ mode: 'open', title: 'Open Presentation', extensions: ['.lsl'] });
+    const chosen = await pick({
+      mode: 'open',
+      title: t('slidesApp.openPresentation'),
+      extensions: ['.lsl'],
+    });
     const target = typeof chosen === 'string' ? chosen : (chosen?.[0] ?? null);
     if (target) await openPath(target);
-  }, [confirmDiscard, pick, openPath]);
+  }, [confirmDiscard, pick, openPath, t]);
 
   const exportHtml = useCallback(async () => {
     const current = historyRef.current.present;
@@ -336,10 +341,10 @@ export default function Slides(props: AppProps) {
     const stem = file ? basename(file, true) : current.title || 'Untitled';
     const chosen = await pick({
       mode: 'save',
-      title: 'Export as HTML',
+      title: t('slidesApp.exportHtml'),
       defaultName: `${stem}.html`,
       startDir: file ? dirname(file) : undefined,
-      confirmLabel: 'Export',
+      confirmLabel: t('slidesApp.export'),
     });
     const target = typeof chosen === 'string' ? chosen : null;
     if (!target) return;
@@ -350,7 +355,7 @@ export default function Slides(props: AppProps) {
     } catch (cause) {
       notify('Could not export', describe(cause));
     }
-  }, [pick, vfs, notify, historyRef, pathRef]);
+  }, [pick, vfs, notify, historyRef, pathRef, t]);
 
   // ── presenting ──────────────────────────────────────────────────────────
 
@@ -447,11 +452,11 @@ export default function Slides(props: AppProps) {
       <span className="truncate-1 min-w-0 pr-1 text-base font-medium text-ink">{deckName}</span>
       <ToolbarGroup>
         <Button size="sm" icon={<Plus className="size-3.5" />} onClick={() => addSlide()}>
-          New Slide
+          {t('slidesApp.newSlide')}
         </Button>
         <IconButton
           ref={layoutButton}
-          label="Choose a layout"
+          label={t('slidesApp.chooseLayout')}
           size="sm"
           aria-haspopup="menu"
           aria-expanded={layoutMenu}
@@ -463,14 +468,19 @@ export default function Slides(props: AppProps) {
       <Divider vertical className="mx-1 h-4" />
       <ToolbarGroup>
         <IconButton
-          label="Duplicate slide"
+          label={t('slidesApp.duplicateSlide')}
           size="sm"
           disabled={!slide}
           onClick={() => duplicateSlide()}
         >
           <Copy />
         </IconButton>
-        <IconButton label="Delete slide" size="sm" disabled={!slide} onClick={() => deleteSlide()}>
+        <IconButton
+          label={t('slidesApp.deleteSlide')}
+          size="sm"
+          disabled={!slide}
+          onClick={() => deleteSlide()}
+        >
           <Trash2 />
         </IconButton>
       </ToolbarGroup>
@@ -484,7 +494,7 @@ export default function Slides(props: AppProps) {
           {theme === 'dark' ? <Sun /> : <Moon />}
         </IconButton>
         <IconButton
-          label="Zoom to fit"
+          label={t('slidesApp.zoomToFit')}
           size="sm"
           active={zoomFit}
           onClick={() => setZoomFit((on) => !on)}
@@ -492,7 +502,7 @@ export default function Slides(props: AppProps) {
           <Scan />
         </IconButton>
         <IconButton
-          label="Notes panel"
+          label={t('slidesApp.notesPanel')}
           size="sm"
           active={prefs.notes}
           onClick={() => setPref('notes')}
@@ -508,7 +518,7 @@ export default function Slides(props: AppProps) {
         disabled={deck.slides.length === 0}
         onClick={present}
       >
-        Present
+        {t('slidesApp.present')}
       </Button>
     </Toolbar>
   );
@@ -518,7 +528,7 @@ export default function Slides(props: AppProps) {
       <span className="truncate-1">{deck.title || 'Untitled'}</span>
       {slide && <span className="text-ink-3">{LAYOUT_LABELS[slide.layout]}</span>}
       <div className="flex-1" />
-      {dirty && <span className="text-ink-3">Unsaved</span>}
+      {dirty && <span className="text-ink-3">{t('slidesApp.unsaved')}</span>}
       <span className="tabular-nums">
         {selected + 1} / {deck.slides.length}
       </span>
@@ -532,11 +542,11 @@ export default function Slides(props: AppProps) {
   ) : error ? (
     <EmptyState
       icon={<FileWarning />}
-      title="Could not open this presentation"
+      title={t('slidesApp.couldNotOpen')}
       description={error}
       action={
         <Button variant="primary" onClick={() => void openFile()}>
-          Open another file
+          {t('slidesApp.openAnother')}
         </Button>
       }
     />
@@ -554,11 +564,11 @@ export default function Slides(props: AppProps) {
   ) : (
     <EmptyState
       icon={<Presentation />}
-      title="No slides"
-      description="This presentation is empty."
+      title={t('slidesApp.noSlides')}
+      description={t('slidesApp.emptyDeck')}
       action={
         <Button variant="primary" onClick={() => addSlide('title')}>
-          Add a slide
+          {t('slidesApp.addASlide')}
         </Button>
       }
     />

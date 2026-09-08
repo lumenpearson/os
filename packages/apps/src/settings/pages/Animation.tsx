@@ -1,5 +1,5 @@
-import type { MinimizeAnimation } from '@lumen/kernel';
-import { useSetting } from '@lumen/kernel/react';
+import type { MinimizeAnimation, Translate } from '@lumen/kernel';
+import { useSetting, useT } from '@lumen/kernel/react';
 import {
   SegmentedControl,
   type SegmentedOption,
@@ -11,29 +11,33 @@ import {
 import { speedLabel } from '../logic';
 import { Row } from '../Row';
 
-const MINIMIZE: SegmentedOption<MinimizeAnimation>[] = [
-  { value: 'scale', label: 'Scale' },
-  { value: 'slide', label: 'Slide' },
-  { value: 'fade', label: 'Fade' },
-  { value: 'none', label: 'None' },
+/*
+ * A function of the translator rather than a table built once at import: a
+ * table would be filled in whatever language the settings happened to hold
+ * when the module first loaded, and would keep those words after the language
+ * changed. Called during render, it follows.
+ */
+const minimizeOptions = (t: Translate): SegmentedOption<MinimizeAnimation>[] => [
+  { value: 'scale', label: t('option.scale') },
+  { value: 'slide', label: t('option.slide') },
+  { value: 'fade', label: t('option.fade') },
+  { value: 'none', label: t('option.none') },
 ];
 
 export function AnimationPage() {
+  const t = useT();
   const [animation, patch] = useSetting('animation');
   return (
-    <SettingsPage
-      title="Animation"
-      description="How fast the interface moves, and which parts of it move at all."
-    >
-      <SettingsGroup title="Speed">
+    <SettingsPage title={t('settings.animation')} description={t('animationPage.intro')}>
+      <SettingsGroup title={t('animationPage.titleSpeed')}>
         <Row
           id="animation.speed"
-          label="Animation speed"
-          description="Multiplies every duration. At Off nothing below animates."
+          label={t('animationPage.speed')}
+          description={t('animationPage.speedHint')}
           stacked
         >
           <Slider
-            aria-label="Animation speed"
+            aria-label={t('animationPage.speed')}
             min={0}
             max={1.5}
             step={0.05}
@@ -44,12 +48,12 @@ export function AnimationPage() {
         </Row>
       </SettingsGroup>
 
-      <SettingsGroup title="Windows">
+      <SettingsGroup title={t('animationPage.titleWindows')}>
         <Row
           id="animation.windows"
           htmlFor="animation-windows"
-          label="Open and close"
-          description="A window scales in when it opens and out when it closes."
+          label={t('animationPage.openClose')}
+          description={t('animationPage.openCloseHint')}
         >
           <Switch
             id="animation-windows"
@@ -59,12 +63,12 @@ export function AnimationPage() {
         </Row>
         <Row
           id="animation.minimize"
-          label="Minimise"
-          description="How a window leaves for the taskbar."
+          label={t('animationPage.minimise')}
+          description={t('animationPage.minimiseHint')}
         >
           <SegmentedControl
-            aria-label="Minimise"
-            options={MINIMIZE}
+            aria-label={t('animationPage.minimise')}
+            options={minimizeOptions(t)}
             value={animation.minimize}
             onChange={(minimize) => patch({ minimize })}
           />
@@ -72,8 +76,8 @@ export function AnimationPage() {
         <Row
           id="animation.windowMove"
           htmlFor="animation-window-move"
-          label="Smooth a window while it is dragged"
-          description="Off: the window goes where the pointer goes, with nothing in between."
+          label={t('animationPage.smoothDrag')}
+          description={t('animationPage.smoothDragHint')}
         >
           <Switch
             id="animation-window-move"
@@ -83,12 +87,12 @@ export function AnimationPage() {
         </Row>
       </SettingsGroup>
 
-      <SettingsGroup title="Interface">
+      <SettingsGroup title={t('animationPage.titleInterface')}>
         <Row
           id="animation.menus"
           htmlFor="animation-menus"
-          label="Menus"
-          description="Menus, popovers and the start menu as they open."
+          label={t('animationPage.menus')}
+          description={t('animationPage.menusHint')}
         >
           <Switch
             id="animation-menus"
@@ -99,8 +103,8 @@ export function AnimationPage() {
         <Row
           id="animation.dialogs"
           htmlFor="animation-dialogs"
-          label="Dialogs"
-          description="Sheets, alerts and prompts."
+          label={t('animationPage.dialogs')}
+          description={t('animationPage.dialogsHint')}
         >
           <Switch
             id="animation-dialogs"
@@ -111,8 +115,8 @@ export function AnimationPage() {
         <Row
           id="animation.panels"
           htmlFor="animation-panels"
-          label="Panels"
-          description="The taskbar, the system bar and the control centre."
+          label={t('animationPage.panels')}
+          description={t('animationPage.panelsHint')}
         >
           <Switch
             id="animation-panels"
@@ -123,8 +127,8 @@ export function AnimationPage() {
         <Row
           id="animation.pages"
           htmlFor="animation-pages"
-          label="Pages"
-          description="Moving between views inside an app."
+          label={t('animationPage.pages')}
+          description={t('animationPage.pagesHint')}
         >
           <Switch
             id="animation-pages"
@@ -135,8 +139,8 @@ export function AnimationPage() {
         <Row
           id="animation.press"
           htmlFor="animation-press"
-          label="Press"
-          description="The cursor's answer to a left or right click."
+          label={t('animationPage.press')}
+          description={t('animationPage.pressHint')}
         >
           <Switch
             id="animation-press"

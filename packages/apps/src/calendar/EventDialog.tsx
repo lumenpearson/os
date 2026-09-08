@@ -1,3 +1,5 @@
+import type { Translate } from '@lumen/kernel';
+import { useT } from '@lumen/kernel/react';
 /**
  * The event editor. Every field edits the draft, and the draft is only turned
  * into an event when Save is pressed — so a half-typed time never reaches the
@@ -23,18 +25,22 @@ import { COLOR_LABELS, EVENT_COLORS, type EventColor, type EventInput } from './
 import { type FormatOptions, formatMediumDate, weekdayHeaders } from './format';
 import { describeRecurrence } from './recurrence';
 
-const REPEAT_OPTIONS: ReadonlyArray<{ value: RepeatChoice; label: string }> = [
-  { value: 'none', label: 'Does not repeat' },
-  { value: 'daily', label: 'Daily' },
-  { value: 'weekly', label: 'Weekly' },
-  { value: 'monthly', label: 'Monthly' },
-  { value: 'yearly', label: 'Yearly' },
+/*
+ * A function of the translator, not a table built at import: a table would
+ * keep whatever language was in force when the module first loaded.
+ */
+const repeatOptions = (t: Translate): ReadonlyArray<{ value: RepeatChoice; label: string }> => [
+  { value: 'none', label: t('calendarApp.noRepeat') },
+  { value: 'daily', label: t('calendarApp.daily') },
+  { value: 'weekly', label: t('calendarApp.weekly') },
+  { value: 'monthly', label: t('calendarApp.monthly') },
+  { value: 'yearly', label: t('calendarApp.yearly') },
 ];
 
-const ENDS_OPTIONS: ReadonlyArray<{ value: EndsChoice; label: string }> = [
-  { value: 'never', label: 'Never' },
-  { value: 'on', label: 'On a date' },
-  { value: 'after', label: 'After a number of times' },
+const endsOptions = (t: Translate): ReadonlyArray<{ value: EndsChoice; label: string }> => [
+  { value: 'never', label: t('calendarApp.never') },
+  { value: 'on', label: t('calendarApp.onADate') },
+  { value: 'after', label: t('calendarApp.afterTimes') },
 ];
 
 export interface EventDialogProps {
@@ -61,6 +67,7 @@ export function EventDialog({
   onDelete,
   onClose,
 }: EventDialogProps) {
+  const t = useT();
   const [error, setError] = useState<DraftError | null>(null);
   const id = useId();
 
@@ -113,25 +120,25 @@ export function EventDialog({
               className="mr-auto text-danger"
               onClick={() => onDelete(draft.id as string)}
             >
-              Delete
+              {t('reminders.delete')}
             </Button>
           )}
           <Button variant="secondary" onClick={onClose}>
-            Cancel
+            {t('action.cancel')}
           </Button>
           <Button variant="primary" onClick={save}>
-            Save
+            {t('menu.save')}
           </Button>
         </>
       }
     >
       <div className="flex flex-col gap-3">
-        <Field label="Title" htmlFor={`${id}-title`} error={errorFor('title')}>
+        <Field label={t('calendarApp.title')} htmlFor={`${id}-title`} error={errorFor('title')}>
           <Input
             id={`${id}-title`}
             data-autofocus
             value={draft.title}
-            placeholder="New Event"
+            placeholder={t('calendarApp.newEventDialog')}
             onChange={(event) => set('title', event.target.value)}
             onKeyDown={(event) => {
               if (event.key !== 'Enter') return;
@@ -142,7 +149,7 @@ export function EventDialog({
         </Field>
 
         <Checkbox
-          label="All day"
+          label={t('calendarApp.allDay')}
           checked={draft.allDay}
           onChange={(event) => set('allDay', event.target.checked)}
         />
@@ -162,7 +169,7 @@ export function EventDialog({
             />
           </Field>
           {draft.allDay ? (
-            <Field label="Ends" htmlFor={`${id}-end-date`}>
+            <Field label={t('calendarApp.ends')} htmlFor={`${id}-end-date`}>
               <Input
                 id={`${id}-end-date`}
                 type="date"
@@ -173,7 +180,7 @@ export function EventDialog({
             </Field>
           ) : (
             <Field
-              label="Time"
+              label={t('calendarApp.time')}
               htmlFor={`${id}-start-time`}
               error={errorFor('time')}
               hint={crossesMidnight(draft) ? 'Runs into the next day.' : undefined}
@@ -183,7 +190,7 @@ export function EventDialog({
                   id={`${id}-start-time`}
                   type="time"
                   mono
-                  aria-label="Start time"
+                  aria-label={t('calendarApp.startTime')}
                   value={draft.start}
                   onChange={(event) => set('start', event.target.value)}
                 />
@@ -193,7 +200,7 @@ export function EventDialog({
                 <Input
                   type="time"
                   mono
-                  aria-label="End time"
+                  aria-label={t('calendarApp.endTime')}
                   value={draft.end}
                   onChange={(event) => set('end', event.target.value)}
                 />
@@ -202,17 +209,17 @@ export function EventDialog({
           )}
         </div>
 
-        <Field label="Location" htmlFor={`${id}-location`}>
+        <Field label={t('calendarApp.location')} htmlFor={`${id}-location`}>
           <Input
             id={`${id}-location`}
             value={draft.location}
-            placeholder="Where"
+            placeholder={t('calendarApp.where')}
             onChange={(event) => set('location', event.target.value)}
           />
         </Field>
 
         <fieldset className="flex flex-col gap-1.5">
-          <legend className="text-sm text-ink-2">Colour</legend>
+          <legend className="text-sm text-ink-2">{t('calendarApp.colour')}</legend>
           <div className="flex items-center gap-1.5">
             {EVENT_COLORS.map((colour) => (
               <button
@@ -234,14 +241,14 @@ export function EventDialog({
         </fieldset>
 
         <Field
-          label="Repeat"
+          label={t('calendarApp.repeat')}
           htmlFor={`${id}-repeat`}
           error={errorFor('repeat')}
           hint={summary ?? undefined}
         >
           <Select
             id={`${id}-repeat`}
-            options={REPEAT_OPTIONS}
+            options={repeatOptions(t)}
             value={draft.repeat}
             onChange={(value) => set('repeat', value as RepeatChoice)}
           />
@@ -249,7 +256,7 @@ export function EventDialog({
 
         {draft.repeat !== 'none' && (
           <div className="flex flex-col gap-3 border-l border-rule pl-3">
-            <Field label="Every" htmlFor={`${id}-interval`} inline>
+            <Field label={t('calendarApp.every')} htmlFor={`${id}-interval`} inline>
               <Input
                 id={`${id}-interval`}
                 type="number"
@@ -263,7 +270,7 @@ export function EventDialog({
 
             {draft.repeat === 'weekly' && (
               <fieldset className="flex flex-col gap-1.5">
-                <legend className="text-sm text-ink-2">On</legend>
+                <legend className="text-sm text-ink-2">{t('calendarApp.on')}</legend>
                 <div className="flex gap-1">
                   {weekdayOrder(firstDay).map((day, index) => (
                     <button
@@ -285,17 +292,17 @@ export function EventDialog({
               </fieldset>
             )}
 
-            <Field label="Ends" htmlFor={`${id}-ends`}>
+            <Field label={t('calendarApp.ends')} htmlFor={`${id}-ends`}>
               <Select
                 id={`${id}-ends`}
-                options={ENDS_OPTIONS}
+                options={endsOptions(t)}
                 value={draft.ends}
                 onChange={(value) => set('ends', value as EndsChoice)}
               />
             </Field>
 
             {draft.ends === 'on' && (
-              <Field label="End date" htmlFor={`${id}-until`}>
+              <Field label={t('calendarApp.endDate')} htmlFor={`${id}-until`}>
                 <Input
                   id={`${id}-until`}
                   type="date"
@@ -306,7 +313,7 @@ export function EventDialog({
               </Field>
             )}
             {draft.ends === 'after' && (
-              <Field label="Times" htmlFor={`${id}-count`}>
+              <Field label={t('calendarApp.times')} htmlFor={`${id}-count`}>
                 <Input
                   id={`${id}-count`}
                   type="number"
@@ -321,7 +328,7 @@ export function EventDialog({
           </div>
         )}
 
-        <Field label="Notes" htmlFor={`${id}-notes`}>
+        <Field label={t('calendarApp.notes')} htmlFor={`${id}-notes`}>
           <TextArea
             id={`${id}-notes`}
             rows={3}

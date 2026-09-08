@@ -1,4 +1,5 @@
-import { useKernel, useVfs } from '@lumen/kernel/react';
+import type { Translate } from '@lumen/kernel';
+import { useKernel, usePlural, useT, useVfs } from '@lumen/kernel/react';
 import {
   AnchoredMenu,
   AppFrame,
@@ -89,13 +90,19 @@ const SAVE_LABELS: Record<SaveState, string> = {
   failed: 'Save failed',
 };
 
-const VIEW_OPTIONS = [
-  { value: 'edit' as const, icon: <PenLine />, title: 'Edit' },
-  { value: 'split' as const, icon: <Columns2 />, title: 'Split' },
-  { value: 'preview' as const, icon: <BookOpen />, title: 'Preview' },
+/*
+ * A function of the translator, not a table built at import: a table would
+ * keep whatever language was in force when the module first loaded.
+ */
+const viewOptions = (t: Translate) => [
+  { value: 'edit' as const, icon: <PenLine />, title: t('notesApp.edit') },
+  { value: 'split' as const, icon: <Columns2 />, title: t('notesApp.split') },
+  { value: 'preview' as const, icon: <BookOpen />, title: t('notesApp.preview') },
 ];
 
 export default function Notes(props: AppProps) {
+  const t = useT();
+  const plural = usePlural();
   const args = useArgs(props.args);
   const kernel = useKernel();
   const vfs = useVfs();
@@ -264,9 +271,9 @@ export default function Notes(props: AppProps) {
   useCloseGuard(async () => {
     if (await flush()) return true;
     return dialogs.confirm({
-      title: 'This note could not be saved.',
-      message: 'Closing now loses the changes made since the last save.',
-      confirmLabel: 'Close Anyway',
+      title: t('notesApp.couldNotSave'),
+      message: t('notesApp.closingLoses'),
+      confirmLabel: t('notesApp.closeAnyway'),
       danger: true,
     });
   });
@@ -333,10 +340,10 @@ export default function Notes(props: AppProps) {
     const note = target(path);
     if (!note) return;
     const name = await dialogs.prompt({
-      title: 'Rename Note',
-      message: 'The file is renamed to match.',
+      title: t('notesApp.renameTitle'),
+      message: t('notesApp.renameHint'),
       defaultValue: note.title,
-      confirmLabel: 'Rename',
+      confirmLabel: t('menu.rename'),
       validate: (value) => (value.trim() ? null : 'Enter a title.'),
     });
     if (name === null) return;
@@ -365,8 +372,8 @@ export default function Notes(props: AppProps) {
     if (!note) return;
     const ok = await dialogs.confirm({
       title: `Move “${note.title}” to the Trash?`,
-      message: 'You can put it back from the Trash in Files.',
-      confirmLabel: 'Move to Trash',
+      message: t('notesApp.putBack'),
+      confirmLabel: t('desktop.moveToTrash'),
       danger: true,
     });
     if (!ok) return;
@@ -503,19 +510,19 @@ export default function Notes(props: AppProps) {
     const note = notes.find((n) => n.path === menuPath);
     if (!note) return [];
     return [
-      { id: 'open', label: 'Open', onSelect: () => void activate(note.path) },
+      { id: 'open', label: t('desktop.open'), onSelect: () => void activate(note.path) },
       {
         id: 'pin',
         label: note.pinned ? 'Unpin' : 'Pin to Top',
         onSelect: () => void togglePin(note.path),
       },
       { type: 'separator' },
-      { id: 'duplicate', label: 'Duplicate', onSelect: () => void duplicate(note.path) },
-      { id: 'rename', label: 'Rename…', onSelect: () => void rename(note.path) },
+      { id: 'duplicate', label: t('menu.duplicate'), onSelect: () => void duplicate(note.path) },
+      { id: 'rename', label: t('menu.renameEllipsis'), onSelect: () => void rename(note.path) },
       { type: 'separator' },
       {
         id: 'trash',
-        label: 'Move to Trash',
+        label: t('desktop.moveToTrash'),
         danger: true,
         onSelect: () => void moveToTrash(note.path),
       },
@@ -531,9 +538,9 @@ export default function Notes(props: AppProps) {
 
   const statusBar = current ? (
     <>
-      <span className="tabular-nums">{words} words</span>
-      <span className="tabular-nums">{characters} characters</span>
-      <span className="tabular-nums">{readingMinutes(words)} min read</span>
+      <span className="tabular-nums">{plural('count.words', words)}</span>
+      <span className="tabular-nums">{plural('count.characters', characters)}</span>
+      <span className="tabular-nums">{plural('count.minRead', readingMinutes(words))}</span>
       <ToolbarSpacer />
       <span className="truncate-1 hidden text-ink-3 sm:inline">{current.name}</span>
       <span className={cx(saveState === 'failed' ? 'text-danger' : 'text-ink-2')}>
@@ -542,7 +549,7 @@ export default function Notes(props: AppProps) {
     </>
   ) : (
     <>
-      <span className="tabular-nums">{notes.length} notes</span>
+      <span className="tabular-nums">{plural('count.notes', notes.length)}</span>
       <ToolbarSpacer />
       <span className="text-ink-3">{kernel.labelFor(dir)}</span>
     </>
@@ -554,7 +561,11 @@ export default function Notes(props: AppProps) {
         toolbar={
           <Toolbar dense windowControls>
             {layout.back && (
-              <IconButton label="Back to notes" size="sm" onClick={() => setPane('list')}>
+              <IconButton
+                label={t('notesApp.backToNotes')}
+                size="sm"
+                onClick={() => setPane('list')}
+              >
                 <ChevronLeft />
               </IconButton>
             )}
@@ -571,13 +582,13 @@ export default function Notes(props: AppProps) {
                 onKeyDown={onSearchKeyDown}
                 onFocus={() => setSearchFocused(true)}
                 onBlur={() => setSearchFocused(false)}
-                placeholder="Search notes"
-                aria-label="Search notes"
+                placeholder={t('notesApp.search')}
+                aria-label={t('notesApp.search')}
               />
             </div>
             {query.trim() !== '' && (
               <span className="mono shrink-0 text-2xs tabular-nums text-ink-3">
-                {totalMatches} in {rows.length}
+                {t('notesApp.matchesIn', { matches: totalMatches, rows: rows.length })}
               </span>
             )}
             <ToolbarSpacer />
@@ -586,13 +597,13 @@ export default function Notes(props: AppProps) {
             {selected !== null && layout.editor && !layout.back && (
               <SegmentedControl
                 size="sm"
-                aria-label="View mode"
-                options={VIEW_OPTIONS}
+                aria-label={t('notesApp.viewMode')}
+                options={viewOptions(t)}
                 value={prefs.view}
                 onChange={(view) => setPref('view', view)}
               />
             )}
-            <IconButton label="New note" size="sm" onClick={() => void newNote()}>
+            <IconButton label={t('notesApp.newNote')} size="sm" onClick={() => void newNote()}>
               <Plus />
             </IconButton>
           </Toolbar>
@@ -645,11 +656,11 @@ export default function Notes(props: AppProps) {
                   <div className="flex min-w-0 flex-1 bg-surface">
                     <EmptyState
                       icon={<NotebookPen />}
-                      title="No note open"
-                      description="Pick one from the list, or start a new one."
+                      title={t('notesApp.noneOpen')}
+                      description={t('notesApp.pickOne')}
                       action={
                         <Button icon={<Plus />} onClick={() => void newNote()}>
-                          New Note
+                          {t('notesApp.newNoteTitle')}
                           <span className="mono ml-1 text-xs text-ink-3">
                             {shortcutLabel('Mod+N')}
                           </span>

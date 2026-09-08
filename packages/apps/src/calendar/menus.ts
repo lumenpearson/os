@@ -3,6 +3,7 @@
  * command reads the same whether it is clicked or typed as a shortcut.
  */
 import type { MenuItemTemplate, MenuTemplate } from '@lumen/kernel';
+import { t } from '@lumen/kernel';
 import { type CalendarView, VIEW_LABELS, VIEW_SHORTCUTS, VIEWS } from './view';
 
 export interface CalendarMenuState {
@@ -34,12 +35,17 @@ export function buildCalendarMenus(
   return [
     {
       id: 'file',
-      label: 'File',
+      label: t('menu.file'),
       items: [
-        { id: 'new-event', label: 'New Event', shortcut: 'Mod+N', onSelect: actions.newEvent },
+        {
+          id: 'new-event',
+          label: t('calendar.newEvent'),
+          shortcut: 'Mod+N',
+          onSelect: actions.newEvent,
+        },
         {
           id: 'edit-event',
-          label: 'Edit Event…',
+          label: t('calendar.editEvent'),
           shortcut: 'Mod+E',
           enabled: state.hasSelection,
           onSelect: actions.editEvent,
@@ -47,24 +53,26 @@ export function buildCalendarMenus(
         separator,
         {
           id: 'delete-event',
-          label: 'Delete Event',
+          label: t('calendar.deleteEvent'),
           shortcut: 'Delete',
           danger: true,
           enabled: state.hasSelection,
           onSelect: actions.deleteEvent,
         },
         separator,
-        { id: 'close', label: 'Close', shortcut: 'Mod+W', onSelect: actions.close },
+        { id: 'close', label: t('menu.close'), shortcut: 'Mod+W', onSelect: actions.close },
       ],
     },
     {
       id: 'edit',
-      label: 'Edit',
-      items: [{ id: 'find', label: 'Find…', shortcut: 'Mod+F', onSelect: actions.find }],
+      label: t('menu.edit'),
+      items: [
+        { id: 'find', label: t('menu.findEllipsis'), shortcut: 'Mod+F', onSelect: actions.find },
+      ],
     },
     {
       id: 'view',
-      label: 'View',
+      label: t('menu.view'),
       items: [
         ...VIEWS.map<MenuItemTemplate>((view) => ({
           id: `view-${view}`,
@@ -75,14 +83,19 @@ export function buildCalendarMenus(
           onSelect: () => actions.setView(view),
         })),
         separator,
-        { id: 'today', label: 'Today', shortcut: 'Mod+T', onSelect: actions.today },
-        { id: 'previous', label: 'Previous', shortcut: 'Mod+[', onSelect: actions.previous },
-        { id: 'next', label: 'Next', shortcut: 'Mod+]', onSelect: actions.next },
+        { id: 'today', label: t('calendar.today'), shortcut: 'Mod+T', onSelect: actions.today },
+        {
+          id: 'previous',
+          label: t('menu.previous'),
+          shortcut: 'Mod+[',
+          onSelect: actions.previous,
+        },
+        { id: 'next', label: t('menu.next'), shortcut: 'Mod+]', onSelect: actions.next },
         separator,
         {
           id: 'sidebar',
           type: 'checkbox',
-          label: 'Sidebar',
+          label: t('menu.sidebar'),
           shortcut: 'Shift+Mod+S',
           checked: state.showSidebar,
           onSelect: actions.toggleSidebar,

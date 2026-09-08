@@ -3,6 +3,7 @@
  * command reads the same whether it is clicked or typed as a shortcut.
  */
 import type { MenuItemTemplate, MenuTemplate } from '@lumen/kernel';
+import { t } from '@lumen/kernel';
 import { SORT_LABELS, type SortKey, VIEW_LABELS, type ViewMode } from './library';
 import type { InlineFormat, ListStyle } from './wrap';
 
@@ -53,19 +54,19 @@ export function buildNotesMenus(state: NotesMenuState, actions: NotesActions): M
   return [
     {
       id: 'file',
-      label: 'File',
+      label: t('menu.file'),
       items: [
-        { id: 'new', label: 'New Note', shortcut: 'Mod+N', onSelect: actions.newNote },
+        { id: 'new', label: t('notes.newNote'), shortcut: 'Mod+N', onSelect: actions.newNote },
         {
           id: 'duplicate',
-          label: 'Duplicate',
+          label: t('menu.duplicate'),
           shortcut: 'Mod+D',
           enabled: state.hasNote,
           onSelect: actions.duplicate,
         },
         {
           id: 'rename',
-          label: 'Rename…',
+          label: t('menu.renameEllipsis'),
           shortcut: 'Mod+R',
           enabled: state.hasNote,
           onSelect: actions.rename,
@@ -73,7 +74,7 @@ export function buildNotesMenus(state: NotesMenuState, actions: NotesActions): M
         {
           id: 'pin',
           type: 'checkbox',
-          label: 'Pin to Top',
+          label: t('notes.pinToTop'),
           shortcut: 'Mod+P',
           checked: state.pinned,
           enabled: state.hasNote,
@@ -82,37 +83,39 @@ export function buildNotesMenus(state: NotesMenuState, actions: NotesActions): M
         separator,
         {
           id: 'export-markdown',
-          label: 'Export as Markdown…',
+          label: t('menu.exportMarkdown'),
           enabled: state.hasNote,
           onSelect: actions.exportMarkdown,
         },
         {
           id: 'export-text',
-          label: 'Export as Plain Text…',
+          label: t('menu.exportPlainText'),
           enabled: state.hasNote,
           onSelect: actions.exportText,
         },
         separator,
         {
           id: 'trash',
-          label: 'Move to Trash',
+          label: t('notes.moveToTrash'),
           shortcut: 'Mod+Backspace',
           danger: true,
           enabled: state.hasNote,
           onSelect: actions.moveToTrash,
         },
         separator,
-        { id: 'close', label: 'Close', shortcut: 'Mod+W', onSelect: actions.close },
+        { id: 'close', label: t('menu.close'), shortcut: 'Mod+W', onSelect: actions.close },
       ],
     },
     {
       id: 'edit',
-      label: 'Edit',
-      items: [{ id: 'find', label: 'Find…', shortcut: 'Mod+F', onSelect: actions.find }],
+      label: t('menu.edit'),
+      items: [
+        { id: 'find', label: t('menu.findEllipsis'), shortcut: 'Mod+F', onSelect: actions.find },
+      ],
     },
     {
       id: 'view',
-      label: 'View',
+      label: t('menu.view'),
       items: [
         ...(['edit', 'preview', 'split'] as ViewMode[]).map<MenuItemTemplate>((mode) => ({
           id: `view-${mode}`,
@@ -126,7 +129,7 @@ export function buildNotesMenus(state: NotesMenuState, actions: NotesActions): M
         {
           id: 'sort',
           type: 'submenu',
-          label: 'Sort By',
+          label: t('menu.sortBy'),
           submenu: SORT_KEYS.map<MenuItemTemplate>((key) => ({
             id: `sort-${key}`,
             type: 'radio',
@@ -139,7 +142,7 @@ export function buildNotesMenus(state: NotesMenuState, actions: NotesActions): M
         {
           id: 'show-tags',
           type: 'checkbox',
-          label: 'Show Tags',
+          label: t('notes.showTags'),
           checked: state.showTags,
           onSelect: actions.toggleTags,
         },
@@ -147,39 +150,39 @@ export function buildNotesMenus(state: NotesMenuState, actions: NotesActions): M
     },
     {
       id: 'format',
-      label: 'Format',
+      label: t('menu.format'),
       items: [
         {
           id: 'bold',
-          label: 'Bold',
+          label: t('menu.bold'),
           shortcut: 'Mod+B',
           enabled: editable,
           onSelect: () => actions.format('bold'),
         },
         {
           id: 'italic',
-          label: 'Italic',
+          label: t('menu.italic'),
           shortcut: 'Mod+I',
           enabled: editable,
           onSelect: () => actions.format('italic'),
         },
         {
           id: 'strike',
-          label: 'Strikethrough',
+          label: t('notes.strikethrough'),
           shortcut: 'Shift+Mod+X',
           enabled: editable,
           onSelect: () => actions.format('strike'),
         },
         {
           id: 'code',
-          label: 'Code',
+          label: t('notes.code'),
           shortcut: 'Mod+E',
           enabled: editable,
           onSelect: () => actions.format('code'),
         },
         {
           id: 'link',
-          label: 'Link',
+          label: t('notes.link'),
           shortcut: 'Mod+K',
           enabled: editable,
           onSelect: actions.link,
@@ -188,33 +191,33 @@ export function buildNotesMenus(state: NotesMenuState, actions: NotesActions): M
         {
           id: 'heading',
           type: 'submenu',
-          label: 'Heading',
+          label: t('notes.heading'),
           enabled: editable,
           submenu: [
             {
               id: 'heading-1',
-              label: 'Level 1',
+              label: t('notes.level1'),
               shortcut: 'Mod+1',
               enabled: editable,
               onSelect: () => actions.heading(1),
             },
             {
               id: 'heading-2',
-              label: 'Level 2',
+              label: t('notes.level2'),
               shortcut: 'Mod+2',
               enabled: editable,
               onSelect: () => actions.heading(2),
             },
             {
               id: 'heading-3',
-              label: 'Level 3',
+              label: t('notes.level3'),
               shortcut: 'Mod+3',
               enabled: editable,
               onSelect: () => actions.heading(3),
             },
             {
               id: 'heading-0',
-              label: 'Body Text',
+              label: t('notes.bodyText'),
               shortcut: 'Mod+0',
               enabled: editable,
               onSelect: () => actions.heading(0),
@@ -224,26 +227,26 @@ export function buildNotesMenus(state: NotesMenuState, actions: NotesActions): M
         {
           id: 'list',
           type: 'submenu',
-          label: 'List',
+          label: t('notes.list'),
           enabled: editable,
           submenu: [
             {
               id: 'list-bullet',
-              label: 'Bulleted',
+              label: t('notes.bulleted'),
               shortcut: 'Shift+Mod+L',
               enabled: editable,
               onSelect: () => actions.list('bullet'),
             },
             {
               id: 'list-number',
-              label: 'Numbered',
+              label: t('notes.numbered'),
               shortcut: 'Shift+Mod+O',
               enabled: editable,
               onSelect: () => actions.list('number'),
             },
             {
               id: 'list-task',
-              label: 'Task',
+              label: t('notes.task'),
               shortcut: 'Shift+Mod+T',
               enabled: editable,
               onSelect: () => actions.list('task'),
@@ -254,8 +257,8 @@ export function buildNotesMenus(state: NotesMenuState, actions: NotesActions): M
     },
     {
       id: 'help',
-      label: 'Help',
-      items: [{ id: 'help', label: 'Notes Help', onSelect: actions.help }],
+      label: t('menu.help'),
+      items: [{ id: 'help', label: t('notes.help'), onSelect: actions.help }],
     },
   ];
 }

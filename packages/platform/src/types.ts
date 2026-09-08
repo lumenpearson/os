@@ -78,6 +78,69 @@ export interface PlatformCapabilities {
   realMetrics: boolean;
   /** Can move the home directory (Settings → Storage). */
   relocatableHome: boolean;
+  /**
+   * The host can put a real web view inside its own window, which is how the
+   * browser app opens a site that refuses to be framed.
+   */
+  pageViews: boolean;
+}
+
+/** Where a page view sits inside the host window, in interface pixels. */
+export interface PageRect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+/** What an open page view reports back. */
+export interface PageReport {
+  /** The tab the view belongs to. Empty for a popup, which has no view yet. */
+  id: string;
+  kind: 'started' | 'loaded' | 'title' | 'popup';
+  url: string;
+  title?: string;
+}
+
+/**
+ * Real web views, one per browser tab, drawn inside the host window over the
+ * rectangle the browser app reserves for the page.
+ *
+ * The view is a native surface: it is painted above the interface rather than
+ * inside it, and it cannot be clipped by anything the interface draws. Where
+ * it goes and whether it is on screen at all are therefore the caller's
+ * business, and `place` is how both are said.
+ */
+export interface PlatformPages {
+  /** Open a view for a tab, or point the open one at another address. */
+  open(id: string, url: string, rect: PageRect, visible: boolean): Promise<void>;
+  navigate(id: string, url: string): Promise<void>;
+  /** Move, resize, show or hide. Called on every frame a window moves. */
+  place(id: string, rect: PageRect, visible: boolean): Promise<void>;
+  zoom(id: string, factor: number): Promise<void>;
+  reload(id: string): Promise<void>;
+  close(id: string): Promise<void>;
+  /** Every view, for a browser window that is closing. */
+  closeAll(): Promise<void>;
+  /** Listen to what the open views are doing. Resolves to the unsubscribe. */
+  listen(handler: (report: PageReport) => void): Promise<() => void>;
+}
+
+/**
+ * Which interface is running, and which binary is under it.
+ *
+ * Two numbers rather than one because a patch moves only the interface. A
+ * release that needs the binary has to say so, and it can only say so if both
+ * are visible.
+ */
+export interface InterfaceState {
+  /** The applied version, or null when the copy inside the binary is live. */
+  version: string | null;
+  /** The host binary's version. No patch can change this. */
+  host: string;
+  previous: string | null;
+  /** Set when the last start gave up a version that never reported. */
+  rolledBackFrom: string | null;
 }
 
 export interface Platform {
@@ -103,6 +166,17 @@ export interface Platform {
     set(patch: Partial<HostConfig>): Promise<HostConfig>;
     /** Ask the host for a directory and move the home there. Returns the new path or null. */
     pickHomeDir(): Promise<string | null>;
+  };
+  /** Real web views for the browser app. Absent capability means no-ops. */
+  pages: PlatformPages;
+  interface: {
+    /** Which interface is running, and which binary is under it. */
+    state(): Promise<InterfaceState>;
+    /**
+     * Report that the interface drew itself. Until this arrives the live
+     * version is on probation and the next start would give it up.
+     */
+    ready(): Promise<void>;
   };
   /** Exit the host application (desktop) or reload the page (web). */
   quit(): Promise<void>;

@@ -59,6 +59,20 @@ describe('the function behind /api/page', () => {
     expect((await ask('/api/page')).status).toBe(400);
   });
 
+  it('answers the frame question as JSON, and guards it the same way', async () => {
+    // The browser asks this before it decides between a frame and the relay,
+    // so it goes through the same door and takes the same refusals. LU-1609.
+    expect((await ask('/api/page?url=https%3A%2F%2Fexample.com%2F&probe=1')).status).toBe(403);
+
+    const answer = await ask('/api/page?url=http%3A%2F%2F169.254.169.254%2F&probe=1', {
+      'sec-fetch-site': 'same-origin',
+      host: 'lumen.example',
+    });
+    expect(answer.status).toBe(200);
+    expect(answer.headers['content-type']).toContain('application/json');
+    expect(JSON.parse(answer.body)).toMatchObject({ frame: 'unknown' });
+  });
+
   it('takes GET and nothing else', async () => {
     const answer: Answer = { status: 0, headers: {}, body: '' };
     const req = { url: '/api/page', method: 'POST', headers: {} } as unknown as IncomingMessage;

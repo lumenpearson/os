@@ -412,11 +412,18 @@ mod tests {
 
     #[test]
     fn read_dir_lists_sorted_and_skips_unrepresentable_entries() {
+        #[cfg_attr(windows, allow(unused_variables))]
         let (dir, sb) = sandbox();
         write_file(&sb, "/b.txt", b"bb", false).unwrap();
         write_file(&sb, "/a.txt", b"a", false).unwrap();
         mkdir(&sb, "/c", false).unwrap();
         // A name the VFS refuses (trailing dot) is skipped, not fatal.
+        //
+        // Only where the file system will hold such a name. Windows strips a
+        // trailing dot on the way in, so the file would arrive as `bad` — a
+        // name the VFS accepts, and the assertion below would be counting a
+        // file the test never meant to make.
+        #[cfg(not(windows))]
         std::fs::write(dir.path().join("bad."), b"x").unwrap();
         let names: Vec<String> = read_dir(&sb, "/")
             .unwrap()

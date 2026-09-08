@@ -8,7 +8,16 @@ import {
   type VfsErrorCode,
   type WriteOptions,
 } from '@lumen/vfs';
-import type { HostConfig, HostProcess, Platform, SystemInfo, SystemMetrics } from './types';
+import type {
+  HostConfig,
+  HostProcess,
+  InterfaceState,
+  PageRect,
+  PageReport,
+  Platform,
+  SystemInfo,
+  SystemMetrics,
+} from './types';
 import { KERNEL_VERSION } from './web';
 
 type Invoke = <T>(
@@ -102,6 +111,7 @@ export async function createTauriPlatform(appVersion = KERNEL_VERSION): Promise<
       canQuit: true,
       realMetrics: true,
       relocatableHome: true,
+      pageViews: true,
     },
     adapter: new TauriAdapter(invoke),
     window: {
@@ -139,6 +149,29 @@ export async function createTauriPlatform(appVersion = KERNEL_VERSION): Promise<
       get: () => invoke<HostConfig>('config_get'),
       set: (patch) => invoke<HostConfig>('config_set', { patch }),
       pickHomeDir: () => invoke<string | null>('config_pick_home_dir'),
+    },
+    /*
+     * A real web view per tab. `place` is called on every frame a window is
+     * dragged, so it is one command rather than three: a view that is moved,
+     * resized and shown in three round trips is a view that tears.
+     */
+    pages: {
+      open: (id, url, rect: PageRect, visible) =>
+        invoke<void>('page_open', { id, url, rect, visible }),
+      navigate: (id, url) => invoke<void>('page_navigate', { id, url }),
+      place: (id, rect: PageRect, visible) => invoke<void>('page_place', { id, rect, visible }),
+      zoom: (id, factor) => invoke<void>('page_zoom', { id, factor }),
+      reload: (id) => invoke<void>('page_reload', { id }),
+      close: (id) => invoke<void>('page_close', { id }),
+      closeAll: () => invoke<void>('page_close_all'),
+      async listen(handler: (report: PageReport) => void) {
+        const { listen } = await import('@tauri-apps/api/event');
+        return listen<PageReport>('lumen://page', (event) => handler(event.payload));
+      },
+    },
+    interface: {
+      state: () => invoke<InterfaceState>('interface_state'),
+      ready: () => invoke<void>('interface_ready'),
     },
     quit: () => invoke<void>('app_quit'),
     async restart() {

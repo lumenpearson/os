@@ -1,5 +1,5 @@
 import { type AppManifest, appsThatCanOpen, defaultAppForFile, parseManifest } from '@lumen/kernel';
-import { useSetting, useVfs } from '@lumen/kernel/react';
+import { useSetting, useT, useVfs } from '@lumen/kernel/react';
 import { Dialog, Select } from '@lumen/ui';
 import { basename, dirname, extname, type FileStat, formatBytes, VfsError } from '@lumen/vfs';
 import { useEffect, useState } from 'react';
@@ -13,6 +13,7 @@ export interface InfoDialogProps {
 
 /** Get Info: kind, size (folders are summed), location, dates, and app manifest details. */
 export function InfoDialog({ path, onClose }: InfoDialogProps) {
+  const t = useT();
   const vfs = useVfs();
   const { container } = useApp();
   const [stat, setStat] = useState<FileStat | null>(null);
@@ -66,7 +67,7 @@ export function InfoDialog({ path, onClose }: InfoDialogProps) {
   }
 
   return (
-    <Dialog open onClose={onClose} title="Info" width={380} container={container}>
+    <Dialog open onClose={onClose} title={t('filesApp.info')} width={380} container={container}>
       <div className="flex items-center gap-3 pb-3">
         <FileTypeIcon entry={{ kind: stat?.kind ?? 'file', path }} size={40} />
         <div className="min-w-0">
@@ -100,6 +101,7 @@ export function InfoDialog({ path, onClose }: InfoDialogProps) {
  * are left to the registry.
  */
 function OpensWith({ path }: { path: string }) {
+  const t = useT();
   const [files, patch] = useSetting('files');
   const ext = extname(path).toLowerCase();
   const { handlers, others } = appsThatCanOpen(path);
@@ -110,7 +112,7 @@ function OpensWith({ path }: { path: string }) {
   return (
     <div className="flex flex-col gap-1.5 border-t border-rule pt-3">
       <div className="flex items-center gap-3 text-sm">
-        <span className="w-[88px] shrink-0 text-ink-3">Opens with</span>
+        <span className="w-[88px] shrink-0 text-ink-3">{t('filesApp.opensWith')}</span>
         <Select
           size="sm"
           aria-label={`Open ${ext} files with`}

@@ -1,3 +1,4 @@
+import { t } from '@lumen/kernel';
 /**
  * The menubar for the game window, built from one snapshot of state so a
  * command does the same thing whether it is clicked in a menu, pressed on the
@@ -31,30 +32,35 @@ export function buildSolitaireMenus(
   return [
     {
       id: 'game',
-      label: 'Game',
+      label: t('menu.game'),
       items: [
-        { id: 'new', label: 'New Deal', shortcut: 'Mod+N', onSelect: actions.newDeal },
-        { id: 'restart', label: 'Restart This Deal', shortcut: 'Mod+R', onSelect: actions.restart },
+        { id: 'new', label: t('solitaire.newDeal'), shortcut: 'Mod+N', onSelect: actions.newDeal },
+        {
+          id: 'restart',
+          label: t('solitaire.restartDeal'),
+          shortcut: 'Mod+R',
+          onSelect: actions.restart,
+        },
         separator,
         {
           id: 'undo',
-          label: 'Undo',
+          label: t('menu.undo'),
           shortcut: 'Mod+Z',
           enabled: state.canUndo,
           onSelect: actions.undo,
         },
         separator,
-        { id: 'close', label: 'Close', shortcut: 'Mod+W', onSelect: actions.close },
+        { id: 'close', label: t('menu.close'), shortcut: 'Mod+W', onSelect: actions.close },
       ],
     },
     {
       id: 'view',
-      label: 'View',
+      label: t('menu.view'),
       items: [
         {
           id: 'draw-one',
           type: 'radio',
-          label: 'Draw One',
+          label: t('solitaire.drawOne'),
           shortcut: 'Mod+1',
           checked: state.draw === 1,
           onSelect: () => actions.setDraw(1),
@@ -62,7 +68,7 @@ export function buildSolitaireMenus(
         {
           id: 'draw-three',
           type: 'radio',
-          label: 'Draw Three',
+          label: t('solitaire.drawThree'),
           shortcut: 'Mod+3',
           checked: state.draw === 3,
           onSelect: () => actions.setDraw(3),
@@ -71,7 +77,7 @@ export function buildSolitaireMenus(
         {
           id: 'timer',
           type: 'checkbox',
-          label: 'Timer',
+          label: t('menu.timer'),
           shortcut: 'Mod+T',
           checked: state.timer,
           onSelect: actions.toggleTimer,

@@ -1,5 +1,5 @@
 import type { SessionState } from '@lumen/kernel';
-import { useKernel } from '@lumen/kernel/react';
+import { useKernel, useT } from '@lumen/kernel/react';
 import { Button } from '@lumen/ui';
 import { useEffect, useState } from 'react';
 import { Wordmark } from '../desktop/Wordmark';
@@ -10,6 +10,7 @@ export function PowerScreen({
 }: {
   state: Extract<SessionState, 'sleeping' | 'shutdown' | 'restarting'>;
 }) {
+  const t = useT();
   const kernel = useKernel();
   const [settled, setSettled] = useState(false);
   const canQuit = kernel.platform.capabilities.canQuit;
@@ -34,13 +35,14 @@ export function PowerScreen({
   if (state === 'sleeping') {
     return (
       <div
+        data-over-page
         className="fixed inset-0 z-[2000] bg-black select-none"
-        aria-label="Sleeping. Press any key to wake."
+        aria-label={t('power.sleeping')}
         role="status"
         data-testid="sleep-screen"
       >
         <p className="mono absolute bottom-6 left-1/2 -translate-x-1/2 text-xs text-[#3a3c42] opacity-0 motion-safe:animate-[lumen-fade-in_2s_2s_forwards]">
-          press any key
+          {t('power.pressAnyKey')}
         </p>
         <style>{'@keyframes lumen-fade-in{to{opacity:1}}'}</style>
       </div>
@@ -50,6 +52,7 @@ export function PowerScreen({
   const restarting = state === 'restarting';
   return (
     <div
+      data-over-page
       className="fixed inset-0 z-[2000] flex flex-col items-center justify-center gap-8 bg-[#0f1012] text-[#ececee] select-none"
       role="status"
       data-testid="power-screen"
@@ -61,9 +64,9 @@ export function PowerScreen({
         <p className="text-md text-[#a3a6ae]">{restarting ? 'Reloading' : 'Closing'}</p>
       ) : (
         <div className="flex flex-col items-center gap-4">
-          <p className="text-md text-[#a3a6ae]">You can close this tab now.</p>
+          <p className="text-md text-[#a3a6ae]">{t('power.closeTab')}</p>
           <Button variant="secondary" onClick={() => kernel.platform.restart()}>
-            Start again
+            {t('power.startAgain')}
           </Button>
         </div>
       )}

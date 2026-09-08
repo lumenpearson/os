@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { en, type MessageKey } from './en';
-import { interpolate, languageForLocale, resolveLanguage, translate } from './index';
+import { formFor, interpolate, languageForLocale, resolveLanguage, translate } from './index';
 import { ru } from './ru';
 
 describe('the dictionaries', () => {
@@ -28,6 +28,29 @@ describe('the dictionaries', () => {
    */
   const SAME_IN_BOTH: MessageKey[] = [
     'region.dateIso', // the standard's name, ISO 8601, which is not translated
+    'controlCenter.wifi', // a trademark, written the same in Russian
+    'controlCenter.bluetooth', // likewise
+    'aboutPage.github', // the name of the site
+    'cursorPage.styleLumen', // the product's own name
+    // The legends printed on the keys themselves. A Russian keyboard says
+    // Ctrl, so translating the word would name a key nobody has.
+    'keyboardPage.modCtrl',
+    'keyboardPage.modCmd',
+    'writerApp.urlPlaceholder', // an example URL, not a sentence
+    'writerApp.html', // the format's name
+    'writerApp.markdown', // likewise
+    'contactsApp.websitePlaceholder', // an example URL
+    'contactsApp.noLabel', // an em dash standing in for "no label"
+    'contactsApp.cardsAndReason', // punctuation between two values, no words
+    'taskManagerApp.pid', // the column heading is the abbreviation itself
+    'taskManagerApp.processTally', // a count and a note, joined with no words
+    'storageApp.filesAndBytes', // two readings with a separator, no words
+    'sysinfoApp.valuesOnly', // a count and a full stop, no words
+    'browserApp.examplePage', // an example address, not a sentence
+    'browserApp.queryPlaceholder', // likewise
+    'browserApp.sitePlaceholder', // likewise
+    'browserApp.javascript', // the language's name
+    'browserApp.formsHint', // the sandbox token itself, which is not translated
   ];
 
   it('say something different from English', () => {
@@ -86,5 +109,31 @@ describe('interpolate', () => {
   it('is used by translate', () => {
     expect(translate('ru', 'system.quit', { app: 'Файлы' })).toBe('Завершить «Файлы»');
     expect(translate('en', 'system.quit', { app: 'Files' })).toBe('Quit Files');
+  });
+});
+
+describe('counts', () => {
+  it('picks the form the language actually uses', () => {
+    // English has two forms and Russian four. A dictionary that only knows
+    // singular and plural writes «5 объект», which is what this is for.
+    expect(formFor('en', 1)).toBe('one');
+    expect(formFor('en', 2)).toBe('other');
+    expect(formFor('en', 5)).toBe('other');
+    expect(formFor('ru', 1)).toBe('one');
+    expect(formFor('ru', 2)).toBe('few');
+    expect(formFor('ru', 5)).toBe('many');
+    expect(formFor('ru', 21)).toBe('one');
+  });
+
+  it('agrees with the number it shows', () => {
+    for (const [count, expected] of [
+      [1, 'Корзина, 1 объект'],
+      [2, 'Корзина, 2 объекта'],
+      [5, 'Корзина, 5 объектов'],
+      [21, 'Корзина, 21 объект'],
+    ] as const) {
+      const form = formFor('ru', count);
+      expect(interpolate(ru[`taskbar.trash.${form}`], { count })).toBe(expected);
+    }
   });
 });

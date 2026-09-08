@@ -55,6 +55,23 @@ export function LumenOS({ appVersion = '0.1.0', autoSetup = null }: LumenOSProps
     };
   }, [appVersion, autoSetup]);
 
+  /*
+   * The interface reporting that it got this far.
+   *
+   * On the desktop the running interface can be one applied as a patch, and a
+   * version that never reaches this line is given up on the next start. So it
+   * belongs after the boot screen has been replaced by the interface itself,
+   * not beside the imports: reporting any earlier would vouch for a version
+   * that had not yet drawn anything.
+   */
+  useEffect(() => {
+    if (!kernel || !ready) return;
+    void kernel.platform.interface.ready().catch(() => {
+      // An older host has no such command, and the interface it is serving
+      // came out of its own binary. Nothing to report and nothing to lose.
+    });
+  }, [kernel, ready]);
+
   if (bootError) return <BootScreen error={bootError} />;
   if (!kernel || !ready) return <BootScreen />;
 

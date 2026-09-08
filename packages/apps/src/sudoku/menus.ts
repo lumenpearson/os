@@ -1,3 +1,4 @@
+import { t } from '@lumen/kernel';
 /**
  * The menubar for a Sudoku window, built from one snapshot of state so a
  * command reads and behaves the same whether it is clicked or typed. Every
@@ -39,11 +40,11 @@ export function buildSudokuMenus(state: SudokuMenuState, actions: SudokuActions)
   return [
     {
       id: 'game',
-      label: 'Game',
+      label: t('menu.game'),
       items: [
         {
           id: 'new',
-          label: 'New Puzzle',
+          label: t('sudoku.newPuzzle'),
           submenu: DIFFICULTIES.map<MenuItemTemplate>((difficulty, position) => ({
             id: `new-${difficulty}`,
             type: 'radio',
@@ -54,32 +55,32 @@ export function buildSudokuMenus(state: SudokuMenuState, actions: SudokuActions)
           })),
         },
         separator,
-        { id: 'check', label: 'Check', shortcut: 'Mod+K', onSelect: actions.check },
+        { id: 'check', label: t('sudoku.check'), shortcut: 'Mod+K', onSelect: actions.check },
         {
           id: 'hint',
-          label: 'Hint',
+          label: t('sudoku.hint'),
           shortcut: 'Mod+H',
           enabled: state.canHint,
           onSelect: actions.hint,
         },
         separator,
-        { id: 'close', label: 'Close', shortcut: 'Mod+W', onSelect: actions.close },
+        { id: 'close', label: t('menu.close'), shortcut: 'Mod+W', onSelect: actions.close },
       ],
     },
     {
       id: 'edit',
-      label: 'Edit',
+      label: t('menu.edit'),
       items: [
         {
           id: 'undo',
-          label: 'Undo',
+          label: t('menu.undo'),
           shortcut: 'Mod+Z',
           enabled: state.canUndo,
           onSelect: actions.undo,
         },
         {
           id: 'redo',
-          label: 'Redo',
+          label: t('menu.redo'),
           shortcut: 'Shift+Mod+Z',
           enabled: state.canRedo,
           onSelect: actions.redo,
@@ -87,7 +88,7 @@ export function buildSudokuMenus(state: SudokuMenuState, actions: SudokuActions)
         separator,
         {
           id: 'clear-cell',
-          label: 'Clear Cell',
+          label: t('sudoku.clearCell'),
           shortcut: 'Mod+Backspace',
           enabled: state.canClear,
           onSelect: actions.clearCell,
@@ -96,12 +97,12 @@ export function buildSudokuMenus(state: SudokuMenuState, actions: SudokuActions)
     },
     {
       id: 'view',
-      label: 'View',
+      label: t('menu.view'),
       items: [
         {
           id: 'pencil',
           type: 'checkbox',
-          label: 'Pencil Marks',
+          label: t('sudoku.pencilMarks'),
           shortcut: 'Mod+P',
           checked: state.pencil,
           onSelect: actions.togglePencil,
@@ -109,14 +110,14 @@ export function buildSudokuMenus(state: SudokuMenuState, actions: SudokuActions)
         {
           id: 'highlight',
           type: 'checkbox',
-          label: 'Highlight Peers',
+          label: t('sudoku.highlightPeers'),
           checked: state.highlight,
           onSelect: actions.toggleHighlight,
         },
         {
           id: 'timer',
           type: 'checkbox',
-          label: 'Timer',
+          label: t('menu.timer'),
           checked: state.timer,
           onSelect: actions.toggleTimer,
         },

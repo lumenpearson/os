@@ -3,6 +3,7 @@
  * a command reads the same whether it is clicked or typed.
  */
 import type { MenuItemTemplate, MenuTemplate } from '@lumen/kernel';
+import { t } from '@lumen/kernel';
 import { REFRESH_RATES, type TabId } from './config';
 import { formatInterval } from './format';
 
@@ -34,16 +35,18 @@ export function buildTaskManagerMenus(
   const onTable = state.tab === 'processes';
   const hasSelection = onTable && state.selectionCount > 0;
   const endLabel =
-    state.selectionCount > 1 ? `End ${state.selectionCount} Processes` : 'End Process';
+    state.selectionCount > 1
+      ? t('taskManagerApp.endProcessesCount', { count: state.selectionCount })
+      : t('taskManagerApp.endProcess');
   return [
     {
       id: 'view',
-      label: 'View',
+      label: t('menu.view'),
       items: [
         {
           id: 'view.processes',
           type: 'radio',
-          label: 'Processes',
+          label: t('taskmanager.processes'),
           shortcut: 'Mod+1',
           checked: state.tab === 'processes',
           onSelect: () => actions.showTab('processes'),
@@ -51,7 +54,7 @@ export function buildTaskManagerMenus(
         {
           id: 'view.performance',
           type: 'radio',
-          label: 'Performance',
+          label: t('taskmanager.performance'),
           shortcut: 'Mod+2',
           checked: state.tab === 'performance',
           onSelect: () => actions.showTab('performance'),
@@ -59,7 +62,7 @@ export function buildTaskManagerMenus(
         {
           id: 'view.apps',
           type: 'radio',
-          label: 'Apps',
+          label: t('taskmanager.apps'),
           shortcut: 'Mod+3',
           checked: state.tab === 'apps',
           onSelect: () => actions.showTab('apps'),
@@ -68,7 +71,7 @@ export function buildTaskManagerMenus(
         {
           id: 'view.refresh',
           type: 'submenu',
-          label: 'Refresh Rate',
+          label: t('taskmanager.refreshRate'),
           submenu: REFRESH_RATES.map((ms) => ({
             id: `view.refresh.${ms}`,
             type: 'radio' as const,
@@ -81,11 +84,11 @@ export function buildTaskManagerMenus(
     },
     {
       id: 'process',
-      label: 'Process',
+      label: t('taskmanager.process'),
       items: [
         {
           id: 'process.focus',
-          label: 'Focus Window',
+          label: t('taskmanager.focusWindow'),
           shortcut: 'Mod+Enter',
           enabled: onTable && state.canFocusWindow,
           onSelect: actions.focusWindow,
@@ -94,7 +97,7 @@ export function buildTaskManagerMenus(
         // this window.
         {
           id: 'process.quit',
-          label: 'Quit App',
+          label: t('taskmanager.quitApp'),
           enabled: hasSelection,
           onSelect: actions.quitApp,
         },

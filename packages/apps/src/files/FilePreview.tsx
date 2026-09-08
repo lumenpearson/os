@@ -1,4 +1,4 @@
-import { useVfs } from '@lumen/kernel/react';
+import { useT, useVfs } from '@lumen/kernel/react';
 import { cx } from '@lumen/ui';
 import { basename, type FileStat, formatBytes, VfsError } from '@lumen/vfs';
 import { useEffect, useState } from 'react';
@@ -15,6 +15,7 @@ export interface FilePreviewProps {
 
 /** Icon or image, name, kind, size, dates, and the head of small text files. */
 export function FilePreview({ path, large }: FilePreviewProps) {
+  const t = useT();
   const vfs = useVfs();
   const [stat, setStat] = useState<FileStat | null>(null);
   const [text, setText] = useState<string | null>(null);
@@ -80,13 +81,13 @@ export function FilePreview({ path, large }: FilePreviewProps) {
       {error && <p className="text-sm text-danger">{error}</p>}
       {stat && (
         <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
-          <dt className="text-ink-3">Size</dt>
+          <dt className="text-ink-3">{t('filesApp.size')}</dt>
           <dd className="mono tabular-nums text-ink-2">
             {stat.kind === 'directory' ? '—' : formatBytes(stat.size)}
           </dd>
-          <dt className="text-ink-3">Created</dt>
+          <dt className="text-ink-3">{t('filesApp.created')}</dt>
           <dd className="mono tabular-nums text-ink-2">{formatDateTime(stat.createdAt)}</dd>
-          <dt className="text-ink-3">Modified</dt>
+          <dt className="text-ink-3">{t('filesApp.modified')}</dt>
           <dd className="mono tabular-nums text-ink-2">{formatDateTime(stat.modifiedAt)}</dd>
         </dl>
       )}

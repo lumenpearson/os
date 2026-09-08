@@ -11,7 +11,7 @@ import {
   useSettingsStore,
   verifyPassword,
 } from '@lumen/kernel';
-import { useKernel, usePlatform, useVfs } from '@lumen/kernel/react';
+import { useKernel, usePlatform, useT, useVfs } from '@lumen/kernel/react';
 import { KERNEL_VERSION } from '@lumen/platform';
 import { cx, useDialogs } from '@lumen/ui';
 import { join } from '@lumen/vfs';
@@ -51,6 +51,7 @@ interface HistoryFile {
 }
 
 export default function Terminal({ args: initialArgs }: AppProps) {
+  const t = useT();
   const args = useArgs(initialArgs);
   const kernel = useKernel();
   const dialogs = useDialogs();
@@ -254,7 +255,12 @@ export default function Terminal({ args: initialArgs }: AppProps) {
         // sudo asks here. The dialog belongs to this window, so it cannot be
         // mistaken for a request from somewhere else.
         password: (title: string) =>
-          dialogs.prompt({ title, password: true, mono: true, confirmLabel: 'Continue' }),
+          dialogs.prompt({
+            title,
+            password: true,
+            mono: true,
+            confirmLabel: t('terminalApp.continue'),
+          }),
         io: {
           stdout: (text) => write(id, { kind: 'out', text }),
           stderr: (text) => write(id, { kind: 'err', text }),
@@ -271,7 +277,7 @@ export default function Terminal({ args: initialArgs }: AppProps) {
         flush();
       }
     },
-    [user, state, home, vfs, shellKernel, measureColumns, write, flush, dialogs.prompt],
+    [user, state, home, vfs, shellKernel, measureColumns, write, flush, dialogs.prompt, t],
   );
 
   // Banner, then the launch script, once.
@@ -588,18 +594,18 @@ export default function Terminal({ args: initialArgs }: AppProps) {
     [
       {
         id: 'shell',
-        label: 'Shell',
+        label: t('terminalApp.shell'),
         items: [
           {
             id: 'new-window',
-            label: 'New Window',
+            label: t('system.newWindow'),
             shortcut: `${shortcutMod}+N`,
             onSelect: () => launch('lumen.terminal', { cwd: state.cwd }),
           },
           { type: 'separator' },
           {
             id: 'close',
-            label: 'Close',
+            label: t('action.close'),
             shortcut: `${shortcutMod}+W`,
             onSelect: () => void close(),
           },
@@ -607,25 +613,30 @@ export default function Terminal({ args: initialArgs }: AppProps) {
       },
       {
         id: 'edit',
-        label: 'Edit',
+        label: t('menu.edit'),
         items: [
           {
             id: 'copy',
-            label: 'Copy',
+            label: t('action.copy'),
             shortcut: `Shift+${shortcutMod}+C`,
             onSelect: copySelection,
           },
           {
             id: 'paste',
-            label: 'Paste',
+            label: t('action.paste'),
             shortcut: `Shift+${shortcutMod}+V`,
             onSelect: () => void paste(),
           },
           { type: 'separator' },
-          { id: 'clear', label: 'Clear', shortcut: `${shortcutMod}+K`, onSelect: clearScreen },
+          {
+            id: 'clear',
+            label: t('menu.clear'),
+            shortcut: `${shortcutMod}+K`,
+            onSelect: clearScreen,
+          },
           {
             id: 'select-all',
-            label: 'Select All',
+            label: t('action.selectAll'),
             shortcut: `${shortcutMod}+A`,
             onSelect: () => {
               const el = scroller.current;
@@ -641,23 +652,23 @@ export default function Terminal({ args: initialArgs }: AppProps) {
       },
       {
         id: 'view',
-        label: 'View',
+        label: t('menu.view'),
         items: [
           {
             id: 'bigger',
-            label: 'Bigger',
+            label: t('editor.bigger'),
             shortcut: `${shortcutMod}+=`,
             onSelect: () => changeFontSize(1),
           },
           {
             id: 'smaller',
-            label: 'Smaller',
+            label: t('editor.smaller'),
             shortcut: `${shortcutMod}+-`,
             onSelect: () => changeFontSize(-1),
           },
           {
             id: 'actual',
-            label: 'Actual Size',
+            label: t('menu.actualSize'),
             shortcut: `${shortcutMod}+0`,
             onSelect: () => changeFontSize(0),
           },
@@ -665,8 +676,14 @@ export default function Terminal({ args: initialArgs }: AppProps) {
       },
       {
         id: 'help',
-        label: 'Help',
-        items: [{ id: 'commands', label: 'Commands', onSelect: () => void execute('help') }],
+        label: t('menu.help'),
+        items: [
+          {
+            id: 'commands',
+            label: t('terminalApp.commands'),
+            onSelect: () => void execute('help'),
+          },
+        ],
       },
     ],
     [state, launch, close, copySelection, paste, clearScreen, changeFontSize, execute],
@@ -689,7 +706,7 @@ export default function Terminal({ args: initialArgs }: AppProps) {
         onScroll={onScroll}
         className="lumen-scroll mono flex-1 select-text px-3 py-2"
         role="log"
-        aria-label="Terminal output"
+        aria-label={t('terminalApp.output')}
         aria-live="polite"
       >
         {blocks.map((block) => (
@@ -727,7 +744,7 @@ export default function Terminal({ args: initialArgs }: AppProps) {
           <input
             ref={input}
             type="text"
-            aria-label="Command"
+            aria-label={t('terminalApp.command')}
             autoComplete="off"
             autoCorrect="off"
             autoCapitalize="off"
@@ -744,6 +761,7 @@ export default function Terminal({ args: initialArgs }: AppProps) {
 }
 
 function PromptLabel({ user, path }: { user: string; path: string }) {
+  const _t = useT();
   return (
     <span aria-hidden className="select-none">
       <span className="text-accent">{user}</span>

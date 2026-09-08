@@ -13,6 +13,7 @@ export function ScreensaverLayer() {
   if (!active || kind === 'none') return null;
   return (
     <div
+      data-over-page
       className="fixed inset-0 z-[2100] bg-black select-none"
       aria-hidden
       data-testid="screensaver"

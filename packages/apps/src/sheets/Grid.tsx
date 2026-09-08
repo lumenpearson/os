@@ -1,3 +1,4 @@
+import { useT } from '@lumen/kernel/react';
 import { cx } from '@lumen/ui';
 import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { Evaluated } from './engine/evaluate';
@@ -86,6 +87,7 @@ export function Grid({
   currency,
   containerRef,
 }: GridProps) {
+  const t = useT();
   const gridId = useId();
   const scroller = useRef<HTMLDivElement>(null);
   const colHeader = useRef<HTMLDivElement>(null);
@@ -566,7 +568,7 @@ export function Grid({
           {editor?.source !== 'grid' && (
             <button
               type="button"
-              aria-label="Fill from the selection"
+              aria-label={t('sheetsApp.fillFromSelection')}
               data-cursor="crosshair"
               onPointerDown={onFillPointerDown}
               className="absolute size-2 cursor-crosshair rounded-[1px] border border-surface bg-accent p-0"

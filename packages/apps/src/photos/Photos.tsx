@@ -8,7 +8,7 @@
  * read from the file system or measured from the decoded image; nothing is
  * inferred, and nothing is invented.
  */
-import { useApp as useAppDefinition, useKernel, useVfs } from '@lumen/kernel/react';
+import { useApp as useAppDefinition, useKernel, useT, useVfs } from '@lumen/kernel/react';
 import {
   AnchoredMenu,
   AppFrame,
@@ -73,6 +73,7 @@ import { useLibrary } from './useLibrary';
 const LIGHTBOX_WIDE = 560;
 
 export default function Photos(_props: AppProps) {
+  const t = useT();
   const kernel = useKernel();
   const vfs = useVfs();
   const dialogs = useDialogs();
@@ -178,7 +179,7 @@ export default function Photos(_props: AppProps) {
     if (!current) return;
     const ok = await dialogs.confirm({
       title: `Move ${current.name} to the Trash?`,
-      confirmLabel: 'Move to Trash',
+      confirmLabel: t('desktop.moveToTrash'),
       danger: true,
     });
     if (!ok) return;
@@ -196,7 +197,7 @@ export default function Photos(_props: AppProps) {
         VfsError.is(failure) ? failure.message : String(failure),
       );
     }
-  }, [current, dialogs, vfs, store, notify, refresh]);
+  }, [current, dialogs, vfs, store, notify, refresh, t]);
 
   const actions = useMemo<PhotosActions>(
     () => ({
@@ -283,11 +284,11 @@ export default function Photos(_props: AppProps) {
       return (
         <EmptyState
           icon={<FolderOpen />}
-          title="No Pictures folder"
+          title={t('photosApp.noPicturesFolder')}
           description={`This account has no folder at ${root}. Create it, put pictures in it, and they appear here.`}
           action={
             <Button icon={<RefreshCw />} onClick={refresh}>
-              Look again
+              {t('photosApp.lookAgain')}
             </Button>
           }
         />
@@ -297,11 +298,11 @@ export default function Photos(_props: AppProps) {
       return (
         <EmptyState
           icon={<ImageOff />}
-          title="Could not read the Pictures folder"
+          title={t('photosApp.couldNotRead')}
           description={error}
           action={
             <Button icon={<RefreshCw />} onClick={refresh}>
-              Try again
+              {t('photosApp.tryAgain')}
             </Button>
           }
         />
@@ -330,18 +331,18 @@ export default function Photos(_props: AppProps) {
           photos.length === 0 ? (
             <EmptyState
               icon={<ImageOff />}
-              title="No pictures yet"
+              title={t('photosApp.noPicturesYet')}
               description={`Pictures in ${root}, and in the folders inside it, appear here.`}
               action={
                 <Button icon={<FolderOpen />} onClick={() => launch('lumen.files', { path: root })}>
-                  Open Pictures in Files
+                  {t('photosApp.openInFiles')}
                 </Button>
               }
             />
           ) : (
             <EmptyState
               icon={<SearchX />}
-              title="Nothing here"
+              title={t('photosApp.nothingHere')}
               description={
                 query.trim()
                   ? `No picture name contains “${query.trim()}”.`
@@ -355,7 +356,7 @@ export default function Photos(_props: AppProps) {
                       searchRef.current?.focus();
                     }}
                   >
-                    Clear search
+                    {t('photosApp.clearSearch')}
                   </Button>
                 ) : undefined
               }

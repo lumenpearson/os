@@ -1,3 +1,4 @@
+import { useT } from '@lumen/kernel/react';
 import { cx, isContextMenuKey, useElementSize } from '@lumen/ui';
 import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import {
@@ -61,6 +62,7 @@ export function PhotoGrid({
   onContextMenu,
   empty,
 }: PhotoGridProps) {
+  const t = useT();
   const [port, viewport] = useElementSize<HTMLDivElement>();
   const frame = useRef(0);
   const [range, setRange] = useState<Range>(EMPTY_RANGE);
@@ -148,7 +150,7 @@ export function PhotoGrid({
     <div
       ref={port}
       role="listbox"
-      aria-label="Pictures"
+      aria-label={t('photosApp.pictures')}
       aria-activedescendant={index >= 0 ? `photo-${index}` : undefined}
       tabIndex={0}
       onScroll={onScroll}

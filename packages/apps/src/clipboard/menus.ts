@@ -1,3 +1,4 @@
+import { t } from '@lumen/kernel';
 /**
  * The menubar for the Clipboard window, built from one snapshot of state so a
  * command does the same thing whether it is clicked in the detail pane, picked
@@ -33,16 +34,16 @@ export function buildClipboardMenus(
   return [
     {
       id: 'file',
-      label: 'File',
-      items: [{ id: 'close', label: 'Close', shortcut: 'Mod+W', onSelect: actions.close }],
+      label: t('menu.file'),
+      items: [{ id: 'close', label: t('menu.close'), shortcut: 'Mod+W', onSelect: actions.close }],
     },
     {
       id: 'edit',
-      label: 'Edit',
+      label: t('menu.edit'),
       items: [
         {
           id: 'put-back',
-          label: 'Put Back on Clipboard',
+          label: t('clipboard.putBack'),
           shortcut: 'Mod+Return',
           enabled: state.hasSelection,
           onSelect: actions.putBack,
@@ -57,7 +58,7 @@ export function buildClipboardMenus(
         },
         {
           id: 'remove',
-          label: 'Remove',
+          label: t('clipboard.remove'),
           shortcut: 'Mod+Backspace',
           enabled: state.hasSelection,
           danger: true,
@@ -65,14 +66,14 @@ export function buildClipboardMenus(
         },
         {
           id: 'clear-all',
-          label: 'Clear All…',
+          label: t('clipboard.clearAll'),
           shortcut: 'Shift+Mod+Backspace',
           enabled: state.hasItems,
           danger: true,
           onSelect: actions.clearAll,
         },
         separator,
-        { id: 'find', label: 'Find', shortcut: 'Mod+F', onSelect: actions.find },
+        { id: 'find', label: t('menu.find'), shortcut: 'Mod+F', onSelect: actions.find },
       ],
     },
   ];

@@ -1,21 +1,22 @@
 import { useLogStore } from '@lumen/kernel';
-import { useKernel, useSetting } from '@lumen/kernel/react';
+import { useKernel, useSetting, useT } from '@lumen/kernel/react';
 import { Button, SettingsGroup, SettingsPage, Switch } from '@lumen/ui';
 import { Row } from '../Row';
 
 export function PrivacyPage() {
+  const t = useT();
   const kernel = useKernel();
   const [privacy, patch] = useSetting('privacy');
   return (
-    <SettingsPage title="Privacy" description="What the system remembers about your session.">
-      <SettingsGroup title="History">
+    <SettingsPage title={t('settings.privacy')} description={t('privacyPage.intro')}>
+      <SettingsGroup title={t('privacyPage.history')}>
         <Row
           id="privacy.recents"
-          label="Keep Recents"
-          description="Files you open appear in the Start menu and in Files."
+          label={t('privacyPage.keepRecents')}
+          description={t('privacyPage.keepRecentsHint')}
         >
           <Button size="sm" onClick={() => kernel.updateState({ recents: [] })}>
-            Clear recents
+            {t('privacyPage.clearRecents')}
           </Button>
           <Switch
             checked={privacy.recents}
@@ -24,11 +25,11 @@ export function PrivacyPage() {
         </Row>
         <Row
           id="privacy.logging"
-          label="Keep session log"
-          description="Kernel and app messages, readable in the Console."
+          label={t('privacyPage.keepLog')}
+          description={t('privacyPage.keepLogHint')}
         >
           <Button size="sm" onClick={() => useLogStore.getState().clear()}>
-            Clear log
+            {t('privacyPage.clearLog')}
           </Button>
           <Switch
             checked={privacy.logging}
@@ -39,11 +40,11 @@ export function PrivacyPage() {
           />
         </Row>
       </SettingsGroup>
-      <SettingsGroup title="Data">
+      <SettingsGroup title={t('privacyPage.data')}>
         <Row
           id="privacy.note"
-          label="Everything stays on this device"
-          description="Settings, files, the user account and the log are stored locally. Nothing is sent anywhere."
+          label={t('privacyPage.local')}
+          description={t('privacyPage.localHint')}
         />
       </SettingsGroup>
     </SettingsPage>

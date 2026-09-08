@@ -2,7 +2,9 @@
  * The live process table. Rows arrive already sorted; the uptime column
  * updates itself through a ref so the second hand costs no re-render.
  */
+
 import type { AppDefinition, AppId, Pid } from '@lumen/kernel';
+import { usePlural, useT } from '@lumen/kernel/react';
 import {
   AnchoredMenu,
   Button,
@@ -16,7 +18,7 @@ import { formatBytes } from '@lumen/vfs';
 import { Box } from 'lucide-react';
 import { useMemo, useRef, useState } from 'react';
 import { EM_DASH, formatUptime } from './format';
-import { PROCESS_STATE_LABEL, type ProcessColumnId, type ProcessRow } from './processes';
+import { PROCESS_STATE_KEYS, type ProcessColumnId, type ProcessRow } from './processes';
 import { rankMap, type SortState } from './sort';
 import { useTick } from './tick';
 
@@ -54,6 +56,8 @@ export function ProcessesTab({
   onEndProcess,
   onQuitApp,
 }: ProcessesTabProps) {
+  const t = useT();
+  const plural = usePlural();
   const [ref, size] = useElementSize<HTMLDivElement>();
   const menu = useContextMenu();
   const [menuPid, setMenuPid] = useState<Pid | null>(null);
@@ -72,7 +76,7 @@ export function ProcessesTab({
     const cols: Column<ProcessRow>[] = [
       {
         id: 'name',
-        header: 'Name',
+        header: t('taskManagerApp.name'),
         width: 'minmax(140px, 1fr)',
         sortable: true,
         accessor: rank,
@@ -86,14 +90,18 @@ export function ProcessesTab({
                 <Box className="size-4 shrink-0 text-ink-3" strokeWidth={1.75} />
               )}
               <span className="truncate-1">{row.name}</span>
-              {row.unsaved && <span className="mono shrink-0 text-xs text-ink-3">unsaved</span>}
+              {row.unsaved && (
+                <span className="mono shrink-0 text-xs text-ink-3">
+                  {t('taskManagerApp.unsaved')}
+                </span>
+              )}
             </span>
           );
         },
       },
       {
         id: 'pid',
-        header: 'PID',
+        header: t('taskManagerApp.pid'),
         width: '64px',
         align: 'right',
         mono: true,
@@ -105,17 +113,17 @@ export function ProcessesTab({
     if (width === 0 || width >= STATE_AT) {
       cols.push({
         id: 'state',
-        header: 'State',
+        header: t('taskManagerApp.state'),
         width: '104px',
         sortable: true,
         accessor: rank,
-        render: (row) => PROCESS_STATE_LABEL[row.state],
+        render: (row) => t(PROCESS_STATE_KEYS[row.state]),
       });
     }
     if (width === 0 || width >= WINDOWS_AT) {
       cols.push({
         id: 'windows',
-        header: 'Windows',
+        header: t('taskManagerApp.windows'),
         width: '80px',
         align: 'right',
         mono: true,
@@ -126,7 +134,7 @@ export function ProcessesTab({
     }
     cols.push({
       id: 'uptime',
-      header: 'Uptime',
+      header: t('taskManagerApp.uptimeColumn'),
       width: '88px',
       align: 'right',
       mono: true,
@@ -137,7 +145,7 @@ export function ProcessesTab({
     if (width === 0 || width >= MEMORY_AT) {
       cols.push({
         id: 'memory',
-        header: 'Memory',
+        header: t('taskManagerApp.memoryColumn'),
         width: '88px',
         align: 'right',
         mono: true,
@@ -147,7 +155,7 @@ export function ProcessesTab({
       });
     }
     return cols;
-  }, [ranks, apps, width]);
+  }, [ranks, apps, width, t]);
 
   const contextRow = rows.find((r) => r.pid === menuPid) ?? null;
 
@@ -179,12 +187,19 @@ export function ProcessesTab({
             onSortChange({ column: next.column as ProcessColumnId, direction: next.direction });
           }
         }}
-        emptyState={<EmptyState title="No processes" description="Nothing is running." />}
+        emptyState={
+          <EmptyState
+            title={t('taskManagerApp.noProcesses')}
+            description={t('taskManagerApp.nothingRunning')}
+          />
+        }
       />
       <div className="flex shrink-0 items-center gap-3 border-t border-rule bg-canvas px-2 py-1.5">
         <p className="mono min-w-0 truncate-1 text-sm text-ink-3 tabular-nums">
-          {rows.length} processes
-          {memoryNote ? ` · ${memoryNote}` : ''}
+          {t('taskManagerApp.processTally', {
+            processes: plural('count.processes', rows.length),
+            note: memoryNote ? ` · ${memoryNote}` : '',
+          })}
         </p>
         <div className="ml-auto flex shrink-0 items-center gap-2">
           <Button
@@ -192,7 +207,7 @@ export function ProcessesTab({
             disabled={!single?.windowIds.length}
             onClick={() => single && onFocusWindow(single)}
           >
-            Focus Window
+            {t('taskManagerApp.focusWindow')}
           </Button>
           <Button
             size="sm"
@@ -200,7 +215,7 @@ export function ProcessesTab({
             disabled={selection.size === 0}
             onClick={() => onEndProcess([...selection])}
           >
-            End Process
+            {t('taskManagerApp.endProcess')}
           </Button>
         </div>
       </div>
@@ -216,15 +231,19 @@ export function ProcessesTab({
             ? [
                 {
                   id: 'focus',
-                  label: 'Focus Window',
+                  label: t('taskManagerApp.focusWindow'),
                   enabled: contextRow.windowIds.length > 0,
                   onSelect: () => onFocusWindow(contextRow),
                 },
-                { id: 'quit', label: 'Quit App', onSelect: () => onQuitApp([contextRow.pid]) },
+                {
+                  id: 'quit',
+                  label: t('taskManagerApp.quitApp'),
+                  onSelect: () => onQuitApp([contextRow.pid]),
+                },
                 { type: 'separator' },
                 {
                   id: 'end',
-                  label: 'End Process',
+                  label: t('taskManagerApp.endProcess'),
                   danger: true,
                   onSelect: () => onEndProcess([contextRow.pid]),
                 },

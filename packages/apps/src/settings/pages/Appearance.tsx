@@ -1,4 +1,5 @@
-import { useSetting } from '@lumen/kernel/react';
+import type { Translate } from '@lumen/kernel';
+import { useSetting, useT } from '@lumen/kernel/react';
 import { accents } from '@lumen/tokens';
 import {
   cx,
@@ -86,36 +87,40 @@ function ThemeSwatch({ mode, selected }: { mode: ThemeMode; selected: boolean })
   );
 }
 
-const THEMES: Array<{ value: ThemeMode; label: string }> = [
-  { value: 'light', label: 'Light' },
-  { value: 'dark', label: 'Dark' },
-  { value: 'auto', label: 'Auto' },
+/*
+ * A function of the translator rather than a table built once at import: a
+ * table would be filled in whatever language the settings happened to hold
+ * when the module first loaded, and would keep those words after the language
+ * changed. Called during render, it follows.
+ */
+const themeOptions = (t: Translate): Array<{ value: ThemeMode; label: string }> => [
+  { value: 'light', label: t('option.light') },
+  { value: 'dark', label: t('option.dark') },
+  { value: 'auto', label: t('option.auto') },
 ];
 
-const CONTRAST: SegmentedOption<'normal' | 'high'>[] = [
-  { value: 'normal', label: 'Normal' },
-  { value: 'high', label: 'High' },
+const contrastOptions = (t: Translate): SegmentedOption<'normal' | 'high'>[] => [
+  { value: 'normal', label: t('option.normal') },
+  { value: 'high', label: t('option.high') },
 ];
 
 export function AppearancePage() {
+  const t = useT();
   const [appearance, patch] = useSetting('appearance');
   return (
-    <SettingsPage
-      title="Appearance"
-      description="Theme, accent colour, contrast, blur and type size."
-    >
-      <SettingsGroup title="Theme">
+    <SettingsPage title={t('settings.appearance')} description={t('appearancePage.intro')}>
+      <SettingsGroup title={t('appearancePage.titleTheme')}>
         <Row
           id="appearance.theme"
-          label="Theme"
-          description="Auto follows the system setting."
+          label={t('appearancePage.titleTheme')}
+          description={t('appearancePage.themeHint')}
           stacked
         >
           <ChoiceGroup
-            label="Theme"
+            label={t('appearancePage.titleTheme')}
             value={appearance.theme}
             onChange={(theme) => patch({ theme })}
-            options={THEMES.map((t) => ({
+            options={themeOptions(t).map((t) => ({
               value: t.value,
               label: t.label,
               render: (selected) => <ThemeSwatch mode={t.value} selected={selected} />,
@@ -124,11 +129,11 @@ export function AppearancePage() {
         </Row>
         <Row
           id="appearance.accent"
-          label="Accent colour"
-          description="Selection, focus and the active state."
+          label={t('appearancePage.accent')}
+          description={t('appearancePage.accentHint')}
         >
           <ChoiceGroup
-            label="Accent colour"
+            label={t('appearancePage.accent')}
             labelHidden
             value={appearance.accent}
             onChange={(accent) => patch({ accent })}
@@ -151,23 +156,23 @@ export function AppearancePage() {
         </Row>
       </SettingsGroup>
 
-      <SettingsGroup title="Accessibility">
+      <SettingsGroup title={t('appearancePage.titleAccessibility')}>
         <Row
           id="appearance.contrast"
-          label="Contrast"
-          description="High contrast darkens secondary text and rules."
+          label={t('appearancePage.contrast')}
+          description={t('appearancePage.contrastHint')}
         >
           <SegmentedControl
-            aria-label="Contrast"
-            options={CONTRAST}
+            aria-label={t('appearancePage.contrast')}
+            options={contrastOptions(t)}
             value={appearance.contrast}
             onChange={(contrast) => patch({ contrast })}
           />
         </Row>
         <Row
           id="appearance.motion"
-          label="Reduce motion"
-          description="Windows and menus appear without animation."
+          label={t('appearancePage.reduceMotion')}
+          description={t('appearancePage.reduceMotionHint')}
         >
           <Switch
             checked={appearance.reduceMotion}
@@ -177,8 +182,8 @@ export function AppearancePage() {
         <Row
           id="appearance.transparency"
           htmlFor="appearance-transparency"
-          label="Reduce transparency"
-          description="Solid menus and chrome instead of blur."
+          label={t('appearancePage.reduceTransparency')}
+          description={t('appearancePage.reduceTransparencyHint')}
         >
           <Switch
             id="appearance-transparency"
@@ -188,12 +193,12 @@ export function AppearancePage() {
         </Row>
         <Row
           id="appearance.blur"
-          label="Blur"
-          description="Blur behind menus, sheets and panels. 0 leaves those surfaces opaque."
+          label={t('appearancePage.blur')}
+          description={t('appearancePage.blurHint')}
           stacked
         >
           <Slider
-            aria-label="Blur"
+            aria-label={t('appearancePage.blur')}
             min={0}
             max={40}
             step={1}
@@ -203,9 +208,9 @@ export function AppearancePage() {
             showValue={pixelLabel}
           />
         </Row>
-        <Row id="appearance.fontScale" label="Font size" stacked>
+        <Row id="appearance.fontScale" label={t('appearancePage.fontSize')} stacked>
           <Slider
-            aria-label="Font size"
+            aria-label={t('appearancePage.fontSize')}
             min={0.9}
             max={1.3}
             step={0.05}

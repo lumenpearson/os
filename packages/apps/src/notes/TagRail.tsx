@@ -1,3 +1,4 @@
+import { useT } from '@lumen/kernel/react';
 import { Sidebar, type SidebarSection } from '@lumen/ui';
 import { Hash, NotebookText } from 'lucide-react';
 import type { TagCount } from './library';
@@ -11,18 +12,20 @@ export interface TagRailProps {
 }
 
 function Count({ value }: { value: number }) {
+  const _t = useT();
   return <span className="mono text-2xs tabular-nums text-ink-3">{value}</span>;
 }
 
 /** The left rail: every note, then the tags found in them, with counts. */
 export function TagRail({ tags, activeTag, total, onSelect, width = 172 }: TagRailProps) {
+  const t = useT();
   const sections: SidebarSection[] = [
     {
       id: 'library',
       items: [
         {
           id: 'all',
-          label: 'All Notes',
+          label: t('notesApp.allNotes'),
           icon: <NotebookText />,
           meta: <Count value={total} />,
           onSelect: () => onSelect(null),
@@ -33,7 +36,7 @@ export function TagRail({ tags, activeTag, total, onSelect, width = 172 }: TagRa
   if (tags.length > 0) {
     sections.push({
       id: 'tags',
-      title: 'Tags',
+      title: t('notesApp.tags'),
       items: tags.map((t) => ({
         id: `tag:${t.tag.toLowerCase()}`,
         label: t.tag,
@@ -51,9 +54,7 @@ export function TagRail({ tags, activeTag, total, onSelect, width = 172 }: TagRa
       activeId={activeTag ? `tag:${activeTag.toLowerCase()}` : 'all'}
       footer={
         tags.length === 0 ? (
-          <p className="px-3 pb-3 text-sm text-ink-3">
-            Write <span className="mono">#tag</span> in a note to file it here.
-          </p>
+          <p className="px-3 pb-3 text-sm text-ink-3">{t('notesApp.tagHint', { tag: '#tag' })}</p>
         ) : undefined
       }
     />

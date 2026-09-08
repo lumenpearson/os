@@ -1,3 +1,5 @@
+import type { Translate } from '@lumen/kernel';
+import { useT } from '@lumen/kernel/react';
 import {
   Button,
   IconButton,
@@ -43,16 +45,20 @@ export interface BrowserSettingsPageProps {
   onClearBookmarks: () => void;
 }
 
-const ENGINE_OPTIONS: ReadonlyArray<SelectOption> = [
-  ...SEARCH_ENGINES.map((e) => ({ value: e.id, label: e.name })),
-  { value: CUSTOM_ENGINE_ID, label: 'Custom…' },
-];
+function engineOptions(t: Translate): ReadonlyArray<SelectOption> {
+  return [
+    ...SEARCH_ENGINES.map((engine) => ({ value: engine.id, label: engine.name })),
+    { value: CUSTOM_ENGINE_ID, label: t('browserApp.custom') },
+  ];
+}
 
-const NEW_TAB_OPTIONS: ReadonlyArray<SelectOption<NewTabTarget>> = [
-  { value: 'start', label: 'New Tab page' },
-  { value: 'homepage', label: 'Homepage' },
-  { value: 'blank', label: 'Blank page' },
-];
+function newTabOptions(t: Translate): ReadonlyArray<SelectOption<NewTabTarget>> {
+  return [
+    { value: 'start', label: t('browserApp.newTabPage') },
+    { value: 'homepage', label: t('browserApp.homepage') },
+    { value: 'blank', label: t('browserApp.blankPage') },
+  ];
+}
 
 const ZOOM_OPTIONS: ReadonlyArray<SelectOption> = ZOOM_LEVELS.map((z) => ({
   value: String(z),
@@ -80,6 +86,7 @@ export function BrowserSettingsPage({
   onClearHistory,
   onClearBookmarks,
 }: BrowserSettingsPageProps) {
+  const t = useT();
   const dialogs = useDialogs();
   const ids = {
     home: useId(),
@@ -137,9 +144,9 @@ export function BrowserSettingsPage({
 
   const clearHistory = async () => {
     const ok = await dialogs.confirm({
-      title: 'Clear browsing history?',
+      title: t('browserApp.clearHistoryTitle'),
       message: `${historyCount} ${historyCount === 1 ? 'page' : 'pages'} will be removed from this browser. Bookmarks are kept.`,
-      confirmLabel: 'Clear History',
+      confirmLabel: t('browserApp.clearHistory'),
       danger: true,
     });
     if (ok) onClearHistory();
@@ -147,20 +154,20 @@ export function BrowserSettingsPage({
 
   const clearBookmarks = async () => {
     const ok = await dialogs.confirm({
-      title: 'Remove every bookmark?',
+      title: t('browserApp.removeAllTitle'),
       message: `${bookmarkCount} ${bookmarkCount === 1 ? 'bookmark' : 'bookmarks'} will be removed. This cannot be undone.`,
-      confirmLabel: 'Remove All',
+      confirmLabel: t('browserApp.removeAll'),
       danger: true,
     });
     if (ok) onClearBookmarks();
   };
 
   return (
-    <SettingsPage title="Browser Settings">
-      <SettingsGroup title="Startup">
+    <SettingsPage title={t('browserApp.settings')}>
+      <SettingsGroup title={t('browserApp.startup')}>
         <SettingsRow
-          label="Homepage"
-          description="Where the Home button goes."
+          label={t('browserApp.homepage')}
+          description={t('browserApp.homepageHint')}
           htmlFor={ids.home}
           stacked
         >
@@ -188,39 +195,39 @@ export function BrowserSettingsPage({
                 onChange({ homepage: START_URL });
               }}
             >
-              Use New Tab Page
+              {t('browserApp.useNewTabPage')}
             </Button>
           </div>
         </SettingsRow>
         <SettingsRow
-          label="New tab opens"
-          description="What Ctrl+T and the plus button open."
+          label={t('browserApp.newTabOpens')}
+          description={t('browserApp.newTabHint')}
           htmlFor={ids.newTab}
         >
           <Select
             id={ids.newTab}
-            options={NEW_TAB_OPTIONS}
+            options={newTabOptions(t)}
             value={settings.newTab}
             onChange={(newTab) => onChange({ newTab })}
           />
         </SettingsRow>
       </SettingsGroup>
 
-      <SettingsGroup title="Search">
+      <SettingsGroup title={t('browserApp.search')}>
         <SettingsRow
-          label="Search engine"
-          description="Where the address bar sends text that is not an address."
+          label={t('browserApp.searchEngine')}
+          description={t('browserApp.searchEngineHint')}
           htmlFor={ids.engine}
         >
           <Select
             id={ids.engine}
-            options={ENGINE_OPTIONS}
+            options={engineOptions(t)}
             value={settings.searchEngine}
             onChange={(searchEngine) => onChange({ searchEngine })}
           />
         </SettingsRow>
         <SettingsRow
-          label="Query template"
+          label={t('browserApp.queryTemplate')}
           description={`The query, percent-encoded, replaces ${QUERY_TOKEN}.`}
           htmlFor={ids.template}
           stacked
@@ -233,7 +240,7 @@ export function BrowserSettingsPage({
             autoComplete="off"
             readOnly={!custom}
             aria-invalid={templateBroken || undefined}
-            placeholder="https://example.com/search?q=%s"
+            placeholder={t('browserApp.queryPlaceholder')}
             value={template}
             onChange={(e) => setTemplate(e.target.value)}
             onBlur={commitTemplate}
@@ -245,17 +252,19 @@ export function BrowserSettingsPage({
           />
           {templateBroken && (
             <p className="text-sm text-ink-2">
-              A template needs an http or https address and one {QUERY_TOKEN}. Until it has both,
-              searches use {SEARCH_ENGINES[0]?.name}.
+              {t('browserApp.templateBroken', {
+                token: QUERY_TOKEN,
+                engine: SEARCH_ENGINES[0]?.name ?? '',
+              })}
             </p>
           )}
         </SettingsRow>
       </SettingsGroup>
 
-      <SettingsGroup title="Appearance">
+      <SettingsGroup title={t('browserApp.appearance')}>
         <SettingsRow
-          label="Default zoom"
-          description="Where a new tab starts, and where Actual Size returns to."
+          label={t('browserApp.defaultZoom')}
+          description={t('browserApp.defaultZoomHint')}
           htmlFor={ids.zoom}
         >
           <Select
@@ -267,8 +276,8 @@ export function BrowserSettingsPage({
           />
         </SettingsRow>
         <SettingsRow
-          label="Bookmarks bar"
-          description="A row of starred pages under the toolbar."
+          label={t('browserApp.bookmarksBar')}
+          description={t('browserApp.bookmarksBarHint')}
           htmlFor={ids.bar}
         >
           <Switch
@@ -279,10 +288,10 @@ export function BrowserSettingsPage({
         </SettingsRow>
       </SettingsGroup>
 
-      <SettingsGroup title="Page frame" description={FRAME_NOTE}>
+      <SettingsGroup title={t('browserApp.pageFrame')} description={FRAME_NOTE}>
         <SettingsRow
-          label="JavaScript"
-          description="allow-scripts. Off breaks most of the web, and is the safest way to read a page."
+          label={t('browserApp.javascript')}
+          description={t('browserApp.javascriptHint')}
           htmlFor={ids.scripts}
         >
           <Switch
@@ -291,7 +300,11 @@ export function BrowserSettingsPage({
             onChange={(e) => onChange({ allowScripts: e.target.checked })}
           />
         </SettingsRow>
-        <SettingsRow label="Forms" description="allow-forms." htmlFor={ids.forms}>
+        <SettingsRow
+          label={t('browserApp.forms')}
+          description={t('browserApp.formsHint')}
+          htmlFor={ids.forms}
+        >
           <Switch
             id={ids.forms}
             checked={settings.allowForms}
@@ -299,8 +312,8 @@ export function BrowserSettingsPage({
           />
         </SettingsRow>
         <SettingsRow
-          label="Pop-up windows"
-          description="allow-popups. A page may open a window outside Lumen."
+          label={t('browserApp.popups')}
+          description={t('browserApp.popupsHint')}
           htmlFor={ids.popups}
         >
           <Switch
@@ -310,8 +323,8 @@ export function BrowserSettingsPage({
           />
         </SettingsRow>
         <SettingsRow
-          label="Downloads"
-          description="allow-downloads. A page may start a download in the browser running Lumen."
+          label={t('browserApp.downloads')}
+          description={t('browserApp.downloadsHint')}
           htmlFor={ids.downloads}
         >
           <Switch
@@ -321,8 +334,8 @@ export function BrowserSettingsPage({
           />
         </SettingsRow>
         <SettingsRow
-          label="Cookies and storage"
-          description="allow-same-origin. Off puts the page in an origin of its own, where it can keep nothing."
+          label={t('browserApp.cookies')}
+          description={t('browserApp.cookiesHint')}
           htmlFor={ids.storage}
         >
           <Switch
@@ -332,8 +345,8 @@ export function BrowserSettingsPage({
           />
         </SettingsRow>
         <SettingsRow
-          label="Give up after"
-          description="A frame that has said nothing by then is called blocked."
+          label={t('browserApp.giveUpAfter')}
+          description={t('browserApp.giveUpHint')}
           htmlFor={ids.wait}
         >
           <Select
@@ -346,11 +359,8 @@ export function BrowserSettingsPage({
         </SettingsRow>
       </SettingsGroup>
 
-      <SettingsGroup
-        title="Sites that open outside Lumen"
-        description="These addresses are handed to the browser Lumen is running in instead of a frame. Subdomains are included."
-      >
-        <SettingsRow label="Add a site" htmlFor={ids.host} stacked>
+      <SettingsGroup title={t('browserApp.outsideSites')} description={t('browserApp.outsideHint')}>
+        <SettingsRow label={t('browserApp.addSite')} htmlFor={ids.host} stacked>
           <form onSubmit={addHost} className="flex w-full items-center gap-2">
             <Input
               id={ids.host}
@@ -358,21 +368,18 @@ export function BrowserSettingsPage({
               type="text"
               spellCheck={false}
               autoComplete="off"
-              placeholder="example.com"
+              placeholder={t('browserApp.sitePlaceholder')}
               value={host}
               onChange={(e) => setHost(e.target.value)}
               className="flex-1"
             />
             <Button type="submit" icon={<Plus />} disabled={hostPattern(host) === null}>
-              Add
+              {t('browserApp.add')}
             </Button>
           </form>
         </SettingsRow>
         {settings.externalHosts.length === 0 ? (
-          <SettingsRow
-            label="No sites yet"
-            description="Add one here, or use Always Open Outside on a page that refused to be embedded."
-          />
+          <SettingsRow label={t('browserApp.noSites')} description={t('browserApp.noSitesHint')} />
         ) : (
           settings.externalHosts.map((pattern) => (
             <div key={pattern} className="flex items-center justify-between gap-4 px-4 py-2">
@@ -391,33 +398,36 @@ export function BrowserSettingsPage({
         )}
       </SettingsGroup>
 
-      <SettingsGroup title="Downloads">
+      <SettingsGroup title={t('browserApp.downloads')}>
         <SettingsRow
-          label="Downloads folder"
+          label={t('browserApp.downloadsFolder')}
           description={displayPath(downloadsPath(settings, home), home)}
         >
-          <Button onClick={onChooseDownloads}>Choose…</Button>
+          <Button onClick={onChooseDownloads}>{t('browserApp.choose')}</Button>
           <Button
             disabled={settings.downloadsDir === DEFAULT_DOWNLOADS_DIR}
             onClick={() => onChange({ downloadsDir: DEFAULT_DOWNLOADS_DIR })}
           >
-            Reset
+            {t('browserApp.reset')}
           </Button>
         </SettingsRow>
-        <SettingsRow label="Export bookmarks" description="Writes bookmarks.json into that folder.">
+        <SettingsRow
+          label={t('browserApp.exportBookmarks')}
+          description={t('browserApp.exportHint')}
+        >
           <Button disabled={bookmarkCount === 0} onClick={onExportBookmarks}>
-            Export
+            {t('browserApp.export')}
           </Button>
         </SettingsRow>
       </SettingsGroup>
 
       <SettingsGroup
-        title="Stored data"
-        description="Everything this browser keeps lives in one file under your home folder."
+        title={t('browserApp.storedData')}
+        description={t('browserApp.storedDataHint')}
       >
         <SettingsRow
-          label="Keep history"
-          description="Off stops new visits from being written down. What is already there stays."
+          label={t('browserApp.keepHistory')}
+          description={t('browserApp.keepHistoryHint')}
           htmlFor={ids.keepHistory}
         >
           <Switch
@@ -427,7 +437,7 @@ export function BrowserSettingsPage({
           />
         </SettingsRow>
         <SettingsRow
-          label="Browsing history"
+          label={t('browserApp.browsingHistory')}
           description={
             historyCount === 0
               ? 'Nothing recorded.'
@@ -439,11 +449,11 @@ export function BrowserSettingsPage({
             disabled={historyCount === 0}
             onClick={() => void clearHistory()}
           >
-            Clear History
+            {t('browserApp.clearHistory')}
           </Button>
         </SettingsRow>
         <SettingsRow
-          label="Bookmarks"
+          label={t('browserApp.bookmarks')}
           description={
             bookmarkCount === 0
               ? 'Nothing kept.'
@@ -455,7 +465,7 @@ export function BrowserSettingsPage({
             disabled={bookmarkCount === 0}
             onClick={() => void clearBookmarks()}
           >
-            Remove All
+            {t('browserApp.removeAll')}
           </Button>
         </SettingsRow>
       </SettingsGroup>

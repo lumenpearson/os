@@ -1,3 +1,4 @@
+import { useT } from '@lumen/kernel/react';
 /**
  * The list pane: the book cut into A–Z sections, with the index rail beside it
  * when the window is wide enough to hold one.
@@ -41,6 +42,7 @@ export function ContactList({
   onSelect,
   onOpen,
 }: ContactListProps) {
+  const t = useT();
   const rows = useRef(new Map<string, HTMLButtonElement>());
   const headers = useRef(new Map<string, HTMLLIElement>());
 
@@ -123,7 +125,7 @@ export function ContactList({
   return (
     <div className="flex min-h-0 min-w-0 flex-1">
       <div className="lumen-scroll min-w-0 flex-1">
-        <ul aria-label="Contacts" onKeyDown={onKeyDown}>
+        <ul aria-label={t('contactsApp.contacts')} onKeyDown={onKeyDown}>
           {sections.map((section) => (
             <li
               key={section.letter}
@@ -162,7 +164,7 @@ export function ContactList({
 
       {rail && (
         <nav
-          aria-label="Jump to letter"
+          aria-label={t('contactsApp.jumpToLetter')}
           className="flex shrink-0 flex-col justify-center gap-px border-l border-rule px-0.5 py-1"
         >
           {SECTION_LETTERS.map((letter) => (
@@ -219,6 +221,7 @@ function Row({
   onOpen,
   register,
 }: RowProps) {
+  const t = useT();
   const name = displayName(contact);
   const second = subtitle(contact, field);
   const matched = field !== undefined && field !== 'name';
@@ -245,7 +248,7 @@ function Row({
     >
       <span className="flex min-w-0 flex-1 flex-col">
         <span className="truncate-1 text-base text-ink">
-          {name || <span className="text-ink-3">No name</span>}
+          {name || <span className="text-ink-3">{t('contactsApp.noName')}</span>}
         </span>
         {second !== '' && (
           <span className={cx('truncate-1 text-sm text-ink-3', matched && 'mono text-2xs')}>
@@ -253,7 +256,7 @@ function Row({
           </span>
         )}
       </span>
-      {isMe && <span className="mono shrink-0 text-2xs text-ink-3">Me</span>}
+      {isMe && <span className="mono shrink-0 text-2xs text-ink-3">{t('contactsApp.me')}</span>}
       {contact.favourite && <Star aria-hidden className="size-3 shrink-0 text-accent" />}
     </button>
   );

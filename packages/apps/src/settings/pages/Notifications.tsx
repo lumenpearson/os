@@ -1,4 +1,4 @@
-import { useApps, useSetting } from '@lumen/kernel/react';
+import { useApps, useSetting, useT } from '@lumen/kernel/react';
 import { Button, SettingsGroup, SettingsPage, Slider, Switch } from '@lumen/ui';
 import { Send } from 'lucide-react';
 import { formatTime, useNotify } from '../../_sdk';
@@ -6,19 +6,17 @@ import { setMuted } from '../logic';
 import { Row } from '../Row';
 
 export function NotificationsPage() {
+  const t = useT();
   const [notifications, patch] = useSetting('notifications');
   const apps = useApps();
   const notify = useNotify();
   return (
-    <SettingsPage
-      title="Notifications"
-      description="Banners, sounds, and which apps may interrupt you."
-    >
-      <SettingsGroup title="Banners">
+    <SettingsPage title={t('settings.notifications')} description={t('notificationsPage.intro')}>
+      <SettingsGroup title={t('notificationsPage.banners')}>
         <Row
           id="notifications.dnd"
-          label="Do Not Disturb"
-          description="Notifications go to the centre silently."
+          label={t('notificationsPage.doNotDisturb')}
+          description={t('notificationsPage.doNotDisturbHint')}
         >
           <Switch
             checked={notifications.doNotDisturb}
@@ -27,23 +25,23 @@ export function NotificationsPage() {
         </Row>
         <Row
           id="notifications.previews"
-          label="Show previews"
-          description="Message text on the banner and lock screen."
+          label={t('notificationsPage.showPreviews')}
+          description={t('notificationsPage.showPreviewsHint')}
         >
           <Switch
             checked={notifications.showPreviews}
             onChange={(e) => patch({ showPreviews: e.target.checked })}
           />
         </Row>
-        <Row id="notifications.sound" label="Play sound">
+        <Row id="notifications.sound" label={t('notificationsPage.playSound')}>
           <Switch
             checked={notifications.sound}
             onChange={(e) => patch({ sound: e.target.checked })}
           />
         </Row>
-        <Row id="notifications.duration" label="Banner duration" stacked>
+        <Row id="notifications.duration" label={t('notificationsPage.duration')} stacked>
           <Slider
-            aria-label="Banner duration"
+            aria-label={t('notificationsPage.duration')}
             min={2}
             max={15}
             step={1}
@@ -52,7 +50,7 @@ export function NotificationsPage() {
             showValue={(v) => `${v} s`}
           />
         </Row>
-        <Row id="notifications.test" label="Send a test notification">
+        <Row id="notifications.test" label={t('notificationsPage.test')}>
           <Button
             size="sm"
             icon={<Send className="size-3.5" />}
@@ -63,16 +61,16 @@ export function NotificationsPage() {
               )
             }
           >
-            Send
+            {t('notificationsPage.send')}
           </Button>
         </Row>
       </SettingsGroup>
 
       <SettingsGroup
-        title="Apps"
-        description="Off keeps an app's notifications out of the centre and off the screen."
+        title={t('notificationsPage.apps')}
+        description={t('notificationsPage.appsHint')}
       >
-        <Row id="notifications.apps" label="Allow notifications from" stacked>
+        <Row id="notifications.apps" label={t('notificationsPage.allowFrom')} stacked>
           <div role="list" className="w-full divide-y divide-rule rounded-sm border border-rule">
             {apps.map((app) => {
               const Icon = app.icon;

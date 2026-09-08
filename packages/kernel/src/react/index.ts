@@ -4,13 +4,20 @@ import {
   type ReactNode,
   useContext,
   useEffect,
+  useMemo,
   useState,
 } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useRegistryStore } from '../apps/registry';
 import { useClipboardStore } from '../clipboard/store';
 import { events, type KernelEvents } from '../events';
-import { type MessageKey, resolveLanguage, translate } from '../i18n';
+import {
+  type PluralKey,
+  resolveLanguage,
+  type Translate,
+  translate,
+  translateCount,
+} from '../i18n';
 import type { Kernel } from '../kernel';
 import { useLogStore } from '../log/store';
 import { useMenuStore } from '../menu/store';
@@ -76,11 +83,37 @@ export function useRuntimeSettings(): Settings {
  * Outside a component use `t` from the kernel barrel, which reads the store
  * once and does not subscribe at all.
  */
-export function useT(): (key: MessageKey, vars?: Record<string, string | number>) => string {
+export function useT(): Translate {
   const language = useSettingsStore((s) =>
     resolveLanguage({ language: s.settings.region.language, locale: s.settings.region.locale }),
   );
-  return (key, vars) => translate(language, key, vars);
+  /*
+   * Memoised on the language, and it matters. A translator built fresh on
+   * every render is a new value every time, so any `useMemo` or `useEffect`
+   * that honestly lists it as a dependency would re-run on every render —
+   * which is at best the loss of the memo and at worst a loop. It only
+   * changes when the language does, and now it says so.
+   */
+  return useMemo(() => (key, vars) => translate(language, key, vars), [language]);
+}
+
+/**
+ * The same, for a message that has to agree with a count. Subscribed to the
+ * language exactly as `useT` is, and for the same reason.
+ */
+export function usePlural(): (
+  base: PluralKey,
+  count: number,
+  vars?: Record<string, string | number>,
+) => string {
+  const language = useSettingsStore((s) =>
+    resolveLanguage({ language: s.settings.region.language, locale: s.settings.region.locale }),
+  );
+  // Stable for the same reason `useT` is.
+  return useMemo(
+    () => (base, count, vars) => translateCount(language, base, count, vars),
+    [language],
+  );
 }
 
 export function useSetting<K extends keyof Settings>(

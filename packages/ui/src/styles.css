@@ -3,6 +3,60 @@
  * control resets, menu keyboard states. Everything else is Tailwind utilities
  * over the tokens in @lumen/tokens.
  */
+
+/*
+ * What the pointer says it is over.
+ *
+ * The browser's own answer is the arrow for everything except a link and a
+ * text field, which leaves a desktop where a button, a tab, a menu item and
+ * the paragraph beside them all look equally inert. These rules say what each
+ * one does before it is clicked.
+ *
+ * In the base layer on purpose: it is the default a component may overrule,
+ * and a Tailwind utility — `cursor-grab` on something being dragged, say —
+ * still wins, because utilities are ordered after base. `CursorLayer` reads
+ * the computed value, so the drawn cursor and the native one change together
+ * and neither needs its own table.
+ */
+@layer base {
+  button,
+  summary,
+  select,
+  a[href],
+  [role="button"],
+  [role="tab"],
+  [role="link"],
+  [role="option"],
+  [role="switch"],
+  [role="checkbox"],
+  [role="radio"],
+  [role="menuitem"],
+  [role="menuitemcheckbox"],
+  [role="menuitemradio"],
+  input[type="button"],
+  input[type="submit"],
+  input[type="reset"],
+  input[type="checkbox"],
+  input[type="radio"],
+  input[type="range"],
+  input[type="color"],
+  input[type="file"] {
+    cursor: pointer;
+  }
+
+  /* The click will do nothing, and the pointer says so before it happens. */
+  :disabled,
+  [aria-disabled="true"] {
+    cursor: not-allowed;
+  }
+
+  /* A caret goes here. The browser says this of an `input` already, but not
+     of the element an editor builds out of a div. */
+  [contenteditable="true"] {
+    cursor: text;
+  }
+}
+
 @layer components {
   .lumen-control {
     /* In rem, so the control grows with the text it holds: at Font size 130 %

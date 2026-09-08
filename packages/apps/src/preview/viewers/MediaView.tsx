@@ -1,3 +1,4 @@
+import { useT } from '@lumen/kernel/react';
 import { IconButton, Slider } from '@lumen/ui';
 import {
   AlertTriangle,
@@ -55,6 +56,7 @@ export function MediaView({
   onDuration,
   onSize,
 }: MediaViewProps) {
+  const t = useT();
   const media = useRef<HTMLMediaElement | null>(null);
   const [playing, setPlaying] = useState(false);
   const [position, setPosition] = useState(0);
@@ -208,7 +210,7 @@ export function MediaView({
         {failed && (
           <p className="absolute inset-x-0 bottom-0 flex items-center justify-center gap-2 bg-surface px-4 py-2 text-base text-ink-2">
             <AlertTriangle aria-hidden className="size-4 shrink-0 text-ink-3" />
-            This runtime cannot play the file's format.
+            {t('previewApp.cannotPlay')}
           </p>
         )}
       </div>
@@ -222,7 +224,7 @@ export function MediaView({
         </span>
         <Slider
           className="min-w-16 flex-1"
-          aria-label="Seek"
+          aria-label={t('previewApp.seek')}
           aria-valuetext={`${formatDuration(position)} of ${formatDuration(duration)}`}
           min={0}
           max={seekable ? duration : 1}
@@ -240,7 +242,7 @@ export function MediaView({
         {!narrow && (
           <Slider
             className="w-20 shrink-0"
-            aria-label="Volume"
+            aria-label={t('previewApp.volume')}
             aria-valuetext={`${Math.round(volume * 100)} percent`}
             min={0}
             max={1}

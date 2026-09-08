@@ -1,4 +1,4 @@
-import { useKernel, useSetting } from '@lumen/kernel/react';
+import { useKernel, usePlatform, useSetting, useT } from '@lumen/kernel/react';
 import { EmptyState, type MenuEntry, useLatest } from '@lumen/ui';
 import { join } from '@lumen/vfs';
 import { Compass } from 'lucide-react';
@@ -64,6 +64,7 @@ import {
   START_URL,
   titleFor,
 } from './url';
+import { usePageViews } from './usePageViews';
 
 const DATA_FILE = '.config/browser.json';
 const EXPORT_NAME = 'bookmarks.json';
@@ -75,6 +76,7 @@ const EXPORT_NAME = 'bookmarks.json';
  * about why rather than pretending.
  */
 export default function Browser({ args }: AppProps) {
+  const t = useT();
   const kernel = useKernel();
   const [keyboard] = useSetting('keyboard');
   const shortcutLabel = useShortcutLabel();
@@ -139,16 +141,18 @@ export default function Browser({ args }: AppProps) {
 
   // ── the visit log ───────────────────────────────────────────────────────
 
-  // One entry per load, keyed by the generation the tab was on when it was
-  // written, so a reload updates the entry instead of stacking duplicates.
-  const logged = useRef(new Map<string, number>());
+  // One entry per load, keyed by the generation and the address the tab was
+  // on when it was written, so a reload updates the entry instead of stacking
+  // duplicates.
+  const logged = useRef(new Map<string, string>());
   useEffect(() => {
     const live = new Set(state.tabs.map((t) => t.id));
     for (const id of logged.current.keys()) if (!live.has(id)) logged.current.delete(id);
     if (!settings.keepHistory) return;
     for (const t of state.tabs) {
-      if (isInternalUrl(t.url) || logged.current.get(t.id) === t.generation) continue;
-      logged.current.set(t.id, t.generation);
+      const visited = `${t.generation}:${t.url}`;
+      if (isInternalUrl(t.url) || logged.current.get(t.id) === visited) continue;
+      logged.current.set(t.id, visited);
       const visit = { id: nextId('visit'), url: t.url, title: t.title, visitedAt: Date.now() };
       update((d) => ({ ...d, history: recordVisit(d.history, visit) }));
     }
@@ -176,9 +180,75 @@ export default function Browser({ args }: AppProps) {
     (target?: string) => dispatch({ type: 'open', id: nextTabId(), url: target }),
     [],
   );
+  /*
+   * The desktop host can put a real web view in its window, and that view is
+   * a browser: every site opens in it, including the ones that refuse to be
+   * framed. In a browser tab there is no such window to put one in, so the
+   * page goes in a frame and the relay behind Settings → Browser is what
+   * opens a site that says no.
+   */
+  const platform = usePlatform();
+  const nativePages = platform.capabilities.pageViews;
+  const platformPages = platform.pages;
+  const pageArea = useRef<HTMLDivElement>(null);
+  usePageViews({
+    tabs: state.tabs,
+    activeId: state.activeId,
+    enabled: nativePages,
+    host: pageArea,
+  });
+
   const onLoaded = useCallback((id: string) => dispatch({ type: 'loaded', id }), []);
   const onBlocked = useCallback((id: string) => dispatch({ type: 'blocked', id }), []);
   const onReloadTab = useCallback((id: string) => dispatch({ type: 'reload', id }), []);
+  /*
+   * A relayed page asking to follow one of its own links. The browser goes
+   * there exactly as it would if the address had been typed, so the tab's
+   * history, its address bar and its Back button all follow, and the next
+   * page is judged on its own headers rather than inheriting this one's.
+   */
+  const onMoved = useCallback(
+    (id: string, target: string) => dispatch({ type: 'navigate', id, url: target }),
+    [],
+  );
+
+  /*
+   * What the real web views are doing. A view follows links, redirects and
+   * form submissions on its own, so the tab is told where it ended up rather
+   * than being asked first: the address bar, the history and the Back button
+   * all read from the tab, and this is what keeps them true. A link that asks
+   * for a window of its own gets a tab, which is where a browser puts it.
+   */
+  useEffect(() => {
+    if (!nativePages) return;
+    let stop: (() => void) | null = null;
+    let live = true;
+    void platformPages
+      .listen((report) => {
+        if (report.kind === 'popup') {
+          if (report.url) dispatch({ type: 'open', id: nextTabId(), url: report.url });
+          return;
+        }
+        const tab = stateRef.current.tabs.find((t) => t.id === report.id);
+        if (!tab) return;
+        if (report.kind === 'title') {
+          if (report.title) dispatch({ type: 'title', id: report.id, title: report.title });
+          return;
+        }
+        if (report.url && report.url !== tab.url && !isInternalUrl(report.url)) {
+          dispatch({ type: 'navigate', id: report.id, url: report.url });
+        }
+        if (report.kind === 'loaded') dispatch({ type: 'loaded', id: report.id });
+      })
+      .then((off) => {
+        if (live) stop = off;
+        else off();
+      });
+    return () => {
+      live = false;
+      stop?.();
+    };
+  }, [nativePages, platformPages, stateRef]);
 
   const alwaysOutside = useCallback(
     (target: string) =>
@@ -228,12 +298,12 @@ export default function Browser({ args }: AppProps) {
   const chooseDownloads = useCallback(async () => {
     const chosen = await pickFile({
       mode: 'folder',
-      title: 'Choose a downloads folder',
+      title: t('browserApp.chooseDownloads'),
       startDir: kernel.home,
-      confirmLabel: 'Use Folder',
+      confirmLabel: t('browserApp.useFolder'),
     });
     if (typeof chosen === 'string') updateSettings({ downloadsDir: chosen });
-  }, [pickFile, kernel.home, updateSettings]);
+  }, [pickFile, kernel.home, updateSettings, t]);
 
   const exportBookmarks = useCallback(async () => {
     const dir = downloadsPath(settings, kernel.home);
@@ -355,20 +425,20 @@ export default function Browser({ args }: AppProps) {
     () => [
       {
         id: 'new-tab',
-        label: 'New Tab',
+        label: t('browserApp.newTab'),
         shortcut: shortcutLabel(SHORTCUTS.newTab),
         onSelect: actions.newTab,
       },
       { type: 'separator' },
       {
         id: 'zoom-out',
-        label: 'Zoom Out',
+        label: t('browserApp.zoomOut'),
         shortcut: shortcutLabel(SHORTCUTS.zoomOut),
         onSelect: actions.zoomOut,
       },
       {
         id: 'zoom-in',
-        label: 'Zoom In',
+        label: t('browserApp.zoomIn'),
         shortcut: shortcutLabel(SHORTCUTS.zoomIn),
         onSelect: actions.zoomIn,
       },
@@ -382,20 +452,20 @@ export default function Browser({ args }: AppProps) {
       { type: 'separator' },
       {
         id: 'history',
-        label: 'History',
+        label: t('browserApp.history'),
         shortcut: shortcutLabel(SHORTCUTS.showHistory),
         onSelect: actions.showHistory,
       },
       {
         id: 'bookmarks',
-        label: 'Bookmarks',
+        label: t('browserApp.bookmarks'),
         shortcut: shortcutLabel(SHORTCUTS.showBookmarks),
         onSelect: actions.showBookmarks,
       },
       {
         id: 'bookmarks-bar',
         type: 'checkbox',
-        label: 'Show Bookmarks Bar',
+        label: t('browserApp.showBookmarksBar'),
         shortcut: shortcutLabel(SHORTCUTS.bookmarksBar),
         checked: settings.showBookmarksBar,
         onSelect: actions.toggleBookmarksBar,
@@ -403,12 +473,12 @@ export default function Browser({ args }: AppProps) {
       { type: 'separator' },
       {
         id: 'settings',
-        label: 'Browser Settings',
+        label: t('browserApp.settings'),
         shortcut: shortcutLabel(SHORTCUTS.settings),
         onSelect: actions.showSettings,
       },
     ],
-    [actions, shortcutLabel, zoom, settings.defaultZoom, settings.showBookmarksBar],
+    [actions, shortcutLabel, zoom, settings.defaultZoom, settings.showBookmarksBar, t],
   );
 
   // ── the page ────────────────────────────────────────────────────────────
@@ -476,7 +546,7 @@ export default function Browser({ args }: AppProps) {
         return (
           <EmptyState
             icon={<Compass />}
-            title="No page at this address"
+            title={t('browserApp.noPageHere')}
             description={`Lumen has no internal page called ${url}.`}
           />
         );
@@ -516,9 +586,14 @@ export default function Browser({ args }: AppProps) {
       {settings.showBookmarksBar && (
         <FavoritesBar bookmarks={data.bookmarks} onOpen={go} onShowAll={actions.showBookmarks} />
       )}
-      <div className="relative min-h-0 flex-1 overflow-hidden bg-surface">
+      <div ref={pageArea} className="relative min-h-0 flex-1 overflow-hidden bg-surface">
+        {/*
+          A real web view replaces the frame, but not the panel that stands in
+          for a site the user sends outside Lumen: there is no page to show
+          for one, on any host, and the panel is how the tab says so.
+        */}
         {state.tabs.map((t) =>
-          isInternalUrl(t.url) ? null : (
+          isInternalUrl(t.url) || (nativePages && t.status !== 'external') ? null : (
             <Frame
               key={t.id}
               tab={t}
@@ -529,6 +604,7 @@ export default function Browser({ args }: AppProps) {
               onLoaded={onLoaded}
               onBlocked={onBlocked}
               onReload={onReloadTab}
+              onMoved={onMoved}
               onOpenOutside={openOutside}
               onAlwaysOutside={alwaysOutside}
               onStopOutside={stopOutside}

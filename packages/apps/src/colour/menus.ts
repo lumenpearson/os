@@ -1,3 +1,4 @@
+import { t } from '@lumen/kernel';
 /**
  * The menubar, built from one snapshot of state so a command does the same
  * thing whether it is clicked, picked from a menu or typed as a shortcut.
@@ -28,9 +29,9 @@ export interface ColourMenuActions {
 const separator: MenuItemTemplate = { type: 'separator' };
 
 const PANELS: ReadonlyArray<{ id: PanelId; label: string; shortcut: string }> = [
-  { id: 'contrast', label: 'Contrast', shortcut: 'Mod+1' },
-  { id: 'palette', label: 'Palette', shortcut: 'Mod+2' },
-  { id: 'vision', label: 'Colour Vision', shortcut: 'Mod+3' },
+  { id: 'contrast', label: t('colour.contrast'), shortcut: 'Mod+1' },
+  { id: 'palette', label: t('colour.palette'), shortcut: 'Mod+2' },
+  { id: 'vision', label: t('colour.vision'), shortcut: 'Mod+3' },
 ];
 
 export function buildColourMenus(
@@ -40,22 +41,22 @@ export function buildColourMenus(
   return [
     {
       id: 'file',
-      label: 'File',
-      items: [{ id: 'close', label: 'Close', shortcut: 'Mod+W', onSelect: actions.close }],
+      label: t('menu.file'),
+      items: [{ id: 'close', label: t('menu.close'), shortcut: 'Mod+W', onSelect: actions.close }],
     },
     {
       id: 'edit',
-      label: 'Edit',
+      label: t('menu.edit'),
       items: [
         {
           id: 'copy-hex',
-          label: 'Copy Hex',
+          label: t('colour.copyHex'),
           shortcut: 'Mod+C',
           onSelect: () => actions.copy('hex'),
         },
         {
           id: 'copy-as',
-          label: 'Copy As',
+          label: t('colour.copyAs'),
           type: 'submenu',
           submenu: NOTATIONS.map<MenuItemTemplate>((notation) => ({
             id: `copy-${notation.id}`,
@@ -66,7 +67,7 @@ export function buildColourMenus(
         separator,
         {
           id: 'paste',
-          label: 'Paste Colour',
+          label: t('colour.pasteColour'),
           shortcut: 'Mod+V',
           enabled: state.canPaste,
           onSelect: actions.paste,
@@ -75,24 +76,24 @@ export function buildColourMenus(
     },
     {
       id: 'colour',
-      label: 'Colour',
+      label: t('colour.colour'),
       items: [
         {
           id: 'add-swatch',
-          label: 'Add to Palette',
+          label: t('colour.addToPalette'),
           shortcut: 'Mod+D',
           onSelect: actions.addToPalette,
         },
         {
           id: 'swap',
-          label: 'Swap With Comparison',
+          label: t('colour.swapWithComparison'),
           shortcut: 'Mod+E',
           onSelect: actions.swapWithComparison,
         },
         separator,
         {
           id: 'clear-palette',
-          label: 'Remove All Swatches',
+          label: t('colour.removeAll'),
           danger: true,
           enabled: state.hasSwatches,
           onSelect: actions.clearPalette,
@@ -101,7 +102,7 @@ export function buildColourMenus(
     },
     {
       id: 'view',
-      label: 'View',
+      label: t('menu.view'),
       items: PANELS.map<MenuItemTemplate>((panel) => ({
         id: `panel-${panel.id}`,
         type: 'radio',

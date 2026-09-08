@@ -1,9 +1,13 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
   acceptableTarget,
+  frameAncestors,
+  frameRule,
   fromThisApp,
   isPrivateAddress,
   loadPage,
+  matchesOrigin,
+  probePage,
   withBase,
   withoutScripts,
 } from './page';
@@ -106,9 +110,23 @@ describe('withBase', () => {
     expect(out.indexOf('<base')).toBeLessThan(out.indexOf('<title>'));
   });
 
-  it('leaves a document that already says where its links point', () => {
-    const html = '<html><head><base href="https://other.example/"></head></html>';
-    expect(withBase(html, 'https://a.example/')).toBe(html);
+  it('makes the base a document wrote for itself absolute against the site', () => {
+    // Served from Lumen's origin, a relative base would point every
+    // stylesheet and image at Lumen, and the page would arrive unstyled.
+    const out = withBase(
+      '<html><head><base href="/assets/"></head></html>',
+      'https://a.example/b/c',
+    );
+    expect(out).toContain('<base href="https://a.example/assets/">');
+    expect(out).not.toContain('href="/assets/"');
+  });
+
+  it('leaves an absolute base of the document’s own alone', () => {
+    const out = withBase(
+      '<html><head><base href="https://other.example/"></head></html>',
+      'https://a.example/',
+    );
+    expect(out).toContain('<base href="https://other.example/">');
   });
 
   it('makes a head for a document that has none', () => {
@@ -125,6 +143,181 @@ describe('withBase', () => {
 
   it('escapes a quote in the address rather than ending the attribute', () => {
     expect(withBase('<html></html>', 'https://a.example/"onload="x')).not.toContain('"onload="x');
+  });
+
+  it('carries the script that keeps the page’s own links inside the browser', () => {
+    // Without this the `<base>` above sends every link straight back to the
+    // site, into a frame the site refuses, and the page goes blank on the
+    // first click. LU-1609.
+    const out = withBase('<html><head></head></html>', 'https://a.example/');
+    expect(out).toContain('page-ready');
+    expect(out).toContain('page-moved');
+    expect(out).toContain('addEventListener("click"');
+    expect(out).toContain('addEventListener("submit"');
+  });
+});
+
+describe('frameAncestors', () => {
+  it('finds the directive among the others', () => {
+    expect(frameAncestors("default-src 'self'; frame-ancestors 'none'")).toEqual([["'none'"]]);
+  });
+
+  it('reads every policy in a header that carries more than one', () => {
+    expect(frameAncestors("frame-ancestors 'self', script-src 'x'; frame-ancestors *")).toEqual([
+      ["'self'"],
+      ['*'],
+    ]);
+  });
+
+  it('says nothing when the header does not mention frames', () => {
+    expect(frameAncestors("default-src 'self'")).toEqual([]);
+  });
+});
+
+describe('matchesOrigin', () => {
+  const lumen = new URL('https://lumen.example');
+
+  it('takes a wildcard, a scheme and a host that name us', () => {
+    for (const source of ['*', 'https:', 'lumen.example', 'https://lumen.example', '*.example']) {
+      expect(matchesOrigin(source, lumen), source).toBe(true);
+    }
+  });
+
+  it('refuses the keywords, which are always about the site and never about us', () => {
+    for (const source of ["'self'", "'none'", "'unsafe-inline'"]) {
+      expect(matchesOrigin(source, lumen), source).toBe(false);
+    }
+  });
+
+  it('refuses a host, scheme or port that is somebody else', () => {
+    for (const source of [
+      'other.example',
+      'https://lumen.example:8443',
+      '*.other.example',
+      'https://sub.lumen.example',
+    ]) {
+      expect(matchesOrigin(source, lumen), source).toBe(false);
+    }
+  });
+
+  it('lets an http source cover an https origin, as the grammar does', () => {
+    expect(matchesOrigin('http:', lumen)).toBe(true);
+    expect(matchesOrigin('http://lumen.example', lumen)).toBe(true);
+    expect(matchesOrigin('https:', new URL('http://lumen.example'))).toBe(false);
+  });
+
+  it('matches a port when it is the one being served on', () => {
+    const dev = new URL('http://localhost:5173');
+    expect(matchesOrigin('http://localhost:5173', dev)).toBe(true);
+    expect(matchesOrigin('localhost', dev)).toBe(false);
+    expect(matchesOrigin('localhost:*', dev)).toBe(true);
+  });
+});
+
+describe('frameRule', () => {
+  const asking = 'https://lumen.example';
+
+  it('lets a page with neither header be framed', () => {
+    expect(frameRule({}, asking)).toEqual({ framable: true, header: null });
+  });
+
+  it('reads the refusals a site actually sends', () => {
+    for (const frameOptions of ['DENY', 'SAMEORIGIN', 'sameorigin', 'Deny']) {
+      const rule = frameRule({ frameOptions }, asking);
+      expect(rule.framable, frameOptions).toBe(false);
+      expect(rule.header, frameOptions).toBe(`X-Frame-Options: ${frameOptions}`);
+    }
+  });
+
+  it('reads a frame-ancestors list that leaves us out, and one that lets us in', () => {
+    const refused = frameRule(
+      { policy: "default-src 'self'; frame-ancestors 'self' https://vercel.com" },
+      asking,
+    );
+    expect(refused.framable).toBe(false);
+    expect(refused.header).toBe(
+      "Content-Security-Policy: frame-ancestors 'self' https://vercel.com",
+    );
+    expect(frameRule({ policy: 'frame-ancestors https://lumen.example' }, asking).framable).toBe(
+      true,
+    );
+  });
+
+  it('obeys frame-ancestors over X-Frame-Options, as a browser does', () => {
+    expect(frameRule({ frameOptions: 'DENY', policy: 'frame-ancestors *' }, asking).framable).toBe(
+      true,
+    );
+  });
+
+  it('reads anything it cannot make sense of as a refusal', () => {
+    // Being wrong this way costs a page fetched through Lumen that need not
+    // have been; being wrong the other way costs a blank frame.
+    expect(frameRule({ frameOptions: 'ALLOW-FROM https://other.example' }, asking).framable).toBe(
+      false,
+    );
+    expect(frameRule({ frameOptions: 'nonsense' }, asking).framable).toBe(false);
+    expect(frameRule({ frameOptions: 'DENY' }, 'not a url').framable).toBe(false);
+  });
+});
+
+describe('probePage', () => {
+  const answering = (headers: Record<string, string>) =>
+    vi.fn(async () => new Response('<html>a whole page</html>', { status: 200, headers }));
+
+  it('asks the site and reports what it said, without reading the page', async () => {
+    const doFetch = answering({ 'x-frame-options': 'SAMEORIGIN' });
+    const probe = await probePage(
+      'https://example.com/',
+      'https://lumen.example',
+      doFetch as unknown as typeof fetch,
+    );
+    expect(probe).toEqual({
+      frame: 'refused',
+      header: 'X-Frame-Options: SAMEORIGIN',
+      url: 'https://example.com/',
+    });
+  });
+
+  it('says a site that allows it allows it', async () => {
+    const probe = await probePage(
+      'https://example.com/',
+      'https://lumen.example',
+      answering({}) as unknown as typeof fetch,
+    );
+    expect(probe.frame).toBe('allowed');
+    expect(probe.header).toBeNull();
+  });
+
+  it('answers about where the address ended up, not where it started', async () => {
+    let hop = 0;
+    const doFetch = vi.fn(async () => {
+      hop += 1;
+      return hop === 1
+        ? new Response(null, { status: 301, headers: { location: 'https://www.example.com/' } })
+        : new Response('<html></html>', { status: 200, headers: { 'x-frame-options': 'DENY' } });
+    });
+    const probe = await probePage(
+      'https://example.com/',
+      'https://lumen.example',
+      doFetch as unknown as typeof fetch,
+    );
+    expect(probe.url).toBe('https://www.example.com/');
+    expect(probe.frame).toBe('refused');
+  });
+
+  it('is unknown, not refused, when nobody could ask', async () => {
+    // The relay runs on this same server, so "we could not reach it" is not
+    // something relaying can fix — the browser should try the site itself.
+    const doFetch = vi.fn(async () => {
+      throw new Error('ECONNREFUSED');
+    });
+    const probe = await probePage(
+      'https://example.com/',
+      'https://lumen.example',
+      doFetch as unknown as typeof fetch,
+    );
+    expect(probe.frame).toBe('unknown');
+    expect(probe.problem).toContain('could not be reached');
   });
 });
 

@@ -1,3 +1,4 @@
+import { useT } from '@lumen/kernel/react';
 import { cx } from '@lumen/ui';
 import type { DirEntry } from '@lumen/vfs';
 import type { ReactNode } from 'react';
@@ -39,13 +40,14 @@ export function GridView({
   onRenameCommit,
   onRenameCancel,
 }: GridViewProps) {
+  const t = useT();
   return (
     <EntryListBox
       marquee
       entries={entries}
       selection={selection}
       layout="grid"
-      label="Files"
+      label={t('filesApp.name')}
       className={cx(
         'lumen-scroll h-full content-start gap-1 p-3',
         entries.length > 0 ? cx('grid', CELL[iconSize]) : 'flex flex-col',

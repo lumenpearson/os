@@ -15,7 +15,7 @@ import { AVATAR_PRESETS, passwordStrength, useUsersStore } from '@lumen/kernel';
 
 type AvatarId = (typeof AVATAR_PRESETS)[number]['id'];
 
-import { useClipboard, useCurrentUser, useKernel } from '@lumen/kernel/react';
+import { useClipboard, useCurrentUser, useKernel, useT } from '@lumen/kernel/react';
 import { Avatar, Button, cx, Dialog, Field, Input, SettingsGroup, useDialogs } from '@lumen/ui';
 import { Check, Copy, UserPlus } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
@@ -23,6 +23,7 @@ import { useApp } from '../../_sdk';
 import { ChoiceGroup, Row, Value } from '../Row';
 
 export function ProfilesGroup() {
+  const t = useT();
   const kernel = useKernel();
   const dialogs = useDialogs();
   const current = useCurrentUser();
@@ -31,9 +32,9 @@ export function ProfilesGroup() {
 
   const remove = async (id: string, name: string) => {
     const ok = await dialogs.confirm({
-      title: `Remove ${name}?`,
-      message: 'Their files stay where they are. Only the way in goes.',
-      confirmLabel: 'Remove',
+      title: t('profilesPage.removeTitle', { name }),
+      message: t('profilesPage.filesStayShort'),
+      confirmLabel: t('profilesPage.remove'),
       danger: true,
     });
     if (!ok) return;
@@ -49,7 +50,7 @@ export function ProfilesGroup() {
   };
 
   return (
-    <SettingsGroup title="People">
+    <SettingsGroup title={t('profilesPage.people')}>
       {accounts.map((account) => {
         const isCurrent = account.id === current?.id;
         return (
@@ -61,14 +62,14 @@ export function ProfilesGroup() {
           >
             <Avatar name={account.name} src={account.avatar} size={28} />
             {isCurrent ? (
-              <Value>Signed in</Value>
+              <Value>{t('profilesPage.signedIn')}</Value>
             ) : (
               <>
                 <Button size="sm" onClick={() => void kernel.switchUser(account.id)}>
-                  Switch to
+                  {t('profilesPage.switchTo')}
                 </Button>
                 <Button size="sm" onClick={() => void remove(account.id, account.name)}>
-                  Remove
+                  {t('profilesPage.remove')}
                 </Button>
               </>
             )}
@@ -77,11 +78,11 @@ export function ProfilesGroup() {
       })}
       <Row
         id="security.addProfile"
-        label="Add a profile"
-        description="A separate account with its own home directory and password."
+        label={t('profilesPage.addProfile')}
+        description={t('profilesPage.addProfileHint')}
       >
         <Button size="sm" icon={<UserPlus className="size-3.5" />} onClick={() => setAdding(true)}>
-          Add a profile…
+          {t('profilesPage.addButton')}
         </Button>
       </Row>
       {adding && <AddProfileDialog open onClose={() => setAdding(false)} />}
@@ -90,6 +91,7 @@ export function ProfilesGroup() {
 }
 
 function AddProfileDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const t = useT();
   const kernel = useKernel();
   const { container } = useApp();
   const [name, setName] = useState('');
@@ -138,12 +140,12 @@ function AddProfileDialog({ open, onClose }: { open: boolean; onClose: () => voi
       actions={
         made ? (
           <Button variant="primary" onClick={close}>
-            Done
+            {t('action.done')}
           </Button>
         ) : (
           <>
             <Button onClick={close} disabled={busy}>
-              Cancel
+              {t('action.cancel')}
             </Button>
             <Button
               variant="primary"
@@ -151,7 +153,7 @@ function AddProfileDialog({ open, onClose }: { open: boolean; onClose: () => voi
               disabled={!canSubmit}
               onClick={() => void submit()}
             >
-              Create profile
+              {t('profilesPage.create')}
             </Button>
           </>
         )
@@ -167,15 +169,15 @@ function AddProfileDialog({ open, onClose }: { open: boolean; onClose: () => voi
             void submit();
           }}
         >
-          <Field label="Name">
+          <Field label={t('profilesPage.name')}>
             <Input
               data-autofocus
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Grace Hopper"
+              placeholder={t('profilesPage.namePlaceholder')}
             />
           </Field>
-          <Field label="Password">
+          <Field label={t('profilesPage.password')}>
             <Input
               type="password"
               autoComplete="new-password"
@@ -184,7 +186,10 @@ function AddProfileDialog({ open, onClose }: { open: boolean; onClose: () => voi
             />
             <Strength password={password} />
           </Field>
-          <Field label="Confirm password" error={mismatch ? 'Passwords do not match.' : null}>
+          <Field
+            label={t('profilesPage.confirmPassword')}
+            error={mismatch ? 'Passwords do not match.' : null}
+          >
             <Input
               type="password"
               autoComplete="new-password"
@@ -193,11 +198,11 @@ function AddProfileDialog({ open, onClose }: { open: boolean; onClose: () => voi
               invalid={mismatch}
             />
           </Field>
-          <Field label="Hint" hint="Shown on the lock screen after a wrong attempt.">
+          <Field label={t('profilesPage.hint')} hint={t('profilesPage.hintShown')}>
             <Input value={hint} onChange={(e) => setHint(e.target.value)} />
           </Field>
           <ChoiceGroup
-            label="Picture"
+            label={t('profilesPage.picture')}
             labelHidden
             value={avatar}
             onChange={setAvatar}
@@ -220,7 +225,7 @@ function AddProfileDialog({ open, onClose }: { open: boolean; onClose: () => voi
             </p>
           )}
           <button type="submit" className="sr-only" tabIndex={-1}>
-            Submit
+            {t('action.submit')}
           </button>
         </form>
       )}
@@ -247,6 +252,7 @@ function Strength({ password }: { password: string }) {
 }
 
 function RecoveryKey({ value }: { value: string }) {
+  const t = useT();
   const { copyText } = useClipboard();
   const [copied, setCopied] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -266,14 +272,13 @@ function RecoveryKey({ value }: { value: string }) {
   return (
     <div className="flex flex-col gap-3">
       <p className="text-ink-2">
-        This unlocks the new account if its password is forgotten. Give it to whoever the account is
-        for.
+        {t('profilesPage.keyUnlocks')} {t('profilesPage.giveItTo')}
       </p>
       <div className="mono select-text rounded-md border border-rule bg-canvas px-3 py-3 text-center text-md tracking-wider text-ink">
         {value}
       </div>
       <div className="flex items-center justify-between gap-3">
-        <p className="text-sm text-danger">Shown once. Write it down before closing this dialog.</p>
+        <p className="text-sm text-danger">{t('profilesPage.keyShownOnce')}</p>
         <Button
           size="sm"
           icon={copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}

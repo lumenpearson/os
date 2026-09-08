@@ -1,6 +1,6 @@
 // deslop-ignore-file 19 the usage bars are pills, the shape the Progress atom uses
 import { TRASH_DIR } from '@lumen/kernel';
-import { usePlatform, useVfs } from '@lumen/kernel/react';
+import { usePlatform, useT, useVfs } from '@lumen/kernel/react';
 import {
   Button,
   IconButton,
@@ -24,6 +24,7 @@ interface StorageState {
 }
 
 export function StoragePage() {
+  const t = useT();
   const vfs = useVfs();
   const platform = usePlatform();
   const dialogs = useDialogs();
@@ -67,8 +68,8 @@ export function StoragePage() {
 
   const emptyTrash = async () => {
     const ok = await dialogs.confirm({
-      title: 'Empty the Trash?',
-      message: 'Items in the Trash are deleted permanently.',
+      title: t('storagePage.emptyTrashConfirm'),
+      message: t('storagePage.trashPermanent'),
       confirmLabel: 'Empty Trash',
       danger: true,
     });
@@ -82,7 +83,7 @@ export function StoragePage() {
     if (!next) return;
     setHostHome(next);
     await dialogs.alert({
-      title: 'Restart required',
+      title: t('storagePage.restartRequired'),
       message: `Files now live in ${next}. Restart Lumen OS to use the new location.`,
     });
   };
@@ -92,8 +93,8 @@ export function StoragePage() {
   const largest = rows[0]?.size ?? 0;
 
   return (
-    <SettingsPage title="Storage" description="What is using space in the file system.">
-      <SettingsGroup title="Usage">
+    <SettingsPage title={t('settings.storage')} description={t('storagePage.intro')}>
+      <SettingsGroup title={t('storagePage.usage')}>
         <Row
           id="storage.usage"
           label={
@@ -105,22 +106,26 @@ export function StoragePage() {
         >
           <div className="flex w-full items-center gap-3">
             {usage?.quota ? (
-              <Progress value={usage.used / usage.quota} label="Storage used" className="flex-1" />
+              <Progress
+                value={usage.used / usage.quota}
+                label={t('storagePage.used')}
+                className="flex-1"
+              />
             ) : (
-              <span className="text-sm text-ink-2">The host does not report a quota.</span>
+              <span className="text-sm text-ink-2">{t('storagePage.noQuota')}</span>
             )}
             {loading ? (
               <Spinner size={14} />
             ) : (
-              <IconButton label="Refresh" size="sm" onClick={() => void refresh()}>
+              <IconButton label={t('storagePage.refresh')} size="sm" onClick={() => void refresh()}>
                 <RefreshCw />
               </IconButton>
             )}
           </div>
         </Row>
-        <Row id="storage.breakdown" label="By folder" stacked>
+        <Row id="storage.breakdown" label={t('storagePage.byFolder')} stacked>
           {rows.length === 0 && !loading ? (
-            <p className="text-sm text-ink-2">The file system is empty.</p>
+            <p className="text-sm text-ink-2">{t('storagePage.empty')}</p>
           ) : (
             <table className="w-full border-collapse text-base">
               <tbody className="divide-y divide-rule">
@@ -152,7 +157,7 @@ export function StoragePage() {
         </Row>
         <Row
           id="storage.trash"
-          label="Trash"
+          label={t('storagePage.trash')}
           description={trash ? `${formatBytes(trash.size)} in the Trash.` : 'The Trash is empty.'}
         >
           <Button
@@ -161,17 +166,17 @@ export function StoragePage() {
             disabled={!trash || trash.size === 0}
             onClick={() => void emptyTrash()}
           >
-            Empty Trash…
+            {t('storagePage.emptyTrashButton')}
           </Button>
         </Row>
       </SettingsGroup>
 
       {relocatable && (
         <SettingsGroup
-          title="Home directory"
-          description="Where Lumen OS keeps its files on this computer."
+          title={t('storagePage.homeDirectory')}
+          description={t('storagePage.homeDirectoryHint')}
         >
-          <Row id="storage.home" label="Location" stacked>
+          <Row id="storage.home" label={t('storagePage.location')} stacked>
             <Value className="break-all">{hostHome ?? '…'}</Value>
             <div className="flex gap-2">
               <Button
@@ -179,32 +184,32 @@ export function StoragePage() {
                 icon={<FolderOpen className="size-3.5" />}
                 onClick={() => void changeHome()}
               >
-                Change location…
+                {t('storagePage.changeLocation')}
               </Button>
               <Button
                 size="sm"
                 icon={<ExternalLink className="size-3.5" />}
                 onClick={() => void platform.shell.revealHome()}
               >
-                Reveal in Explorer
+                {t('storagePage.revealInExplorer')}
               </Button>
             </div>
           </Row>
         </SettingsGroup>
       )}
 
-      <SettingsGroup title="Details">
+      <SettingsGroup title={t('storagePage.details')}>
         <Row
           id="storage.details"
-          label="Storage app"
-          description="Largest files, file types and a folder-by-folder view."
+          label={t('storagePage.storageApp')}
+          description={t('storagePage.storageAppHint')}
         >
           <Button
             size="sm"
             icon={<HardDrive className="size-3.5" />}
             onClick={() => launch('lumen.storage')}
           >
-            Open Storage
+            {t('storagePage.openStorage')}
           </Button>
         </Row>
       </SettingsGroup>

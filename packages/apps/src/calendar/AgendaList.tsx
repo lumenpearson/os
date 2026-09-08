@@ -1,3 +1,4 @@
+import { useT } from '@lumen/kernel/react';
 /**
  * The agenda: every occurrence in the range as one scrolling list, grouped by
  * day. Days with nothing on them are left out — an agenda is what is happening,
@@ -28,14 +29,15 @@ export function AgendaList({
   onSelect,
   onOpen,
 }: AgendaListProps) {
+  const t = useT();
   const groups = groupByDay(occurrences);
 
   if (groups.length === 0) {
     return (
       <EmptyState
         icon={<CalendarDays className="size-5" />}
-        title="Nothing scheduled"
-        description="The next three months are clear. Press Mod+N to add something."
+        title={t('calendarApp.nothingScheduled')}
+        description={t('calendarApp.threeMonthsClear')}
       />
     );
   }

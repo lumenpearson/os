@@ -1,3 +1,4 @@
+import { t } from '@lumen/kernel';
 /**
  * The menubar, built from one snapshot of state so a command does the same
  * thing whether it is clicked in the detail pane, picked from the menu or
@@ -42,42 +43,42 @@ export function buildCharmapMenus(
   return [
     {
       id: 'file',
-      label: 'File',
-      items: [{ id: 'close', label: 'Close', shortcut: 'Mod+W', onSelect: actions.close }],
+      label: t('menu.file'),
+      items: [{ id: 'close', label: t('menu.close'), shortcut: 'Mod+W', onSelect: actions.close }],
     },
     {
       id: 'edit',
-      label: 'Edit',
+      label: t('menu.edit'),
       items: [
         {
           id: 'copy-character',
-          label: 'Copy Character',
+          label: t('charmap.copyCharacter'),
           shortcut: 'Mod+C',
           enabled: state.hasCharacter,
           onSelect: actions.copyCharacter,
         },
         {
           id: 'copy-code-point',
-          label: 'Copy Code Point',
+          label: t('charmap.copyCodePoint'),
           shortcut: 'Shift+Mod+C',
           enabled: state.hasCharacter,
           onSelect: actions.copyCodePoint,
         },
         {
           id: 'copy-html',
-          label: 'Copy HTML Entity',
+          label: t('charmap.copyHtmlEntity'),
           enabled: state.hasCharacter,
           onSelect: actions.copyHtml,
         },
         {
           id: 'copy-javascript',
-          label: 'Copy JavaScript Escape',
+          label: t('charmap.copyJsEscape'),
           enabled: state.hasCharacter,
           onSelect: actions.copyJavaScript,
         },
         {
           id: 'copy-css',
-          label: 'Copy CSS Escape',
+          label: t('charmap.copyCssEscape'),
           enabled: state.hasCharacter,
           onSelect: actions.copyCss,
         },
@@ -92,7 +93,7 @@ export function buildCharmapMenus(
         separator,
         {
           id: 'clear-recents',
-          label: 'Clear Recents',
+          label: t('menu.clearRecents'),
           enabled: state.hasRecents,
           onSelect: actions.clearRecents,
         },
@@ -100,37 +101,37 @@ export function buildCharmapMenus(
     },
     {
       id: 'go',
-      label: 'Go',
+      label: t('menu.go'),
       items: [
-        { id: 'go-pinned', label: 'Pinned', onSelect: actions.showPinned },
-        { id: 'go-recent', label: 'Recent', onSelect: actions.showRecent },
+        { id: 'go-pinned', label: t('charmap.pinned'), onSelect: actions.showPinned },
+        { id: 'go-recent', label: t('charmap.recent'), onSelect: actions.showRecent },
         separator,
         {
           id: 'previous-block',
-          label: 'Previous Block',
+          label: t('charmap.previousBlock'),
           shortcut: 'Mod+[',
           enabled: state.inBlock,
           onSelect: () => actions.stepBlock(-1),
         },
         {
           id: 'next-block',
-          label: 'Next Block',
+          label: t('charmap.nextBlock'),
           shortcut: 'Mod+]',
           enabled: state.inBlock,
           onSelect: () => actions.stepBlock(1),
         },
         separator,
-        { id: 'find', label: 'Find', shortcut: 'Mod+F', onSelect: actions.focusSearch },
+        { id: 'find', label: t('menu.find'), shortcut: 'Mod+F', onSelect: actions.focusSearch },
       ],
     },
     {
       id: 'view',
-      label: 'View',
+      label: t('menu.view'),
       items: [
         {
           id: 'sidebar',
           type: 'checkbox',
-          label: 'Blocks Sidebar',
+          label: t('charmap.blocksSidebar'),
           shortcut: 'Mod+B',
           checked: state.showSidebar,
           onSelect: actions.toggleSidebar,

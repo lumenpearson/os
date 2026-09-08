@@ -18,6 +18,7 @@ import { AppProvider, FileDialogProvider } from '../_sdk';
 import Browser from './Browser';
 import { type BrowserData, DEFAULT_BOOKMARKS, DEFAULT_DATA } from './data';
 import definition from './index';
+import { forgetProbes } from './probe';
 
 const Dummy = () => null;
 
@@ -72,6 +73,23 @@ async function goTo(user: ReturnType<typeof userEvent.setup>, text: string) {
 }
 
 beforeEach(async () => {
+  /*
+   * The frame asks Lumen whether a site allows framing before it decides
+   * between the site and the relay, and that question goes over the network.
+   * These tests are about the browser around the frame, so the answer is
+   * "the site allows it" and the frame is the site's own, as it reads here.
+   */
+  forgetProbes();
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(
+      async () =>
+        new Response(JSON.stringify({ frame: 'allowed', header: null, url: '' }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        }),
+    ),
+  );
   const platform = createWebPlatform();
   kernel = createKernel({
     platform: { ...platform, adapter: new MemoryAdapter() },
@@ -82,7 +100,10 @@ beforeEach(async () => {
   home = kernel.home;
 });
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.unstubAllGlobals();
+});
 
 describe('the window', () => {
   it('opens one tab on the new-tab page', async () => {
@@ -305,7 +326,8 @@ describe('settings', () => {
     const { windowId } = mount();
     await goTo(user, 'ada.example');
     const frame = () => document.querySelector('iframe');
-    expect(frame()).toHaveAttribute('sandbox', 'allow-scripts allow-forms');
+    // The frame appears once the site has answered about being framed.
+    await waitFor(() => expect(frame()).toHaveAttribute('sandbox', 'allow-scripts allow-forms'));
 
     command(windowId, 'file', 'new-tab').onSelect?.();
     await openSettings(user);

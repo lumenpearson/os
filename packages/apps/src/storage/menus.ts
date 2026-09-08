@@ -4,14 +4,14 @@
  * nothing to act on stands down instead of failing quietly.
  */
 
-import type { MenuItemTemplate, MenuTemplate } from '@lumen/kernel';
+import { type MenuItemTemplate, type MenuTemplate, type MessageKey, t } from '@lumen/kernel';
 
 export type StorageView = 'overview' | 'folders' | 'files';
 
-export const VIEW_LABELS: Record<StorageView, string> = {
-  overview: 'Overview',
-  folders: 'By Folder',
-  files: 'Largest Files',
+export const VIEW_KEYS: Record<StorageView, MessageKey> = {
+  overview: 'storageApp.overview',
+  folders: 'storageApp.byFolder',
+  files: 'storageApp.largestFiles',
 };
 
 export interface StorageMenuState {
@@ -42,18 +42,18 @@ export function buildStorageMenus(
   return [
     {
       id: 'file',
-      label: 'File',
+      label: t('menu.file'),
       items: [
         {
           id: 'file.rescan',
-          label: 'Rescan',
+          label: t('storage.rescan'),
           shortcut: 'Mod+R',
           enabled: !state.scanning,
           onSelect: actions.rescan,
         },
         {
           id: 'file.cancel',
-          label: 'Cancel Scan',
+          label: t('storage.cancelScan'),
           shortcut: 'Mod+.',
           enabled: state.scanning,
           onSelect: actions.cancelScan,
@@ -61,23 +61,23 @@ export function buildStorageMenus(
         separator,
         {
           id: 'file.empty-trash',
-          label: 'Empty Trash',
+          label: t('menu.emptyTrash'),
           danger: true,
           enabled: state.trashBytes !== null && state.trashBytes > 0 && !state.scanning,
           onSelect: actions.emptyTrash,
         },
         separator,
-        { id: 'file.close', label: 'Close', shortcut: 'Mod+W', onSelect: actions.close },
+        { id: 'file.close', label: t('menu.close'), shortcut: 'Mod+W', onSelect: actions.close },
       ],
     },
     {
       id: 'view',
-      label: 'View',
+      label: t('menu.view'),
       items: [
         {
           id: 'view.overview',
           type: 'radio',
-          label: VIEW_LABELS.overview,
+          label: t(VIEW_KEYS.overview),
           shortcut: 'Mod+1',
           checked: state.view === 'overview',
           onSelect: () => actions.showView('overview'),
@@ -85,7 +85,7 @@ export function buildStorageMenus(
         {
           id: 'view.folders',
           type: 'radio',
-          label: VIEW_LABELS.folders,
+          label: t(VIEW_KEYS.folders),
           shortcut: 'Mod+2',
           checked: state.view === 'folders',
           onSelect: () => actions.showView('folders'),
@@ -93,7 +93,7 @@ export function buildStorageMenus(
         {
           id: 'view.files',
           type: 'radio',
-          label: VIEW_LABELS.files,
+          label: t(VIEW_KEYS.files),
           shortcut: 'Mod+3',
           checked: state.view === 'files',
           onSelect: () => actions.showView('files'),
@@ -101,7 +101,7 @@ export function buildStorageMenus(
         separator,
         {
           id: 'view.up',
-          label: 'Go Up',
+          label: t('storage.goUp'),
           shortcut: 'Mod+Up',
           enabled: state.view === 'folders' && state.canGoUp,
           onSelect: actions.goUp,

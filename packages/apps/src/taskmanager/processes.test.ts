@@ -1,4 +1,5 @@
 import type { Pid, Process, WindowId, WindowState } from '@lumen/kernel';
+import { type Translate, translate } from '@lumen/kernel';
 import { describe, expect, it } from 'vitest';
 import {
   buildProcessRows,
@@ -218,6 +219,9 @@ describe('windowSignature', () => {
 });
 
 describe('endProcessMessage', () => {
+  // The wording comes from the dictionary, so the test names the language it
+  // is reading rather than depending on the one the settings store holds.
+  const en: Translate = (key, vars) => translate('en', key, vars);
   const row = (pid: Pid, over: Partial<ProcessRow> = {}): ProcessRow => ({
     pid,
     appId: 'lumen.editor',
@@ -231,27 +235,31 @@ describe('endProcessMessage', () => {
   });
 
   it('asks nothing when there is no unsaved work and the monitor is not in the selection', () => {
-    expect(endProcessMessage([row(1), row(2)], 99)).toBeNull();
+    expect(endProcessMessage([row(1), row(2)], 99, en)).toBeNull();
   });
 
   it('names the one app with unsaved work', () => {
-    const message = endProcessMessage([row(1, { unsaved: true, name: 'Notes' })], 99);
+    const message = endProcessMessage([row(1, { unsaved: true, name: 'Notes' })], 99, en);
     expect(message).toBe('Notes has unsaved changes. Ending it loses them.');
   });
 
   it('counts several apps with unsaved work', () => {
-    const message = endProcessMessage([row(1, { unsaved: true }), row(2, { unsaved: true })], 99);
+    const message = endProcessMessage(
+      [row(1, { unsaved: true }), row(2, { unsaved: true })],
+      99,
+      en,
+    );
     expect(message).toContain('2 apps have unsaved changes');
   });
 
   it('warns when the selection includes this window', () => {
-    expect(endProcessMessage([row(1)], 1)).toBe(
+    expect(endProcessMessage([row(1)], 1, en)).toBe(
       'Task Manager is in the selection, so this window closes.',
     );
   });
 
   it('says both things when both apply', () => {
-    const message = endProcessMessage([row(1, { unsaved: true, name: 'Notes' }), row(2)], 2);
+    const message = endProcessMessage([row(1, { unsaved: true, name: 'Notes' }), row(2)], 2, en);
     expect(message).toContain('Notes has unsaved changes');
     expect(message).toContain('Task Manager is in the selection');
   });

@@ -1,3 +1,4 @@
+import { useT } from '@lumen/kernel/react';
 import { Divider, IconButton, Select, type SelectOption, Toolbar, ToolbarGroup } from '@lumen/ui';
 import {
   AlignCenter,
@@ -49,11 +50,12 @@ export function WriterToolbar({
   findOpen,
   actions,
 }: WriterToolbarProps) {
+  const t = useT();
   return (
     <Toolbar dense className="gap-1 overflow-x-auto overflow-y-hidden">
       <ToolbarGroup>
         <IconButton
-          label="Undo"
+          label={t('writerApp.undo')}
           disabled={readOnly}
           onMouseDown={keepSelection}
           onClick={actions.undo}
@@ -61,7 +63,7 @@ export function WriterToolbar({
           <Undo2 />
         </IconButton>
         <IconButton
-          label="Redo"
+          label={t('writerApp.redo')}
           disabled={readOnly}
           onMouseDown={keepSelection}
           onClick={actions.redo}
@@ -71,7 +73,7 @@ export function WriterToolbar({
       </ToolbarGroup>
       <Rule />
       <Select
-        aria-label="Paragraph style"
+        aria-label={t('writerApp.paragraphStyle')}
         size="sm"
         className="shrink-0"
         options={BLOCK_OPTIONS}
@@ -82,7 +84,7 @@ export function WriterToolbar({
       <Rule />
       <ToolbarGroup>
         <IconButton
-          label="Bold"
+          label={t('writerApp.bold')}
           active={editor.bold}
           disabled={readOnly}
           onMouseDown={keepSelection}
@@ -91,7 +93,7 @@ export function WriterToolbar({
           <Bold />
         </IconButton>
         <IconButton
-          label="Italic"
+          label={t('writerApp.italic')}
           active={editor.italic}
           disabled={readOnly}
           onMouseDown={keepSelection}
@@ -100,7 +102,7 @@ export function WriterToolbar({
           <Italic />
         </IconButton>
         <IconButton
-          label="Underline"
+          label={t('writerApp.underline')}
           active={editor.underline}
           disabled={readOnly}
           onMouseDown={keepSelection}
@@ -109,7 +111,7 @@ export function WriterToolbar({
           <Underline />
         </IconButton>
         <IconButton
-          label="Strikethrough"
+          label={t('writerApp.strikethrough')}
           active={editor.strike}
           disabled={readOnly}
           onMouseDown={keepSelection}
@@ -121,7 +123,7 @@ export function WriterToolbar({
       <Rule />
       <ToolbarGroup>
         <IconButton
-          label="Bulleted list"
+          label={t('writerApp.bulletedList')}
           active={editor.bulletList}
           disabled={readOnly}
           onMouseDown={keepSelection}
@@ -130,7 +132,7 @@ export function WriterToolbar({
           <List />
         </IconButton>
         <IconButton
-          label="Numbered list"
+          label={t('writerApp.numberedList')}
           active={editor.numberList}
           disabled={readOnly}
           onMouseDown={keepSelection}
@@ -139,7 +141,7 @@ export function WriterToolbar({
           <ListOrdered />
         </IconButton>
         <IconButton
-          label="Outdent"
+          label={t('writerApp.outdent')}
           disabled={readOnly}
           onMouseDown={keepSelection}
           onClick={actions.outdent}
@@ -147,7 +149,7 @@ export function WriterToolbar({
           <IndentDecrease />
         </IconButton>
         <IconButton
-          label="Indent"
+          label={t('writerApp.indent')}
           disabled={readOnly}
           onMouseDown={keepSelection}
           onClick={actions.indent}
@@ -158,7 +160,7 @@ export function WriterToolbar({
       <Rule />
       <ToolbarGroup>
         <IconButton
-          label="Align left"
+          label={t('writerApp.alignLeft')}
           active={editor.align === 'left'}
           disabled={readOnly}
           onMouseDown={keepSelection}
@@ -167,7 +169,7 @@ export function WriterToolbar({
           <AlignLeft />
         </IconButton>
         <IconButton
-          label="Align centre"
+          label={t('writerApp.alignCentre')}
           active={editor.align === 'center'}
           disabled={readOnly}
           onMouseDown={keepSelection}
@@ -176,7 +178,7 @@ export function WriterToolbar({
           <AlignCenter />
         </IconButton>
         <IconButton
-          label="Align right"
+          label={t('writerApp.alignRight')}
           active={editor.align === 'right'}
           disabled={readOnly}
           onMouseDown={keepSelection}
@@ -188,7 +190,7 @@ export function WriterToolbar({
       <Rule />
       <ToolbarGroup>
         <IconButton
-          label="Link"
+          label={t('writerApp.link')}
           active={editor.link}
           disabled={readOnly}
           onMouseDown={keepSelection}
@@ -197,7 +199,7 @@ export function WriterToolbar({
           <Link />
         </IconButton>
         <IconButton
-          label="Clear formatting"
+          label={t('writerApp.clearFormatting')}
           disabled={readOnly}
           onMouseDown={keepSelection}
           onClick={actions.clearFormatting}
@@ -205,7 +207,7 @@ export function WriterToolbar({
           <RemoveFormatting />
         </IconButton>
         <IconButton
-          label="Horizontal rule"
+          label={t('writerApp.horizontalRule')}
           disabled={readOnly}
           onMouseDown={keepSelection}
           onClick={actions.insertRule}
@@ -213,7 +215,7 @@ export function WriterToolbar({
           <Minus />
         </IconButton>
         <IconButton
-          label="Insert date"
+          label={t('writerApp.insertDate')}
           disabled={readOnly}
           onMouseDown={keepSelection}
           onClick={actions.insertDate}
@@ -223,10 +225,14 @@ export function WriterToolbar({
       </ToolbarGroup>
       <div className="flex-1" />
       <ToolbarGroup>
-        <IconButton label="Find" active={findOpen} onClick={actions.find}>
+        <IconButton label={t('writerApp.find')} active={findOpen} onClick={actions.find}>
           <Search />
         </IconButton>
-        <IconButton label="Reading mode" active={readingMode} onClick={actions.toggleReadingMode}>
+        <IconButton
+          label={t('writerApp.readingMode')}
+          active={readingMode}
+          onClick={actions.toggleReadingMode}
+        >
           <BookOpen />
         </IconButton>
       </ToolbarGroup>
@@ -235,6 +241,7 @@ export function WriterToolbar({
 }
 
 function Rule() {
+  const _t = useT();
   return (
     <span className="mx-0.5 flex h-4 shrink-0 items-stretch">
       <Divider vertical />

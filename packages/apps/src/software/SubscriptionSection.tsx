@@ -10,6 +10,7 @@
  * write to one file under the user's home.
  */
 
+import { useSettingsStore } from '@lumen/kernel';
 import { Button } from '@lumen/ui';
 import { Check } from 'lucide-react';
 import type { AccountState, CurrencyCode, PaidPlanId, Plan } from './account';
@@ -30,13 +31,25 @@ import {
  * wrong in the rest. One formatter per currency, kept, since building one is
  * the expensive part.
  */
-const MONEY = new Map<CurrencyCode, Intl.NumberFormat>();
+const MONEY = new Map<string, Intl.NumberFormat>();
 
-export function formatMoney(minor: number, currency: CurrencyCode): string {
-  let format = MONEY.get(currency);
+/**
+ * The region Lumen is set to, not the one the host machine happens to have.
+ *
+ * `Intl` with no locale takes the machine's, so a price printed beside an
+ * interface set to English came out as `5,00 £` on a Russian Windows — the
+ * one number on the page that ignored the setting above it.
+ */
+export function formatMoney(
+  minor: number,
+  currency: CurrencyCode,
+  locale = useSettingsStore.getState().settings.region.locale,
+): string {
+  const key = `${locale}|${currency}`;
+  let format = MONEY.get(key);
   if (!format) {
-    format = new Intl.NumberFormat(undefined, { style: 'currency', currency });
-    MONEY.set(currency, format);
+    format = new Intl.NumberFormat(locale, { style: 'currency', currency });
+    MONEY.set(key, format);
   }
   return format.format(minor / 100);
 }

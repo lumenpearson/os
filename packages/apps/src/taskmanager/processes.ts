@@ -2,16 +2,24 @@
  * The process table's row model, derived from the kernel's process and window
  * stores. Everything here is pure so the table can be tested without a kernel.
  */
-import type { AppId, Pid, Process, WindowId, WindowState } from '@lumen/kernel';
+import type {
+  AppId,
+  MessageKey,
+  Pid,
+  Process,
+  Translate,
+  WindowId,
+  WindowState,
+} from '@lumen/kernel';
 import type { SortValue } from './sort';
 
 export type ProcessStateId = 'active' | 'running' | 'minimized' | 'background';
 
-export const PROCESS_STATE_LABEL: Record<ProcessStateId, string> = {
-  active: 'Active',
-  running: 'Running',
-  minimized: 'Minimized',
-  background: 'Background',
+export const PROCESS_STATE_KEYS: Record<ProcessStateId, MessageKey> = {
+  active: 'taskManagerApp.stateActive',
+  running: 'taskManagerApp.stateRunning',
+  minimized: 'taskManagerApp.stateMinimized',
+  background: 'taskManagerApp.stateBackground',
 };
 
 /** Sort order for the State column: most active first. */
@@ -125,18 +133,22 @@ export function windowSignature(
  * Why ending these processes needs a confirmation, or null when it does not.
  * Ending an app with no unsaved work is as reversible as closing it.
  */
-export function endProcessMessage(rows: readonly ProcessRow[], selfPid: Pid): string | null {
+export function endProcessMessage(
+  rows: readonly ProcessRow[],
+  selfPid: Pid,
+  t: Translate,
+): string | null {
   const unsaved = rows.filter((r) => r.unsaved);
   const self = rows.some((r) => r.pid === selfPid);
   if (unsaved.length === 0 && !self) return null;
   const parts: string[] = [];
   const first = unsaved[0];
   if (unsaved.length === 1 && first) {
-    parts.push(`${first.name} has unsaved changes. Ending it loses them.`);
+    parts.push(t('taskManagerApp.unsavedOne', { name: first.name }));
   } else if (unsaved.length > 1) {
-    parts.push(`${unsaved.length} apps have unsaved changes. Ending them loses the changes.`);
+    parts.push(t('taskManagerApp.unsavedMany', { count: unsaved.length }));
   }
-  if (self) parts.push('Task Manager is in the selection, so this window closes.');
+  if (self) parts.push(t('taskManagerApp.selfInSelection'));
   return parts.join(' ');
 }
 

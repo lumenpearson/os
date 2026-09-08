@@ -1,4 +1,5 @@
-import { useKernel, useVfs } from '@lumen/kernel/react';
+import type { Translate } from '@lumen/kernel';
+import { useKernel, usePlural, useT, useVfs } from '@lumen/kernel/react';
 import { Button, useDialogs } from '@lumen/ui';
 import { basename } from '@lumen/vfs';
 import { FileWarning } from 'lucide-react';
@@ -77,11 +78,17 @@ const APP_ID = 'lumen.writer';
 const SYNC_DELAY = 180;
 const EMPTY_STATS: TextStats = { words: 0, characters: 0, charactersNoSpaces: 0, minutes: 0 };
 
-const EXPORTS: Record<ExportFormat, { label: string; extension: string }> = {
-  html: { label: 'HTML', extension: '.html' },
-  markdown: { label: 'Markdown', extension: '.md' },
-  text: { label: 'Plain Text', extension: '.txt' },
-};
+/*
+ * A function of the translator, not a table built at import: a table would
+ * keep whatever language was in force when the module first loaded.
+ */
+const exportFormats = (
+  t: Translate,
+): Record<ExportFormat, { label: string; extension: string }> => ({
+  html: { label: t('writerApp.html'), extension: '.html' },
+  markdown: { label: t('writerApp.markdown'), extension: '.md' },
+  text: { label: t('writerApp.plainText'), extension: '.txt' },
+});
 
 const SHORTCUT_HELP: Array<[string, string]> = [
   ['Mod+S', 'Save'],
@@ -102,6 +109,8 @@ const SHORTCUT_HELP: Array<[string, string]> = [
 ];
 
 export default function Writer({ args: launchArgs }: AppProps) {
+  const t = useT();
+  const plural = usePlural();
   const args = useArgs(launchArgs);
   const argPath = typeof args.path === 'string' ? args.path : null;
 
@@ -331,7 +340,7 @@ export default function Writer({ args: launchArgs }: AppProps) {
           recursive: true,
         });
       } catch (cause: unknown) {
-        await dialogs.alert({ title: 'Could not save', message: messageOf(cause) });
+        await dialogs.alert({ title: t('writerApp.couldNotSave'), message: messageOf(cause) });
         return false;
       }
       savedHtml.current = html;
@@ -342,19 +351,19 @@ export default function Writer({ args: launchArgs }: AppProps) {
       kernel.addRecent(target, APP_ID);
       return true;
     },
-    [currentHtml, vfs, dialogs, kernel],
+    [currentHtml, vfs, dialogs, kernel, t],
   );
 
   const saveAs = useCallback(async (): Promise<boolean> => {
     const chosen = await pickFile({
       mode: 'save',
-      title: 'Save Document',
+      title: t('writerApp.saveDocument'),
       defaultName: suggestedName(path, WRITER_EXTENSION),
       extensions: SAVE_EXTENSIONS,
-      confirmLabel: 'Save',
+      confirmLabel: t('menu.save'),
     });
     return typeof chosen === 'string' ? saveTo(chosen) : false;
-  }, [pickFile, path, saveTo]);
+  }, [pickFile, path, saveTo, t]);
 
   const save = useCallback(async (): Promise<boolean> => {
     if (path === null || readOnly) return saveAs();
@@ -365,23 +374,23 @@ export default function Writer({ args: launchArgs }: AppProps) {
     if (!dirty) return true;
     const choice = await dialogs.choose({
       title: `Save changes to ${documentName}?`,
-      message: 'Changes since the last save will be lost.',
+      message: t('writerApp.changesLost'),
       buttons: [
-        { id: 'discard', label: "Don't Save" },
-        { id: 'cancel', label: 'Cancel' },
-        { id: 'save', label: 'Save', variant: 'primary' },
+        { id: 'discard', label: t('action.dontSave') },
+        { id: 'cancel', label: t('action.cancel') },
+        { id: 'save', label: t('menu.save'), variant: 'primary' },
       ],
     });
     if (choice === 'save') return save();
     return choice === 'discard';
-  }, [dirty, documentName, dialogs, save]);
+  }, [dirty, documentName, dialogs, save, t]);
 
   useCloseGuard(dirty ? confirmDiscard : null);
 
   const openFile = useCallback(async () => {
     const chosen = await pickFile({
       mode: 'open',
-      title: 'Open Document',
+      title: t('writerApp.openDocument'),
       extensions: OPEN_EXTENSIONS,
     });
     if (typeof chosen !== 'string') return;
@@ -394,18 +403,18 @@ export default function Writer({ args: launchArgs }: AppProps) {
       setError(null);
       kernel.addRecent(chosen, APP_ID);
     } catch (cause: unknown) {
-      await dialogs.alert({ title: 'Could not open', message: messageOf(cause) });
+      await dialogs.alert({ title: t('writerApp.couldNotOpen'), message: messageOf(cause) });
     }
-  }, [pickFile, confirmDiscard, vfs, applyHtml, kernel, dialogs]);
+  }, [pickFile, confirmDiscard, vfs, applyHtml, kernel, dialogs, t]);
 
   const exportAs = useCallback(
     async (format: ExportFormat) => {
-      const { label, extension } = EXPORTS[format];
+      const { label, extension } = exportFormats(t)[format];
       const chosen = await pickFile({
         mode: 'save',
         title: `Export as ${label}`,
         defaultName: suggestedName(path, extension),
-        confirmLabel: 'Export',
+        confirmLabel: t('writerApp.export'),
       });
       if (typeof chosen !== 'string') return;
       const html = currentHtml();
@@ -419,10 +428,10 @@ export default function Writer({ args: launchArgs }: AppProps) {
         await vfs.writeText(chosen, body, { recursive: true });
         notify('Export finished', basename(chosen));
       } catch (cause: unknown) {
-        await dialogs.alert({ title: 'Could not export', message: messageOf(cause) });
+        await dialogs.alert({ title: t('writerApp.couldNotExport'), message: messageOf(cause) });
       }
     },
-    [pickFile, path, currentHtml, title, vfs, notify, dialogs],
+    [pickFile, path, currentHtml, title, vfs, notify, dialogs, t],
   );
 
   // ── formatting ──────────────────────────────────────────────────────────
@@ -435,9 +444,9 @@ export default function Writer({ args: launchArgs }: AppProps) {
     const collapsed = selection === null || selection.isCollapsed;
     const answer = await dialogs.prompt({
       title: existing === null ? 'Add link' : 'Edit link',
-      message: 'Web address. http, https and mailto only.',
+      message: t('writerApp.webAddress'),
       defaultValue: existing?.getAttribute('href') ?? '',
-      placeholder: 'https://example.com',
+      placeholder: t('writerApp.urlPlaceholder'),
       confirmLabel: existing === null ? 'Add' : 'Update',
       mono: true,
       validate: (value) =>
@@ -463,7 +472,7 @@ export default function Writer({ args: launchArgs }: AppProps) {
     if (collapsed) exec('insertHTML', anchorHtml(href, href));
     else exec('createLink', href);
     markEdited();
-  }, [readOnly, readingMode, dialogs, focusPage, markEdited]);
+  }, [readOnly, readingMode, dialogs, focusPage, markEdited, t]);
 
   const removeLink = useCallback(() => {
     const page = pageRef.current;
@@ -607,7 +616,7 @@ export default function Writer({ args: launchArgs }: AppProps) {
       },
       showShortcuts: () =>
         void dialogs.alert({
-          title: 'Keyboard shortcuts',
+          title: t('writerApp.shortcuts'),
           message: (
             <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-1 text-base">
               {SHORTCUT_HELP.map(([keys, description]) => (
@@ -621,9 +630,8 @@ export default function Writer({ args: launchArgs }: AppProps) {
         }),
       showAbout: () =>
         void dialogs.alert({
-          title: 'Writer',
-          message:
-            'A word processor for Lumen. Documents are saved as .lwr files: JSON holding the document HTML, which exports to HTML, Markdown and plain text.',
+          title: t('writerApp.document'),
+          message: t('writerApp.about'),
         }),
     }),
     [
@@ -643,6 +651,7 @@ export default function Writer({ args: launchArgs }: AppProps) {
       clearFormatting,
       dialogs,
       shortcutLabel,
+      t,
     ],
   );
 
@@ -728,11 +737,11 @@ export default function Writer({ args: launchArgs }: AppProps) {
         <div className="flex shrink-0 items-center gap-2 border-b border-rule bg-surface-2 px-3 py-1.5">
           <FileWarning aria-hidden className="size-3.5 shrink-0 text-ink-2" />
           <p className="text-sm text-ink-2">
-            RTF is imported as text. Save as {WRITER_EXTENSION} to edit it.
+            {t('writerApp.rtfImported', { extension: WRITER_EXTENSION })}
           </p>
           <div className="flex-1" />
           <Button size="sm" onClick={() => void saveAs()}>
-            Save As…
+            {t('writerApp.saveAs')}
           </Button>
         </div>
       )}
@@ -743,7 +752,7 @@ export default function Writer({ args: launchArgs }: AppProps) {
             role="textbox"
             tabIndex={0}
             aria-multiline="true"
-            aria-label="Document"
+            aria-label={t('writerApp.document')}
             aria-readonly={!editable}
             spellCheck
             contentEditable={editable}
@@ -757,20 +766,20 @@ export default function Writer({ args: launchArgs }: AppProps) {
       </div>
       <div className="flex h-7 shrink-0 items-center gap-4 border-t border-rule bg-canvas px-3">
         <span className="mono shrink-0 text-xs text-ink-2 tabular-nums">
-          {stats.words.toLocaleString()} words
+          {plural('count.words', stats.words)}
         </span>
         <span className="mono shrink-0 text-xs text-ink-2 tabular-nums">
-          {stats.characters.toLocaleString()} characters
+          {plural('count.characters', stats.characters)}
         </span>
         {stats.minutes > 0 && (
           <span className="mono shrink-0 text-xs text-ink-2 tabular-nums">
-            {stats.minutes} min read
+            {plural('count.minRead', stats.minutes)}
           </span>
         )}
         <div className="flex-1" />
         {readingMode && (
           <Button size="sm" variant="ghost" onClick={() => setReadingMode(false)}>
-            Exit reading mode
+            {t('writerApp.exitReading')}
           </Button>
         )}
         <span className="mono truncate-1 text-xs text-ink-3">

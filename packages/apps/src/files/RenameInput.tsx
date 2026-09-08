@@ -1,4 +1,4 @@
-import { useVfs } from '@lumen/kernel/react';
+import { useT, useVfs } from '@lumen/kernel/react';
 import { cx } from '@lumen/ui';
 import { basename, dirname } from '@lumen/vfs';
 import { useEffect, useRef, useState } from 'react';
@@ -23,6 +23,7 @@ export function RenameInput({
   align = 'left',
   className,
 }: RenameInputProps) {
+  const t = useT();
   const vfs = useVfs();
   const name = basename(path);
   const [value, setValue] = useState(name);
@@ -65,7 +66,7 @@ export function RenameInput({
       <input
         ref={ref}
         value={value}
-        aria-label="New name"
+        aria-label={t('filesApp.newName')}
         aria-invalid={error ? true : undefined}
         spellCheck={false}
         autoComplete="off"

@@ -1,3 +1,5 @@
+import { t } from '@lumen/kernel';
+import { useT } from '@lumen/kernel/react';
 import {
   AnchoredMenu,
   cx,
@@ -43,29 +45,35 @@ export function tabMenuItems(
   id: string,
   actions: TabMenuActions,
 ): MenuEntry[] {
-  const index = tabs.findIndex((t) => t.id === id);
-  const others = tabs.filter((t) => t.id !== id).map((t) => t.id);
-  const toTheRight = index < 0 ? [] : tabs.slice(index + 1).map((t) => t.id);
+  const index = tabs.findIndex((tab) => tab.id === id);
+  const others = tabs.filter((tab) => tab.id !== id).map((tab) => tab.id);
+  const toTheRight = index < 0 ? [] : tabs.slice(index + 1).map((tab) => tab.id);
   const closeEach = (ids: string[]) => () => {
     for (const each of ids) actions.close(each);
   };
-  const items: MenuEntry[] = [{ id: 'new-tab', label: 'New Tab', onSelect: actions.newTab }];
+  const items: MenuEntry[] = [
+    { id: 'new-tab', label: t('browserApp.newTab'), onSelect: actions.newTab },
+  ];
   if (actions.duplicate) {
     const duplicate = actions.duplicate;
-    items.push({ id: 'duplicate', label: 'Duplicate Tab', onSelect: () => duplicate(id) });
+    items.push({
+      id: 'duplicate',
+      label: t('browserApp.duplicateTab'),
+      onSelect: () => duplicate(id),
+    });
   }
   items.push(
     { id: 'tab-sep', type: 'separator' },
-    { id: 'close', label: 'Close Tab', onSelect: () => actions.close(id) },
+    { id: 'close', label: t('browserApp.closeTab'), onSelect: () => actions.close(id) },
     {
       id: 'close-others',
-      label: 'Close Other Tabs',
+      label: t('browserApp.closeOtherTabs'),
       enabled: others.length > 0,
       onSelect: closeEach(others),
     },
     {
       id: 'close-right',
-      label: 'Close Tabs to the Right',
+      label: t('browserApp.closeTabsRight'),
       enabled: toTheRight.length > 0,
       onSelect: closeEach(toTheRight),
     },
@@ -87,6 +95,7 @@ const PAGE_GLYPHS = {
  * carries its own close button so the mouse and the keyboard agree.
  */
 export function TabStrip({ tabs, activeId, onSelect, onClose, onNew, onDuplicate }: TabStripProps) {
+  const t = useT();
   const strip = useRef<HTMLDivElement>(null);
   const menu = useContextMenu();
   const [menuTab, setMenuTab] = useState<string | null>(null);
@@ -134,7 +143,7 @@ export function TabStrip({ tabs, activeId, onSelect, onClose, onNew, onDuplicate
       <div
         ref={strip}
         role="tablist"
-        aria-label="Tabs"
+        aria-label={t('browserApp.tabs')}
         aria-orientation="horizontal"
         className="lumen-scroll flex min-w-0 flex-1 items-center gap-1 overflow-x-auto overflow-y-hidden pb-px"
       >
@@ -205,7 +214,7 @@ export function TabStrip({ tabs, activeId, onSelect, onClose, onNew, onDuplicate
           );
         })}
       </div>
-      <IconButton label="New tab" size="sm" onClick={onNew}>
+      <IconButton label={t('browserApp.newTabAria')} size="sm" onClick={onNew}>
         <Plus />
       </IconButton>
       <AnchoredMenu open={menu.open} at={menu.at} items={items} onClose={menu.close} />

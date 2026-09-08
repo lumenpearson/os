@@ -18,17 +18,25 @@ function receipt(over: Partial<Receipt> = {}): Receipt {
   };
 }
 
+/*
+ * Money is printed in the region Lumen is set to. These assertions name a
+ * locale rather than leaning on the machine's, which is why they used to fail
+ * on a Russian Windows and pass in CI — the one difference that makes a test
+ * useless exactly where it would have helped.
+ */
+const EN = 'en-GB';
+
 describe('receiptsSummary', () => {
   it('says so plainly when there is nothing to add up', () => {
     expect(receiptsSummary([])).toBe('No receipts');
   });
 
   it('counts one receipt in the singular', () => {
-    expect(receiptsSummary([receipt()])).toBe('1 receipt, £5.00 in total');
+    expect(receiptsSummary([receipt()], EN)).toBe('1 receipt, £5.00 in total');
   });
 
   it('adds up receipts in the same currency', () => {
-    expect(receiptsSummary([receipt(), receipt({ id: 'r2', amountMinor: 4800 })])).toBe(
+    expect(receiptsSummary([receipt(), receipt({ id: 'r2', amountMinor: 4800 })], EN)).toBe(
       '2 receipts, £53.00 in total',
     );
   });
@@ -37,7 +45,7 @@ describe('receiptsSummary', () => {
     // A package costs a plan rather than money, so it belongs in the count
     // and adds nothing to the total.
     const free = receipt({ id: 'r2', kind: 'package', item: 'lumen.notes', amountMinor: 0 });
-    expect(receiptsSummary([receipt(), free])).toBe('2 receipts, £5.00 in total');
+    expect(receiptsSummary([receipt(), free], EN)).toBe('2 receipts, £5.00 in total');
   });
 });
 

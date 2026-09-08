@@ -1,3 +1,4 @@
+import { useT } from '@lumen/kernel/react';
 import { Button, EmptyState, IconButton, SearchField, SettingsPage, useDialogs } from '@lumen/ui';
 import { Pencil, Plus, Star, X } from 'lucide-react';
 import { useState } from 'react';
@@ -29,17 +30,18 @@ export function Library({
   onRename,
   onRemove,
 }: LibraryProps) {
+  const t = useT();
   const dialogs = useDialogs();
   const [query, setQuery] = useState('');
   const shown = bookmarks.filter((b) => matchesQuery(b, query));
 
   const add = async () => {
     const typed = await dialogs.prompt({
-      title: 'Add a bookmark',
-      message: 'The address of the page to keep.',
-      placeholder: 'example.com/page',
+      title: t('browserApp.addBookmark'),
+      message: t('browserApp.addressToKeep'),
+      placeholder: t('browserApp.examplePage'),
       mono: true,
-      confirmLabel: 'Add',
+      confirmLabel: t('browserApp.add'),
       validate: (value) => (value.trim() ? null : 'Type an address.'),
     });
     if (typed === null) return;
@@ -50,10 +52,10 @@ export function Library({
 
   const rename = async (bookmark: Bookmark) => {
     const next = await dialogs.prompt({
-      title: 'Rename bookmark',
+      title: t('browserApp.renameBookmark'),
       defaultValue: bookmark.title,
       placeholder: titleFor(bookmark.url),
-      confirmLabel: 'Rename',
+      confirmLabel: t('browserApp.rename'),
       validate: (value) => (value.trim() ? null : 'A bookmark needs a name.'),
     });
     if (next === null) return;
@@ -64,11 +66,11 @@ export function Library({
     return (
       <EmptyState
         icon={<Star />}
-        title="No bookmarks yet"
-        description="Star a page from the toolbar, or add an address by hand."
+        title={t('browserApp.noBookmarks')}
+        description={t('browserApp.bookmarksHint')}
         action={
           <Button icon={<Plus />} onClick={() => void add()}>
-            Add Bookmark
+            {t('browserApp.addBookmarkButton')}
           </Button>
         }
       />
@@ -76,22 +78,24 @@ export function Library({
   }
 
   return (
-    <SettingsPage title="Bookmarks">
+    <SettingsPage title={t('browserApp.bookmarks')}>
       <div className="flex items-center gap-2">
         <SearchField
           value={query}
           onChange={setQuery}
-          placeholder="Search bookmarks"
-          aria-label="Search bookmarks"
+          placeholder={t('browserApp.searchBookmarks')}
+          aria-label={t('browserApp.searchBookmarks')}
           className="flex-1"
         />
         <Button icon={<Plus />} onClick={() => void add()}>
-          Add
+          {t('browserApp.add')}
         </Button>
       </div>
 
       {shown.length === 0 ? (
-        <p className="text-base text-ink-2">No bookmark matches “{query.trim()}”.</p>
+        <p className="text-base text-ink-2">
+          {t('browserApp.noBookmarkMatch', { query: query.trim() })}
+        </p>
       ) : (
         <ul className="divide-y divide-rule rounded-md border border-rule bg-surface">
           {shown.map((b) => {

@@ -1,4 +1,4 @@
-import { useSetting } from '@lumen/kernel/react';
+import { useSetting, useT } from '@lumen/kernel/react';
 import { cx, useLatest } from '@lumen/ui';
 import { type DirEntry, formatBytes } from '@lumen/vfs';
 import { type CSSProperties, type ReactNode, useEffect, useMemo, useRef } from 'react';
@@ -31,7 +31,7 @@ function CardImage({ path, size }: { path: string; size: number }) {
   return (
     <img
       src={url}
-      alt=""
+      alt="" /* i18n-ignore decorative thumbnail; an empty alt is correct */
       className="max-h-full max-w-full rounded-xs border border-rule object-contain"
     />
   );
@@ -76,6 +76,7 @@ export function CardView({
   onRenameCommit,
   onRenameCancel,
 }: CardViewProps) {
+  const t = useT();
   const [appearance] = useSetting('appearance');
   const laneRef = useRef<HTMLDivElement>(null);
   const pending = useRef(0);
@@ -145,7 +146,7 @@ export function CardView({
       entries={entries}
       selection={selection}
       layout="grid"
-      label="Files"
+      label={t('filesApp.name')}
       orientation={axis}
       containerRef={laneRef}
       reveal={reveal}

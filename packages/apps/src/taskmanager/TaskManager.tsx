@@ -4,9 +4,9 @@
  * the window shares. Each tab is mounted only while it is shown, so a chart
  * never resumes onto a buffer with a hole in it.
  */
-import type { AppId, Pid } from '@lumen/kernel';
+import type { AppId, MessageKey, Pid, Translate } from '@lumen/kernel';
 import { useProcessStore, useWindowStore } from '@lumen/kernel';
-import { useApps, useKernel, usePlatform } from '@lumen/kernel/react';
+import { useApps, useKernel, usePlatform, useT } from '@lumen/kernel/react';
 import {
   SegmentedControl,
   type SegmentedOption,
@@ -48,27 +48,32 @@ import { useDocumentVisible } from './samplers';
 import { sortRows } from './sort';
 import { TickProvider } from './tick';
 
-const TAB_LABEL: Record<TabId, string> = {
-  processes: 'Processes',
-  performance: 'Performance',
-  services: 'Services',
-  apps: 'Apps',
+const TAB_KEYS: Record<TabId, MessageKey> = {
+  processes: 'taskManagerApp.processes',
+  performance: 'taskManagerApp.tabPerformance',
+  services: 'taskManagerApp.tabServices',
+  apps: 'taskManagerApp.tabApps',
 };
 
-const TAB_OPTIONS: ReadonlyArray<SegmentedOption<TabId>> = TAB_IDS.map((id) => ({
-  value: id,
-  label: TAB_LABEL[id],
-}));
+/**
+ * Built per render rather than once at import: the labels and the interval
+ * read the language that is set now, not the one that was set at start-up.
+ */
+function tabOptions(t: Translate): ReadonlyArray<SegmentedOption<TabId>> {
+  return TAB_IDS.map((id) => ({ value: id, label: t(TAB_KEYS[id]) }));
+}
 
-const RATE_OPTIONS: ReadonlyArray<SelectOption> = REFRESH_RATES.map((ms) => ({
-  value: String(ms),
-  label: formatInterval(ms),
-}));
+function rateOptions(): ReadonlyArray<SelectOption> {
+  return REFRESH_RATES.map((ms) => ({ value: String(ms), label: formatInterval(ms) }));
+}
 
 /** Window width at which the refresh control still has room for its label. */
 const LABEL_AT = 560;
 
 export default function TaskManager({ pid, windowId }: AppProps) {
+  const t = useT();
+  const tabs = useMemo(() => tabOptions(t), [t]);
+  const rates = useMemo(() => rateOptions(), []);
   const kernel = useKernel();
   const platform = usePlatform();
   const dialogs = useDialogs();
@@ -159,16 +164,19 @@ export default function TaskManager({ pid, windowId }: AppProps) {
       const wanted = new Set(pids);
       const targets = ordered.filter((row) => wanted.has(row.pid));
       if (targets.length === 0) return;
-      const warning = endProcessMessage(targets, pid);
+      const warning = endProcessMessage(targets, pid, t);
       if (warning) {
         const first = targets[0];
         const ok = await dialogs.confirm({
           title:
             targets.length === 1 && first
-              ? `End ${first.name}?`
-              : `End ${targets.length} processes?`,
+              ? t('taskManagerApp.endOne', { name: first.name })
+              : t('taskManagerApp.endMany', { count: targets.length }),
           message: warning,
-          confirmLabel: targets.length === 1 ? 'End Process' : 'End Processes',
+          confirmLabel:
+            targets.length === 1
+              ? t('taskManagerApp.endProcess')
+              : t('taskManagerApp.endProcesses'),
           danger: true,
         });
         if (!ok) return;
@@ -186,7 +194,7 @@ export default function TaskManager({ pid, windowId }: AppProps) {
         kernel.kill(row.pid);
       }
     },
-    [ordered, pid, dialogs, kernel],
+    [ordered, pid, dialogs, kernel, t],
   );
 
   const quitApp = useCallback(
@@ -237,9 +245,9 @@ export default function TaskManager({ pid, windowId }: AppProps) {
     <div ref={rootRef} className="flex h-full w-full flex-col bg-surface text-ink">
       <Toolbar dense>
         <SegmentedControl
-          aria-label="View"
+          aria-label={t('menu.view')}
           size="sm"
-          options={TAB_OPTIONS}
+          options={tabs}
           value={config.tab}
           onChange={showTab}
         />
@@ -247,15 +255,15 @@ export default function TaskManager({ pid, windowId }: AppProps) {
         {/* The narrowest window keeps the control and drops its word for it. */}
         {(size.width === 0 || size.width >= LABEL_AT) && (
           <label htmlFor="taskmanager-refresh" className="text-sm text-ink-2">
-            Refresh
+            {t('taskManagerApp.refresh')}
           </label>
         )}
         <Select
           id="taskmanager-refresh"
-          aria-label="Refresh rate"
+          aria-label={t('taskManagerApp.refreshRate')}
           size="sm"
           mono
-          options={RATE_OPTIONS}
+          options={rates}
           value={String(config.refreshMs)}
           onChange={(value) => patch({ refreshMs: Number(value) })}
         />

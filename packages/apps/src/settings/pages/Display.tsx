@@ -1,4 +1,4 @@
-import { useSetting } from '@lumen/kernel/react';
+import { useSetting, useT } from '@lumen/kernel/react';
 import { SettingsGroup, SettingsPage, Slider, Switch } from '@lumen/ui';
 import { useViewport } from '../hooks';
 import { percentLabel, pixelLabel, viewportLabel } from '../logic';
@@ -7,23 +7,21 @@ import { Row, Value } from '../Row';
 const BASE_FONT_PX = 13;
 
 export function DisplayPage() {
+  const t = useT();
   const [display, patch] = useSetting('display');
   const [windows, patchWindows] = useSetting('windows');
   const vp = useViewport();
   return (
-    <SettingsPage
-      title="Display"
-      description="Interface scale, window behaviour and the current viewport."
-    >
-      <SettingsGroup title="Scale">
+    <SettingsPage title={t('settings.display')} description={t('displayPage.intro')}>
+      <SettingsGroup title={t('displayPage.titleScale')}>
         <Row
           id="display.scale"
-          label="Scale"
-          description="Resizes every part of the interface."
+          label={t('displayPage.titleScale')}
+          description={t('displayPage.scaleHint')}
           stacked
         >
           <Slider
-            aria-label="Scale"
+            aria-label={t('displayPage.titleScale')}
             min={0.75}
             max={1.75}
             step={0.05}
@@ -36,28 +34,34 @@ export function DisplayPage() {
               className="font-medium text-ink"
               style={{ fontSize: BASE_FONT_PX * display.scale, lineHeight: 1.3 }}
             >
+              {/* i18n-ignore-next-line the product's name, which is the same in every language */}
               Lumen OS
             </span>
             <Value>
               {BASE_FONT_PX} × {display.scale.toFixed(2)} ={' '}
+              {/* i18n-ignore-next-line the symbol for the CSS pixel, not a word */}
               {(BASE_FONT_PX * display.scale).toFixed(2)} px
             </Value>
           </div>
         </Row>
       </SettingsGroup>
 
-      <SettingsGroup title="Windows">
+      <SettingsGroup title={t('displayPage.titleWindows')}>
         <Row
           id="display.snapping"
-          label="Snap to edges"
-          description="Drag a window to a screen edge to tile it."
+          label={t('displayPage.snap')}
+          description={t('displayPage.snapHint')}
         >
           <Switch
             checked={display.snapping}
             onChange={(e) => patch({ snapping: e.target.checked })}
           />
         </Row>
-        <Row id="display.shadows" label="Window shadows" description="Turn off on slow machines.">
+        <Row
+          id="display.shadows"
+          label={t('displayPage.shadows')}
+          description={t('displayPage.shadowsHint')}
+        >
           <Switch
             checked={display.shadows}
             onChange={(e) => patch({ shadows: e.target.checked })}
@@ -65,8 +69,8 @@ export function DisplayPage() {
         </Row>
         <Row
           id="display.overlay"
-          label="Performance overlay"
-          description="Frame rate and memory in a corner of the screen."
+          label={t('displayPage.overlay')}
+          description={t('displayPage.overlayHint')}
         >
           <Switch
             checked={display.performanceOverlay}
@@ -75,15 +79,15 @@ export function DisplayPage() {
         </Row>
       </SettingsGroup>
 
-      <SettingsGroup title="Tiling">
+      <SettingsGroup title={t('displayPage.titleTiling')}>
         <Row
           id="display.tilingGap"
-          label="Gap between tiled windows"
-          description="The margin a tiled window keeps from the screen edges and from its neighbour."
+          label={t('displayPage.gap')}
+          description={t('displayPage.gapHint')}
           stacked
         >
           <Slider
-            aria-label="Gap between tiled windows"
+            aria-label={t('displayPage.gap')}
             min={0}
             max={32}
             step={2}
@@ -94,12 +98,12 @@ export function DisplayPage() {
         </Row>
       </SettingsGroup>
 
-      <SettingsGroup title="Full screen">
+      <SettingsGroup title={t('displayPage.titleFullScreen')}>
         <Row
           id="display.fullscreenCoversPanels"
           htmlFor="windows-fullscreen-covers-panels"
-          label="Cover the panels"
-          description="Off: a full-screen window stops at the menubar and the taskbar."
+          label={t('displayPage.coverPanels')}
+          description={t('displayPage.coverPanelsHint')}
         >
           <Switch
             id="windows-fullscreen-covers-panels"
@@ -110,8 +114,8 @@ export function DisplayPage() {
         <Row
           id="display.fullscreenHidesTitleBar"
           htmlFor="windows-fullscreen-hides-title-bar"
-          label="Hide the title bar"
-          description="The window controls go away with it, the way macOS does."
+          label={t('displayPage.hideTitleBar')}
+          description={t('displayPage.hideTitleBarHint')}
         >
           <Switch
             id="windows-fullscreen-hides-title-bar"
@@ -122,8 +126,8 @@ export function DisplayPage() {
         <Row
           id="display.immersiveSystemBar"
           htmlFor="windows-immersive-system-bar"
-          label="Slide the menubar away"
-          description="It comes back when the pointer reaches the top edge."
+          label={t('displayPage.slideMenubar')}
+          description={t('displayPage.slideMenubarHint')}
         >
           <Switch
             id="windows-immersive-system-bar"
@@ -135,8 +139,8 @@ export function DisplayPage() {
         <Row
           id="display.immersiveTaskbar"
           htmlFor="windows-immersive-taskbar"
-          label="Slide the taskbar away"
-          description="Likewise, from the edge it sits on."
+          label={t('displayPage.slideTaskbar')}
+          description={t('displayPage.slideTaskbarHint')}
         >
           <Switch
             id="windows-immersive-taskbar"
@@ -147,11 +151,11 @@ export function DisplayPage() {
         </Row>
       </SettingsGroup>
 
-      <SettingsGroup title="Viewport">
+      <SettingsGroup title={t('displayPage.titleViewport')}>
         <Row
           id="display.viewport"
-          label="Current viewport"
-          description="CSS pixels and device pixel ratio."
+          label={t('displayPage.viewport')}
+          description={t('displayPage.viewportHint')}
         >
           <Value>{viewportLabel(vp.width, vp.height, vp.dpr)}</Value>
         </Row>

@@ -1,3 +1,4 @@
+import { useT } from '@lumen/kernel/react';
 import { Progress } from '@lumen/ui';
 import type { StorageReading } from './sections';
 import { storageBar } from './view';
@@ -8,10 +9,13 @@ import { storageBar } from './view';
  * number nobody measured.
  */
 export function StorageBar({ reading }: { reading: StorageReading | null }) {
+  const t = useT();
   const bar = storageBar(reading);
   return (
     <div className="flex flex-col gap-1.5">
-      {bar.fraction !== null && <Progress value={bar.fraction} label="Storage in use" />}
+      {bar.fraction !== null && (
+        <Progress value={bar.fraction} label={t('sysinfoApp.storageInUse')} />
+      )}
       <p className="mono text-sm tabular-nums text-ink-2">{bar.caption}</p>
       {bar.reason && <p className="text-sm text-ink-3">{bar.reason}</p>}
     </div>

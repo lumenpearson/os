@@ -1,7 +1,9 @@
+import { useT } from '@lumen/kernel/react';
 import { isTauri } from '@lumen/platform';
 import { Button, cx, Spinner } from '@lumen/ui';
 import { ExternalLink, ListPlus, RotateCw, ShieldOff } from 'lucide-react';
 import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
+import { askAboutFrame, framePlan, type PageProbe } from './probe';
 import { type BlockedReason, blockedReason, preflight } from './settings';
 import type { Tab } from './tabs';
 import { displayUrl, hostOf, throughLumen } from './url';
@@ -21,6 +23,8 @@ export interface FrameProps {
   onLoaded: (id: string) => void;
   onBlocked: (id: string) => void;
   onReload: (id: string) => void;
+  /** A relayed page followed a link of its own and is now somewhere else. */
+  onMoved: (id: string, url: string) => void;
   /** Hand the address to the browser Lumen is running in. */
   onOpenOutside: (url: string) => void;
   /** Put this host on the list of sites that open outside Lumen. */
@@ -50,10 +54,12 @@ export function Frame({
   onLoaded,
   onBlocked,
   onReload,
+  onMoved,
   onOpenOutside,
   onAlwaysOutside,
   onStopOutside,
 }: FrameProps) {
+  const t = useT();
   const { id, url, status } = tab;
   const external = status === 'external';
 
@@ -61,58 +67,79 @@ export function Frame({
   // this address out, or the host is one that is already known to refuse.
   const known = useMemo(() => preflight(url, pageProtocol()), [url]);
 
-  /*
-   * Whether this page is being fetched through Lumen rather than framed.
-   *
-   * The first attempt is always the site itself: a page that will be framed
-   * should be, because it keeps its own origin, its cookies and its scripts.
-   * Only once it has refused — a known refusal, or a frame that never
-   * reported a load — is it asked for again through Lumen, and one failure
-   * there is the end of it rather than a loop between the two.
-   */
+  /** Whether this page is being fetched through Lumen rather than framed. */
   const [relayed, setRelayed] = useState(false);
+  /** The site's own word on being framed, once it has been asked for it. */
+  const [probe, setProbe] = useState<PageProbe | null>(null);
+
   /*
-   * `pageEndpoint()` is served by the host that serves Lumen, which is a
-   * thing only the web build has: the desktop app is a bundle of files behind
-   * a Tauri protocol and there is nothing there to answer. Relaying into a
-   * 404 would be worse than the wall it replaced, so on the desktop the site
-   * is asked directly and refused honestly, as before.
+   * `/api/page` is served by the host that serves Lumen, which is a thing
+   * only the web build has: the desktop app is a bundle of files behind a
+   * Tauri protocol and there is nothing there to answer or to ask. So on the
+   * desktop the site is asked directly and refused honestly, as before.
+   *
+   * An address the frame cannot be given at all — `ftp:`, `mailto:` — is not
+   * asked about either; there is no page there to fetch. An http address on
+   * an https Lumen is: the browser refuses to frame it, and fetching it
+   * through here is the only way that address opens.
    */
-  const canRelay = viaLumen && !isTauri() && (known === null || known.cause === 'known-refusal');
+  const canProbe = !isTauri() && known?.cause !== 'unsupported-scheme';
+  const canRelay = viaLumen && canProbe;
 
   // A new address, or the same one asked for again, starts over from direct.
   // biome-ignore lint/correctness/useExhaustiveDependencies: the address and the generation are the intended triggers
   useEffect(() => {
     setRelayed(false);
+    setProbe(null);
   }, [url, tab.generation]);
 
-  // Going somewhere new while already loading leaves the status alone, so the
-  // address and the generation have to restart the clock themselves.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: url and generation restart the timer for a second load
+  // Ask the site whether it would let itself be framed. A host already on the
+  // list of known refusals is not asked: the answer would be the same, and
+  // that list only ever saves the wait.
   useEffect(() => {
-    if (status !== 'loading') return;
-    // Known to refuse a frame, and Lumen may fetch it: there is nothing to
-    // wait for, so skip the timeout and ask Lumen straight away.
-    if (known && canRelay && !relayed) {
-      setRelayed(true);
-      return;
-    }
-    // Known to refuse, and nothing else to try.
-    if (known && !relayed) {
-      onBlocked(id);
-      return;
-    }
-    /*
-     * Otherwise wait for the frame to say it loaded. When the wait runs out
-     * the site is either asked again through Lumen — once — or called
-     * blocked. Once it has been relayed this is the only clock left, which is
-     * what keeps a relayed page from being taken down the moment it starts.
-     */
+    if (!canProbe || known || relayed || status !== 'loading') return;
+    let live = true;
+    void askAboutFrame(url).then((answer) => {
+      if (live) setProbe(answer);
+    });
+    return () => {
+      live = false;
+    };
+  }, [canProbe, known, relayed, status, url]);
+
+  const plan = framePlan({
+    external,
+    relayed,
+    refusedInAdvance: known !== null,
+    canRelay,
+    verdict: probe?.frame ?? null,
+  });
+
+  /*
+   * Carrying the plan out. Turning the frame over to the relay is state, and
+   * saying a page is blocked is the browser's business, so both happen here
+   * rather than while rendering.
+   *
+   * A refusal is reported whatever the tab's status, because a frame the site
+   * turned away fires `load` exactly as one that arrived does: the tab can
+   * already have been told the page loaded when the site's own answer shows
+   * that what loaded was the browser's refusal notice.
+   */
+  useEffect(() => {
+    if (plan === 'blocked') onBlocked(id);
+    else if (plan === 'relay' && !relayed && status === 'loading') setRelayed(true);
+  }, [plan, relayed, status, id, onBlocked]);
+
+  /*
+   * The wait, for a frame that has been given an address and says nothing.
+   *
+   * With the site's own answer in hand this is no longer how a refusal is
+   * found — it is the last resort for a site that hangs, or that tells the
+   * server one thing and the browser another.
+   */
+  useEffect(() => {
+    if (status !== 'loading' || (plan !== 'direct' && plan !== 'relay')) return;
     const timer = setTimeout(() => {
-      if (canRelay && !relayed) {
-        setRelayed(true);
-        return;
-      }
       /*
        * A relayed frame is never called blocked. Lumen's own endpoint answers
        * every time — with the page, or with a sentence saying why not — so
@@ -120,17 +147,18 @@ export function Frame({
        * would be covering the answer. Without the message (scripts off in
        * Settings > Browser) this is what clears the spinner.
        */
-      if (relayed) onLoaded(id);
+      if (plan === 'relay') onLoaded(id);
+      else if (canRelay) setRelayed(true);
       else onBlocked(id);
     }, timeoutMs);
     return () => clearTimeout(timer);
-  }, [status, id, url, tab.generation, known, canRelay, relayed, timeoutMs, onBlocked, onLoaded]);
+  }, [plan, status, id, canRelay, timeoutMs, onBlocked, onLoaded]);
 
-  const framed = !external && (relayed || !known);
+  const framed = plan === 'direct' || plan === 'relay';
   const source = relayed ? throughLumen(url) : url;
 
   /*
-   * A relayed page says when it arrived, rather than waiting for `load`.
+   * A relayed page says when it arrived, and where it goes next.
    *
    * `load` waits for every image, stylesheet and script the page asks for,
    * and those come from the site itself — one slow or unreachable asset and
@@ -139,28 +167,33 @@ export function Frame({
    * is not an option and should not be: the frame is sandboxed to an opaque
    * origin precisely so a page fetched from anywhere cannot touch Lumen.
    *
-   * What is left is the message the served document sends on its way in. It
-   * is matched by window rather than by origin, because an opaque origin has
-   * nothing to match — and `source` is the browser's own answer to "which
-   * frame sent this", which a page cannot forge.
+   * What is left is what the served document says for itself: that it
+   * arrived, and — when a link inside it is followed — where it is asking to
+   * go, which the browser then goes to as though the address had been typed.
+   * Both are matched by window rather than by origin, because an opaque
+   * origin has nothing to match, and the window is the browser's own answer
+   * to "which frame sent this", which a page cannot forge.
    */
   const frameRef = useRef<HTMLIFrameElement>(null);
   useEffect(() => {
-    if (!relayed || status !== 'loading') return;
+    if (!relayed) return;
     const onMessage = (event: MessageEvent) => {
       if (event.source !== frameRef.current?.contentWindow) return;
-      if ((event.data as { lumen?: string } | null)?.lumen !== 'page-ready') return;
-      onLoaded(id);
+      const message = event.data as { lumen?: string; url?: string } | null;
+      if (message?.lumen === 'page-ready') onLoaded(id);
+      else if (message?.lumen === 'page-moved' && typeof message.url === 'string') {
+        onMoved(id, message.url);
+      }
     };
     window.addEventListener('message', onMessage);
     return () => window.removeEventListener('message', onMessage);
-  }, [relayed, status, id, onLoaded]);
+  }, [relayed, id, onLoaded, onMoved]);
   const host = hostOf(url);
 
   return (
     <div className="absolute inset-0 overflow-hidden" hidden={!active}>
       <div className="h-full w-full" style={{ zoom: tab.zoom }}>
-        {framed && status === 'loading' && (
+        {(framed || plan === 'asking') && status === 'loading' && (
           <div className="absolute inset-0 flex items-center justify-center gap-2 bg-surface">
             <Spinner size={14} />
             <span className="mono text-sm text-ink-3">{host}</span>
@@ -186,8 +219,7 @@ export function Frame({
       {framed && relayed && status !== 'blocked' && (
         <div className="pointer-events-none absolute inset-x-0 top-0 flex justify-center p-1.5">
           <p className="pointer-events-auto rounded-sm border border-rule bg-surface px-2.5 py-1 text-xs text-ink-2 shadow-sm">
-            {hostOf(url)} refuses to be framed, so Lumen fetched the page. Signing in and anything
-            the site loads from script will not work.
+            {t('browserApp.relayNote', { host: hostOf(url) })}
           </p>
         </div>
       )}
@@ -195,21 +227,21 @@ export function Frame({
       {external && (
         <Panel
           icon={<ExternalLink className="size-8 stroke-[1.5] text-ink-3" aria-hidden />}
-          title="This site opens outside Lumen"
+          title={t('browserApp.opensOutside')}
           text={`${host} is on your list of sites that open in the browser Lumen is running in.`}
           url={url}
         >
           <Button variant="primary" icon={<ExternalLink />} onClick={() => onOpenOutside(url)}>
-            Open Outside Lumen
+            {t('browserApp.openOutside')}
           </Button>
-          <Button onClick={() => onStopOutside(url)}>Stop Opening Outside</Button>
+          <Button onClick={() => onStopOutside(url)}>{t('browserApp.stopOpeningOutside')}</Button>
         </Panel>
       )}
 
       {status === 'blocked' && (
         <BlockedPanel
           url={url}
-          reason={known ?? blockedReason(url, pageProtocol())}
+          reason={known ?? blockedReason(url, pageProtocol(), probe?.header ?? null)}
           onReload={() => onReload(id)}
           onOpenOutside={() => onOpenOutside(url)}
           onAlwaysOutside={() => onAlwaysOutside(url)}
@@ -232,6 +264,7 @@ function BlockedPanel({
   onOpenOutside: () => void;
   onAlwaysOutside: () => void;
 }) {
+  const t = useT();
   // Nothing to add to the list, and nothing outside can open it either.
   const web = reason.cause !== 'unsupported-scheme' && hostOf(url) !== '';
 
@@ -243,15 +276,15 @@ function BlockedPanel({
       url={url}
     >
       <Button icon={<RotateCw />} onClick={onReload}>
-        Try Again
+        {t('browserApp.tryAgain')}
       </Button>
       {web && (
         <>
           <Button variant="primary" icon={<ExternalLink />} onClick={onOpenOutside}>
-            Open Outside Lumen
+            {t('browserApp.openOutside')}
           </Button>
           <Button icon={<ListPlus />} onClick={onAlwaysOutside}>
-            Always Open Outside
+            {t('browserApp.alwaysOutside')}
           </Button>
         </>
       )}

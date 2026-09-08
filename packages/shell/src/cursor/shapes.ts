@@ -93,3 +93,79 @@ export function shapeForCursor(value: string | undefined): Shape {
   if (value === undefined) return 'arrow';
   return CURSOR_TO_SHAPE[value.trim()] ?? 'arrow';
 }
+
+/**
+ * Elements a click acts on. The same list the base stylesheet gives
+ * `cursor: pointer`, kept here as well because the stylesheet cannot be asked:
+ * while this layer is drawing, `[data-lumen-cursor="custom"] *` sets
+ * `cursor: none !important` on everything, so the computed value of every
+ * element in the OS is `none` and says nothing about what the element is.
+ */
+const POINTER = [
+  'button',
+  'summary',
+  'select',
+  'a[href]',
+  '[role="button"]',
+  '[role="tab"]',
+  '[role="link"]',
+  '[role="option"]',
+  '[role="switch"]',
+  '[role="checkbox"]',
+  '[role="radio"]',
+  '[role="menuitem"]',
+  '[role="menuitemcheckbox"]',
+  '[role="menuitemradio"]',
+  'input[type="button"]',
+  'input[type="submit"]',
+  'input[type="reset"]',
+  'input[type="checkbox"]',
+  'input[type="radio"]',
+  'input[type="range"]',
+  'input[type="color"]',
+  'input[type="file"]',
+].join(',');
+
+/** Controls that will not act on a click. */
+const NOT_ALLOWED = ':disabled,[aria-disabled="true"]';
+
+/** Somewhere a caret goes. */
+const TEXT = [
+  'input:not([type])',
+  'input[type="text"]',
+  'input[type="search"]',
+  'input[type="email"]',
+  'input[type="url"]',
+  'input[type="tel"]',
+  'input[type="password"]',
+  'input[type="number"]',
+  'textarea',
+  '[contenteditable="true"]',
+].join(',');
+
+/**
+ * The shape the pointer should take over an element, read from the element
+ * itself rather than from the stylesheet.
+ *
+ * It walks up from what the pointer is actually over — a click usually lands
+ * on the glyph inside a button, not on the button — and the first node that
+ * says anything wins, so the nearest answer is the one used: a disabled
+ * button inside a clickable row is not-allowed, and a button inside a pane
+ * that asked for a resize cursor is still a button.
+ *
+ * `data-cursor` comes first at every level, because it is the one an element
+ * states outright; everything below it is inference from what the element is.
+ * Null means nothing along the way had an opinion.
+ */
+export function shapeForElement(from: Element | null, stop?: Element | null): Shape | null {
+  let node = from;
+  while (node && node !== stop) {
+    const hinted = (node as HTMLElement).dataset?.cursor;
+    if (hinted) return shapeForCursor(hinted);
+    if (node.matches(NOT_ALLOWED)) return 'not-allowed';
+    if (node.matches(TEXT)) return 'text';
+    if (node.matches(POINTER)) return 'pointer';
+    node = node.parentElement;
+  }
+  return null;
+}

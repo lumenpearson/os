@@ -252,6 +252,18 @@ export function throughLumen(url: string): string {
   return `${PAGE_ENDPOINT}?url=${encodeURIComponent(url)}`;
 }
 
+/**
+ * The address that asks Lumen whether the site would let itself be framed.
+ *
+ * The same endpoint, answering about the page instead of with it. It exists
+ * because a frame the site refuses fires `load` exactly as one that arrived
+ * does and never fires `error`, so this question cannot be answered from
+ * inside the browser at all — only by whoever holds the response headers.
+ */
+export function probeThroughLumen(url: string): string {
+  return `${throughLumen(url)}&probe=1`;
+}
+
 /** Whether an address is one of ours standing in for a page. */
 export function isThroughLumen(url: string): boolean {
   return url.startsWith(`${PAGE_ENDPOINT}?`);

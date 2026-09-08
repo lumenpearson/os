@@ -1,5 +1,5 @@
 import { useClipboardStore } from '@lumen/kernel';
-import { useKernel, useSettings, useVfs } from '@lumen/kernel/react';
+import { useKernel, useSettings, useT, useVfs } from '@lumen/kernel/react';
 import {
   AppFrame,
   cx,
@@ -110,6 +110,7 @@ async function readClipboardText(): Promise<string> {
 }
 
 export default function Sheets({ args: initialArgs }: AppProps) {
+  const t = useT();
   const args = useArgs(initialArgs);
   const { container } = useApp();
   const vfs = useVfs();
@@ -275,14 +276,14 @@ export default function Sheets({ args: initialArgs }: AppProps) {
     const suggested = `${path ? basename(path, true) : sheet.name || 'Untitled'}.lsd`;
     const target = await pick({
       mode: 'save',
-      title: 'Save As',
+      title: t('sheetsApp.saveAs'),
       defaultName: suggested,
       startDir: path ? dirname(path) : join(kernel.home, 'Documents'),
       extensions: ['.lsd'],
     });
     if (typeof target !== 'string') return false;
     return writeTo(target, kindOf(target));
-  }, [pick, path, sheet.name, kernel.home, writeTo]);
+  }, [pick, path, sheet.name, kernel.home, writeTo, t]);
 
   const save = useCallback(async () => {
     if (!path) return saveAs();
@@ -293,7 +294,7 @@ export default function Sheets({ args: initialArgs }: AppProps) {
     const stem = path ? basename(path, true) : sheet.name || 'Sheet';
     const target = await pick({
       mode: 'save',
-      title: 'Export CSV',
+      title: t('sheetsApp.exportCsv'),
       defaultName: `${stem}.csv`,
       startDir: path ? dirname(path) : join(kernel.home, 'Documents'),
       extensions: ['.csv'],
@@ -311,23 +312,23 @@ export default function Sheets({ args: initialArgs }: AppProps) {
     } catch (e) {
       notify('Could not export the sheet', e instanceof Error ? e.message : String(e));
     }
-  }, [pick, path, sheet, kernel.home, vfs, locale, currency, notify]);
+  }, [pick, path, sheet, kernel.home, vfs, locale, currency, notify, t]);
 
   /** Ask before throwing away unsaved changes. */
   const confirmDiscard = useCallback(async () => {
     if (!dirty) return true;
     const choice = await dialogs.choose({
       title: `Save changes to ${fileName}?`,
-      message: 'Your changes are lost if you do not save them.',
+      message: t('sheetsApp.changesLost'),
       buttons: [
-        { id: 'discard', label: "Don't Save" },
-        { id: 'cancel', label: 'Cancel' },
-        { id: 'save', label: 'Save', variant: 'primary' },
+        { id: 'discard', label: t('action.dontSave') },
+        { id: 'cancel', label: t('action.cancel') },
+        { id: 'save', label: t('menu.save'), variant: 'primary' },
       ],
     });
     if (choice === 'save') return save();
     return choice === 'discard';
-  }, [dirty, dialogs, fileName, save]);
+  }, [dirty, dialogs, fileName, save, t]);
 
   useCloseGuard(dirty ? confirmDiscard : null);
 
@@ -335,12 +336,12 @@ export default function Sheets({ args: initialArgs }: AppProps) {
     if (!(await confirmDiscard())) return;
     const target = await pick({
       mode: 'open',
-      title: 'Open',
+      title: t('desktop.open'),
       extensions: ['.lsd', '.csv', '.tsv'],
       startDir: join(kernel.home, 'Documents'),
     });
     if (typeof target === 'string') await load(target);
-  }, [confirmDiscard, pick, kernel.home, load]);
+  }, [confirmDiscard, pick, kernel.home, load, t]);
 
   // ── selection and editing ───────────────────────────────────────────────
 
@@ -518,14 +519,14 @@ export default function Sheets({ args: initialArgs }: AppProps) {
       const current = workbook.sheets[index];
       if (!current) return;
       const name = await dialogs.prompt({
-        title: 'Rename Sheet',
+        title: t('sheetsApp.renameSheet'),
         defaultValue: current.name,
-        confirmLabel: 'Rename',
+        confirmLabel: t('menu.rename'),
         validate: (v) => (v.trim() ? null : 'The sheet needs a name.'),
       });
       if (name?.trim()) commit((wb) => renameSheet(wb, index, name));
     },
-    [workbook.sheets, dialogs, commit],
+    [workbook.sheets, dialogs, commit, t],
   );
 
   const deleteSheetAt = useCallback(
@@ -535,15 +536,15 @@ export default function Sheets({ args: initialArgs }: AppProps) {
       if (!target) return;
       const ok = await dialogs.confirm({
         title: `Delete “${target.name}”?`,
-        message: 'The sheet and everything on it go away. Undo brings it back.',
-        confirmLabel: 'Delete',
+        message: t('sheetsApp.deleteExplains'),
+        confirmLabel: t('sheetsApp.delete'),
         danger: true,
       });
       if (!ok) return;
       commit((wb) => removeSheet(wb, index));
       setActive((a) => Math.max(0, Math.min(a, workbook.sheets.length - 2)));
     },
-    [workbook.sheets, dialogs, commit],
+    [workbook.sheets, dialogs, commit, t],
   );
 
   // ── keyboard ────────────────────────────────────────────────────────────
@@ -751,9 +752,9 @@ export default function Sheets({ args: initialArgs }: AppProps) {
   };
 
   const alignButtons: Array<{ value: Align; label: string; icon: React.ReactNode }> = [
-    { value: 'left', label: 'Align left', icon: <AlignLeft /> },
-    { value: 'center', label: 'Align center', icon: <AlignCenter /> },
-    { value: 'right', label: 'Align right', icon: <AlignRight /> },
+    { value: 'left', label: t('writerApp.alignLeft'), icon: <AlignLeft /> },
+    { value: 'center', label: t('sheetsApp.alignCenter'), icon: <AlignCenter /> },
+    { value: 'right', label: t('writerApp.alignRight'), icon: <AlignRight /> },
   ];
 
   return (
@@ -769,10 +770,18 @@ export default function Sheets({ args: initialArgs }: AppProps) {
               {fileName}
             </span>
             <ToolbarGroup>
-              <IconButton label="Bold" active={activeStyle?.bold} onClick={toggleBold}>
+              <IconButton
+                label={t('writerApp.bold')}
+                active={activeStyle?.bold}
+                onClick={toggleBold}
+              >
                 <Bold />
               </IconButton>
-              <IconButton label="Italic" active={activeStyle?.italic} onClick={toggleItalic}>
+              <IconButton
+                label={t('writerApp.italic')}
+                active={activeStyle?.italic}
+                onClick={toggleItalic}
+              >
                 <Italic />
               </IconButton>
             </ToolbarGroup>
@@ -792,7 +801,7 @@ export default function Sheets({ args: initialArgs }: AppProps) {
             <Divider vertical className="mx-1 h-4" />
             <Select
               size="sm"
-              aria-label="Number format"
+              aria-label={t('sheetsApp.numberFormat')}
               options={NUMBER_FORMATS}
               value={activeStyle?.format ?? 'general'}
               onChange={setFormat}
@@ -802,7 +811,7 @@ export default function Sheets({ args: initialArgs }: AppProps) {
             <Input
               mono
               size="sm"
-              aria-label="Name box"
+              aria-label={t('sheetsApp.nameBox')}
               className="w-24 text-center"
               value={nameDraft ?? formatRange(range)}
               onChange={(e) => setNameDraft(e.target.value)}
@@ -813,12 +822,13 @@ export default function Sheets({ args: initialArgs }: AppProps) {
               }}
             />
             <span aria-hidden className="mono text-sm text-ink-3">
+              {/* i18n-ignore-next-line the spreadsheet symbol for a formula, not a word */}
               fx
             </span>
             <Input
               mono
               size="sm"
-              aria-label="Formula bar"
+              aria-label={t('sheetsApp.formulaBar')}
               className="flex-1"
               value={formulaText}
               onChange={(e) =>
@@ -838,12 +848,16 @@ export default function Sheets({ args: initialArgs }: AppProps) {
         <>
           <span className="text-ink-2">{formatRange(range)}</span>
           <span className="tabular-nums">
-            Sum {stats.count > 0 ? formatNumber(stats.sum, locale) : '—'}
+            {t('sheetsApp.sumValue', {
+              value: stats.count > 0 ? formatNumber(stats.sum, locale) : '—',
+            })}
           </span>
           <span className="tabular-nums">
-            Avg {stats.average === null ? '—' : formatNumber(stats.average, locale)}
+            {t('sheetsApp.avgValue', {
+              value: stats.average === null ? '—' : formatNumber(stats.average, locale),
+            })}
           </span>
-          <span className="tabular-nums">Count {stats.count}</span>
+          <span className="tabular-nums">{t('sheetsApp.countValue', { value: stats.count })}</span>
           <span className="flex-1" />
           <span className="text-ink-3">{sheet.name}</span>
         </>
@@ -902,11 +916,15 @@ export default function Sheets({ args: initialArgs }: AppProps) {
             </button>
           ))}
         </div>
-        <IconButton label="Add sheet" size="sm" onClick={addNewSheet}>
+        <IconButton label={t('sheetsApp.addSheet')} size="sm" onClick={addNewSheet}>
           <Plus />
         </IconButton>
         {workbook.sheets.length > 1 && (
-          <IconButton label="Delete sheet" size="sm" onClick={() => void deleteSheetAt(active)}>
+          <IconButton
+            label={t('sheetsApp.deleteSheet')}
+            size="sm"
+            onClick={() => void deleteSheetAt(active)}
+          >
             <X />
           </IconButton>
         )}

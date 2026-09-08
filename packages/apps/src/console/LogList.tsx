@@ -6,6 +6,7 @@
  * followed: a list pinned to the bottom stays followed, and the moment the
  * user is anywhere else, following stops.
  */
+import { useT } from '@lumen/kernel/react';
 import { EmptyState, useElementSize } from '@lumen/ui';
 import { ScrollText } from 'lucide-react';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
@@ -49,6 +50,7 @@ export function LogList({
   emptyTitle,
   emptyDescription,
 }: LogListProps) {
+  const t = useT();
   const [scroller, size] = useElementSize<HTMLDivElement>();
   const [scrollTop, setScrollTop] = useState(0);
   const frame = useRef(0);
@@ -213,7 +215,7 @@ export function LogList({
       onScroll={onScroll}
       onKeyDown={onKeyDown}
       role="grid"
-      aria-label="Captured events"
+      aria-label={t('consoleApp.capturedEvents')}
       aria-rowcount={rows.length}
       // The grid owns the keyboard: it scrolls and it moves the selection.
       tabIndex={0}

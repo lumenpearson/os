@@ -1,3 +1,4 @@
+import { t } from '@lumen/kernel';
 /**
  * The menubar for the Mail window, built from one snapshot of state so a
  * command does the same thing whether it is clicked in a toolbar, picked from
@@ -55,32 +56,32 @@ export function buildMailMenus(state: MailMenuState, actions: MailActions): Menu
   return [
     {
       id: 'file',
-      label: 'File',
+      label: t('menu.file'),
       items: [
         {
           id: 'new-message',
-          label: 'New Message',
+          label: t('mail.newMessage'),
           shortcut: 'Mod+N',
           onSelect: actions.newMessage,
         },
         {
           id: 'save-draft',
-          label: 'Save Draft',
+          label: t('mail.saveDraft'),
           shortcut: 'Mod+S',
           enabled: state.composing,
           onSelect: actions.saveDraft,
         },
         separator,
-        { id: 'new-folder', label: 'New Folder…', onSelect: actions.newFolder },
+        { id: 'new-folder', label: t('mail.newFolder'), onSelect: actions.newFolder },
         {
           id: 'rename-folder',
-          label: 'Rename Folder…',
+          label: t('mail.renameFolder'),
           enabled: state.inFolder,
           onSelect: actions.renameFolder,
         },
         {
           id: 'delete-folder',
-          label: 'Delete Folder',
+          label: t('mail.deleteFolder'),
           enabled: state.inFolder,
           danger: true,
           onSelect: actions.deleteFolder,
@@ -88,34 +89,42 @@ export function buildMailMenus(state: MailMenuState, actions: MailActions): Menu
         separator,
         {
           id: 'empty-trash',
-          label: 'Empty Trash',
+          label: t('menu.emptyTrash'),
           danger: true,
           onSelect: actions.emptyTrash,
         },
         separator,
-        { id: 'close', label: 'Close', shortcut: 'Mod+W', onSelect: actions.close },
+        { id: 'close', label: t('menu.close'), shortcut: 'Mod+W', onSelect: actions.close },
       ],
     },
     {
       id: 'edit',
-      label: 'Edit',
-      items: [{ id: 'find', label: 'Find…', shortcut: 'Mod+F', onSelect: actions.find }],
+      label: t('menu.edit'),
+      items: [
+        { id: 'find', label: t('menu.findEllipsis'), shortcut: 'Mod+F', onSelect: actions.find },
+      ],
     },
     {
       id: 'message',
-      label: 'Message',
+      label: t('mail.message'),
       items: [
-        { id: 'reply', label: 'Reply', shortcut: 'Mod+R', enabled: on, onSelect: actions.reply },
+        {
+          id: 'reply',
+          label: t('mail.reply'),
+          shortcut: 'Mod+R',
+          enabled: on,
+          onSelect: actions.reply,
+        },
         {
           id: 'reply-all',
-          label: 'Reply All',
+          label: t('mail.replyAll'),
           shortcut: 'Shift+Mod+R',
           enabled: on,
           onSelect: actions.replyAll,
         },
         {
           id: 'forward',
-          label: 'Forward',
+          label: t('menu.forward'),
           shortcut: 'Shift+Mod+F',
           enabled: on,
           onSelect: actions.forward,
@@ -131,7 +140,7 @@ export function buildMailMenus(state: MailMenuState, actions: MailActions): Menu
         {
           id: 'flag',
           type: 'checkbox',
-          label: 'Flag',
+          label: t('mail.flag'),
           shortcut: 'Shift+Mod+L',
           checked: state.flagged,
           enabled: on,
@@ -140,14 +149,14 @@ export function buildMailMenus(state: MailMenuState, actions: MailActions): Menu
         separator,
         {
           id: 'archive',
-          label: 'Move to Archive',
+          label: t('mail.moveToArchive'),
           shortcut: 'Shift+Mod+A',
           enabled: on && !state.inTrash,
           onSelect: actions.archive,
         },
         {
           id: 'restore',
-          label: 'Move Back from Trash',
+          label: t('mail.moveBackFromTrash'),
           enabled: on && state.inTrash,
           onSelect: actions.restore,
         },
@@ -163,12 +172,12 @@ export function buildMailMenus(state: MailMenuState, actions: MailActions): Menu
     },
     {
       id: 'view',
-      label: 'View',
+      label: t('menu.view'),
       items: [
         {
           id: 'sort',
           type: 'submenu',
-          label: 'Sort By',
+          label: t('menu.sortBy'),
           submenu: SORT_KEYS.map<MenuItemTemplate>((key) => ({
             id: `sort-${key}`,
             type: 'radio',
@@ -180,7 +189,7 @@ export function buildMailMenus(state: MailMenuState, actions: MailActions): Menu
         separator,
         {
           id: 'back',
-          label: 'Message List',
+          label: t('mail.messageList'),
           shortcut: 'Escape',
           enabled: state.canGoBack,
           onSelect: actions.back,
@@ -188,7 +197,7 @@ export function buildMailMenus(state: MailMenuState, actions: MailActions): Menu
         {
           id: 'sidebar',
           type: 'checkbox',
-          label: 'Sidebar',
+          label: t('menu.sidebar'),
           shortcut: 'Shift+Mod+S',
           checked: state.sidebar,
           onSelect: actions.toggleSidebar,

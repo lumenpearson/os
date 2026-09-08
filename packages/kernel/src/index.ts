@@ -29,7 +29,7 @@ export type { KernelEvents } from './events';
 export { EventBus, events } from './events';
 export * from './fs/layout';
 export { seedApplications, seedHome, seedSystem } from './fs/seed';
-export type { Language, MessageKey } from './i18n';
+export type { Language, MessageKey, PluralKey, Translate } from './i18n';
 export {
   en,
   interpolate,

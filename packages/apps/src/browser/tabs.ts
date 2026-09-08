@@ -243,8 +243,14 @@ export function tabsReducer(state: TabsState, action: TabsAction): TabsState {
         tab.status === 'idle' || tab.status === 'external' ? tab : { ...tab, status: 'idle' },
       );
     case 'blocked':
+      /*
+       * `idle` counts as well as `loading`. A frame the site refused fires
+       * `load` exactly as one that arrived does — measured, not assumed — so
+       * a tab can be told a page loaded and then be shown, by the site's own
+       * headers, that what loaded was the browser turning it away.
+       */
       return mapTab(state, action.id, (tab) =>
-        tab.status === 'loading' ? { ...tab, status: 'blocked' } : tab,
+        tab.status === 'loading' || tab.status === 'idle' ? { ...tab, status: 'blocked' } : tab,
       );
     case 'title':
       return mapTab(state, action.id, (tab) =>

@@ -78,6 +78,7 @@ export function Dialog({
   const target = container ?? document.body;
   return createPortal(
     <div
+      data-over-page
       // The scrim is the sheet's containing block: it covers the window body
       // the dialog was portalled into, so every size below is measured
       // against that box and not against the viewport. Its padding is the

@@ -1,6 +1,7 @@
 // deslop-ignore-file 09 13 — <Mark> is the product wordmark; the scanner matches the substring 'mark'.
 /** The Start button, and the hairline that separates it from what follows. */
 
+import { useT } from '@lumen/kernel/react';
 import { cx, Tooltip } from '@lumen/ui';
 import { Mark } from '../../desktop/Wordmark';
 import { useShellStore } from '../../shellStore';
@@ -12,14 +13,15 @@ export function StartItem({
   position,
   separator,
 }: TaskbarItemProps & { separator: boolean }) {
+  const t = useT();
   const open = useShellStore((s) => s.startMenu);
   const toggle = useShellStore((s) => s.toggle);
   return (
     <div data-taskbar-item="start" className={groupClass(vertical)}>
-      <Tooltip content="Start" side={tooltipSide(position)}>
+      <Tooltip content={t('taskbar.start')} side={tooltipSide(position)}>
         <button
           type="button"
-          aria-label="Start"
+          aria-label={t('taskbar.start')}
           aria-haspopup="dialog"
           aria-expanded={open}
           data-testid="start-button"
@@ -43,7 +45,12 @@ export function StartItem({
         </button>
       </Tooltip>
       {separator && (
-        <span aria-hidden className={cx('bg-rule', vertical ? 'my-1 h-px w-6' : 'mx-1 h-6 w-px')} />
+        <span
+          aria-hidden
+          // Half strength: the bar's separators group the icons, they do not
+          // divide the bar, and a full hairline reads as an edge.
+          className={cx('bg-rule/50', vertical ? 'my-1 h-px w-6' : 'mx-1 h-6 w-px')}
+        />
       )}
     </div>
   );

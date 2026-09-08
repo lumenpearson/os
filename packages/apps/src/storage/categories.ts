@@ -7,6 +7,7 @@
  * file can never land in one category here and another one there.
  */
 
+import { type MessageKey, t } from '@lumen/kernel';
 import { type FileCategory, fileCategory } from '@lumen/vfs';
 
 export type StorageCategory =
@@ -29,14 +30,14 @@ export const CATEGORIES: readonly StorageCategory[] = [
   'other',
 ];
 
-export const CATEGORY_LABELS: Record<StorageCategory, string> = {
-  documents: 'Documents',
-  pictures: 'Pictures',
-  audio: 'Audio',
-  video: 'Video',
-  code: 'Code',
-  archives: 'Archives',
-  other: 'Other',
+export const CATEGORY_KEYS: Record<StorageCategory, MessageKey> = {
+  documents: 'storageApp.documents',
+  pictures: 'storageApp.pictures',
+  audio: 'storageApp.audio',
+  video: 'storageApp.video',
+  code: 'storageApp.code',
+  archives: 'storageApp.archives',
+  other: 'storageApp.other',
 };
 
 /**
@@ -95,7 +96,7 @@ export function categoryTotals(files: Iterable<SizedFile>): CategoryTotal[] {
   }
   return CATEGORIES.map((category) => ({
     category,
-    label: CATEGORY_LABELS[category],
+    label: t(CATEGORY_KEYS[category]),
     bytes: bytes.get(category) ?? 0,
     files: counts.get(category) ?? 0,
   }));

@@ -1,3 +1,4 @@
+import { useT } from '@lumen/kernel/react';
 import { Dialog, Input } from '@lumen/ui';
 import { useMemo, useState } from 'react';
 import { FUNCTION_DOCS, type FunctionCategory } from './engine/functions';
@@ -22,6 +23,7 @@ export function FunctionsDialog({
   onClose: () => void;
   container: HTMLElement | null;
 }) {
+  const t = useT();
   const [query, setQuery] = useState('');
 
   const groups = useMemo(() => {
@@ -40,7 +42,7 @@ export function FunctionsDialog({
     <Dialog
       open={open}
       onClose={onClose}
-      title="Functions"
+      title={t('sheetsApp.functions')}
       width={620}
       container={container}
       className="h-[560px]"
@@ -50,12 +52,14 @@ export function FunctionsDialog({
           data-autofocus
           type="search"
           value={query}
-          placeholder="Search functions"
+          placeholder={t('sheetsApp.searchFunctions')}
           onChange={(e) => setQuery(e.target.value)}
-          aria-label="Search functions"
+          aria-label={t('sheetsApp.searchFunctions')}
         />
         {groups.length === 0 && (
-          <p className="py-6 text-center text-ink-3">No function matches “{query}”.</p>
+          <p className="py-6 text-center text-ink-3">
+            {t('sheetsApp.noFunctionMatches', { query })}
+          </p>
         )}
         {groups.map((group) => (
           <section key={group.category} className="flex flex-col gap-1.5">

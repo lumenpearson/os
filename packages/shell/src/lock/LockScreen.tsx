@@ -1,5 +1,5 @@
 import { useSessionStore, useUsersStore } from '@lumen/kernel';
-import { useClock, useCurrentUser, useKernel, useSettings } from '@lumen/kernel/react';
+import { useClock, useCurrentUser, useKernel, useSettings, useT } from '@lumen/kernel/react';
 import { AnchoredMenu, Avatar, Button, cx, Input } from '@lumen/ui';
 import { ArrowRight, Power, Users } from 'lucide-react';
 import { type FormEvent, useEffect, useRef, useState } from 'react';
@@ -8,6 +8,7 @@ import { RecoveryFlow } from './RecoveryFlow';
 
 /** The lock screen: clock, account, password, recovery, power. */
 export default function LockScreen() {
+  const t = useT();
   const kernel = useKernel();
   const user = useCurrentUser();
   const settings = useSettings();
@@ -42,7 +43,7 @@ export default function LockScreen() {
     setBusy(false);
     if (!result.ok) {
       setPassword('');
-      setError(result.reason === 'locked-out' ? 'Too many attempts.' : 'Wrong password.');
+      setError(t(result.reason === 'locked-out' ? 'lock.tooManyAttempts' : 'lock.wrongPassword'));
       setShake(true);
       setTimeout(() => setShake(false), 260);
       inputRef.current?.focus();
@@ -95,12 +96,17 @@ export default function LockScreen() {
           className="flex w-full max-w-[300px] flex-col items-center gap-3"
           data-testid="lock-form"
         >
-          <Avatar name={user?.name ?? 'User'} src={user?.avatar} size={72} className="shadow-md" />
+          <Avatar
+            name={user?.name ?? t('lock.user')}
+            src={user?.avatar}
+            size={72}
+            className="shadow-md"
+          />
           <span className="text-md font-medium text-white drop-shadow-[0_1px_2px_rgb(0_0_0_/_0.4)]">
             {user?.name}
           </span>
           {passwordless ? (
-            <p className="text-sm text-white/80">Click or press any key to unlock</p>
+            <p className="text-sm text-white/80">{t('lock.pressAnyKey')}</p>
           ) : (
             <div
               className={cx(
@@ -111,9 +117,11 @@ export default function LockScreen() {
               <Input
                 ref={inputRef}
                 type="password"
-                aria-label="Password"
+                aria-label={t('lock.password')}
                 placeholder={
-                  lockoutMs > 0 ? `Try again in ${Math.ceil(lockoutMs / 1000)} s` : 'Password'
+                  lockoutMs > 0
+                    ? t('lock.tryAgainIn', { seconds: Math.ceil(lockoutMs / 1000) })
+                    : t('lock.password')
                 }
                 value={password}
                 onChange={(e) => {
@@ -127,7 +135,7 @@ export default function LockScreen() {
               />
               <button
                 type="submit"
-                aria-label="Unlock"
+                aria-label={t('lock.unlock')}
                 disabled={busy || lockoutMs > 0 || password.length === 0}
                 className="absolute right-1 top-1/2 flex size-7 -translate-y-1/2 items-center justify-center rounded-sm bg-[#141517]/10 text-[#141517] lumen-focus disabled:opacity-30 dark:bg-white/15 dark:text-white"
               >
@@ -148,7 +156,7 @@ export default function LockScreen() {
             {/* The hint earns its place after a wrong attempt, which is exactly
                 when an error is showing — so it sits alongside, not instead. */}
             {failedAttempts > 0 && settings.lock.showHint && user?.hint && (
-              <span>Hint: {user.hint}</span>
+              <span>{t('lock.hint', { hint: user.hint })}</span>
             )}
           </div>
           {!passwordless && (
@@ -157,7 +165,7 @@ export default function LockScreen() {
               onClick={() => setRecovery(true)}
               className="text-sm text-white/70 underline-offset-2 hover:underline lumen-focus rounded-xs"
             >
-              Forgot password?
+              {t('lock.forgotPassword')}
             </button>
           )}
           {/* One account is not a choice, so the machine does not offer one. */}
@@ -174,7 +182,7 @@ export default function LockScreen() {
                 className="text-white/85 hover:bg-white/10 hover:text-white"
                 aria-haspopup="menu"
               >
-                Switch User
+                {t('lock.switchUser')}
               </Button>
               <AnchoredMenu
                 open={usersOpen}
@@ -213,7 +221,7 @@ export default function LockScreen() {
             className="text-white/85 hover:bg-white/10 hover:text-white"
             aria-haspopup="menu"
           >
-            Power
+            {t('lock.power')}
           </Button>
           <AnchoredMenu
             open={powerOpen}
@@ -221,9 +229,9 @@ export default function LockScreen() {
             anchor={powerRef.current}
             align="start"
             items={[
-              { label: 'Sleep', onSelect: () => kernel.sleep() },
-              { label: 'Restart', onSelect: () => void kernel.restart() },
-              { label: 'Shut Down', onSelect: () => void kernel.shutdown() },
+              { label: t('lock.sleep'), onSelect: () => kernel.sleep() },
+              { label: t('lock.restart'), onSelect: () => void kernel.restart() },
+              { label: t('lock.shutDown'), onSelect: () => void kernel.shutdown() },
             ]}
           />
         </div>
@@ -234,7 +242,11 @@ export default function LockScreen() {
 
 function Screen({ children }: { children: React.ReactNode }) {
   return (
-    <div className="fixed inset-0 z-[2000] flex select-none" data-testid="lock-screen">
+    <div
+      data-over-page
+      className="fixed inset-0 z-[2000] flex select-none"
+      data-testid="lock-screen"
+    >
       <Wallpaper dim />
       <div className="relative z-10 flex flex-1 flex-col">{children}</div>
     </div>

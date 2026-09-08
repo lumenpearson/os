@@ -5,7 +5,7 @@
  */
 
 import { TRASH_DIR } from '@lumen/kernel';
-import { useKernel, useVfs } from '@lumen/kernel/react';
+import { useKernel, usePlural, useT, useVfs } from '@lumen/kernel/react';
 import { cx, Tooltip } from '@lumen/ui';
 import { isInside } from '@lumen/vfs';
 import { Trash, Trash2 } from 'lucide-react';
@@ -13,6 +13,8 @@ import { useEffect, useState } from 'react';
 import { groupClass, ITEM_BUTTON, type TaskbarItemProps, tooltipSide } from './types';
 
 export function TrashItem({ size, vertical, position }: TaskbarItemProps) {
+  const t = useT();
+  const plural = usePlural();
   const kernel = useKernel();
   const vfs = useVfs();
   const [count, setCount] = useState(0);
@@ -41,9 +43,7 @@ export function TrashItem({ size, vertical, position }: TaskbarItemProps) {
   }, [vfs]);
 
   const full = count > 0;
-  const label = full
-    ? `Recycle Bin, ${count} ${count === 1 ? 'item' : 'items'}`
-    : 'Recycle Bin, empty';
+  const label = full ? plural('taskbar.trash', count) : t('taskbar.trashEmpty');
   const Icon = full ? Trash2 : Trash;
 
   return (

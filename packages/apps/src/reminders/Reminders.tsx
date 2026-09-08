@@ -12,7 +12,7 @@
  * through the VFS.
  */
 
-import { useKernel, useSettings } from '@lumen/kernel/react';
+import { useKernel, useSettings, useT } from '@lumen/kernel/react';
 import {
   AnchoredMenu,
   AppFrame,
@@ -83,6 +83,7 @@ import {
 const TICK_MS = 60_000;
 
 export default function Reminders(_props: AppProps) {
+  const t = useT();
   const kernel = useKernel();
   const settings = useSettings();
   const { container } = useApp();
@@ -247,7 +248,7 @@ export default function Reminders(_props: AppProps) {
         const ok = await dialogs.confirm({
           title: `Delete "${displayTitle(item)}"?`,
           message: kids === 1 ? 'Its subtask goes with it.' : `Its ${kids} subtasks go with it.`,
-          confirmLabel: 'Delete',
+          confirmLabel: t('reminders.delete'),
           danger: true,
         });
         if (!ok) return;
@@ -258,7 +259,7 @@ export default function Reminders(_props: AppProps) {
       if (next !== null && next !== id) focusRow(next);
       else setFocusId(null);
     },
-    [data.items, rows, dialogs, dispatch, focusRow],
+    [data.items, rows, dialogs, dispatch, focusRow, t],
   );
 
   const saveDetails = useCallback(
@@ -273,31 +274,31 @@ export default function Reminders(_props: AppProps) {
 
   const newList = useCallback(async () => {
     const name = await dialogs.prompt({
-      title: 'New List',
-      placeholder: 'Name',
-      confirmLabel: 'Create',
+      title: t('remindersApp.newList'),
+      placeholder: t('remindersApp.name'),
+      confirmLabel: t('remindersApp.create'),
       validate: (value) => (value.trim() ? null : 'Give the list a name.'),
     });
     if (!name?.trim()) return;
     const id = newId('l');
     dispatch({ type: 'addList', list: { id, name: name.trim(), createdAt: Date.now() } });
     setPrefs({ selection: selectionId({ kind: 'list', id }) });
-  }, [dialogs, dispatch, setPrefs]);
+  }, [dialogs, dispatch, setPrefs, t]);
 
   const renameList = useCallback(
     async (id: string) => {
       const list = data.lists.find((l) => l.id === id);
       if (!list) return;
       const name = await dialogs.prompt({
-        title: 'Rename List',
+        title: t('remindersApp.renameList'),
         defaultValue: list.name,
-        confirmLabel: 'Rename',
+        confirmLabel: t('menu.rename'),
         validate: (value) => (value.trim() ? null : 'Give the list a name.'),
       });
       if (!name?.trim()) return;
       dispatch({ type: 'renameList', id, name: name.trim() });
     },
-    [data.lists, dialogs, dispatch],
+    [data.lists, dialogs, dispatch, t],
   );
 
   const removeList = useCallback(
@@ -311,7 +312,7 @@ export default function Reminders(_props: AppProps) {
           held === 0
             ? 'The list is empty.'
             : `${held} ${held === 1 ? 'reminder' : 'reminders'} in it will be deleted.`,
-        confirmLabel: 'Delete',
+        confirmLabel: t('reminders.delete'),
         danger: true,
       });
       if (!ok) return;
@@ -320,7 +321,7 @@ export default function Reminders(_props: AppProps) {
         setPrefs({ selection: selectionId({ kind: 'smart', id: 'today' }) });
       }
     },
-    [data.lists, data.items, dialogs, dispatch, selection, setPrefs],
+    [data.lists, data.items, dialogs, dispatch, selection, setPrefs, t],
   );
 
   const select = useCallback(
@@ -479,7 +480,7 @@ export default function Reminders(_props: AppProps) {
       onSelect: () => select({ kind: 'list', id: list.id }),
     })),
     { type: 'separator' },
-    { id: 'new-list', label: 'New List…', onSelect: () => void newList() },
+    { id: 'new-list', label: t('remindersApp.newListEllipsis'), onSelect: () => void newList() },
   ];
 
   return (
@@ -490,7 +491,7 @@ export default function Reminders(_props: AppProps) {
             {layout.sidebarFits ? (
               <IconButton
                 size="sm"
-                label="Sidebar"
+                label={t('remindersApp.sidebar')}
                 active={data.prefs.showSidebar}
                 onClick={() => latest.current.toggleSidebar()}
               >
@@ -499,7 +500,7 @@ export default function Reminders(_props: AppProps) {
             ) : (
               <IconButton
                 size="sm"
-                label="Lists"
+                label={t('remindersApp.lists')}
                 onClick={(event) => {
                   const box = event.currentTarget.getBoundingClientRect();
                   setListMenuAt({ x: box.left, y: box.bottom + 4 });
@@ -518,8 +519,8 @@ export default function Reminders(_props: AppProps) {
                 ref={searchRef}
                 size="sm"
                 value={query}
-                aria-label="Search reminders"
-                placeholder="Search"
+                aria-label={t('remindersApp.searchReminders')}
+                placeholder={t('systemBar.search')}
                 onChange={setQuery}
                 onFocus={() => setFocusId(null)}
               />
@@ -527,7 +528,7 @@ export default function Reminders(_props: AppProps) {
             {layout.compact ? (
               <IconButton
                 size="sm"
-                label="New Reminder"
+                label={t('remindersApp.newReminderTitle')}
                 onClick={() => latest.current.startNewReminder()}
               >
                 <Plus className="size-3.5" />
@@ -538,7 +539,7 @@ export default function Reminders(_props: AppProps) {
                 icon={<Plus className="size-3.5" />}
                 onClick={() => latest.current.startNewReminder()}
               >
-                New Reminder
+                {t('remindersApp.newReminderTitle')}
               </Button>
             )}
           </Toolbar>
@@ -563,7 +564,9 @@ export default function Reminders(_props: AppProps) {
               {counts.open === 1 ? '1 open' : `${counts.open} open`}
             </span>
             {counts.completed > 0 && (
-              <span className="tabular-nums text-ink-3">{counts.completed} completed</span>
+              <span className="tabular-nums text-ink-3">
+                {t('remindersApp.completedCount', { count: counts.completed })}
+              </span>
             )}
             {focused && <span className="truncate-1 text-ink-3">{displayTitle(focused)}</span>}
           </>

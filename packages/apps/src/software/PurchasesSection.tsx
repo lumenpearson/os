@@ -22,14 +22,16 @@ import { formatDay, formatMoney } from './SubscriptionSection';
  * the currency it was charged in, and adding unlike ones together would print
  * a number that is true of nothing.
  */
-export function receiptsSummary(receipts: readonly Receipt[]): string {
+export function receiptsSummary(receipts: readonly Receipt[], locale?: string): string {
   if (receipts.length === 0) return 'No receipts';
   const totals = new Map<CurrencyCode, number>();
   for (const receipt of receipts) {
     totals.set(receipt.currency, (totals.get(receipt.currency) ?? 0) + receipt.amountMinor);
   }
   const count = receipts.length === 1 ? '1 receipt' : `${receipts.length} receipts`;
-  const money = [...totals].map(([currency, minor]) => formatMoney(minor, currency)).join(' and ');
+  const money = [...totals]
+    .map(([currency, minor]) => formatMoney(minor, currency, locale))
+    .join(' and ');
   return `${count}, ${money} in total`;
 }
 

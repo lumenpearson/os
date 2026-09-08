@@ -1,3 +1,4 @@
+import { useT } from '@lumen/kernel/react';
 import { cx, EmptyState, Heading } from '@lumen/ui';
 import { Flag, Mail, Paperclip } from 'lucide-react';
 import { displaySender, displaySubject } from './compose';
@@ -46,13 +47,14 @@ export function ReadingPane({
   onOpenAttachment,
   className,
 }: ReadingPaneProps) {
+  const t = useT();
   if (!message) {
     return (
       <div className={cx('flex min-h-0 min-w-0 flex-1 flex-col bg-surface', className)}>
         <EmptyState
           icon={<Mail />}
-          title="No message selected"
-          description="This mailbox is a file on this computer. Nothing here was sent or received over a network."
+          title={t('mailApp.noneSelected')}
+          description={t('mailApp.localOnly')}
         />
       </div>
     );
@@ -78,7 +80,7 @@ export function ReadingPane({
             {message.flagged && (
               <span className="flex items-center gap-1 text-xs text-accent">
                 <Flag className="size-3" />
-                Flagged
+                {t('mailApp.flagged')}
               </span>
             )}
             <span className="mono text-xs tabular-nums text-ink-2">
@@ -86,9 +88,9 @@ export function ReadingPane({
             </span>
           </div>
           <div className="flex flex-col gap-1 border-t border-rule pt-2">
-            <AddressRow label="To" list={message.to} />
-            <AddressRow label="Cc" list={message.cc} />
-            <AddressRow label="Bcc" list={message.bcc} />
+            <AddressRow label={t('mailApp.to')} list={message.to} />
+            <AddressRow label={t('mailApp.cc')} list={message.cc} />
+            <AddressRow label={t('mailApp.bcc')} list={message.bcc} />
           </div>
         </header>
 
@@ -96,7 +98,7 @@ export function ReadingPane({
           <section className="flex flex-col gap-2">
             <div className="flex items-center gap-2">
               <span className="mono text-2xs uppercase tracking-[0.08em] text-ink-3">
-                Attachments
+                {t('mailApp.attachments')}
               </span>
               <span className="mono text-2xs tabular-nums text-ink-3">{formatSize(totalSize)}</span>
             </div>
@@ -145,7 +147,7 @@ export function ReadingPane({
         {others.length > 0 && (
           <section className="flex flex-col gap-2 border-t border-rule pt-4">
             <h3 className="mono text-2xs uppercase tracking-[0.08em] text-ink-3">
-              Earlier in this conversation
+              {t('mailApp.earlier')}
             </h3>
             <ul className="flex flex-col">
               {others.map((other) => (

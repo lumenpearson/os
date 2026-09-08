@@ -4,6 +4,7 @@
  * menu or typed as a shortcut.
  */
 import type { MenuItemTemplate, MenuTemplate } from '@lumen/kernel';
+import { t } from '@lumen/kernel';
 import type { Color } from './board';
 import { LEVELS, type LevelId } from './engine';
 
@@ -60,23 +61,23 @@ export function buildChessMenus(state: ChessMenuState, actions: ChessActions): M
   return [
     {
       id: 'game',
-      label: 'Game',
+      label: t('menu.game'),
       items: [
-        { id: 'new', label: 'New Game…', shortcut: 'Mod+N', onSelect: actions.newGame },
+        { id: 'new', label: t('chess.newGame'), shortcut: 'Mod+N', onSelect: actions.newGame },
         {
           id: 'new-white',
-          label: 'New Game as White',
+          label: t('chess.asWhite'),
           onSelect: () => actions.newGameAs('w'),
         },
         {
           id: 'new-black',
-          label: 'New Game as Black',
+          label: t('chess.asBlack'),
           shortcut: 'Shift+Mod+N',
           onSelect: () => actions.newGameAs('b'),
         },
         {
           id: 'restart',
-          label: 'Restart Game',
+          label: t('chess.restart'),
           shortcut: 'Mod+R',
           enabled: state.canRestart,
           onSelect: actions.restart,
@@ -84,21 +85,21 @@ export function buildChessMenus(state: ChessMenuState, actions: ChessActions): M
         separator,
         {
           id: 'undo',
-          label: 'Undo Move',
+          label: t('chess.undoMove'),
           shortcut: 'Mod+Z',
           enabled: state.canUndo,
           onSelect: actions.undo,
         },
         {
           id: 'redo',
-          label: 'Redo Move',
+          label: t('chess.redoMove'),
           shortcut: 'Shift+Mod+Z',
           enabled: state.canRedo,
           onSelect: actions.redo,
         },
         {
           id: 'take-back',
-          label: 'Take Back',
+          label: t('chess.takeBack'),
           shortcut: 'Mod+Backspace',
           enabled: state.canTakeBack,
           onSelect: actions.takeBack,
@@ -106,35 +107,35 @@ export function buildChessMenus(state: ChessMenuState, actions: ChessActions): M
         separator,
         {
           id: 'resign',
-          label: 'Resign',
+          label: t('chess.resign'),
           danger: true,
           enabled: state.canResign,
           onSelect: actions.resign,
         },
         separator,
-        { id: 'close', label: 'Close', shortcut: 'Mod+W', onSelect: actions.close },
+        { id: 'close', label: t('menu.close'), shortcut: 'Mod+W', onSelect: actions.close },
       ],
     },
     {
       id: 'edit',
-      label: 'Edit',
+      label: t('menu.edit'),
       items: [
         {
           id: 'copy-fen',
-          label: 'Copy Position (FEN)',
+          label: t('chess.copyFen'),
           shortcut: 'Mod+C',
           onSelect: actions.copyFen,
         },
         {
           id: 'copy-pgn',
-          label: 'Copy Game (PGN)',
+          label: t('chess.copyPgn'),
           shortcut: 'Shift+Mod+C',
           onSelect: actions.copyPgn,
         },
         separator,
         {
           id: 'paste-fen',
-          label: 'Paste Position…',
+          label: t('chess.pastePosition'),
           shortcut: 'Mod+V',
           onSelect: actions.pasteFen,
         },
@@ -142,12 +143,12 @@ export function buildChessMenus(state: ChessMenuState, actions: ChessActions): M
     },
     {
       id: 'view',
-      label: 'View',
+      label: t('menu.view'),
       items: [
         {
           id: 'flip',
           type: 'checkbox',
-          label: 'Flip Board',
+          label: t('chess.flipBoard'),
           shortcut: 'Mod+F',
           checked: state.flipped,
           onSelect: actions.flip,
@@ -156,53 +157,58 @@ export function buildChessMenus(state: ChessMenuState, actions: ChessActions): M
         {
           id: 'coordinates',
           type: 'checkbox',
-          label: 'Coordinates',
+          label: t('chess.coordinates'),
           checked: state.coordinates,
           onSelect: actions.toggleCoordinates,
         },
         {
           id: 'last-move',
           type: 'checkbox',
-          label: 'Last Move',
+          label: t('chess.lastMove'),
           checked: state.lastMove,
           onSelect: actions.toggleLastMove,
         },
         {
           id: 'hints',
           type: 'checkbox',
-          label: 'Legal Moves',
+          label: t('chess.legalMoves'),
           checked: state.hints,
           onSelect: actions.toggleHints,
         },
         {
           id: 'captured',
           type: 'checkbox',
-          label: 'Captured Pieces',
+          label: t('chess.capturedPieces'),
           checked: state.captured,
           onSelect: actions.toggleCaptured,
         },
         {
           id: 'move-list',
           type: 'checkbox',
-          label: 'Move List',
+          label: t('chess.moveList'),
           checked: state.moveList,
           onSelect: actions.toggleMoveList,
         },
         separator,
-        { id: 'first', label: 'First Move', shortcut: 'Mod+Up', onSelect: actions.first },
+        { id: 'first', label: t('chess.firstMove'), shortcut: 'Mod+Up', onSelect: actions.first },
         {
           id: 'previous',
-          label: 'Previous Move',
+          label: t('chess.previousMove'),
           shortcut: 'Mod+Left',
           onSelect: actions.previous,
         },
-        { id: 'next', label: 'Next Move', shortcut: 'Mod+Right', onSelect: actions.next },
-        { id: 'last', label: 'Latest Position', shortcut: 'Mod+Down', onSelect: actions.last },
+        { id: 'next', label: t('chess.nextMove'), shortcut: 'Mod+Right', onSelect: actions.next },
+        {
+          id: 'last',
+          label: t('chess.latestPosition'),
+          shortcut: 'Mod+Down',
+          onSelect: actions.last,
+        },
       ],
     },
     {
       id: 'level',
-      label: 'Level',
+      label: t('chess.level'),
       items: LEVELS.map<MenuItemTemplate>((level, position) => ({
         id: `level-${level.id}`,
         type: 'radio',
@@ -214,10 +220,10 @@ export function buildChessMenus(state: ChessMenuState, actions: ChessActions): M
     },
     {
       id: 'help',
-      label: 'Help',
+      label: t('menu.help'),
       items: [
-        { id: 'how-to-play', label: 'How to Play', onSelect: actions.howToPlay },
-        { id: 'about', label: 'About Chess', onSelect: actions.about },
+        { id: 'how-to-play', label: t('chess.howToPlay'), onSelect: actions.howToPlay },
+        { id: 'about', label: t('chess.about'), onSelect: actions.about },
       ],
     },
   ];

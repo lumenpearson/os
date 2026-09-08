@@ -40,8 +40,13 @@ test('a site that refuses to be framed still opens', async ({ page }) => {
   await expect(win.getByText('This site refused to be embedded')).toHaveCount(0);
   await expect(win.getByText(/Lumen fetched the page/)).toBeVisible();
 
-  // The page is the site's, not a placeholder: its own text is in the frame.
-  await expect(win.frameLocator('iframe').getByText('Google Search').first()).toBeVisible();
+  /*
+   * The page is the site's, not a placeholder: its own search box is in the
+   * frame. Matched by the field's name rather than by anything written on it,
+   * because Google answers in the language of wherever the request came from
+   * and the words on this page are not the same twice.
+   */
+  await expect(win.frameLocator('iframe').locator('input[name="q"]').first()).toBeVisible();
 
   // And browsing carries on from there, to another site that refuses framing.
   await goTo('https://en.wikipedia.org/wiki/Operating_system');
@@ -49,6 +54,43 @@ test('a site that refuses to be framed still opens', async ({ page }) => {
   await expect(
     win.frameLocator('iframe').getByRole('heading', { name: 'Operating system' }).first(),
   ).toBeVisible();
+});
+
+/**
+ * LU-1609, the second half. The document is served from Lumen's origin with a
+ * `<base>` pointing at the site, so that the page's own images and
+ * stylesheets load — and that sent the page's links to the site as well. A
+ * link followed from a fetched page went straight to `google.com`, into a
+ * frame google refuses, and the page went blank on the first click.
+ */
+test('a link followed inside a fetched page stays inside Lumen', async ({ page }) => {
+  await page.setViewportSize({ width: 1200, height: 800 });
+  await setupAndUnlock(page);
+  await launch(page, 'Browser');
+  const win = page.getByTestId('window').first();
+  const address = win.getByRole('combobox', { name: 'Address and search' });
+
+  await address.click();
+  await page.keyboard.press('Control+a');
+  await page.keyboard.type('https://www.google.com/');
+  await address.press('Enter');
+
+  const frame = win.locator('iframe');
+  await expect
+    .poll(() => frame.getAttribute('src'), { message: 'asked through Lumen' })
+    .toContain('/api/page?url=');
+
+  // Matched by where the link goes rather than by what it says, because the
+  // words on this page depend on where the request came from.
+  await win.frameLocator('iframe').locator('a[href*="advanced_search"]').first().click();
+
+  // The link was followed, and it was followed through Lumen: handed to the
+  // site, it would have landed in a frame google refuses.
+  await expect
+    .poll(() => frame.getAttribute('src'), { message: 'the link went through Lumen' })
+    .toContain('advanced_search');
+  // And the browser knows where its page went, so the address bar is right.
+  await expect(address).toHaveValue(/google\.com\/advanced_search/);
 });
 
 /**
