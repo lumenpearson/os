@@ -1,27 +1,29 @@
-import { useSetting } from '@lumen/kernel/react';
+import { useSetting, useT } from '@lumen/kernel/react';
 import { Input, SettingsGroup, SettingsPage, Switch } from '@lumen/ui';
 import { networkStatus } from '../logic';
 import { Row, Value } from '../Row';
 
 export function NetworkPage() {
+  const t = useT();
   const [network, patch] = useSetting('network');
   const grounded = network.airplane;
   return (
-    <SettingsPage
-      title="Network"
-      description="Simulated radios. The status line is what the menubar shows."
-    >
-      <SettingsGroup title="Radios">
-        <Row id="network.wifi" label="Wi-Fi">
+    <SettingsPage title={t('settings.network')} description={t('networkPage.intro')}>
+      <SettingsGroup title={t('networkPage.radios')}>
+        <Row id="network.wifi" label={t('controlCenter.wifi')}>
           <Switch
             checked={network.wifi && !grounded}
             disabled={grounded}
             onChange={(e) => patch({ wifi: e.target.checked })}
           />
         </Row>
-        <Row id="network.ssid" label="Network name" description="Shown when Wi-Fi is on.">
+        <Row
+          id="network.ssid"
+          label={t('networkPage.networkName')}
+          description={t('networkPage.networkNameHint')}
+        >
           <Input
-            aria-label="Network name"
+            aria-label={t('networkPage.networkName')}
             mono
             value={network.ssid}
             onChange={(e) => patch({ ssid: e.target.value })}
@@ -29,7 +31,7 @@ export function NetworkPage() {
             className="max-w-56"
           />
         </Row>
-        <Row id="network.bluetooth" label="Bluetooth">
+        <Row id="network.bluetooth" label={t('controlCenter.bluetooth')}>
           <Switch
             checked={network.bluetooth && !grounded}
             disabled={grounded}
@@ -38,8 +40,8 @@ export function NetworkPage() {
         </Row>
         <Row
           id="network.airplane"
-          label="Airplane mode"
-          description="Turns off Wi-Fi and Bluetooth."
+          label={t('networkPage.airplane')}
+          description={t('networkPage.airplaneHint')}
         >
           <Switch
             checked={network.airplane}
@@ -47,8 +49,8 @@ export function NetworkPage() {
           />
         </Row>
       </SettingsGroup>
-      <SettingsGroup title="Status">
-        <Row id="network.status" label="Status">
+      <SettingsGroup title={t('networkPage.status')}>
+        <Row id="network.status" label={t('networkPage.status')}>
           <Value>{networkStatus(network)}</Value>
         </Row>
       </SettingsGroup>

@@ -1,5 +1,6 @@
+import type { Translate } from '@lumen/kernel';
 import { DEFAULT_STORE_ORIGIN } from '@lumen/kernel';
-import { useSetting } from '@lumen/kernel/react';
+import { useSetting, useT } from '@lumen/kernel/react';
 import {
   Button,
   Input,
@@ -15,11 +16,15 @@ import { Row, Value } from '../Row';
 
 // Minutes, as strings: the Select carries string values, and the page is the
 // only place that has to know the difference.
-const INTERVALS: SelectOption<string>[] = [
-  { value: '0', label: 'Only when asked' },
-  { value: '60', label: 'Every hour' },
-  { value: '360', label: 'Every six hours' },
-  { value: '1440', label: 'Every day' },
+/*
+ * A function of the translator, not a table built at import: a table would
+ * keep whatever language was in force when the module first loaded.
+ */
+const intervalOptions = (t: Translate): SelectOption<string>[] => [
+  { value: '0', label: t('storePage.onlyWhenAsked') },
+  { value: '60', label: t('storePage.everyHour') },
+  { value: '360', label: t('storePage.everySixHours') },
+  { value: '1440', label: t('storePage.everyDay') },
 ];
 
 /** The last sync, or a sentence saying there has not been one. */
@@ -29,6 +34,7 @@ function syncedAt(at: number | null, locale: string): string {
 }
 
 export function StorePage() {
+  const t = useT();
   const [store, patch] = useSetting('store');
   const [region] = useSetting('region');
   // The field is edited freely and only written back when it is left, so a
@@ -42,18 +48,18 @@ export function StorePage() {
   };
 
   return (
-    <SettingsPage title="Store" description="Where programs, fonts and icon sets are fetched from.">
-      <SettingsGroup title="Catalogue">
+    <SettingsPage title={t('settings.store')} description={t('storePage.intro')}>
+      <SettingsGroup title={t('storePage.catalogue')}>
         <Row
           id="store.origin"
-          label="Address"
-          description="A directory of static files. A path is served beside Lumen; a full URL is a store hosted on its own."
+          label={t('storePage.address')}
+          description={t('storePage.addressHint')}
         >
           <Input
             className="mono w-72"
             value={draft}
             spellCheck={false}
-            aria-label="Store address"
+            aria-label={t('storePage.storeAddress')}
             onChange={(e) => setDraft(e.target.value)}
             onBlur={commit}
             onKeyDown={(e) => {
@@ -69,27 +75,27 @@ export function StorePage() {
               patch({ origin: DEFAULT_STORE_ORIGIN });
             }}
           >
-            Default
+            {t('storePage.default')}
           </Button>
         </Row>
-        <Row id="store.lastSync" label="Last fetched">
+        <Row id="store.lastSync" label={t('storePage.lastFetched')}>
           <Value>{syncedAt(store.lastSync, region.locale)}</Value>
         </Row>
       </SettingsGroup>
-      <SettingsGroup title="Refreshing">
+      <SettingsGroup title={t('storePage.refreshing')}>
         <Row
           id="store.autoSync"
-          label="Fetch the catalogue on its own"
-          description="Off leaves it to the Refresh button in the Software app."
+          label={t('storePage.autoFetch')}
+          description={t('storePage.autoFetchHint')}
         >
           <Switch
             checked={store.autoSync}
             onChange={(e) => patch({ autoSync: e.target.checked })}
           />
         </Row>
-        <Row id="store.syncMinutes" label="How often">
+        <Row id="store.syncMinutes" label={t('storePage.howOften')}>
           <Select
-            options={INTERVALS}
+            options={intervalOptions(t)}
             value={String(store.syncMinutes)}
             disabled={!store.autoSync}
             onChange={(minutes) => patch({ syncMinutes: Number(minutes) })}

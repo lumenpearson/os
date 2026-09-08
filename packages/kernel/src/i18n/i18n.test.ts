@@ -30,6 +30,12 @@ describe('the dictionaries', () => {
     'region.dateIso', // the standard's name, ISO 8601, which is not translated
     'controlCenter.wifi', // a trademark, written the same in Russian
     'controlCenter.bluetooth', // likewise
+    'aboutPage.github', // the name of the site
+    'cursorPage.styleLumen', // the product's own name
+    // The legends printed on the keys themselves. A Russian keyboard says
+    // Ctrl, so translating the word would name a key nobody has.
+    'keyboardPage.modCtrl',
+    'keyboardPage.modCmd',
   ];
 
   it('say something different from English', () => {

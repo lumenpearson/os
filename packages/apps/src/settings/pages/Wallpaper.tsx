@@ -1,5 +1,6 @@
+import type { Translate } from '@lumen/kernel';
 import { WALLPAPERS } from '@lumen/kernel';
-import { useSetting } from '@lumen/kernel/react';
+import { useSetting, useT } from '@lumen/kernel/react';
 import {
   Button,
   cx,
@@ -16,23 +17,27 @@ import { ChoiceGroup, Row, Value } from '../Row';
 
 const IMAGE_EXTENSIONS = ['.png', '.jpg', '.jpeg', '.webp', '.gif', '.svg'];
 
-const FITS: SelectOption<'cover' | 'contain' | 'tile' | 'center'>[] = [
-  { value: 'cover', label: 'Fill screen' },
-  { value: 'contain', label: 'Fit to screen' },
-  { value: 'tile', label: 'Tile' },
-  { value: 'center', label: 'Centre' },
+/*
+ * A function of the translator, not a table built at import: a table would
+ * keep whatever language was in force when the module first loaded.
+ */
+const fitOptions = (t: Translate): SelectOption<'cover' | 'contain' | 'tile' | 'center'>[] => [
+  { value: 'cover', label: t('wallpaperPage.fillScreen') },
+  { value: 'contain', label: t('wallpaperPage.fitToScreen') },
+  { value: 'tile', label: t('wallpaperPage.tile') },
+  { value: 'center', label: t('wallpaperPage.centre') },
 ];
 
-const ICON_SIZES: SelectOption<'small' | 'medium' | 'large'>[] = [
-  { value: 'small', label: 'Small' },
-  { value: 'medium', label: 'Medium' },
-  { value: 'large', label: 'Large' },
+const iconSizeOptions = (t: Translate): SelectOption<'small' | 'medium' | 'large'>[] => [
+  { value: 'small', label: t('desktop.sizeSmall') },
+  { value: 'medium', label: t('desktop.sizeMedium') },
+  { value: 'large', label: t('desktop.sizeLarge') },
 ];
 
-const SORTS: SelectOption<'name' | 'kind' | 'date'>[] = [
-  { value: 'name', label: 'Name' },
-  { value: 'kind', label: 'Kind' },
-  { value: 'date', label: 'Date modified' },
+const sortOptions = (t: Translate): SelectOption<'name' | 'kind' | 'date'>[] => [
+  { value: 'name', label: t('desktop.sortName') },
+  { value: 'kind', label: t('desktop.sortKind') },
+  { value: 'date', label: t('wallpaperPage.dateModified') },
 ];
 
 function Thumb({ src, alt, selected }: { src: string | null; alt: string; selected: boolean }) {
@@ -63,6 +68,7 @@ function CustomThumb({ path, selected }: { path: string; selected: boolean }) {
 }
 
 export function WallpaperPage() {
+  const t = useT();
   const [desktop, patch] = useSetting('desktop');
   const pick = useFilePicker();
   const custom = desktop.wallpaper.startsWith('preset:') ? null : desktop.wallpaper;
@@ -70,7 +76,7 @@ export function WallpaperPage() {
   const choose = async () => {
     const result = await pick({
       mode: 'open',
-      title: 'Choose a wallpaper',
+      title: t('wallpaperPage.choose'),
       extensions: IMAGE_EXTENSIONS,
     });
     const path = Array.isArray(result) ? result[0] : result;
@@ -83,7 +89,7 @@ export function WallpaperPage() {
     render: (selected: boolean) => (
       <Thumb
         src={`data:image/svg+xml;charset=utf-8,${encodeURIComponent(w.svg)}`}
-        alt=""
+        alt="" /* i18n-ignore a decorative preview; an empty alt is correct */
         selected={selected}
       />
     ),
@@ -97,11 +103,11 @@ export function WallpaperPage() {
   }
 
   return (
-    <SettingsPage title="Wallpaper" description="The desktop picture and how icons sit on it.">
-      <SettingsGroup title="Wallpaper">
-        <Row id="wallpaper.picker" label="Picture" stacked>
+    <SettingsPage title={t('settings.wallpaper')} description={t('wallpaperPage.intro')}>
+      <SettingsGroup title={t('settings.wallpaper')}>
+        <Row id="wallpaper.picker" label={t('wallpaperPage.picture')} stacked>
           <ChoiceGroup
-            label="Wallpaper"
+            label={t('settings.wallpaper')}
             value={desktop.wallpaper}
             onChange={(wallpaper) => patch({ wallpaper })}
             options={options}
@@ -112,22 +118,22 @@ export function WallpaperPage() {
               icon={<FolderOpen className="size-3.5" />}
               onClick={() => void choose()}
             >
-              Choose from Files…
+              {t('wallpaperPage.chooseFromFiles')}
             </Button>
             {custom && <Value>{custom}</Value>}
           </div>
         </Row>
-        <Row id="wallpaper.fit" label="Fit">
+        <Row id="wallpaper.fit" label={t('wallpaperPage.fit')}>
           <Select
-            options={FITS}
+            options={fitOptions(t)}
             value={desktop.wallpaperFit}
             onChange={(wallpaperFit) => patch({ wallpaperFit })}
           />
         </Row>
         <Row
           id="wallpaper.dynamicChrome"
-          label="Dynamic chrome"
-          description="Tint the menubar and desktop from the wallpaper."
+          label={t('wallpaperPage.dynamicChrome')}
+          description={t('wallpaperPage.dynamicChromeHint')}
         >
           <Switch
             checked={desktop.dynamicChrome}
@@ -136,24 +142,24 @@ export function WallpaperPage() {
         </Row>
       </SettingsGroup>
 
-      <SettingsGroup title="Desktop icons">
-        <Row id="wallpaper.icons" label="Show desktop icons">
+      <SettingsGroup title={t('wallpaperPage.desktopIcons')}>
+        <Row id="wallpaper.icons" label={t('wallpaperPage.showIcons')}>
           <Switch
             checked={desktop.showIcons}
             onChange={(e) => patch({ showIcons: e.target.checked })}
           />
         </Row>
-        <Row id="wallpaper.iconSize" label="Icon size">
+        <Row id="wallpaper.iconSize" label={t('wallpaperPage.iconSize')}>
           <Select
-            options={ICON_SIZES}
+            options={iconSizeOptions(t)}
             value={desktop.iconSize}
             onChange={(iconSize) => patch({ iconSize })}
             disabled={!desktop.showIcons}
           />
         </Row>
-        <Row id="wallpaper.sortBy" label="Sort by">
+        <Row id="wallpaper.sortBy" label={t('wallpaperPage.sortBy')}>
           <Select
-            options={SORTS}
+            options={sortOptions(t)}
             value={desktop.sortBy}
             onChange={(sortBy) => patch({ sortBy })}
             disabled={!desktop.showIcons}

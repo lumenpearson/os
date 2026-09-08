@@ -1,4 +1,5 @@
-import { useSetting } from '@lumen/kernel/react';
+import type { Translate } from '@lumen/kernel';
+import { useSetting, useT } from '@lumen/kernel/react';
 import {
   CURSOR_DRAWINGS,
   SegmentedControl,
@@ -50,38 +51,40 @@ function Arrow({ style }: { style: CursorStyle }) {
   );
 }
 
-const STYLES: SegmentedOption<CursorStyle>[] = [
-  { value: 'lumen', label: 'Lumen', icon: <Arrow style="lumen" /> },
-  { value: 'classic', label: 'Classic', icon: <Arrow style="classic" /> },
-  { value: 'native', label: 'Native', icon: <Arrow style="native" /> },
+/*
+ * A function of the translator, not a table built at import: a table would
+ * keep whatever language was in force when the module first loaded.
+ */
+const styleOptions = (t: Translate): SegmentedOption<CursorStyle>[] => [
+  { value: 'lumen', label: t('cursorPage.styleLumen'), icon: <Arrow style="lumen" /> },
+  { value: 'classic', label: t('cursorPage.styleClassic'), icon: <Arrow style="classic" /> },
+  { value: 'native', label: t('cursorPage.styleNative'), icon: <Arrow style="native" /> },
 ];
 
-const COLORS: SegmentedOption<'auto' | 'light' | 'dark'>[] = [
-  { value: 'auto', label: 'Auto' },
-  { value: 'light', label: 'Light' },
-  { value: 'dark', label: 'Dark' },
+const colourOptions = (t: Translate): SegmentedOption<'auto' | 'light' | 'dark'>[] => [
+  { value: 'auto', label: t('option.auto') },
+  { value: 'light', label: t('option.light') },
+  { value: 'dark', label: t('option.dark') },
 ];
 
 export function CursorPage() {
+  const t = useT();
   const [cursor, patch] = useSetting('cursor');
   const custom = cursor.style !== 'native';
   return (
-    <SettingsPage
-      title="Cursor"
-      description="The pointer the system draws. Native uses the host's own."
-    >
-      <SettingsGroup title="Pointer">
-        <Row id="cursor.style" label="Style">
+    <SettingsPage title={t('settings.cursor')} description={t('cursorPage.intro')}>
+      <SettingsGroup title={t('cursorPage.pointer')}>
+        <Row id="cursor.style" label={t('cursorPage.style')}>
           <SegmentedControl
-            aria-label="Cursor style"
-            options={STYLES}
+            aria-label={t('cursorPage.cursorStyle')}
+            options={styleOptions(t)}
             value={cursor.style}
             onChange={(style) => patch({ style })}
           />
         </Row>
-        <Row id="cursor.size" label="Size" stacked>
+        <Row id="cursor.size" label={t('cursorPage.size')} stacked>
           <Slider
-            aria-label="Cursor size"
+            aria-label={t('cursorPage.cursorSize')}
             min={1}
             max={2}
             step={0.25}
@@ -93,17 +96,21 @@ export function CursorPage() {
         </Row>
         <Row
           id="cursor.color"
-          label="Colour"
-          description="Auto picks light on dark wallpapers and dark on light ones."
+          label={t('cursorPage.colour')}
+          description={t('cursorPage.colourHint')}
         >
           <SegmentedControl
-            aria-label="Cursor colour"
-            options={COLORS}
+            aria-label={t('cursorPage.cursorColour')}
+            options={colourOptions(t)}
             value={cursor.color}
             onChange={(color) => patch({ color })}
           />
         </Row>
-        <Row id="cursor.trail" label="Trail" description="A short motion trail behind the pointer.">
+        <Row
+          id="cursor.trail"
+          label={t('cursorPage.trail')}
+          description={t('cursorPage.trailHint')}
+        >
           <Switch
             checked={cursor.trail}
             disabled={!custom}

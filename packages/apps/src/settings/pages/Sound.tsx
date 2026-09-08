@@ -1,15 +1,16 @@
-import { useSetting } from '@lumen/kernel/react';
+import { useSetting, useT } from '@lumen/kernel/react';
 import { SettingsGroup, SettingsPage, Slider, Switch } from '@lumen/ui';
 import { Row } from '../Row';
 
 export function SoundPage() {
+  const t = useT();
   const [sound, patch] = useSetting('sound');
   return (
-    <SettingsPage title="Sound" description="Output volume and interface sounds.">
-      <SettingsGroup title="Output">
-        <Row id="sound.volume" label="Volume" stacked>
+    <SettingsPage title={t('settings.sound')} description={t('soundPage.intro')}>
+      <SettingsGroup title={t('soundPage.output')}>
+        <Row id="sound.volume" label={t('soundPage.volume')} stacked>
           <Slider
-            aria-label="Volume"
+            aria-label={t('soundPage.volume')}
             min={0}
             max={100}
             step={1}
@@ -19,18 +20,22 @@ export function SoundPage() {
             showValue={(v) => `${v}%`}
           />
         </Row>
-        <Row id="sound.mute" label="Mute">
+        <Row id="sound.mute" label={t('soundPage.mute')}>
           <Switch checked={sound.muted} onChange={(e) => patch({ muted: e.target.checked })} />
         </Row>
       </SettingsGroup>
-      <SettingsGroup title="Interface">
-        <Row id="sound.ui" label="Interface sounds" description="Clicks, alerts and notifications.">
+      <SettingsGroup title={t('soundPage.interface')}>
+        <Row
+          id="sound.ui"
+          label={t('soundPage.interfaceSounds')}
+          description={t('soundPage.interfaceSoundsHint')}
+        >
           <Switch
             checked={sound.uiSounds}
             onChange={(e) => patch({ uiSounds: e.target.checked })}
           />
         </Row>
-        <Row id="sound.startup" label="Startup sound">
+        <Row id="sound.startup" label={t('soundPage.startupSound')}>
           <Switch
             checked={sound.startupSound}
             onChange={(e) => patch({ startupSound: e.target.checked })}

@@ -1,10 +1,11 @@
-import { useKernel, useSetting } from '@lumen/kernel/react';
+import { useKernel, useSetting, useT } from '@lumen/kernel/react';
 import { Button, Select, SettingsGroup, SettingsPage, Switch, useDialogs } from '@lumen/ui';
 import { Moon, Power, RotateCcw } from 'lucide-react';
 import { MINUTE_OPTIONS, parseMinutes } from '../logic';
 import { Row } from '../Row';
 
 export function PowerPage() {
+  const t = useT();
   const kernel = useKernel();
   const dialogs = useDialogs();
   const [power, patch] = useSetting('power');
@@ -12,8 +13,8 @@ export function PowerPage() {
   const restart = async () => {
     if (
       await dialogs.confirm({
-        title: 'Restart now?',
-        message: 'Open windows will close.',
+        title: t('powerPage.restartNow'),
+        message: t('powerPage.windowsWillClose'),
         confirmLabel: 'Restart',
       })
     )
@@ -22,8 +23,8 @@ export function PowerPage() {
   const shutdown = async () => {
     if (
       await dialogs.confirm({
-        title: 'Shut down now?',
-        message: 'Open windows will close.',
+        title: t('powerPage.shutDownNow'),
+        message: t('powerPage.windowsWillClose'),
         confirmLabel: 'Shut Down',
         danger: true,
       })
@@ -32,12 +33,12 @@ export function PowerPage() {
   };
 
   return (
-    <SettingsPage title="Power" description="Idle behaviour and the session controls.">
-      <SettingsGroup title="Idle">
+    <SettingsPage title={t('settings.power')} description={t('powerPage.intro')}>
+      <SettingsGroup title={t('powerPage.idle')}>
         <Row
           id="power.sleep"
-          label="Sleep after"
-          description="Turns the screen dark until you move the mouse or press a key."
+          label={t('powerPage.sleepAfter')}
+          description={t('powerPage.sleepAfterHint')}
         >
           <Select
             options={MINUTE_OPTIONS}
@@ -47,8 +48,8 @@ export function PowerPage() {
         </Row>
         <Row
           id="power.lowPower"
-          label="Low power mode"
-          description="Holds animation, transparency, window shadows and taskbar magnification off. Your own settings for those are kept and come back when it is switched off."
+          label={t('powerPage.lowPower')}
+          description={t('powerPage.lowPowerHint')}
         >
           <Switch
             checked={power.lowPowerMode}
@@ -56,20 +57,20 @@ export function PowerPage() {
           />
         </Row>
       </SettingsGroup>
-      <SettingsGroup title="Session">
-        <Row id="power.actions" label="Sleep, restart or shut down">
+      <SettingsGroup title={t('powerPage.session')}>
+        <Row id="power.actions" label={t('powerPage.sessionControls')}>
           <Button size="sm" icon={<Moon className="size-3.5" />} onClick={() => kernel.sleep()}>
-            Sleep
+            {t('powerPage.sleep')}
           </Button>
           <Button
             size="sm"
             icon={<RotateCcw className="size-3.5" />}
             onClick={() => void restart()}
           >
-            Restart
+            {t('powerPage.restart')}
           </Button>
           <Button size="sm" icon={<Power className="size-3.5" />} onClick={() => void shutdown()}>
-            Shut Down
+            {t('powerPage.shutDown')}
           </Button>
         </Row>
       </SettingsGroup>
