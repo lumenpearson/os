@@ -1,0 +1,14 @@
+{
+  "id": "developer-kit",
+  "title": "The Developer Kit, in one install",
+  "text": "Six tools and the monospace italic, downloaded together.",
+  "target": {
+    "kind": "package",
+    "id": "com.lumen.bundle.developer"
+  },
+  "artwork": {
+    "shape": "grid",
+    "seed": 81,
+    "tone": "accent"
+  }
+}

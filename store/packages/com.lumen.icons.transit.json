@@ -1,0 +1,36 @@
+{
+  "id": "com.lumen.icons.transit",
+  "kind": "icons",
+  "name": "Transit Icons",
+  "tagline": "Thirteen ways of getting there.",
+  "version": "1.0.0",
+  "publisher": "Lumen",
+  "category": "icons",
+  "size": 1657,
+  "price": "free",
+  "keywords": [
+    "icons",
+    "transport",
+    "travel",
+    "map",
+    "journey"
+  ],
+  "updated": "2026-08-11T09:00:00Z",
+  "description": "Bus, train, tram, bicycle, ferry, plane, walking, car, scooter, traffic light, map pin, signpost and route. Drawn for a journey planner, where the icon has to be told apart from its neighbour at the size of a list row.\n\nThe three rail-and-road vehicles share a body, a window line and a pair of lamps, and differ only where they actually differ: the tram takes a pantograph, the train takes rails, the bus takes a door. Wheels are open circles of the same radius throughout, so a row of them sits on one line.\n\nStroke at 2 units with round caps and joins on a 24 unit box.",
+  "payload": "payload/com.lumen.icons.transit-1.0.0.json",
+  "sha256": "04b8fa6253fc98530a341e25130a75e12de11eb6f520f341756d0f5e0d83a44a",
+  "requires": {
+    "os": ">=0.1.0"
+  },
+  "capabilities": [
+    "icons"
+  ],
+  "screenshots": [
+    {
+      "shape": "grid",
+      "seed": 64,
+      "tone": "accent"
+    }
+  ],
+  "releaseNotes": "First release."
+}

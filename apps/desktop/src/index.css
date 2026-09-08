@@ -1,0 +1,9 @@
+@import "@lumen/tokens/fonts.css";
+@import "@lumen/tokens/theme.css";
+@import "@lumen/tokens/base.css";
+@import "@lumen/ui/styles.css";
+
+/* Tailwind scans the workspace packages that render into this app. */
+@source "../../../packages/ui/src";
+@source "../../../packages/shell/src";
+@source "../../../packages/apps/src";

@@ -1,0 +1,41 @@
+{
+  "id": "com.lumen.bezier",
+  "kind": "app",
+  "name": "Bezier Editor",
+  "tagline": "Shape a CSS timing function and watch it move.",
+  "version": "1.0.0",
+  "publisher": "Lumen",
+  "category": "developer",
+  "size": 12657,
+  "price": "free",
+  "keywords": [
+    "bezier",
+    "easing",
+    "animation",
+    "css",
+    "timing"
+  ],
+  "updated": "2026-08-15T09:00:00Z",
+  "description": "A cubic-bezier() editor. Two control points sit on a unit grid; drag them and the curve, the declaration and the preview follow. The vertical axis runs from -1 to 2 so a curve can overshoot and settle back, which is what most spring-like easings actually are.\n\nThe six presets are the four CSS keywords, linear, and one overshoot worth having. When the points land exactly on a keyword the declaration says which one, so you know when the shorter name will do.\n\nDragging coalesces pointer moves into one write per frame rather than one per event. Each handle is a focusable slider: arrow keys move it a hundredth at a time, shift moves it a tenth, and the value is announced as a coordinate pair. The numbers can also be typed directly.",
+  "payload": "payload/com.lumen.bezier-1.0.0.json",
+  "sha256": "22865dbba6f8851024b4748aa9a3e85c9f4e938a506198010be2b2aded9cc696",
+  "requires": {
+    "os": ">=0.1.0"
+  },
+  "capabilities": [
+    "storage"
+  ],
+  "screenshots": [
+    {
+      "shape": "rings",
+      "seed": 8,
+      "tone": "accent"
+    },
+    {
+      "shape": "grid",
+      "seed": 15,
+      "tone": "neutral"
+    }
+  ],
+  "releaseNotes": "First release."
+}

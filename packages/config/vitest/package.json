@@ -1,0 +1,33 @@
+{
+  "name": "@lumen/config-vitest",
+  "version": "0.1.0",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "main": "./index.mjs",
+  "types": "./index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./index.mjs"
+    },
+    "./setup": "./setup.ts",
+    "./matchers": "./matchers.d.ts"
+  },
+  "dependencies": {
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.3",
+    "@testing-library/user-event": "^14.6.7",
+    "fake-indexeddb": "^6.2.5",
+    "happy-dom": "^20.13.2"
+  },
+  "peerDependencies": {
+    "vitest": "^5.0.0"
+  },
+  "files": [
+    "index.mjs",
+    "index.d.ts",
+    "setup.ts",
+    "matchers.d.ts"
+  ]
+}

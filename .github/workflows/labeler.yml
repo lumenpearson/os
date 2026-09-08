@@ -1,0 +1,27 @@
+name: Label
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+
+# pull_request_target runs against the base repository with a token that can
+# write, so it must be given the narrowest set that does the job and must never
+# check out or execute the pull request's code.
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: label-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  label:
+    name: By touched area
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/labeler@v5
+        with:
+          configuration-path: .github/labeler.yml
+          sync-labels: true

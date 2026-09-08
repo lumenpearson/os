@@ -1,0 +1,116 @@
+import { t } from '@lumen/kernel';
+/**
+ * The menubar, built from one snapshot of state so a command does the same
+ * thing whether it is clicked, picked from a menu or typed as a shortcut.
+ */
+
+import type { MenuItemTemplate, MenuTemplate } from '@lumen/kernel';
+import type { Notation } from './model';
+import { NOTATIONS } from './model';
+import type { PanelId } from './palette';
+
+export interface ColourMenuState {
+  panel: PanelId;
+  hasSwatches: boolean;
+  /** The clipboard holds text that parses as a colour. */
+  canPaste: boolean;
+}
+
+export interface ColourMenuActions {
+  close: () => void;
+  copy: (notation: Notation) => void;
+  paste: () => void;
+  addToPalette: () => void;
+  clearPalette: () => void;
+  swapWithComparison: () => void;
+  setPanel: (panel: PanelId) => void;
+}
+
+const separator: MenuItemTemplate = { type: 'separator' };
+
+const PANELS: ReadonlyArray<{ id: PanelId; label: string; shortcut: string }> = [
+  { id: 'contrast', label: t('colour.contrast'), shortcut: 'Mod+1' },
+  { id: 'palette', label: t('colour.palette'), shortcut: 'Mod+2' },
+  { id: 'vision', label: t('colour.vision'), shortcut: 'Mod+3' },
+];
+
+export function buildColourMenus(
+  state: ColourMenuState,
+  actions: ColourMenuActions,
+): MenuTemplate[] {
+  return [
+    {
+      id: 'file',
+      label: t('menu.file'),
+      items: [{ id: 'close', label: t('menu.close'), shortcut: 'Mod+W', onSelect: actions.close }],
+    },
+    {
+      id: 'edit',
+      label: t('menu.edit'),
+      items: [
+        {
+          id: 'copy-hex',
+          label: t('colour.copyHex'),
+          shortcut: 'Mod+C',
+          onSelect: () => actions.copy('hex'),
+        },
+        {
+          id: 'copy-as',
+          label: t('colour.copyAs'),
+          type: 'submenu',
+          submenu: NOTATIONS.map<MenuItemTemplate>((notation) => ({
+            id: `copy-${notation.id}`,
+            label: notation.label,
+            onSelect: () => actions.copy(notation.id),
+          })),
+        },
+        separator,
+        {
+          id: 'paste',
+          label: t('colour.pasteColour'),
+          shortcut: 'Mod+V',
+          enabled: state.canPaste,
+          onSelect: actions.paste,
+        },
+      ],
+    },
+    {
+      id: 'colour',
+      label: t('colour.colour'),
+      items: [
+        {
+          id: 'add-swatch',
+          label: t('colour.addToPalette'),
+          shortcut: 'Mod+D',
+          onSelect: actions.addToPalette,
+        },
+        {
+          id: 'swap',
+          label: t('colour.swapWithComparison'),
+          shortcut: 'Mod+E',
+          onSelect: actions.swapWithComparison,
+        },
+        separator,
+        {
+          id: 'clear-palette',
+          label: t('colour.removeAll'),
+          danger: true,
+          enabled: state.hasSwatches,
+          onSelect: actions.clearPalette,
+        },
+      ],
+    },
+    {
+      id: 'view',
+      label: t('menu.view'),
+      items: PANELS.map<MenuItemTemplate>((panel) => ({
+        id: `panel-${panel.id}`,
+        type: 'radio',
+        label: panel.label,
+        shortcut: panel.shortcut,
+        checked: state.panel === panel.id,
+        onSelect: () => actions.setPanel(panel.id),
+      })),
+    },
+  ];
+}

@@ -1,0 +1,41 @@
+{
+  "id": "com.lumen.font.blocks",
+  "kind": "font",
+  "name": "Lumen Blocks",
+  "tagline": "Block and box-drawing glyphs that meet exactly.",
+  "version": "1.0.0",
+  "publisher": "Lumen",
+  "category": "fonts",
+  "size": 6370,
+  "price": "free",
+  "keywords": [
+    "font",
+    "blocks",
+    "box-drawing",
+    "terminal",
+    "sparkline"
+  ],
+  "updated": "2026-08-06T09:00:00Z",
+  "description": "The eighth blocks, the half blocks, the three shades and eleven box-drawing characters, drawn on one 600 by 1000 cell so that adjacent cells join with no seam and no overlap. Terminal sparklines built from the lower eighth blocks line up along their tops; a box drawn from the corner and rule glyphs closes at every corner.\n\nMost monospace faces draw these characters as an afterthought, a half unit out of alignment, which is why a box drawn in a terminal so often has gaps in it. Here the rule is 60 units centred on the cell, the same in every glyph, so the joins are exact by construction.\n\nUse it as a fallback after your monospace face, so only these characters come from it. The outlines are rectangles computed from the Unicode descriptions and built during the catalogue build.",
+  "payload": "payload/com.lumen.font.blocks-1.0.0.json",
+  "sha256": "898c8e5f4002448f83d8e46ffaec76a72a90f3659eec3ec3da8464842f78ed29",
+  "requires": {
+    "os": ">=0.1.0"
+  },
+  "capabilities": [
+    "fonts"
+  ],
+  "screenshots": [
+    {
+      "shape": "grid",
+      "seed": 52,
+      "tone": "neutral"
+    },
+    {
+      "shape": "ramp",
+      "seed": 13,
+      "tone": "accent"
+    }
+  ],
+  "releaseNotes": "First release."
+}

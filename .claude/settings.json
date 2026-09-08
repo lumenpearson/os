@@ -1,0 +1,69 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(pnpm *)",
+      "Bash(pnpm:*)",
+      "Bash(npx *)",
+      "Bash(node *)",
+      "Bash(cargo *)",
+      "Bash(rustfmt *)",
+      "Bash(turbo *)",
+      "Bash(biome *)",
+      "Bash(git status*)",
+      "Bash(git diff*)",
+      "Bash(git log*)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git switch *)",
+      "Bash(git checkout *)",
+      "Bash(git branch*)",
+      "Bash(git fetch*)",
+      "Bash(git push *)",
+      "Bash(ls *)",
+      "Bash(cat *)",
+      "Bash(head *)",
+      "Bash(tail *)",
+      "Bash(grep *)",
+      "Bash(rg *)",
+      "Bash(find *)",
+      "Bash(wc *)",
+      "Bash(mkdir *)",
+      "Bash(cp *)",
+      "Bash(mv *)",
+      "Read",
+      "Edit",
+      "Write",
+      "Glob",
+      "Grep",
+      "WebFetch(domain:v2.tauri.app)",
+      "WebFetch(domain:react.dev)",
+      "WebFetch(domain:tailwindcss.com)",
+      "WebFetch(domain:vite.dev)",
+      "WebFetch(domain:threejs.org)",
+      "WebFetch(domain:docs.pmnd.rs)",
+      "WebFetch(domain:vercel.com)",
+      "WebFetch(domain:turbo.build)"
+    ],
+    "deny": [
+      "Bash(git push --force*)",
+      "Bash(git push -f*)",
+      "Bash(rm -rf /*)",
+      "Read(./.env)",
+      "Read(./.env.*)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/hooks/format-changed.mjs"
+          }
+        ]
+      }
+    ]
+  }
+}

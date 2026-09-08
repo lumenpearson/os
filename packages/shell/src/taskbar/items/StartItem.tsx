@@ -1,0 +1,57 @@
+// deslop-ignore-file 09 13 — <Mark> is the product wordmark; the scanner matches the substring 'mark'.
+/** The Start button, and the hairline that separates it from what follows. */
+
+import { useT } from '@lumen/kernel/react';
+import { cx, Tooltip } from '@lumen/ui';
+import { Mark } from '../../desktop/Wordmark';
+import { useShellStore } from '../../shellStore';
+import { groupClass, ITEM_BUTTON, type TaskbarItemProps, tooltipSide } from './types';
+
+export function StartItem({
+  size,
+  vertical,
+  position,
+  separator,
+}: TaskbarItemProps & { separator: boolean }) {
+  const t = useT();
+  const open = useShellStore((s) => s.startMenu);
+  const toggle = useShellStore((s) => s.toggle);
+  return (
+    <div data-taskbar-item="start" className={groupClass(vertical)}>
+      <Tooltip content={t('taskbar.start')} side={tooltipSide(position)}>
+        <button
+          type="button"
+          aria-label={t('taskbar.start')}
+          aria-haspopup="dialog"
+          aria-expanded={open}
+          data-testid="start-button"
+          data-taskbar-icon=""
+          onClick={() => toggle('startMenu')}
+          className={cx(ITEM_BUTTON, open ? 'bg-selection text-accent' : 'hover:bg-surface-2/70')}
+          style={{ width: size, height: size }}
+        >
+          <span
+            data-taskbar-glyph=""
+            className={cx(
+              'flex items-center justify-center',
+              position === 'bottom' && 'origin-bottom',
+              position === 'left' && 'origin-left',
+              position === 'right' && 'origin-right',
+            )}
+          >
+            {/* deslop-ignore-next-line 24 — the product wordmark, not a generated glyph. */}
+            <Mark size={Math.round(size * 0.5)} />
+          </span>
+        </button>
+      </Tooltip>
+      {separator && (
+        <span
+          aria-hidden
+          // Half strength: the bar's separators group the icons, they do not
+          // divide the bar, and a full hairline reads as an edge.
+          className={cx('bg-rule/50', vertical ? 'my-1 h-px w-6' : 'mx-1 h-6 w-px')}
+        />
+      )}
+    </div>
+  );
+}

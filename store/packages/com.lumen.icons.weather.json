@@ -1,0 +1,36 @@
+{
+  "id": "com.lumen.icons.weather",
+  "kind": "icons",
+  "name": "Weather Icons",
+  "tagline": "Twelve marks for sky, water and temperature.",
+  "version": "1.1.0",
+  "publisher": "Lumen",
+  "category": "icons",
+  "size": 1176,
+  "price": "free",
+  "keywords": [
+    "icons",
+    "weather",
+    "forecast",
+    "sun",
+    "rain"
+  ],
+  "updated": "2026-08-18T09:00:00Z",
+  "description": "Sun, moon, cloud, rain, snow, wind, fog, storm, thermometer, umbrella, droplet and sunrise. The set is built around one cloud silhouette that every weather state reuses, so a forecast row reads as one family rather than twelve separate drawings.\n\nMarks below the cloud — rain, snow — sit on the same baseline at the same spacing, which keeps a column of forecast tiles from shifting as the weather changes. Rays, drops and flakes are drawn as short strokes and points rather than as filled shapes, so they survive being set at 16 pixels.\n\nStroke at 2 units with round caps and joins on a 24 unit box.",
+  "payload": "payload/com.lumen.icons.weather-1.1.0.json",
+  "sha256": "e2f6081e21793ec0a94608912e1eac36170018375da725d1ae06eabda01ce784",
+  "requires": {
+    "os": ">=0.1.0"
+  },
+  "capabilities": [
+    "icons"
+  ],
+  "screenshots": [
+    {
+      "shape": "rings",
+      "seed": 61,
+      "tone": "neutral"
+    }
+  ],
+  "releaseNotes": "Added fog and sunrise. The cloud is now identical across every state."
+}

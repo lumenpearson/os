@@ -1,0 +1,36 @@
+{
+  "id": "com.lumen.contrast",
+  "kind": "app",
+  "name": "Contrast Checker",
+  "tagline": "Whether two colours are far enough apart to read.",
+  "version": "1.1.0",
+  "publisher": "Lumen",
+  "category": "developer",
+  "size": 9467,
+  "price": "free",
+  "keywords": [
+    "contrast",
+    "wcag",
+    "accessibility",
+    "colour",
+    "a11y"
+  ],
+  "updated": "2026-08-30T09:00:00Z",
+  "description": "Enter a foreground and a background as hex, or pick them, and read the WCAG 2 contrast ratio between them. The four thresholds are listed with their numbers and a plain pass or fail: 4.5 for body text at AA, 7 for AAA, 3 for large text, and 3 for interface targets such as borders, icons and focus rings.\n\nThe preview shows both a heading and a thirteen pixel paragraph in the pair, because a ratio that reads comfortably at nineteen pixels can be hard work at thirteen. Three-digit hex is accepted and normalised.\n\n\"Fix the foreground\" searches outwards from the current colour, one per cent darker and one per cent lighter at a time, and stops at the first value that clears 4.5:1 — so the suggestion is the smallest change that passes rather than a jump to black.",
+  "payload": "payload/com.lumen.contrast-1.1.0.json",
+  "sha256": "cf5b9d36860849beb2a908b06a0d6f8a979547fecf280cbd3d49f0745f55d622",
+  "requires": {
+    "os": ">=0.1.0"
+  },
+  "capabilities": [
+    "storage"
+  ],
+  "screenshots": [
+    {
+      "shape": "ramp",
+      "seed": 2,
+      "tone": "accent"
+    }
+  ],
+  "releaseNotes": "Added the interface target threshold and a repair that keeps the hue."
+}

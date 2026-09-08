@@ -1,0 +1,37 @@
+{
+  "id": "com.lumen.metronome",
+  "kind": "app",
+  "name": "Metronome",
+  "tagline": "A steady click that does not drift when the tab is busy.",
+  "version": "1.1.0",
+  "publisher": "Lumen",
+  "category": "media",
+  "size": 9431,
+  "price": "free",
+  "keywords": [
+    "metronome",
+    "tempo",
+    "beat",
+    "music",
+    "practice"
+  ],
+  "updated": "2026-08-26T09:00:00Z",
+  "description": "Thirty to two hundred and sixty beats per minute, two to seven beats in a bar, with the downbeat pitched higher when accenting is on. The tempo carries its Italian name, which is the reason most people look a number up in the first place.\n\nClicks are booked against the Web Audio clock a tenth of a second ahead rather than played from a timer, so the beat holds when the frame is throttled or the main thread stalls. The beat lights and the bar count follow the audio clock rather than leading it, so what you see is what you just heard.\n\nTap tempo averages the last five taps inside three seconds. Space starts and stops; T taps.",
+  "payload": "payload/com.lumen.metronome-1.1.0.json",
+  "sha256": "be8845b4a99375a06ef58a74369677a703095567705c566698594ae1adec7ab9",
+  "requires": {
+    "os": ">=0.1.0"
+  },
+  "capabilities": [
+    "storage",
+    "audio"
+  ],
+  "screenshots": [
+    {
+      "shape": "rings",
+      "seed": 19,
+      "tone": "accent"
+    }
+  ],
+  "releaseNotes": "Odd meters up to seven. The bar count follows the audio clock."
+}

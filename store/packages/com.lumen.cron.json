@@ -1,0 +1,41 @@
+{
+  "id": "com.lumen.cron",
+  "kind": "app",
+  "name": "Cron Explainer",
+  "tagline": "What a crontab line means, and when it fires next.",
+  "version": "1.0.0",
+  "publisher": "Lumen",
+  "category": "developer",
+  "size": 12390,
+  "price": "free",
+  "keywords": [
+    "cron",
+    "crontab",
+    "schedule",
+    "timer",
+    "jobs"
+  ],
+  "updated": "2026-08-12T09:00:00Z",
+  "description": "Type a five-field cron expression and read it back as a sentence, a table of the values each field allows, and the next five times it fires in local time. Ranges, lists, steps, month names and day names all parse, as do the shorthands @hourly, @daily, @weekly, @monthly and @yearly.\n\nDay of month and day of week follow the traditional rule: when both are restricted, the expression fires on a day that matches either one. That is the behaviour of Vixie cron and of most schedulers copying it, and it is the difference people most often trip over — the explanation says so in words rather than leaving it implied.\n\nA malformed field says which field and why, so the expression can be fixed without guessing. Nothing is scheduled or run; this only reads.",
+  "payload": "payload/com.lumen.cron-1.0.0.json",
+  "sha256": "996a0449911ca1bb3d68b86fe19d50ca638f8c15ca5183e51bb8d4f72b2d25af",
+  "requires": {
+    "os": ">=0.1.0"
+  },
+  "capabilities": [
+    "storage"
+  ],
+  "screenshots": [
+    {
+      "shape": "rings",
+      "seed": 6,
+      "tone": "accent"
+    },
+    {
+      "shape": "grid",
+      "seed": 31,
+      "tone": "neutral"
+    }
+  ],
+  "releaseNotes": "First release."
+}

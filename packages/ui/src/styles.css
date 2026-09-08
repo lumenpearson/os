@@ -1,0 +1,365 @@
+/*
+ * Component styles that are awkward as utilities: focus rings, native
+ * control resets, menu keyboard states. Everything else is Tailwind utilities
+ * over the tokens in @lumen/tokens.
+ */
+
+/*
+ * What the pointer says it is over.
+ *
+ * The browser's own answer is the arrow for everything except a link and a
+ * text field, which leaves a desktop where a button, a tab, a menu item and
+ * the paragraph beside them all look equally inert. These rules say what each
+ * one does before it is clicked.
+ *
+ * In the base layer on purpose: it is the default a component may overrule,
+ * and a Tailwind utility — `cursor-grab` on something being dragged, say —
+ * still wins, because utilities are ordered after base. `CursorLayer` reads
+ * the computed value, so the drawn cursor and the native one change together
+ * and neither needs its own table.
+ */
+@layer base {
+  button,
+  summary,
+  select,
+  a[href],
+  [role="button"],
+  [role="tab"],
+  [role="link"],
+  [role="option"],
+  [role="switch"],
+  [role="checkbox"],
+  [role="radio"],
+  [role="menuitem"],
+  [role="menuitemcheckbox"],
+  [role="menuitemradio"],
+  input[type="button"],
+  input[type="submit"],
+  input[type="reset"],
+  input[type="checkbox"],
+  input[type="radio"],
+  input[type="range"],
+  input[type="color"],
+  input[type="file"] {
+    cursor: pointer;
+  }
+
+  /* The click will do nothing, and the pointer says so before it happens. */
+  :disabled,
+  [aria-disabled="true"] {
+    cursor: not-allowed;
+  }
+
+  /* A caret goes here. The browser says this of an `input` already, but not
+     of the element an editor builds out of a div. */
+  [contenteditable="true"] {
+    cursor: text;
+  }
+}
+
+@layer components {
+  .lumen-control {
+    /* In rem, so the control grows with the text it holds: at Font size 130 %
+       a 28px box around a 17px line clipped its own placeholder. */
+    height: 1.75rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--lumen-rule-strong);
+    background: var(--lumen-surface);
+    color: var(--lumen-ink);
+    padding: 0 8px;
+    font-size: var(--text-base);
+    line-height: 1.625rem;
+    transition:
+      border-color var(--duration-fast) var(--ease-standard),
+      background-color var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard);
+  }
+  .lumen-control:hover:not(:disabled) {
+    border-color: var(--lumen-ink-3);
+  }
+  .lumen-control:focus-visible,
+  .lumen-control:focus-within {
+    outline: none;
+    border-color: var(--lumen-accent);
+    box-shadow: 0 0 0 3px var(--lumen-accent-soft);
+  }
+  /* The click will do nothing, and the cursor says so. This is for the native
+     cursor; the drawn one reads `data-cursor` on the control itself. */
+  .lumen-control:disabled,
+  .lumen-control[aria-disabled="true"] {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  .lumen-control::placeholder {
+    color: var(--lumen-ink-3);
+  }
+
+  .lumen-focus:focus-visible {
+    outline: 2px solid var(--lumen-accent);
+    outline-offset: 1px;
+  }
+
+  .lumen-menu {
+    min-width: 12.5rem;
+    padding: 4px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--lumen-rule);
+    background: var(--lumen-surface);
+    box-shadow: var(--lumen-shadow-lg);
+    color: var(--lumen-ink);
+  }
+  /* The rule above is the default: an opaque menu. Translucency applies only
+     when the user turns it on in Settings > Appearance, which is what the
+     macOS-like reading of the shell asks for and what Reduce Transparency
+     switches back off. */
+  /* deslop-ignore 19 */
+  :root[data-transparency="full"] .lumen-menu {
+    background: color-mix(in srgb, var(--lumen-surface) 86%, transparent);
+    /* Prefixed first, standard last: the minifier keeps the last declaration
+       of a longhand, and the other order shipped the prefix alone. */
+    /* deslop-ignore-next-line 19 */
+    -webkit-backdrop-filter: blur(var(--lumen-blur, 14px)) saturate(1.4);
+    /* deslop-ignore-next-line 19 */
+    backdrop-filter: blur(var(--lumen-blur, 14px)) saturate(1.4);
+  }
+
+  /*
+   * The scrim behind a modal. With transparency on it takes a light blur, so
+   * what is behind the sheet reads as out of reach rather than merely dimmed;
+   * with Reduce Transparency it is the plain wash and nothing else.
+   */
+  .lumen-scrim {
+    background: var(--lumen-scrim);
+  }
+  /* deslop-ignore 19 */
+  :root[data-transparency="full"] .lumen-scrim {
+    /* deslop-ignore-next-line 19 */
+    -webkit-backdrop-filter: blur(6px);
+    /* deslop-ignore-next-line 19 */
+    backdrop-filter: blur(6px);
+  }
+  .lumen-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    height: 1.625rem;
+    padding: 0 8px 0 24px;
+    border-radius: var(--radius-sm);
+    font-size: var(--text-base);
+    white-space: nowrap;
+    position: relative;
+    user-select: none;
+  }
+  .lumen-menu-item[data-active="true"] {
+    background: var(--lumen-accent);
+    color: var(--lumen-accent-ink);
+  }
+  .lumen-menu-item[aria-disabled="true"] {
+    color: var(--lumen-ink-3);
+    cursor: not-allowed;
+  }
+  .lumen-menu-item[data-danger="true"]:not([data-active="true"]) {
+    color: var(--lumen-danger);
+  }
+  .lumen-menu-shortcut {
+    margin-left: auto;
+    padding-left: 24px;
+    /* Shortcuts are one of the accents the design rules put in JetBrains Mono,
+       and the fixed advance keeps a column of them aligned down the menu. */
+    /* deslop-ignore-next-line 34 */
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: var(--lumen-ink-3);
+    letter-spacing: 0.02em;
+  }
+  .lumen-menu-item[data-active="true"] .lumen-menu-shortcut {
+    color: color-mix(in srgb, var(--lumen-accent-ink) 78%, transparent);
+  }
+  .lumen-menu-separator {
+    /*
+     * `border: 0` is the whole rule working. Preflight gives every `hr` a
+     * 1px top border in `currentColor`, and this element is 1px tall, so
+     * that opaque line in the ink colour covered the translucent one below
+     * it: what read as the separator was the reset's, not the theme's, and
+     * it was near-black on a surface meant to show what is behind it.
+     */
+    border: 0;
+    height: 1px;
+    margin: 4px 8px;
+    background: var(--lumen-rule);
+  }
+
+  .lumen-scroll {
+    overflow: auto;
+    overscroll-behavior: contain;
+  }
+  /*
+   * Content continues past this edge, and the edge says so.
+   *
+   * An inset shadow rather than a gradient: design rule 4 makes depth a
+   * hairline plus a small colourless shadow, and this is the same idea turned
+   * inward — the content is under the edge rather than beside it. The spread
+   * is negative by the whole blur so nothing bleeds along the other three
+   * sides, which is what lets the four stack when a table is scrolled into a
+   * corner.
+   *
+   * `useScrollEdges` sets the attributes, inside a frame; a scroller that
+   * never gets the hook simply never gets a shadow, which is the right way
+   * round for something that is information rather than decoration.
+   */
+  .lumen-scroll[data-edge-top] {
+    box-shadow: inset 0 7px 6px -7px var(--lumen-scroll-edge);
+  }
+  .lumen-scroll[data-edge-bottom] {
+    box-shadow: inset 0 -7px 6px -7px var(--lumen-scroll-edge);
+  }
+  .lumen-scroll[data-edge-top][data-edge-bottom] {
+    box-shadow:
+      inset 0 7px 6px -7px var(--lumen-scroll-edge),
+      inset 0 -7px 6px -7px var(--lumen-scroll-edge);
+  }
+  .lumen-scroll[data-edge-left] {
+    box-shadow: inset 7px 0 6px -7px var(--lumen-scroll-edge);
+  }
+  .lumen-scroll[data-edge-right] {
+    box-shadow: inset -7px 0 6px -7px var(--lumen-scroll-edge);
+  }
+  .lumen-scroll[data-edge-left][data-edge-right] {
+    box-shadow:
+      inset 7px 0 6px -7px var(--lumen-scroll-edge),
+      inset -7px 0 6px -7px var(--lumen-scroll-edge);
+  }
+  /* Both axes at once: a wide table scrolled into the middle of itself. */
+  .lumen-scroll[data-edge-top][data-edge-left],
+  .lumen-scroll[data-edge-top][data-edge-right],
+  .lumen-scroll[data-edge-bottom][data-edge-left],
+  .lumen-scroll[data-edge-bottom][data-edge-right] {
+    box-shadow:
+      inset 0 7px 6px -7px var(--lumen-scroll-edge),
+      inset 0 -7px 6px -7px var(--lumen-scroll-edge),
+      inset 7px 0 6px -7px var(--lumen-scroll-edge),
+      inset -7px 0 6px -7px var(--lumen-scroll-edge);
+  }
+
+  .lumen-list-row {
+    display: grid;
+    align-items: center;
+    height: 1.5rem;
+    padding: 0 8px;
+    border-radius: var(--radius-xs);
+    font-size: var(--text-base);
+  }
+  .lumen-list-row[aria-selected="true"] {
+    background: var(--lumen-selection);
+  }
+  .lumen-list-row[aria-selected="true"][data-focused="true"] {
+    background: var(--lumen-accent);
+    color: var(--lumen-accent-ink);
+  }
+  /*
+   * A folder's glyph is the accent, and so is the row under it once selected,
+   * so the icon disappeared into its own row. On that row it takes the
+   * accent's ink instead — the same colour as the name beside it. Only icons
+   * that actually use the accent are touched: a green spreadsheet or a blue
+   * source file still reads on the accent, and turning them all white would
+   * throw away the one thing the colour is for.
+   */
+  .lumen-list-row[aria-selected="true"][data-focused="true"] [data-icon-tone="accent"] {
+    color: var(--lumen-accent-ink);
+  }
+
+  .lumen-pop-enter {
+    animation: lumen-pop var(--duration-base) var(--ease-out);
+    transform-origin: var(--lumen-pop-origin, top left);
+  }
+  @keyframes lumen-pop {
+    from {
+      opacity: 0;
+      transform: scale(0.96) translateY(-2px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  .lumen-fade-enter {
+    animation: lumen-fade var(--duration-base) var(--ease-out);
+  }
+  /*
+   * Leaving, which until now nothing did: a dialog and a menu arrived with an
+   * animation and then vanished between one frame and the next. Each exit is
+   * the reverse of the entrance above it, on `--ease-in` rather than
+   * `--ease-out` — a thing coming towards you decelerates, a thing leaving
+   * gathers speed — and `forwards` holds the last frame so nothing flashes
+   * back into view for the tick before `usePresence` unmounts it.
+   */
+  .lumen-pop-exit {
+    animation: lumen-pop var(--duration-base) var(--ease-in) reverse forwards;
+    transform-origin: var(--lumen-pop-origin, top left);
+  }
+  .lumen-fade-exit {
+    animation: lumen-fade var(--duration-base) var(--ease-in) reverse forwards;
+  }
+  /*
+   * A press, felt rather than seen: the control gives by two per cent under
+   * the finger and comes back. Design rule 5 forbids scaling on *hover*, and
+   * this is not hover — it is the moment of the click, the same feedback the
+   * cursor already gives itself, and it answers to the same Animation switch.
+   *
+   * Only the scale lives here. The easing and the duration come from the
+   * control's own transition list, which already names `transform`, because a
+   * `transition` written in this layer would lose to the utility that sets
+   * `transition-property` on the element.
+   */
+  :root[data-anim-press="on"] .lumen-press:active:not(:disabled):not([aria-disabled="true"]) {
+    transform: scale(0.98);
+  }
+
+  /* On the way out it is a picture of a panel, not the panel: the click that
+     dismissed it must reach whatever is underneath, and the next one must not
+     land on a menu item that is already gone. */
+  .lumen-pop-exit,
+  .lumen-fade-exit {
+    pointer-events: none;
+  }
+  @keyframes lumen-fade {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  /*
+   * Personalisation > Animation switches each of these off by category. The
+   * element still appears; it simply appears at once.
+   *
+   * Which category a thing belongs to is stated on the element as
+   * `data-anim`, because it cannot be read off the animation class: a dialog
+   * and a menu both pop, and a dialog's scrim and its sheet are two elements
+   * of one thing. The same attribute names the token `usePresence` waits on,
+   * so the switch and the script agree by construction.
+   */
+  :root[data-anim-menus="off"] [data-anim="menu"],
+  :root[data-anim-dialogs="off"] [data-anim="dialog"],
+  :root[data-anim-panels="off"] [data-anim="panel"],
+  :root[data-anim-pages="off"] [data-page-enter] {
+    animation: none;
+  }
+  :root[data-anim-windows="off"] [data-testid="window"] {
+    transition: none;
+  }
+
+  .lumen-spin {
+    /* The centre is pinned below and the keyframe carries rotation only,
+       so nothing wobbles. */
+    /* deslop-ignore-next-line 27 */
+    animation: lumen-spin 0.8s linear infinite;
+    transform-origin: 50% 50%;
+  }
+  @keyframes lumen-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+}

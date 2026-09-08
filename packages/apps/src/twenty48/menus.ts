@@ -1,0 +1,69 @@
+import { t } from '@lumen/kernel';
+/**
+ * The menubar for the game window, built from one snapshot of state so a
+ * command does the same thing whether it is clicked in the toolbar, chosen
+ * from the menu or typed as a shortcut.
+ */
+
+import type { MenuItemTemplate, MenuTemplate } from '@lumen/kernel';
+
+export interface Twenty48MenuState {
+  canUndo: boolean;
+  showBest: boolean;
+  animations: boolean;
+}
+
+export interface Twenty48MenuActions {
+  newGame: () => void;
+  undo: () => void;
+  close: () => void;
+  toggleBest: () => void;
+  toggleAnimations: () => void;
+}
+
+const separator: MenuItemTemplate = { type: 'separator' };
+
+export function buildTwenty48Menus(
+  state: Twenty48MenuState,
+  actions: Twenty48MenuActions,
+): MenuTemplate[] {
+  return [
+    {
+      id: 'game',
+      label: t('menu.game'),
+      items: [
+        { id: 'new', label: t('menu.newGame'), shortcut: 'Mod+N', onSelect: actions.newGame },
+        {
+          id: 'undo',
+          label: t('menu.undo'),
+          shortcut: 'Mod+Z',
+          enabled: state.canUndo,
+          onSelect: actions.undo,
+        },
+        separator,
+        { id: 'close', label: t('menu.close'), shortcut: 'Mod+W', onSelect: actions.close },
+      ],
+    },
+    {
+      id: 'view',
+      label: t('menu.view'),
+      items: [
+        {
+          id: 'best',
+          type: 'checkbox',
+          label: t('twenty48.bestScore'),
+          shortcut: 'Mod+B',
+          checked: state.showBest,
+          onSelect: actions.toggleBest,
+        },
+        {
+          id: 'animations',
+          type: 'checkbox',
+          label: t('twenty48.animations'),
+          checked: state.animations,
+          onSelect: actions.toggleAnimations,
+        },
+      ],
+    },
+  ];
+}

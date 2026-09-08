@@ -1,0 +1,14 @@
+{
+  "id": "typefaces",
+  "title": "Two italics and two faces drawn from rectangles",
+  "text": "The italics the OS leaves out, a seven-segment display and a set of blocks.",
+  "target": {
+    "kind": "section",
+    "id": "typefaces"
+  },
+  "artwork": {
+    "shape": "type",
+    "seed": 22,
+    "tone": "neutral"
+  }
+}

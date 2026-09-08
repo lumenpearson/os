@@ -1,0 +1,14 @@
+{
+  "id": "welcome",
+  "title": "Six programs to start with",
+  "text": "A pattern tester, a diff, a table, an encoder, a stopwatch and a clock.",
+  "target": {
+    "kind": "collection",
+    "id": "essentials"
+  },
+  "artwork": {
+    "shape": "rings",
+    "seed": 3,
+    "tone": "accent"
+  }
+}

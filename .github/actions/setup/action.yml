@@ -1,0 +1,29 @@
+name: Set up Node and pnpm
+description: >
+  Checks out nothing and installs nothing on its own — it wires up pnpm, Node
+  from .nvmrc, and the pnpm store cache, which every JavaScript job needs
+  identically. Kept as one action so the Node version and the cache key are
+  defined once; a workflow that pins its own drifts silently and only shows up
+  as a cache that never hits.
+
+inputs:
+  install:
+    description: Run `pnpm install --frozen-lockfile` after setting up.
+    required: false
+    default: 'true'
+
+runs:
+  using: composite
+  steps:
+    # Third-party actions are pinned to a commit, not a tag: a tag can be
+    # moved to point at different code, and a workflow with write access
+    # would run it without anything changing here. Dependabot updates these
+    # monthly and keeps the version comment beside them current.
+    - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
+    - uses: actions/setup-node@v4
+      with:
+        node-version-file: .nvmrc
+        cache: pnpm
+    - if: inputs.install == 'true'
+      run: pnpm install --frozen-lockfile
+      shell: bash

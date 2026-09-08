@@ -1,0 +1,129 @@
+name: Desktop
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+    paths:
+      - "apps/desktop/**"
+      - "crates/**"
+      - "packages/**"
+      - "Cargo.*"
+      - "pnpm-lock.yaml"
+      - ".github/workflows/desktop.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: desktop-${{ github.ref }}
+  cancel-in-progress: true
+
+# Building needs nothing but the checkout; only the release job writes, and it
+# asks for that itself.
+permissions:
+  contents: read
+
+env:
+  TURBO_TELEMETRY_DISABLED: 1
+
+jobs:
+  build:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 60
+    strategy:
+      # One platform failing must not cancel the others: when a build breaks it
+      # is usually platform-specific, and hiding the other two turns one
+      # failure into three unknowns.
+      fail-fast: false
+      matrix:
+        include:
+          - name: Windows (x64)
+            runner: windows-latest
+            target: x86_64-pc-windows-msvc
+            artifact: lumen-os-windows-x64
+            paths: |
+              target/x86_64-pc-windows-msvc/release/bundle/nsis/*.exe
+              target/x86_64-pc-windows-msvc/release/bundle/msi/*.msi
+          # Apple silicon runner. An Intel build would need its own matrix
+          # entry with x86_64-apple-darwin; a universal binary is possible but
+          # doubles the build and is not worth it until someone asks.
+          - name: macOS (Apple silicon)
+            runner: macos-latest
+            target: aarch64-apple-darwin
+            artifact: lumen-os-macos-arm64
+            paths: |
+              target/aarch64-apple-darwin/release/bundle/dmg/*.dmg
+          # Ubuntu 22.04 rather than latest, deliberately: the AppImage is only
+          # as portable as the glibc it was linked against, so building on the
+          # oldest runner still supported by the actions widens the range of
+          # distributions that can run it. 22.04 ships glibc 2.35, and it is
+          # also the last image carrying webkit2gtk-4.1 without extra work.
+          - name: Linux (x64)
+            runner: ubuntu-22.04
+            target: x86_64-unknown-linux-gnu
+            artifact: lumen-os-linux-x64
+            paths: |
+              target/x86_64-unknown-linux-gnu/release/bundle/deb/*.deb
+              target/x86_64-unknown-linux-gnu/release/bundle/rpm/*.rpm
+              target/x86_64-unknown-linux-gnu/release/bundle/appimage/*.AppImage
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Linux prerequisites
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file \
+            libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev
+
+      - uses: ./.github/actions/setup
+        with:
+          install: 'false'
+
+      # See ci.yml: pinning loses @stable's default, so it is named here.
+      - uses: dtolnay/rust-toolchain@6c977a6ca4077a0ceb28ffbe03f59d46e9ac8772 # v1
+        with:
+          toolchain: stable
+          targets: ${{ matrix.target }}
+
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          workspaces: ". -> target"
+          # Without this the three platforms share one key and evict each
+          # other's artefacts on every run.
+          key: ${{ matrix.target }}
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Build Tauri bundles
+        run: pnpm --filter @lumen/desktop tauri build --target ${{ matrix.target }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: ${{ matrix.paths }}
+          if-no-files-found: error
+          retention-days: 14
+
+  release:
+    name: Attach to release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+      - uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2.6.2
+        with:
+          files: |
+            dist/**/*.exe
+            dist/**/*.msi
+            dist/**/*.dmg
+            dist/**/*.deb
+            dist/**/*.rpm
+            dist/**/*.AppImage
+          generate_release_notes: true
