@@ -10,7 +10,13 @@ import { useShallow } from 'zustand/react/shallow';
 import { useRegistryStore } from '../apps/registry';
 import { useClipboardStore } from '../clipboard/store';
 import { events, type KernelEvents } from '../events';
-import { type MessageKey, resolveLanguage, translate } from '../i18n';
+import {
+  type MessageKey,
+  type PluralKey,
+  resolveLanguage,
+  translate,
+  translateCount,
+} from '../i18n';
 import type { Kernel } from '../kernel';
 import { useLogStore } from '../log/store';
 import { useMenuStore } from '../menu/store';
@@ -81,6 +87,21 @@ export function useT(): (key: MessageKey, vars?: Record<string, string | number>
     resolveLanguage({ language: s.settings.region.language, locale: s.settings.region.locale }),
   );
   return (key, vars) => translate(language, key, vars);
+}
+
+/**
+ * The same, for a message that has to agree with a count. Subscribed to the
+ * language exactly as `useT` is, and for the same reason.
+ */
+export function usePlural(): (
+  base: PluralKey,
+  count: number,
+  vars?: Record<string, string | number>,
+) => string {
+  const language = useSettingsStore((s) =>
+    resolveLanguage({ language: s.settings.region.language, locale: s.settings.region.locale }),
+  );
+  return (base, count, vars) => translateCount(language, base, count, vars);
 }
 
 export function useSetting<K extends keyof Settings>(

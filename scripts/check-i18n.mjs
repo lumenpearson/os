@@ -43,6 +43,10 @@ const TRANSLATED = [
   'packages/apps/src/settings/pages/Region.tsx',
   'packages/shell/src/boot/BootScreen.tsx',
   'packages/shell/src/lock/LockScreen.tsx',
+  'packages/shell/src/taskbar/Taskbar.tsx',
+  'packages/shell/src/taskbar/items/StartItem.tsx',
+  'packages/shell/src/taskbar/items/SearchItem.tsx',
+  'packages/shell/src/taskbar/items/TrashItem.tsx',
 ];
 
 /** Props whose value is read out by a person or a screen reader. */

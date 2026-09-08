@@ -14,7 +14,7 @@
  */
 
 import { useProcessStore, useWindowStore } from '@lumen/kernel';
-import { useRuntimeSettings } from '@lumen/kernel/react';
+import { useRuntimeSettings, useT } from '@lumen/kernel/react';
 import { cx, Tooltip, useMediaQuery } from '@lumen/ui';
 import { type CSSProperties, useMemo, useRef, useState } from 'react';
 import { useEdgeReveal } from '../hooks/useEdgeReveal';
@@ -43,6 +43,7 @@ import { useMagnify } from './useMagnify';
 const FLOAT_PADDING = 3;
 
 export function Taskbar() {
+  const t = useT();
   const settings = useRuntimeSettings();
   const taskbar = settings.taskbar;
   const startOpen = useShellStore((s) => s.startMenu);
@@ -102,7 +103,7 @@ export function Taskbar() {
         />
       )}
       <nav
-        aria-label="Taskbar"
+        aria-label={t('taskbar.bar')}
         data-testid="taskbar"
         data-position={position}
         data-floating={floating}
@@ -208,11 +209,12 @@ function ShowDesktop({
   centered,
   position,
 }: Pick<TaskbarItemProps, 'vertical' | 'position'> & { floating: boolean; centered: boolean }) {
+  const t = useT();
   return (
-    <Tooltip content="Show desktop" side={tooltipSide(position)}>
+    <Tooltip content={t('taskbar.showDesktop')} side={tooltipSide(position)}>
       <button
         type="button"
-        aria-label="Show desktop"
+        aria-label={t('taskbar.showDesktop')}
         data-testid="taskbar-show-desktop"
         onClick={() => {
           const s = useWindowStore.getState();

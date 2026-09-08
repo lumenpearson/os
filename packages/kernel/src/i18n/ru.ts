@@ -9,6 +9,16 @@ import type { MessageKey } from './en';
  * it is the convention for "this asks you something first", not decoration.
  */
 export const ru: Record<MessageKey, string> = {
+  'taskbar.bar': 'Панель задач',
+  'taskbar.showDesktop': 'Показать рабочий стол',
+  'taskbar.search': 'Поиск',
+  'taskbar.start': 'Пуск',
+  'taskbar.trashEmpty': 'Корзина, пусто',
+  'taskbar.trash.one': 'Корзина, {count} объект',
+  'taskbar.trash.few': 'Корзина, {count} объекта',
+  'taskbar.trash.many': 'Корзина, {count} объектов',
+  'taskbar.trash.other': 'Корзина, {count} объекта',
+
   'boot.starting': 'Запуск Lumen OS',
   'boot.failed': 'Не удалось загрузиться',
   'boot.couldNotStart': 'Lumen OS не смогла запуститься.',

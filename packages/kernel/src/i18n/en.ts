@@ -11,6 +11,19 @@
  * from the `vars` argument to `t`.
  */
 export const en = {
+  // ── the taskbar ────────────────────────────────────────────────────────
+  'taskbar.bar': 'Taskbar',
+  'taskbar.showDesktop': 'Show desktop',
+  'taskbar.search': 'Search',
+  'taskbar.start': 'Start',
+  'taskbar.trashEmpty': 'Recycle Bin, empty',
+  // A count family: `.other` is the one every language has, and the form
+  // names are Intl's. English never selects `few` or `many`; Russian does.
+  'taskbar.trash.one': 'Recycle Bin, {count} item',
+  'taskbar.trash.few': 'Recycle Bin, {count} items',
+  'taskbar.trash.many': 'Recycle Bin, {count} items',
+  'taskbar.trash.other': 'Recycle Bin, {count} items',
+
   // ── starting up ────────────────────────────────────────────────────────
   'boot.starting': 'Starting Lumen OS',
   'boot.failed': 'Boot failed',

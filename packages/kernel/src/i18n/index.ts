@@ -61,3 +61,57 @@ export function translate(
 export function t(key: MessageKey, vars?: Record<string, string | number>): string {
   return translate(resolveLanguage(useSettingsStore.getState().settings.region), key, vars);
 }
+
+/**
+ * The forms a count can take. English uses two of these and Russian four, so
+ * a dictionary with only a singular and a plural writes «5 элемент» — which
+ * is the sort of thing that makes a translated interface read as a
+ * translation rather than as the interface.
+ */
+export type PluralForm = 'one' | 'few' | 'many' | 'other';
+
+/**
+ * A key with a `.one` / `.few` / `.many` / `.other` family behind it.
+ *
+ * The family is declared in `en` like any other key, so the compiler still
+ * refuses a base nobody wrote, and `scripts/check-i18n.mjs` checks the rest
+ * of the family is there. `.other` is what every language has and what any
+ * missing form falls back to.
+ */
+type BaseOf<K> = K extends `${infer Base}.other` ? Base : never;
+export type PluralKey = BaseOf<MessageKey>;
+
+/** Which form `count` takes in `language`, as Intl has it. */
+export function formFor(language: Language, count: number): PluralForm {
+  const form = new Intl.PluralRules(language).select(count);
+  return form === 'one' || form === 'few' || form === 'many' ? form : 'other';
+}
+
+/**
+ * One message for a count, in the form the language actually uses.
+ *
+ * `{count}` is filled in for you, because a form that does not show the
+ * number it agrees with is a form nobody needed.
+ */
+export function translateCount(
+  language: Language,
+  base: PluralKey,
+  count: number,
+  vars?: Record<string, string | number>,
+): string {
+  const form = formFor(language, count);
+  const key = `${base}.${form}` as MessageKey;
+  const fallback = `${base}.other` as MessageKey;
+  const dictionary = DICTIONARIES[language];
+  const text = dictionary[key] ?? dictionary[fallback] ?? en[fallback];
+  return interpolate(text, { count, ...vars });
+}
+
+export function plural(
+  base: PluralKey,
+  count: number,
+  vars?: Record<string, string | number>,
+): string {
+  const language = resolveLanguage(useSettingsStore.getState().settings.region);
+  return translateCount(language, base, count, vars);
+}
