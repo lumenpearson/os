@@ -1,3 +1,4 @@
+import { useT } from '@lumen/kernel/react';
 import { cx, EmptyState, Select } from '@lumen/ui';
 import { Pin, Search } from 'lucide-react';
 import {
@@ -18,6 +19,7 @@ const SORT_OPTIONS = (['modified', 'created', 'title'] as SortKey[]).map((value)
 
 /** The matched runs of a string, marked with the selection wash. */
 function Highlight({ text, ranges }: { text: string; ranges: readonly Range[] }) {
+  const _t = useT();
   if (ranges.length === 0) return text;
   let offset = 0;
   return highlightParts(text, ranges).map((part) => {
@@ -67,6 +69,7 @@ export function NoteList({
   className,
   style,
 }: NoteListProps) {
+  const t = useT();
   const listId = useId();
   const boxRef = useRef<HTMLDivElement>(null);
   const index = rows.findIndex((r) => r.note.path === selectedPath);
@@ -124,7 +127,7 @@ export function NoteList({
         <div className="flex-1" />
         <Select
           size="sm"
-          aria-label="Sort notes by"
+          aria-label={t('notesApp.sortBy')}
           options={SORT_OPTIONS}
           value={sort}
           onChange={onSort}
@@ -146,7 +149,7 @@ export function NoteList({
           ref={boxRef}
           role="listbox"
           tabIndex={0}
-          aria-label="Notes"
+          aria-label={t('notesApp.notes')}
           aria-activedescendant={index >= 0 ? rowId(index) : undefined}
           onKeyDown={onKeyDown}
           className="lumen-scroll min-h-0 flex-1 p-1 outline-none"
@@ -171,7 +174,10 @@ export function NoteList({
               >
                 <div className="flex items-baseline gap-1.5">
                   {row.note.pinned && (
-                    <Pin aria-label="Pinned" className="size-3 shrink-0 self-center text-ink-3" />
+                    <Pin
+                      aria-label={t('notesApp.pinned')}
+                      className="size-3 shrink-0 self-center text-ink-3"
+                    />
                   )}
                   <span className="truncate-1 min-w-0 flex-1 text-base font-medium text-ink">
                     <Highlight text={row.note.title} ranges={row.titleRanges} />
@@ -185,7 +191,7 @@ export function NoteList({
                     {row.excerpt ? (
                       <Highlight text={row.excerpt} ranges={row.excerptRanges} />
                     ) : (
-                      <span className="text-ink-3">Empty note</span>
+                      <span className="text-ink-3">{t('notesApp.emptyNote')}</span>
                     )}
                   </span>
                   {row.matches > 0 && (

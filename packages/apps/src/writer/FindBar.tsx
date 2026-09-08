@@ -1,3 +1,4 @@
+import { useT } from '@lumen/kernel/react';
 import { IconButton, SearchField } from '@lumen/ui';
 import { ChevronDown, ChevronUp, X } from 'lucide-react';
 import type { KeyboardEvent, RefObject } from 'react';
@@ -24,6 +25,7 @@ export function FindBar({
   onPrevious,
   onClose,
 }: FindBarProps) {
+  const t = useT();
   const onKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'Enter') {
       event.preventDefault();
@@ -43,21 +45,31 @@ export function FindBar({
         value={query}
         onChange={onQueryChange}
         onKeyDown={onKeyDown}
-        placeholder="Find in document"
-        aria-label="Find in document"
+        placeholder={t('writerApp.findInDocument')}
+        aria-label={t('writerApp.findInDocument')}
         className="w-56"
       />
       <span className="mono shrink-0 text-xs text-ink-2 tabular-nums">
         {query === '' ? '' : total === 0 ? 'No matches' : `${index + 1} of ${total}`}
       </span>
       <div className="flex-1" />
-      <IconButton label="Previous match" size="sm" disabled={total === 0} onClick={onPrevious}>
+      <IconButton
+        label={t('writerApp.previousMatch')}
+        size="sm"
+        disabled={total === 0}
+        onClick={onPrevious}
+      >
         <ChevronUp />
       </IconButton>
-      <IconButton label="Next match" size="sm" disabled={total === 0} onClick={onNext}>
+      <IconButton
+        label={t('writerApp.nextMatch')}
+        size="sm"
+        disabled={total === 0}
+        onClick={onNext}
+      >
         <ChevronDown />
       </IconButton>
-      <IconButton label="Close find" size="sm" onClick={onClose}>
+      <IconButton label={t('writerApp.closeFind')} size="sm" onClick={onClose}>
         <X />
       </IconButton>
     </div>

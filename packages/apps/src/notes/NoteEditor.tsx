@@ -1,3 +1,4 @@
+import { useT } from '@lumen/kernel/react';
 import { cx, useElementSize } from '@lumen/ui';
 import type { ChangeEvent, RefObject } from 'react';
 import type { ViewMode } from './library';
@@ -28,6 +29,7 @@ export function NoteEditor({
   onBlur,
   onToggleTask,
 }: NoteEditorProps) {
+  const t = useT();
   const [ref, size] = useElementSize<HTMLDivElement>();
   const stacked = view === 'split' && size.width > 0 && size.width < SPLIT_STACK_WIDTH;
 
@@ -44,8 +46,8 @@ export function NoteEditor({
           autoComplete="off"
           autoCorrect="off"
           autoCapitalize="sentences"
-          aria-label="Note text"
-          placeholder="Write in Markdown."
+          aria-label={t('notesApp.noteText')}
+          placeholder={t('notesApp.writeMarkdown')}
           onChange={(e: ChangeEvent<HTMLTextAreaElement>) => onChange(e.target.value)}
           onBlur={onBlur}
           className={cx(

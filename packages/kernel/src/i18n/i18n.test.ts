@@ -36,6 +36,9 @@ describe('the dictionaries', () => {
     // Ctrl, so translating the word would name a key nobody has.
     'keyboardPage.modCtrl',
     'keyboardPage.modCmd',
+    'writerApp.urlPlaceholder', // an example URL, not a sentence
+    'writerApp.html', // the format's name
+    'writerApp.markdown', // likewise
   ];
 
   it('say something different from English', () => {
