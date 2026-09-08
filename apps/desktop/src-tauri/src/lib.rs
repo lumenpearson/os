@@ -102,6 +102,14 @@ pub fn run() {
             commands::config::config_pick_home_dir,
             commands::interface::interface_state,
             commands::interface::interface_ready,
+            commands::page::page_supported,
+            commands::page::page_open,
+            commands::page::page_navigate,
+            commands::page::page_place,
+            commands::page::page_zoom,
+            commands::page::page_reload,
+            commands::page::page_close,
+            commands::page::page_close_all,
         ])
         .run(tauri::generate_context!());
 
