@@ -4,8 +4,9 @@
  * The buffers start again whenever sampling starts, so a chart never mixes
  * two rates or hides a pause behind a straight line.
  */
+import type { Translate } from '@lumen/kernel';
 import { useProcessStore } from '@lumen/kernel';
-import { usePlatform, useVfs } from '@lumen/kernel/react';
+import { usePlatform, useT, useVfs } from '@lumen/kernel/react';
 import { formatBytes } from '@lumen/vfs';
 import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import { Chart, type ChartProps } from './Chart';
@@ -81,6 +82,7 @@ export interface PerformanceTabProps {
 }
 
 export function PerformanceTab({ active, refreshMs }: PerformanceTabProps) {
+  const t = useT();
   const platform = usePlatform();
   const vfs = useVfs();
   const documentVisible = useDocumentVisible();
@@ -175,7 +177,7 @@ export function PerformanceTab({ active, refreshMs }: PerformanceTabProps) {
   }, [sampling, refreshMs, series, support, platform, vfs, readFrameRate]);
 
   const charts = useMemo(
-    () => buildCharts(snapshot, support, refreshMs, platform.adapter.id),
+    () => buildCharts(snapshot, support, refreshMs, platform.adapter.id, t),
     [snapshot, support, refreshMs, platform.adapter.id],
   );
 
@@ -187,9 +189,7 @@ export function PerformanceTab({ active, refreshMs }: PerformanceTabProps) {
           <Chart key={chart.title} {...chart} />
         ))}
       </div>
-      {!sampling && (
-        <p className="mt-3 text-sm text-ink-3">Sampling is paused while the window is hidden.</p>
-      )}
+      {!sampling && <p className="mt-3 text-sm text-ink-3">{t('taskManagerApp.samplingPaused')}</p>}
     </div>
   );
 }
@@ -203,6 +203,7 @@ function buildCharts(
   support: Record<ChartId, MetricSupport>,
   refreshMs: number,
   adapterId: string,
+  t: Translate,
 ): ChartProps[] {
   const { stats, values } = snapshot;
   const span = formatSpan(SERIES_CAPACITY, refreshMs);
@@ -220,7 +221,7 @@ function buildCharts(
 
   return [
     {
-      title: 'Frame rate',
+      title: t('taskManagerApp.frameRate'),
       source: 'Animation frames delivered to this window',
       value: value(stats.frameRate.last, formatFrameRate),
       unit: 'fps',
@@ -232,7 +233,7 @@ function buildCharts(
       note: note('frameRate'),
     },
     {
-      title: 'JS heap used',
+      title: t('taskManagerApp.jsHeap'),
       source: 'performance.memory for this document',
       value: value(stats.heap.last, (v) => formatBytes(v)),
       values: plot('heap'),
@@ -245,7 +246,7 @@ function buildCharts(
       note: note('heap'),
     },
     {
-      title: 'Processes',
+      title: t('taskManagerApp.processes'),
       source: 'Entries in the kernel process table',
       value: value(stats.processes.last, formatCount),
       values: plot('processes'),
@@ -256,7 +257,7 @@ function buildCharts(
       note: note('processes'),
     },
     {
-      title: 'Storage used',
+      title: t('taskManagerApp.storageUsed'),
       source: `Bytes the ${adapterId} file system reports in use`,
       value: value(stats.storage.last, (v) => formatBytes(v)),
       values: plot('storage'),
@@ -269,7 +270,7 @@ function buildCharts(
       note: note('storage'),
     },
     {
-      title: 'Host CPU',
+      title: t('taskManagerApp.hostCpu'),
       source: 'Load reported by the desktop host',
       value: value(stats.hostCpu.last, (v) => formatPercent(v)),
       values: plot('hostCpu'),
@@ -280,7 +281,7 @@ function buildCharts(
       note: note('hostCpu'),
     },
     {
-      title: 'Host memory used',
+      title: t('taskManagerApp.hostMemory'),
       source: 'Physical memory reported by the desktop host',
       value: value(stats.hostMemory.last, (v) => formatBytes(v)),
       values: plot('hostMemory'),
@@ -305,6 +306,7 @@ function Fact({ label, children }: { label: string; children: ReactNode }) {
 }
 
 function SystemFacts({ refreshMs }: { refreshMs: number }) {
+  const t = useT();
   const platform = usePlatform();
   const info = useSystemInfo();
   const cores = platform.capabilities.realMetrics ? (info?.cpu.cores ?? null) : logicalCores();
@@ -312,14 +314,16 @@ function SystemFacts({ refreshMs }: { refreshMs: number }) {
   const os = info ? `${info.os.name} ${info.os.version}`.trim() : pending;
   return (
     <dl className="flex flex-wrap gap-x-8 gap-y-3">
-      <Fact label="Host">{info ? (info.host === 'tauri' ? 'Desktop' : 'Browser') : pending}</Fact>
-      <Fact label="Platform">{os}</Fact>
-      <Fact label="Logical cores">{cores ?? EM_DASH}</Fact>
-      <Fact label="Display">
+      <Fact label={t('taskManagerApp.host')}>
+        {info ? (info.host === 'tauri' ? 'Desktop' : 'Browser') : pending}
+      </Fact>
+      <Fact label={t('taskManagerApp.platform')}>{os}</Fact>
+      <Fact label={t('taskManagerApp.logicalCores')}>{cores ?? EM_DASH}</Fact>
+      <Fact label={t('taskManagerApp.display')}>
         {info ? `${info.display.width}×${info.display.height} @ ${info.display.scale}×` : pending}
       </Fact>
-      <Fact label="File system">{platform.adapter.id}</Fact>
-      <Fact label="Sampling">{formatInterval(refreshMs)}</Fact>
+      <Fact label={t('taskManagerApp.fileSystem')}>{platform.adapter.id}</Fact>
+      <Fact label={t('taskManagerApp.sampling')}>{formatInterval(refreshMs)}</Fact>
     </dl>
   );
 }

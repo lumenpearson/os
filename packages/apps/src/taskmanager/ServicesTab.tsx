@@ -9,6 +9,7 @@
  * assume.
  */
 
+import type { MessageKey, Translate } from '@lumen/kernel';
 import {
   SERVICES,
   type ServiceCategory,
@@ -16,6 +17,7 @@ import {
   type ServiceState,
   useServiceStore,
 } from '@lumen/kernel';
+import { usePlural, useT } from '@lumen/kernel/react';
 import { type Column, DataTable, RowAction, Select, useElementSize } from '@lumen/ui';
 import { useMemo, useState } from 'react';
 import { rankMap, type SortState, type SortValue, sortRows, toggleSort } from './sort';
@@ -37,10 +39,25 @@ const STARTUP_AT = 780;
 /** Most active first, so what is running is at the top when sorted by state. */
 const STATE_RANK: Record<ServiceState, number> = { running: 0, 'on-demand': 1, stopped: 2 };
 
-const STATE_LABEL: Record<ServiceState, string> = {
-  running: 'Running',
-  'on-demand': 'On demand',
-  stopped: 'Stopped',
+const STATE_KEYS: Record<ServiceState, MessageKey> = {
+  running: 'taskManagerApp.serviceRunning',
+  'on-demand': 'taskManagerApp.serviceOnDemand',
+  stopped: 'taskManagerApp.serviceStopped',
+};
+
+const CATEGORY_KEYS: Record<ServiceCategory, MessageKey> = {
+  core: 'taskManagerApp.categoryCore',
+  shell: 'taskManagerApp.categoryShell',
+  files: 'taskManagerApp.categoryFiles',
+  network: 'taskManagerApp.categoryNetwork',
+  input: 'taskManagerApp.categoryInput',
+  media: 'taskManagerApp.categoryMedia',
+  printing: 'taskManagerApp.categoryPrinting',
+  security: 'taskManagerApp.categorySecurity',
+  sync: 'taskManagerApp.categorySync',
+  maintenance: 'taskManagerApp.categoryMaintenance',
+  accessibility: 'taskManagerApp.categoryAccessibility',
+  developer: 'taskManagerApp.categoryDeveloper',
 };
 
 export function sortValue(row: ServiceRow, column: ServiceColumnId): SortValue {
@@ -61,18 +78,20 @@ export function sortValue(row: ServiceRow, column: ServiceColumnId): SortValue {
 }
 
 /** Categories that have at least one service, plus "all". */
-export function categoryOptions(): Array<{ value: string; label: string }> {
+export function categoryOptions(t: Translate): Array<{ value: string; label: string }> {
   const seen = new Set<ServiceCategory>(SERVICES.map((s) => s.category));
   return [
-    { value: 'all', label: 'All categories' },
+    { value: 'all', label: t('taskManagerApp.allCategories') },
     ...[...seen].sort().map((category) => ({
       value: category,
-      label: category.charAt(0).toUpperCase() + category.slice(1),
+      label: t(CATEGORY_KEYS[category]),
     })),
   ];
 }
 
 export function ServicesTab() {
+  const t = useT();
+  const plural = usePlural();
   const [ref, size] = useElementSize<HTMLDivElement>();
   const statuses = useServiceStore((s) => s.statuses);
   const essential = useServiceStore((s) => s.isEssential);
@@ -102,7 +121,7 @@ export function ServicesTab() {
     const cols: Column<ServiceRow>[] = [
       {
         id: 'name',
-        header: 'Name',
+        header: t('taskManagerApp.name'),
         width: 'minmax(160px, 1fr)',
         sortable: true,
         accessor: rank,
@@ -117,7 +136,7 @@ export function ServicesTab() {
     if (width === 0 || width >= ID_AT) {
       cols.push({
         id: 'id',
-        header: 'Identifier',
+        header: t('taskManagerApp.identifier'),
         width: 'minmax(150px, 230px)',
         mono: true,
         sortable: true,
@@ -128,17 +147,17 @@ export function ServicesTab() {
     if (width === 0 || width >= CATEGORY_AT) {
       cols.push({
         id: 'category',
-        header: 'Category',
+        header: t('taskManagerApp.category'),
         width: '112px',
         sortable: true,
         accessor: rank,
-        render: (row) => row.service.category,
+        render: (row) => t(CATEGORY_KEYS[row.service.category]),
       });
     }
     if (width === 0 || width >= STARTUP_AT) {
       cols.push({
         id: 'startup',
-        header: 'Starts',
+        header: t('taskManagerApp.starts'),
         width: '96px',
         sortable: true,
         accessor: rank,
@@ -147,7 +166,7 @@ export function ServicesTab() {
     }
     cols.push({
       id: 'kind',
-      header: 'Kind',
+      header: t('taskManagerApp.kind'),
       width: '96px',
       mono: true,
       sortable: true,
@@ -156,15 +175,16 @@ export function ServicesTab() {
     });
     cols.push({
       id: 'state',
-      header: 'State',
+      header: t('taskManagerApp.state'),
       width: '104px',
       mono: true,
       sortable: true,
       accessor: rank,
-      render: (row) => STATE_LABEL[row.state],
+      render: (row) => t(STATE_KEYS[row.state]),
     });
     cols.push({
       id: 'actions',
+      // i18n-ignore-next-line the actions column has no heading to read
       header: '',
       width: '88px',
       align: 'right',
@@ -174,19 +194,19 @@ export function ServicesTab() {
           <RowAction
             danger
             disabled={row.essential}
-            title={row.essential ? 'The system requires this service' : undefined}
+            title={row.essential ? t('taskManagerApp.essential') : undefined}
             onClick={() => useServiceStore.getState().stop(row.service.id)}
           >
-            Stop
+            {t('taskManagerApp.stop')}
           </RowAction>
         ) : (
           <RowAction onClick={() => useServiceStore.getState().start(row.service.id, Date.now())}>
-            Start
+            {t('taskManagerApp.start')}
           </RowAction>
         ),
     });
     return cols;
-  }, [ranks, width]);
+  }, [ranks, width, t]);
 
   const running = rows.filter((row) => row.state === 'running').length;
 
@@ -195,8 +215,8 @@ export function ServicesTab() {
       <div className="flex shrink-0 items-center gap-2 border-b border-rule bg-canvas px-2 py-1.5">
         <Select
           size="sm"
-          aria-label="Category"
-          options={categoryOptions()}
+          aria-label={t('taskManagerApp.category')}
+          options={categoryOptions(t)}
           value={category}
           onChange={setCategory}
         />
@@ -213,8 +233,11 @@ export function ServicesTab() {
       />
       <div className="shrink-0 border-t border-rule bg-canvas px-2 py-1.5">
         <p className="mono truncate-1 text-sm text-ink-3 tabular-nums">
-          {rows.length} services · {running} running ·{' '}
-          {rows.filter((row) => row.service.implemented).length} implemented here
+          {t('taskManagerApp.serviceTally', {
+            services: plural('count.services', rows.length),
+            running,
+            implemented: rows.filter((row) => row.service.implemented).length,
+          })}
         </p>
       </div>
     </div>

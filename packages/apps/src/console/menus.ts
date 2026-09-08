@@ -3,7 +3,7 @@
  * command reads the same whether it is clicked in a menu, typed as a
  * shortcut, or pressed in the toolbar.
  */
-import type { MenuItemTemplate, MenuTemplate } from '@lumen/kernel';
+import type { MenuItemTemplate, MenuTemplate, MessageKey } from '@lumen/kernel';
 import { t } from '@lumen/kernel';
 import { LEVELS, type LogLevel } from './types';
 
@@ -26,11 +26,11 @@ export interface ConsoleActions {
   copySelected: () => void;
 }
 
-const LEVEL_LABEL: Record<LogLevel, string> = {
-  debug: 'Debug',
-  info: 'Info',
-  warn: 'Warnings',
-  error: 'Errors',
+const LEVEL_KEY: Record<LogLevel, MessageKey> = {
+  debug: 'consoleApp.levelDebug',
+  info: 'consoleApp.levelInfo',
+  warn: 'consoleApp.levelWarn',
+  error: 'consoleApp.levelError',
 };
 
 const separator: MenuItemTemplate = { type: 'separator' };
@@ -90,7 +90,7 @@ export function buildConsoleMenus(
           submenu: LEVELS.map((level) => ({
             id: `view.levels.${level}`,
             type: 'checkbox' as const,
-            label: LEVEL_LABEL[level],
+            label: t(LEVEL_KEY[level]),
             checked: shown.has(level),
             onSelect: () => actions.toggleLevel(level),
           })),
@@ -98,7 +98,7 @@ export function buildConsoleMenus(
         separator,
         {
           id: 'view.pause',
-          label: state.paused ? 'Resume Capture' : 'Pause Capture',
+          label: t(state.paused ? 'consoleApp.resumeCapture' : 'consoleApp.pauseCapture'),
           shortcut: 'Mod+P',
           onSelect: actions.togglePaused,
         },

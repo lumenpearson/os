@@ -8,6 +8,7 @@
  * legible on screen.
  */
 
+import { useT } from '@lumen/kernel/react';
 import { Breadcrumb, cx, EmptyState, useElementSize } from '@lumen/ui';
 import { formatBytes } from '@lumen/vfs';
 import { FolderTree } from 'lucide-react';
@@ -30,6 +31,7 @@ const LABEL_MIN_HEIGHT = 20;
 const SIZE_MIN_HEIGHT = 34;
 
 export function Folders({ tree, path, onPathChange }: FoldersProps) {
+  const t = useT();
   const listId = useId();
   const [box, size] = useElementSize<HTMLDivElement>();
   const [focus, setFocus] = useState(0);
@@ -121,8 +123,8 @@ export function Folders({ tree, path, onPathChange }: FoldersProps) {
         {children.length === 0 ? (
           <EmptyState
             icon={<FolderTree />}
-            title="No files here"
-            description="A folder with no files in it takes no space, so it gets no tile."
+            title={t('storageApp.noFilesHere')}
+            description={t('storageApp.noFilesHint')}
           />
         ) : (
           <svg

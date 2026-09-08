@@ -1,4 +1,4 @@
-import { SERVICES, useServiceStore } from '@lumen/kernel';
+import { SERVICES, translate, useServiceStore } from '@lumen/kernel';
 import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -32,7 +32,9 @@ describe('sortValue', () => {
 
 describe('categoryOptions', () => {
   it('offers every category that has a service, and all of them together', () => {
-    const options = categoryOptions();
+    // The translator is a dependency now, so the test names the language
+    // rather than leaning on whichever one the store happens to hold.
+    const options = categoryOptions((key) => translate('en', key));
     expect(options[0]).toEqual({ value: 'all', label: 'All categories' });
     const values = options.slice(1).map((o) => o.value);
     expect(values).toContain('core');

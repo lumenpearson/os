@@ -9,7 +9,7 @@
  * so opening the window shows figures immediately and says how old they are.
  */
 
-import { useKernel, useVfs } from '@lumen/kernel/react';
+import { useKernel, usePlural, useT, useVfs } from '@lumen/kernel/react';
 import {
   AppFrame,
   Button,
@@ -51,6 +51,8 @@ const LARGEST_LIMIT = 200;
 const PROGRESS_MS = 120;
 
 export default function Storage(_props: AppProps) {
+  const t = useT();
+  const plural = usePlural();
   const vfs = useVfs();
   const kernel = useKernel();
   const notify = useNotify();
@@ -168,9 +170,12 @@ export default function Storage(_props: AppProps) {
   const emptyTrash = useCallback(async () => {
     const bytes = trash?.total?.bytes ?? 0;
     const confirmed = await dialogs.confirm({
-      title: 'Empty the Trash?',
-      message: `${formatBytes(bytes)} in ${trash?.total?.files ?? 0} files will be deleted. This cannot be undone.`,
-      confirmLabel: 'Empty Trash',
+      title: t('filesApp.emptyTrashTitle'),
+      message: t('storageApp.emptyTrashMessage', {
+        bytes: formatBytes(bytes),
+        files: plural('count.files', trash?.total?.files ?? 0),
+      }),
+      confirmLabel: t('menu.emptyTrash'),
       danger: true,
     });
     if (!confirmed) return;
@@ -178,13 +183,13 @@ export default function Storage(_props: AppProps) {
     try {
       await vfs.emptyTrash();
       await measure();
-      notify('Trash emptied', `${formatBytes(bytes)} freed.`);
+      notify(t('storageApp.trashEmptied'), t('storageApp.freed', { bytes: formatBytes(bytes) }));
     } catch (error) {
-      notify('Could not empty the Trash', error instanceof Error ? error.message : String(error));
+      notify(t('storageApp.couldNotEmpty'), error instanceof Error ? error.message : String(error));
     } finally {
       if (alive.current) setWorking(false);
     }
-  }, [vfs, dialogs, notify, measure, trash]);
+  }, [vfs, dialogs, notify, measure, trash, t, plural]);
 
   const reveal = useCallback(
     (path: string) => {
@@ -271,23 +276,23 @@ export default function Storage(_props: AppProps) {
       toolbar={
         <Toolbar dense>
           <SegmentedControl
-            aria-label="View"
+            aria-label={t('menu.view')}
             size="sm"
             value={view}
             onChange={showView}
             options={[
-              { value: 'overview', label: 'Overview', icon: <ChartPie /> },
-              { value: 'folders', label: 'By Folder', icon: <FolderTree /> },
-              { value: 'files', label: 'Largest Files', icon: <Table /> },
+              { value: 'overview', label: t('storageApp.overview'), icon: <ChartPie /> },
+              { value: 'folders', label: t('storageApp.byFolder'), icon: <FolderTree /> },
+              { value: 'files', label: t('storageApp.largestFiles'), icon: <Table /> },
             ]}
           />
           <ToolbarSpacer />
           {scanning ? (
-            <IconButton label="Cancel scan" onClick={cancelScan}>
+            <IconButton label={t('storageApp.cancelScan')} onClick={cancelScan}>
               <X />
             </IconButton>
           ) : (
-            <IconButton label="Rescan" onClick={() => void rescan()}>
+            <IconButton label={t('storageApp.rescan')} onClick={() => void rescan()}>
               <RotateCw />
             </IconButton>
           )}
@@ -351,16 +356,17 @@ interface BodyProps {
 }
 
 function Body(props: BodyProps) {
+  const t = useT();
   const { view, result, tree, failure, scanning } = props;
   if (failure && !result) {
     return (
       <EmptyState
         icon={<TriangleAlert />}
-        title="This folder could not be scanned"
+        title={t('storageApp.couldNotScan')}
         description={failure}
         action={
           <Button size="sm" onClick={props.onRescan}>
-            Try again
+            {t('storageApp.tryAgain')}
           </Button>
         }
       />
@@ -370,16 +376,12 @@ function Body(props: BodyProps) {
     return (
       <EmptyState
         icon={<HardDrive />}
-        title={scanning ? 'Scanning…' : 'Nothing measured yet'}
-        description={
-          scanning
-            ? 'Counting the files under your home folder.'
-            : 'Run a scan to see what is using space.'
-        }
+        title={scanning ? t('storageApp.scanning') : t('storageApp.nothingMeasured')}
+        description={scanning ? t('storageApp.countingFiles') : t('storageApp.runScan')}
         action={
           scanning ? undefined : (
             <Button size="sm" onClick={props.onRescan}>
-              Scan now
+              {t('storageApp.scanNow')}
             </Button>
           )
         }
@@ -432,6 +434,8 @@ function StatusBar({
   failure: string | null;
   root: string;
 }) {
+  const t = useT();
+  const plural = usePlural();
   if (scanning) {
     return (
       <>
@@ -444,26 +448,33 @@ function StatusBar({
     );
   }
   if (!result) {
-    return <span className="min-w-0 truncate">{failure ?? 'No scan taken'}</span>;
+    return <span className="min-w-0 truncate">{failure ?? t('storageApp.noScanTaken')}</span>;
   }
   return (
     <>
       <span className="shrink-0 tabular-nums">
-        {result.files.length.toLocaleString()} files · {formatBytes(result.bytes)}
+        {t('storageApp.filesAndBytes', {
+          files: plural('count.files', result.files.length),
+          bytes: formatBytes(result.bytes),
+        })}
       </span>
       {result.errors.length > 0 && (
         <span className="shrink-0 tabular-nums text-ink-3">
-          {result.errors.length} unreadable {result.errors.length === 1 ? 'folder' : 'folders'}
+          {plural('count.unreadableFolders', result.errors.length)}
         </span>
       )}
       {!result.complete && (
         <span className="shrink-0 text-ink-3">
-          {result.truncated ? 'Stopped at the file ceiling' : 'Stopped early'} — figures are partial
+          {t('storageApp.figuresPartial', {
+            reason: result.truncated
+              ? t('storageApp.stoppedAtCeiling')
+              : t('storageApp.stoppedEarly'),
+          })}
         </span>
       )}
       <ToolbarSpacer />
       <span className="min-w-0 truncate tabular-nums text-ink-3">
-        Scanned {formatRelative(result.finishedAt)}
+        {t('storageApp.scannedRelative', { time: formatRelative(result.finishedAt) })}
       </span>
     </>
   );

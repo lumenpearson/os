@@ -7,6 +7,7 @@
  * of its own — the app never resolves it by choosing.
  */
 
+import { usePlural, useT } from '@lumen/kernel/react';
 import { Button, cx, IconButton, Progress, useElementSize } from '@lumen/ui';
 import { formatBytes } from '@lumen/vfs';
 import { Trash2 } from 'lucide-react';
@@ -65,24 +66,29 @@ export function Overview({
 }
 
 function Volume({ report }: { report: UsageReport | null }) {
+  const t = useT();
   return (
     <section aria-labelledby="storage-volume" className="flex flex-col gap-2">
       <h2 id="storage-volume" className="px-1 text-md font-medium text-ink">
-        This volume
+        {t('storageApp.thisVolume')}
       </h2>
       <div className="rounded-md border border-rule bg-surface">
         {report && report.fraction !== null && (
           <div className="flex flex-col gap-1.5 border-b border-rule px-4 py-3">
-            <Progress value={report.fraction} label="Space in use" />
+            <Progress value={report.fraction} label={t('storageApp.spaceInUse')} />
             <p className="mono text-sm tabular-nums text-ink-2">
-              {report.used.value} of {report.quota.value} used ({formatShare(report.fraction)})
+              {t('storageApp.usedOfQuota', {
+                used: report.used.value,
+                quota: report.quota.value,
+                share: formatShare(report.fraction),
+              })}
             </p>
           </div>
         )}
         <dl className="divide-y divide-rule">
-          <ReadingRow label="Used" reading={report?.used} />
-          <ReadingRow label="Quota" reading={report?.quota} />
-          <ReadingRow label="Browser estimate" reading={report?.browser} />
+          <ReadingRow label={t('storageApp.used')} reading={report?.used} />
+          <ReadingRow label={t('storageApp.quota')} reading={report?.quota} />
+          <ReadingRow label={t('storageApp.browserEstimate')} reading={report?.browser} />
         </dl>
         <div className="flex flex-col gap-1 border-t border-rule px-4 py-2.5">
           {report?.disagreement && <p className="text-sm text-ink">{report.disagreement}</p>}
@@ -131,6 +137,8 @@ function Stored({
   onEmptyTrash,
   emptyTrashEnabled,
 }: Omit<OverviewProps, 'report'>) {
+  const t = useT();
+  const plural = usePlural();
   const total = segmented.bytes;
   const [listRef, list] = useElementSize<HTMLDivElement>();
   // Below this the three figures, the label and the Trash button cannot share
@@ -140,7 +148,7 @@ function Stored({
   return (
     <section aria-labelledby="storage-stored" className="flex flex-col gap-2">
       <h2 id="storage-stored" className="px-1 text-md font-medium text-ink">
-        What is stored
+        {t('storageApp.whatIsStored')}
       </h2>
       <div ref={listRef} className="rounded-md border border-rule bg-surface">
         <div className="flex flex-col gap-2 border-b border-rule px-4 py-3">
@@ -156,9 +164,13 @@ function Stored({
             ))}
           </div>
           <p className="mono text-sm tabular-nums text-ink-2">
-            {formatBytes(total)} in {segmented.files.toLocaleString()} files under {root} and the
-            Trash
-            {partial ? ' (partial scan)' : ''}
+            {t('storageApp.storedSummary', {
+              bytes: formatBytes(total),
+              files: plural('count.files', segmented.files),
+              root,
+              trash: t('filesApp.trash'),
+              partial: partial ? t('storageApp.partialScan') : '',
+            })}
           </p>
         </div>
         <ul className="divide-y divide-rule">
@@ -178,7 +190,7 @@ function Stored({
                 (narrow ? (
                   <IconButton
                     size="sm"
-                    label="Empty Trash"
+                    label={t('menu.emptyTrash')}
                     onClick={onEmptyTrash}
                     disabled={!emptyTrashEnabled}
                   >
@@ -191,11 +203,11 @@ function Stored({
                     onClick={onEmptyTrash}
                     disabled={!emptyTrashEnabled}
                   >
-                    Empty Trash
+                    {t('menu.emptyTrash')}
                   </Button>
                 ))}
               <span className="mono w-24 shrink-0 text-right text-sm tabular-nums text-ink-3">
-                {segment.files.toLocaleString()} {segment.files === 1 ? 'file' : 'files'}
+                {plural('count.files', segment.files)}
               </span>
               <span className="mono w-20 shrink-0 text-right text-sm tabular-nums text-ink">
                 {formatBytes(segment.bytes)}
@@ -210,11 +222,15 @@ function Stored({
         </ul>
         <div className="flex flex-col gap-1 border-t border-rule px-4 py-2.5">
           {trashReason && (
-            <p className="text-sm text-ink-3">The Trash could not be measured: {trashReason}</p>
+            <p className="text-sm text-ink-3">
+              {t('storageApp.trashNotMeasured', { reason: trashReason })}
+            </p>
           )}
           {coverage && <p className="text-sm text-ink-3">{coverage}</p>}
           <p className="text-sm text-ink-3">
-            {scannedAt === null ? 'No scan taken yet.' : `Scanned ${formatDateTime(scannedAt)}.`}
+            {scannedAt === null
+              ? t('storageApp.noScanYet')
+              : t('storageApp.scannedAt', { time: formatDateTime(scannedAt) })}
           </p>
         </div>
       </div>

@@ -1,18 +1,17 @@
-import { t } from '@lumen/kernel';
 /**
  * The menubar for the Storage window. Built from one snapshot of state, so a
  * command reads the same whether it is clicked or typed, and a command with
  * nothing to act on stands down instead of failing quietly.
  */
 
-import type { MenuItemTemplate, MenuTemplate } from '@lumen/kernel';
+import { type MenuItemTemplate, type MenuTemplate, type MessageKey, t } from '@lumen/kernel';
 
 export type StorageView = 'overview' | 'folders' | 'files';
 
-export const VIEW_LABELS: Record<StorageView, string> = {
-  overview: 'Overview',
-  folders: 'By Folder',
-  files: 'Largest Files',
+export const VIEW_KEYS: Record<StorageView, MessageKey> = {
+  overview: 'storageApp.overview',
+  folders: 'storageApp.byFolder',
+  files: 'storageApp.largestFiles',
 };
 
 export interface StorageMenuState {
@@ -78,7 +77,7 @@ export function buildStorageMenus(
         {
           id: 'view.overview',
           type: 'radio',
-          label: VIEW_LABELS.overview,
+          label: t(VIEW_KEYS.overview),
           shortcut: 'Mod+1',
           checked: state.view === 'overview',
           onSelect: () => actions.showView('overview'),
@@ -86,7 +85,7 @@ export function buildStorageMenus(
         {
           id: 'view.folders',
           type: 'radio',
-          label: VIEW_LABELS.folders,
+          label: t(VIEW_KEYS.folders),
           shortcut: 'Mod+2',
           checked: state.view === 'folders',
           onSelect: () => actions.showView('folders'),
@@ -94,7 +93,7 @@ export function buildStorageMenus(
         {
           id: 'view.files',
           type: 'radio',
-          label: VIEW_LABELS.files,
+          label: t(VIEW_KEYS.files),
           shortcut: 'Mod+3',
           checked: state.view === 'files',
           onSelect: () => actions.showView('files'),

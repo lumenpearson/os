@@ -5,6 +5,7 @@
  * of repeated prefix.
  */
 
+import { usePlural, useT } from '@lumen/kernel/react';
 import { Button, type Column, DataTable, EmptyState, Toolbar, ToolbarSpacer } from '@lumen/ui';
 import { formatBytes, relative } from '@lumen/vfs';
 import { FolderOpen, HardDrive, Trash2 } from 'lucide-react';
@@ -26,6 +27,8 @@ interface FileRow extends ScanFile {
 }
 
 export function LargestFiles({ files, root, onReveal, onTrash, busy }: LargestFilesProps) {
+  const t = useT();
+  const plural = usePlural();
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [sort, setSort] = useState<{ column: string; direction: 'asc' | 'desc' } | null>({
     column: 'size',
@@ -41,7 +44,7 @@ export function LargestFiles({ files, root, onReveal, onTrash, busy }: LargestFi
     () => [
       {
         id: 'location',
-        header: 'Path',
+        header: t('storageApp.path'),
         width: 'minmax(160px,1fr)',
         sortable: true,
         mono: true,
@@ -49,7 +52,7 @@ export function LargestFiles({ files, root, onReveal, onTrash, busy }: LargestFi
       },
       {
         id: 'size',
-        header: 'Size',
+        header: t('storageApp.size'),
         width: '110px',
         align: 'right',
         sortable: true,
@@ -59,7 +62,7 @@ export function LargestFiles({ files, root, onReveal, onTrash, busy }: LargestFi
       },
       {
         id: 'modified',
-        header: 'Modified',
+        header: t('storageApp.modified'),
         width: '170px',
         sortable: true,
         mono: true,
@@ -67,7 +70,7 @@ export function LargestFiles({ files, root, onReveal, onTrash, busy }: LargestFi
         render: (row) => (row.modifiedAt > 0 ? formatDateTime(row.modifiedAt) : '—'),
       },
     ],
-    [],
+    [t],
   );
 
   const first = chosen[0];
@@ -75,7 +78,7 @@ export function LargestFiles({ files, root, onReveal, onTrash, busy }: LargestFi
     <div className="flex min-h-0 flex-1 flex-col">
       <Toolbar dense>
         <span className="mono text-xs tabular-nums text-ink-2">
-          {rows.length.toLocaleString()} largest {rows.length === 1 ? 'file' : 'files'}
+          {plural('count.largestFiles', rows.length)}
         </span>
         <ToolbarSpacer />
         <Button
@@ -84,7 +87,7 @@ export function LargestFiles({ files, root, onReveal, onTrash, busy }: LargestFi
           disabled={chosen.length !== 1 || !first}
           onClick={() => first && onReveal(first.path)}
         >
-          Reveal in Files
+          {t('menu.revealInFiles')}
         </Button>
         <Button
           size="sm"
@@ -92,7 +95,7 @@ export function LargestFiles({ files, root, onReveal, onTrash, busy }: LargestFi
           disabled={chosen.length === 0 || busy}
           onClick={() => onTrash(chosen.map((row) => row.path))}
         >
-          Move to Trash
+          {t('desktop.moveToTrash')}
         </Button>
       </Toolbar>
       <DataTable
@@ -107,8 +110,8 @@ export function LargestFiles({ files, root, onReveal, onTrash, busy }: LargestFi
         emptyState={
           <EmptyState
             icon={<HardDrive />}
-            title="No files found"
-            description="The scan of this folder turned up nothing to list."
+            title={t('storageApp.noFilesFound')}
+            description={t('storageApp.scanFoundNothing')}
           />
         }
         className="min-h-0 flex-1"

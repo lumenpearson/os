@@ -42,6 +42,9 @@ describe('the dictionaries', () => {
     'contactsApp.websitePlaceholder', // an example URL
     'contactsApp.noLabel', // an em dash standing in for "no label"
     'contactsApp.cardsAndReason', // punctuation between two values, no words
+    'taskManagerApp.pid', // the column heading is the abbreviation itself
+    'taskManagerApp.processTally', // a count and a note, joined with no words
+    'storageApp.filesAndBytes', // two readings with a separator, no words
   ];
 
   it('say something different from English', () => {

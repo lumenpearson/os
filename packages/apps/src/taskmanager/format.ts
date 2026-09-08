@@ -2,6 +2,7 @@
  * Number and duration formatting for the monitor. Bytes are formatted with
  * `formatBytes` from @lumen/vfs; nothing here re-implements it.
  */
+import { t } from '@lumen/kernel';
 
 /** Shown wherever the platform cannot measure a value. Never a placeholder number. */
 export const EM_DASH = '—';
@@ -44,13 +45,15 @@ export function formatCount(value: number): string {
 export function formatInterval(ms: number): string {
   if (!Number.isFinite(ms) || ms <= 0) return EM_DASH;
   const seconds = ms / 1000;
-  return `${Number.isInteger(seconds) ? seconds : seconds.toFixed(1)} s`;
+  return t('taskManagerApp.seconds', {
+    value: Number.isInteger(seconds) ? seconds : seconds.toFixed(1),
+  });
 }
 
 /** How far back a full buffer reaches: "last 60 s", "last 5 min". */
 export function formatSpan(capacity: number, intervalMs: number): string {
   const seconds = Math.round((capacity * intervalMs) / 1000);
   if (!Number.isFinite(seconds) || seconds <= 0) return EM_DASH;
-  if (seconds < 120) return `last ${seconds} s`;
-  return `last ${Math.round(seconds / 60)} min`;
+  if (seconds < 120) return t('taskManagerApp.lastSeconds', { value: seconds });
+  return t('taskManagerApp.lastMinutes', { value: Math.round(seconds / 60) });
 }

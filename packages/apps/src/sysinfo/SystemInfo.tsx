@@ -8,7 +8,15 @@
  */
 
 import { useSessionStore } from '@lumen/kernel';
-import { useClipboard, useClock, useKernel, usePlatform, useVfs } from '@lumen/kernel/react';
+import {
+  useClipboard,
+  useClock,
+  useKernel,
+  usePlatform,
+  usePlural,
+  useT,
+  useVfs,
+} from '@lumen/kernel/react';
 import {
   AppFrame,
   Button,
@@ -54,6 +62,7 @@ import { countReadings, reportTitle, splitOverview } from './view';
 const SAMPLE_DEADLINE_MS = SAMPLE_MS + 1500;
 
 export default function SystemInfo(_props: AppProps) {
+  const t = useT();
   const platform = usePlatform();
   const vfs = useVfs();
   const kernel = useKernel();
@@ -141,7 +150,7 @@ export default function SystemInfo(_props: AppProps) {
       await vfs.ensureDir(dir);
       const path = await vfs.createFile(dir, reportFileName(made.collectedAt), made.text);
       notify('Report saved', path, {
-        actions: [{ id: 'open', label: 'Open' }],
+        actions: [{ id: 'open', label: t('desktop.open') }],
         onAction: (id) => {
           if (id === 'open') void open(path);
         },
@@ -167,7 +176,7 @@ export default function SystemInfo(_props: AppProps) {
     <AppFrame
       toolbar={
         <Toolbar dense>
-          <IconButton label="Take readings again" onClick={refresh} disabled={reading}>
+          <IconButton label={t('sysinfoApp.takeReadings')} onClick={refresh} disabled={reading}>
             <RotateCw />
           </IconButton>
           <ToolbarSpacer />
@@ -177,7 +186,7 @@ export default function SystemInfo(_props: AppProps) {
             onClick={copyReport}
             disabled={!hasReport}
           >
-            Copy Report
+            {t('sysinfoApp.copyReport')}
           </Button>
           <Button
             size="sm"
@@ -185,7 +194,7 @@ export default function SystemInfo(_props: AppProps) {
             onClick={() => void saveReport()}
             disabled={!hasReport}
           >
-            Save Report
+            {t('sysinfoApp.saveReport')}
           </Button>
         </Toolbar>
       }
@@ -224,19 +233,26 @@ function StatusBar({
   at: number | undefined;
   failure: string | null;
 }) {
-  if (total === 0) return <span>{reading ? 'Taking readings…' : 'No readings'}</span>;
+  const t = useT();
+  const plural = usePlural();
+  if (total === 0)
+    return <span>{reading ? t('sysinfoApp.takingReadings') : t('sysinfoApp.noReadings')}</span>;
   return (
     <>
-      <span className="shrink-0 tabular-nums">{total} values</span>
-      <span className="shrink-0 tabular-nums text-ink-3">{missing} unavailable here</span>
+      <span className="shrink-0 tabular-nums">{plural('count.values', total)}</span>
+      <span className="shrink-0 tabular-nums text-ink-3">
+        {t('sysinfoApp.unavailableHere', { count: missing })}
+      </span>
       <ToolbarSpacer />
       {failure ? (
-        <span className="min-w-0 truncate text-danger">Last reading failed: {failure}</span>
+        <span className="min-w-0 truncate text-danger">
+          {t('sysinfoApp.lastReadingFailed', { reason: failure })}
+        </span>
       ) : (
         <span className="min-w-0 truncate tabular-nums text-ink-3">
           {reading || at === undefined
-            ? 'Taking readings…'
-            : `Read ${formatTime(at, { seconds: true })}`}
+            ? t('sysinfoApp.takingReadings')
+            : t('sysinfoApp.readAt', { time: formatTime(at, { seconds: true }) })}
         </span>
       )}
     </>
@@ -256,15 +272,16 @@ function Readings({
   failure: string | null;
   onRetry: () => void;
 }) {
+  const t = useT();
   if (failure && !snapshot) {
     return (
       <EmptyState
         icon={<TriangleAlert />}
-        title="This machine could not be read"
+        title={t('sysinfoApp.couldNotRead')}
         description={failure}
         action={
           <Button size="sm" onClick={onRetry}>
-            Try again
+            {t('sysinfoApp.tryAgain')}
           </Button>
         }
       />

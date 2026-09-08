@@ -35,7 +35,9 @@ export function buildTaskManagerMenus(
   const onTable = state.tab === 'processes';
   const hasSelection = onTable && state.selectionCount > 0;
   const endLabel =
-    state.selectionCount > 1 ? `End ${state.selectionCount} Processes` : 'End Process';
+    state.selectionCount > 1
+      ? t('taskManagerApp.endProcessesCount', { count: state.selectionCount })
+      : t('taskManagerApp.endProcess');
   return [
     {
       id: 'view',
