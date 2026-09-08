@@ -9,6 +9,25 @@ import type { MessageKey } from './en';
  * it is the convention for "this asks you something first", not decoration.
  */
 export const ru: Record<MessageKey, string> = {
+  'boot.starting': 'Запуск Lumen OS',
+  'boot.failed': 'Не удалось загрузиться',
+  'boot.couldNotStart': 'Lumen OS не смогла запуститься.',
+
+  'lock.user': 'Пользователь',
+  'lock.pressAnyKey': 'Нажмите любую клавишу или щёлкните, чтобы разблокировать',
+  'lock.password': 'Пароль',
+  'lock.tryAgainIn': 'Повторите через {seconds} с',
+  'lock.unlock': 'Разблокировать',
+  'lock.wrongPassword': 'Неверный пароль.',
+  'lock.tooManyAttempts': 'Слишком много попыток.',
+  'lock.hint': 'Подсказка: {hint}',
+  'lock.forgotPassword': 'Забыли пароль?',
+  'lock.switchUser': 'Сменить пользователя',
+  'lock.power': 'Питание',
+  'lock.sleep': 'Сон',
+  'lock.restart': 'Перезагрузить',
+  'lock.shutDown': 'Выключить',
+
   'system.about': 'Об этом компьютере',
   'system.settings': 'Настройки системы…',
   'system.software': 'Центр приложений…',

@@ -11,6 +11,29 @@
  * from the `vars` argument to `t`.
  */
 export const en = {
+  // ── starting up ────────────────────────────────────────────────────────
+  'boot.starting': 'Starting Lumen OS',
+  'boot.failed': 'Boot failed',
+  'boot.couldNotStart': 'Lumen OS could not start.',
+
+  // ── the lock screen ────────────────────────────────────────────────────
+  'lock.user': 'User',
+  'lock.pressAnyKey': 'Click or press any key to unlock',
+  'lock.password': 'Password',
+  'lock.tryAgainIn': 'Try again in {seconds} s',
+  'lock.unlock': 'Unlock',
+  'lock.wrongPassword': 'Wrong password.',
+  'lock.tooManyAttempts': 'Too many attempts.',
+  'lock.hint': 'Hint: {hint}',
+  'lock.forgotPassword': 'Forgot password?',
+  // No ellipsis: from here these act at once, where the system menu's
+  // entries of the same name ask first.
+  'lock.switchUser': 'Switch User',
+  'lock.power': 'Power',
+  'lock.sleep': 'Sleep',
+  'lock.restart': 'Restart',
+  'lock.shutDown': 'Shut Down',
+
   // ── the system menu ────────────────────────────────────────────────────
   'system.about': 'About This Computer',
   'system.settings': 'System Settings…',
