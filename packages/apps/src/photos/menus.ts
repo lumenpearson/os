@@ -75,7 +75,7 @@ export function buildPhotosMenus(state: PhotosMenuState, actions: PhotosActions)
           onSelect: actions.reveal,
         },
         separator,
-        { id: 'refresh', label: 'Refresh', shortcut: 'Mod+R', onSelect: actions.refresh },
+        { id: 'refresh', label: t('photos.refresh'), shortcut: 'Mod+R', onSelect: actions.refresh },
         separator,
         {
           id: 'trash',
@@ -91,7 +91,7 @@ export function buildPhotosMenus(state: PhotosMenuState, actions: PhotosActions)
     },
     {
       id: 'picture',
-      label: 'Picture',
+      label: t('photos.picture'),
       items: [
         {
           id: 'lightbox',
@@ -168,7 +168,7 @@ export function buildPhotosMenus(state: PhotosMenuState, actions: PhotosActions)
         {
           id: 'sidebar',
           type: 'checkbox',
-          label: 'Show Albums',
+          label: t('photos.showAlbums'),
           shortcut: 'Mod+1',
           checked: state.sidebar,
           onSelect: actions.toggleSidebar,
@@ -176,13 +176,18 @@ export function buildPhotosMenus(state: PhotosMenuState, actions: PhotosActions)
         {
           id: 'info',
           type: 'checkbox',
-          label: 'Show Info',
+          label: t('photos.showInfo'),
           shortcut: 'Mod+I',
           checked: state.info,
           onSelect: actions.toggleInfo,
         },
         separator,
-        { id: 'search', label: 'Search', shortcut: 'Mod+F', onSelect: actions.focusSearch },
+        {
+          id: 'search',
+          label: t('photos.search'),
+          shortcut: 'Mod+F',
+          onSelect: actions.focusSearch,
+        },
       ],
     },
   ];
@@ -191,7 +196,7 @@ export function buildPhotosMenus(state: PhotosMenuState, actions: PhotosActions)
 /** The same commands on a right-click, minus the ones that need no picture. */
 export function pictureContextMenu(state: PhotosMenuState, actions: PhotosActions) {
   return [
-    { id: 'view', label: 'View Full Window', onSelect: actions.openLightbox },
+    { id: 'view', label: t('photos.viewFullWindow'), onSelect: actions.openLightbox },
     { id: 'open-preview', label: t('menu.openInPreview'), onSelect: actions.openInPreview },
     {
       id: 'open-paint',

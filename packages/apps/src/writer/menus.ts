@@ -60,7 +60,7 @@ const separator: MenuItemTemplate = { type: 'separator' };
 
 const ALIGNMENTS: Array<{ value: Alignment; label: string }> = [
   { value: 'left', label: t('menu.left') },
-  { value: 'center', label: 'Centre' },
+  { value: 'center', label: t('writer.centre') },
   { value: 'right', label: t('menu.right') },
 ];
 
@@ -141,14 +141,14 @@ export function buildMenus(state: WriterMenuState, actions: WriterActions): Menu
         { id: 'find', label: t('menu.findEllipsis'), shortcut: 'Mod+F', onSelect: actions.find },
         {
           id: 'find-next',
-          label: 'Find Next',
+          label: t('writer.findNext'),
           shortcut: 'Mod+G',
           enabled: state.hasMatches,
           onSelect: actions.findNext,
         },
         {
           id: 'find-previous',
-          label: 'Find Previous',
+          label: t('writer.findPrevious'),
           shortcut: 'Shift+Mod+G',
           enabled: state.hasMatches,
           onSelect: actions.findPrevious,
@@ -163,7 +163,7 @@ export function buildMenus(state: WriterMenuState, actions: WriterActions): Menu
         {
           id: 'reading-mode',
           type: 'checkbox',
-          label: 'Reading Mode',
+          label: t('writer.readingMode'),
           shortcut: 'Shift+Mod+R',
           checked: state.readingMode,
           onSelect: actions.toggleReadingMode,
@@ -183,8 +183,8 @@ export function buildMenus(state: WriterMenuState, actions: WriterActions): Menu
       id: 'help',
       label: t('menu.help'),
       items: [
-        { id: 'shortcuts', label: 'Keyboard Shortcuts', onSelect: actions.showShortcuts },
-        { id: 'about', label: 'About Writer', onSelect: actions.showAbout },
+        { id: 'shortcuts', label: t('writer.shortcuts'), onSelect: actions.showShortcuts },
+        { id: 'about', label: t('writer.about'), onSelect: actions.showAbout },
       ],
     },
   ];
@@ -208,7 +208,7 @@ function formatMenu(
       {
         id: 'paragraph-style',
         type: 'submenu',
-        label: 'Paragraph Style',
+        label: t('writer.paragraphStyle'),
         enabled: editable,
         submenu: BLOCK_TYPES.map((block) => ({
           id: `block-${block.value}`,
@@ -221,7 +221,7 @@ function formatMenu(
       {
         id: 'align',
         type: 'submenu',
-        label: 'Alignment',
+        label: t('writer.alignment'),
         enabled: editable,
         submenu: ALIGNMENTS.map((option) => ({
           id: `align-${option.value}`,
@@ -235,7 +235,7 @@ function formatMenu(
       {
         id: 'bullet-list',
         type: 'checkbox',
-        label: 'Bulleted List',
+        label: t('writer.bulletedList'),
         shortcut: 'Shift+Mod+8',
         checked: editor.bulletList,
         enabled: editable,
@@ -244,7 +244,7 @@ function formatMenu(
       {
         id: 'number-list',
         type: 'checkbox',
-        label: 'Numbered List',
+        label: t('writer.numberedList'),
         shortcut: 'Shift+Mod+7',
         checked: editor.numberList,
         enabled: editable,
@@ -252,14 +252,14 @@ function formatMenu(
       },
       {
         id: 'indent',
-        label: 'Indent',
+        label: t('writer.indent'),
         shortcut: 'Mod+]',
         enabled: editable,
         onSelect: actions.indent,
       },
       {
         id: 'outdent',
-        label: 'Outdent',
+        label: t('writer.outdent'),
         shortcut: 'Mod+[',
         enabled: editable,
         onSelect: actions.outdent,
@@ -267,20 +267,20 @@ function formatMenu(
       separator,
       {
         id: 'link',
-        label: 'Link…',
+        label: t('writer.link'),
         shortcut: 'Mod+K',
         enabled: editable,
         onSelect: actions.link,
       },
       {
         id: 'remove-link',
-        label: 'Remove Link',
+        label: t('writer.removeLink'),
         enabled: editable && editor.link,
         onSelect: actions.removeLink,
       },
       {
         id: 'clear-formatting',
-        label: 'Clear Formatting',
+        label: t('writer.clearFormatting'),
         shortcut: 'Mod+\\',
         enabled: editable,
         onSelect: actions.clearFormatting,
@@ -288,13 +288,13 @@ function formatMenu(
       separator,
       {
         id: 'insert-rule',
-        label: 'Insert Horizontal Rule',
+        label: t('writer.horizontalRule'),
         enabled: editable,
         onSelect: actions.insertRule,
       },
       {
         id: 'insert-date',
-        label: 'Insert Date',
+        label: t('writer.insertDate'),
         enabled: editable,
         onSelect: actions.insertDate,
       },

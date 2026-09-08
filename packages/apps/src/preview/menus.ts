@@ -141,7 +141,7 @@ export function buildPreviewMenus(
         {
           id: 'source',
           type: 'checkbox',
-          label: 'View Source',
+          label: t('preview.viewSource'),
           shortcut: 'Shift+Mod+U',
           checked: state.showingSource,
           enabled: state.hasSource,
@@ -150,7 +150,7 @@ export function buildPreviewMenus(
         {
           id: 'filmstrip',
           type: 'checkbox',
-          label: 'Show Filmstrip',
+          label: t('preview.showFilmstrip'),
           checked: state.filmstrip,
           enabled: state.canFilmstrip,
           onSelect: actions.toggleFilmstrip,

@@ -127,7 +127,7 @@ export function sortSubmenu(
     {
       id: 'sort-folders-first',
       type: 'checkbox',
-      label: 'Folders First',
+      label: t('files.foldersFirst'),
       checked: foldersFirst,
       onSelect: actions.toggleFoldersFirst,
     },
@@ -140,10 +140,10 @@ export function viewSubmenu(
   withShortcuts = false,
 ): MenuEntry[] {
   const modes: Array<{ id: ViewMode; label: string; shortcut: string }> = [
-    { id: 'list', label: 'as List', shortcut: 'Mod+1' },
-    { id: 'grid', label: 'as Grid', shortcut: 'Mod+2' },
-    { id: 'columns', label: 'as Columns', shortcut: 'Mod+3' },
-    { id: 'cards', label: 'as Cards', shortcut: 'Mod+4' },
+    { id: 'list', label: t('files.asList'), shortcut: 'Mod+1' },
+    { id: 'grid', label: t('files.asGrid'), shortcut: 'Mod+2' },
+    { id: 'columns', label: t('files.asColumns'), shortcut: 'Mod+3' },
+    { id: 'cards', label: t('files.asCards'), shortcut: 'Mod+4' },
   ];
   return modes.map((m) => ({
     id: `view-${m.id}`,
@@ -161,7 +161,7 @@ export function filterSubmenu(state: MenuState, actions: FilesActions): MenuEntr
   return [
     {
       id: 'filter-kind',
-      label: 'Kind',
+      label: t('files.kind'),
       submenu: KIND_FILTERS.map((o) => ({
         id: `filter-kind-${o.id}`,
         type: 'radio',
@@ -172,7 +172,7 @@ export function filterSubmenu(state: MenuState, actions: FilesActions): MenuEntr
     },
     {
       id: 'filter-size',
-      label: 'Size',
+      label: t('files.size'),
       submenu: SIZE_FILTERS.map((o) => ({
         id: `filter-size-${o.id}`,
         type: 'radio',
@@ -183,7 +183,7 @@ export function filterSubmenu(state: MenuState, actions: FilesActions): MenuEntr
     },
     {
       id: 'filter-date',
-      label: 'Date Modified',
+      label: t('files.dateModified'),
       submenu: DATE_FILTERS.map((o) => ({
         id: `filter-date-${o.id}`,
         type: 'radio',
@@ -194,13 +194,13 @@ export function filterSubmenu(state: MenuState, actions: FilesActions): MenuEntr
     },
     {
       id: 'filter-pattern',
-      label: 'Name Pattern…',
+      label: t('files.namePattern'),
       onSelect: actions.editPattern,
     },
     separator,
     {
       id: 'filter-clear',
-      label: 'Clear Filters',
+      label: t('files.clearFilters'),
       enabled: isFiltering(filter),
       onSelect: actions.clearFilter,
     },
@@ -212,7 +212,7 @@ export function viewOptionsSubmenu(state: MenuState, actions: FilesActions): Men
   return [
     {
       id: 'card-axis',
-      label: 'Card Lane',
+      label: t('files.cardLane'),
       enabled: state.view === 'cards',
       submenu: LANE_AXES.map((o) => ({
         id: `card-axis-${o.id}`,
@@ -224,7 +224,7 @@ export function viewOptionsSubmenu(state: MenuState, actions: FilesActions): Men
     },
     {
       id: 'icon-size',
-      label: 'Icon Size',
+      label: t('files.iconSize'),
       submenu: ICON_SIZES.map((o) => ({
         id: `icon-size-${o.id}`,
         type: 'radio',
@@ -237,20 +237,20 @@ export function viewOptionsSubmenu(state: MenuState, actions: FilesActions): Men
     {
       id: 'sidebar',
       type: 'checkbox',
-      label: 'Show Sidebar',
+      label: t('files.showSidebar'),
       checked: state.sidebarVisible,
       onSelect: actions.toggleSidebar,
     },
     {
       id: 'index-rail',
       type: 'checkbox',
-      label: 'Show A–Z Rail',
+      label: t('files.showRail'),
       checked: state.indexRail,
       onSelect: actions.toggleIndexRail,
     },
     {
       id: 'toolbar',
-      label: 'Toolbar',
+      label: t('files.toolbar'),
       submenu: TOOLBAR_PARTS.map((part) => ({
         id: `toolbar-${part.id}`,
         type: 'checkbox',
@@ -292,7 +292,7 @@ function openWithSubmenu(state: MenuState, actions: FilesActions): MenuEntry | n
   }
   return {
     id: 'open-with',
-    label: 'Open With',
+    label: t('files.openWith'),
     enabled: submenu.length > 0,
     submenu,
   };
@@ -456,7 +456,12 @@ export function menubarFor(state: MenuState, actions: FilesActions): MenuTemplat
   const single = count === 1;
   const openWith = openWithSubmenu(state, actions);
   const file: MenuEntry[] = [
-    { id: 'new-window', label: 'New Window', shortcut: 'Mod+N', onSelect: actions.newWindow },
+    {
+      id: 'new-window',
+      label: t('files.newWindow'),
+      shortcut: 'Mod+N',
+      onSelect: actions.newWindow,
+    },
     {
       id: 'new-folder',
       label: t('menu.newFolder'),
@@ -477,7 +482,13 @@ export function menubarFor(state: MenuState, actions: FilesActions): MenuTemplat
       submenu: newDocumentSubmenu(actions),
     },
     separator,
-    { id: 'open', label: 'Open', shortcut: 'Mod+O', enabled: some, onSelect: actions.open },
+    {
+      id: 'open',
+      label: t('files.open'),
+      shortcut: 'Mod+O',
+      enabled: some,
+      onSelect: actions.open,
+    },
     ...(openWith ? [openWith] : []),
     { id: 'info', label: t('menu.getInfo'), shortcut: 'Mod+I', onSelect: actions.getInfo },
     { id: 'quick-look', label: t('menu.quickLook'), enabled: single, onSelect: actions.quickLook },
@@ -522,7 +533,7 @@ export function menubarFor(state: MenuState, actions: FilesActions): MenuTemplat
     });
   file.push(separator, {
     id: 'close',
-    label: 'Close Window',
+    label: t('files.closeWindow'),
     shortcut: 'Mod+W',
     onSelect: actions.closeWindow,
   });
@@ -592,7 +603,7 @@ export function menubarFor(state: MenuState, actions: FilesActions): MenuTemplat
     },
     {
       id: 'up',
-      label: 'Enclosing Folder',
+      label: t('files.enclosingFolder'),
       shortcut: 'Mod+ArrowUp',
       enabled: state.canUp,
       onSelect: actions.up,
@@ -605,7 +616,12 @@ export function menubarFor(state: MenuState, actions: FilesActions): MenuTemplat
       onSelect: () => actions.go(p.path),
     })),
     separator,
-    { id: 'go-to', label: 'Go to Folder…', shortcut: 'Shift+Mod+G', onSelect: actions.goToFolder },
+    {
+      id: 'go-to',
+      label: t('files.goToFolder'),
+      shortcut: 'Shift+Mod+G',
+      onSelect: actions.goToFolder,
+    },
   ];
 
   return [

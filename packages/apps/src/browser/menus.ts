@@ -68,18 +68,23 @@ export const SHORTCUTS = {
 
 export function menubarFor(state: BrowserMenuState, actions: BrowserActions): MenuTemplate[] {
   const file: MenuItemTemplate[] = [
-    { id: 'new-tab', label: 'New Tab', shortcut: SHORTCUTS.newTab, onSelect: actions.newTab },
+    {
+      id: 'new-tab',
+      label: t('browser.newTab'),
+      shortcut: SHORTCUTS.newTab,
+      onSelect: actions.newTab,
+    },
     { type: 'separator' },
     {
       id: 'settings',
-      label: 'Browser Settings',
+      label: t('browser.settings'),
       shortcut: SHORTCUTS.settings,
       onSelect: actions.showSettings,
     },
     { type: 'separator' },
     {
       id: 'close-tab',
-      label: 'Close Tab',
+      label: t('browser.closeTab'),
       shortcut: SHORTCUTS.closeTab,
       onSelect: actions.closeTab,
     },
@@ -103,17 +108,17 @@ export function menubarFor(state: BrowserMenuState, actions: BrowserActions): Me
     { type: 'separator' },
     {
       id: 'reload',
-      label: 'Reload',
+      label: t('browser.reload'),
       shortcut: SHORTCUTS.reload,
       enabled: !state.loading,
       onSelect: actions.reload,
     },
-    { id: 'stop', label: 'Stop', enabled: state.loading, onSelect: actions.stop },
-    { id: 'home', label: 'Home', shortcut: SHORTCUTS.home, onSelect: actions.home },
+    { id: 'stop', label: t('browser.stop'), enabled: state.loading, onSelect: actions.stop },
+    { id: 'home', label: t('browser.home'), shortcut: SHORTCUTS.home, onSelect: actions.home },
     { type: 'separator' },
     {
       id: 'show-history',
-      label: 'Show History',
+      label: t('browser.showHistory'),
       shortcut: SHORTCUTS.showHistory,
       onSelect: actions.showHistory,
     },
@@ -128,7 +133,7 @@ export function menubarFor(state: BrowserMenuState, actions: BrowserActions): Me
     },
     {
       id: 'show-bookmarks',
-      label: 'Show All Bookmarks',
+      label: t('browser.showBookmarks'),
       shortcut: SHORTCUTS.showBookmarks,
       onSelect: actions.showBookmarks,
     },
@@ -136,7 +141,7 @@ export function menubarFor(state: BrowserMenuState, actions: BrowserActions): Me
     {
       id: 'bookmarks-bar',
       type: 'checkbox',
-      label: 'Show Bookmarks Bar',
+      label: t('browser.showBookmarksBar'),
       shortcut: SHORTCUTS.bookmarksBar,
       checked: state.showBookmarksBar,
       onSelect: actions.toggleBookmarksBar,
@@ -167,8 +172,8 @@ export function menubarFor(state: BrowserMenuState, actions: BrowserActions): Me
 
   return [
     { id: 'file', label: t('menu.file'), items: file },
-    { id: 'history', label: 'History', items: history },
-    { id: 'bookmarks', label: 'Bookmarks', items: bookmarks },
+    { id: 'history', label: t('browser.history'), items: history },
+    { id: 'bookmarks', label: t('browser.bookmarks'), items: bookmarks },
     { id: 'view', label: t('menu.view'), items: view },
   ];
 }

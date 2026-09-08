@@ -49,7 +49,7 @@ export interface SheetsMenuActions {
 
 const ALIGNS: Array<{ value: Align; label: string }> = [
   { value: 'left', label: t('menu.left') },
-  { value: 'center', label: 'Center' },
+  { value: 'center', label: t('sheets.center') },
   { value: 'right', label: t('menu.right') },
 ];
 
@@ -85,7 +85,7 @@ export function buildMenus(state: SheetsMenuState, actions: SheetsMenuActions): 
           shortcut: 'Shift+Mod+S',
           onSelect: actions.saveAs,
         },
-        { id: 'export-csv', label: 'Export CSV…', onSelect: actions.exportCsv },
+        { id: 'export-csv', label: t('sheets.exportCsv'), onSelect: actions.exportCsv },
         { id: 'file-sep-2', type: 'separator' },
         { id: 'close', label: t('menu.close'), shortcut: 'Mod+W', onSelect: actions.close },
       ],
@@ -143,32 +143,32 @@ export function buildMenus(state: SheetsMenuState, actions: SheetsMenuActions): 
           onSelect: actions.toggleItalic,
         },
         { id: 'format-sep-1', type: 'separator' },
-        { id: 'align', label: 'Align', type: 'submenu', submenu: alignItems },
-        { id: 'number', label: 'Number', type: 'submenu', submenu: formatItems },
+        { id: 'align', label: t('sheets.align'), type: 'submenu', submenu: alignItems },
+        { id: 'number', label: t('sheets.number'), type: 'submenu', submenu: formatItems },
       ],
     },
     {
       id: 'insert',
-      label: 'Insert',
+      label: t('sheets.insert'),
       items: [
-        { id: 'row-above', label: 'Row Above', onSelect: actions.insertRowAbove },
-        { id: 'row-below', label: 'Row Below', onSelect: actions.insertRowBelow },
-        { id: 'column-left', label: 'Column Left', onSelect: actions.insertColumnLeft },
-        { id: 'column-right', label: 'Column Right', onSelect: actions.insertColumnRight },
+        { id: 'row-above', label: t('sheets.rowAbove'), onSelect: actions.insertRowAbove },
+        { id: 'row-below', label: t('sheets.rowBelow'), onSelect: actions.insertRowBelow },
+        { id: 'column-left', label: t('sheets.columnLeft'), onSelect: actions.insertColumnLeft },
+        { id: 'column-right', label: t('sheets.columnRight'), onSelect: actions.insertColumnRight },
         { id: 'insert-sep-1', type: 'separator' },
-        { id: 'delete-row', label: 'Delete Row', onSelect: actions.deleteRow },
-        { id: 'delete-column', label: 'Delete Column', onSelect: actions.deleteColumn },
+        { id: 'delete-row', label: t('sheets.deleteRow'), onSelect: actions.deleteRow },
+        { id: 'delete-column', label: t('sheets.deleteColumn'), onSelect: actions.deleteColumn },
       ],
     },
     {
       id: 'sheet',
-      label: 'Sheet',
+      label: t('sheets.sheet'),
       items: [
-        { id: 'add-sheet', label: 'Add Sheet', onSelect: actions.addSheet },
+        { id: 'add-sheet', label: t('sheets.addSheet'), onSelect: actions.addSheet },
         { id: 'rename-sheet', label: t('menu.renameEllipsis'), onSelect: actions.renameSheet },
         {
           id: 'delete-sheet',
-          label: 'Delete Sheet',
+          label: t('sheets.deleteSheet'),
           danger: true,
           enabled: state.canDeleteSheet,
           onSelect: actions.deleteSheet,
@@ -178,7 +178,7 @@ export function buildMenus(state: SheetsMenuState, actions: SheetsMenuActions): 
     {
       id: 'help',
       label: t('menu.help'),
-      items: [{ id: 'functions', label: 'Functions…', onSelect: actions.showFunctions }],
+      items: [{ id: 'functions', label: t('sheets.functions'), onSelect: actions.showFunctions }],
     },
   ];
 }

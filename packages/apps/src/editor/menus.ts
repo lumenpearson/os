@@ -125,12 +125,17 @@ export function buildEditorMenus(state: EditorMenuState, actions: EditorActions)
         { id: 'find', label: t('menu.findEllipsis'), shortcut: 'Mod+F', onSelect: actions.find },
         {
           id: 'replace',
-          label: 'Replace…',
+          label: t('editor.replace'),
           shortcut: 'Mod+H',
           enabled: !state.readOnly,
           onSelect: actions.replace,
         },
-        { id: 'go-to-line', label: 'Go to Line…', shortcut: 'Mod+G', onSelect: actions.goToLine },
+        {
+          id: 'go-to-line',
+          label: t('editor.goToLine'),
+          shortcut: 'Mod+G',
+          onSelect: actions.goToLine,
+        },
       ],
     },
     {
@@ -140,29 +145,34 @@ export function buildEditorMenus(state: EditorMenuState, actions: EditorActions)
         {
           id: 'word-wrap',
           type: 'checkbox',
-          label: 'Word Wrap',
+          label: t('editor.wordWrap'),
           checked: state.wordWrap,
           onSelect: actions.toggleWordWrap,
         },
         {
           id: 'line-numbers',
           type: 'checkbox',
-          label: 'Line Numbers',
+          label: t('editor.lineNumbers'),
           checked: state.lineNumbers,
           onSelect: actions.toggleLineNumbers,
         },
         {
           id: 'preview',
           type: 'checkbox',
-          label: 'Markdown Preview',
+          label: t('editor.markdownPreview'),
           shortcut: 'Shift+Mod+P',
           checked: state.preview,
           enabled: state.isMarkdown,
           onSelect: actions.togglePreview,
         },
         separator,
-        { id: 'zoom-in', label: 'Bigger', shortcut: 'Mod+=', onSelect: actions.zoomIn },
-        { id: 'zoom-out', label: 'Smaller', shortcut: 'Mod+-', onSelect: actions.zoomOut },
+        { id: 'zoom-in', label: t('editor.bigger'), shortcut: 'Mod+=', onSelect: actions.zoomIn },
+        {
+          id: 'zoom-out',
+          label: t('editor.smaller'),
+          shortcut: 'Mod+-',
+          onSelect: actions.zoomOut,
+        },
         {
           id: 'zoom-reset',
           label: t('menu.actualSize'),
@@ -174,7 +184,7 @@ export function buildEditorMenus(state: EditorMenuState, actions: EditorActions)
     {
       id: 'help',
       label: t('menu.help'),
-      items: [{ id: 'help', label: 'Text Editor Help', onSelect: actions.help }],
+      items: [{ id: 'help', label: t('editor.help'), onSelect: actions.help }],
     },
   ];
 }
