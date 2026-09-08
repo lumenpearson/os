@@ -357,7 +357,7 @@ const BASE_TAG = /<base\b[^>]*\bhref\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))[^>]
 /**
  * A policy that lets Lumen's one script run and nothing else's.
  *
- * The strip above keeps the page whole; this keeps it safe, and it is the
+ * The strip below keeps the page whole; this keeps it safe, and it is the
  * half that does not depend on getting string surgery right. A script the
  * scanner somehow missed still cannot execute, because it carries no nonce.
  * `object-src` closes the other way a document runs code. Nothing else is
@@ -391,7 +391,7 @@ function policyFor(nonce: string): string {
  * where the HTML parser's script-data state does.
  *
  * Inline `on*` handlers are left: they fire only on interaction, and removing
- * attributes needs a real parser. The nonce policy below is what stands
+ * attributes needs a real parser. The nonce policy above is what stands
  * behind this in any case — this keeps the page whole; that keeps it safe.
  */
 export function withoutScripts(html: string): string {
